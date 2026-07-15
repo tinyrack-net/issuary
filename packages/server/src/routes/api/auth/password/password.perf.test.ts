@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -12,10 +12,14 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 1;
-const MEASURED_REQUESTS = 10;
+const WARMUP_REQUESTS = 4;
+const MEASURED_REQUESTS = 20;
 const TOKEN_BACKLOG_SIZE = getPerfInteger('TINYAUTH_PERF_TOKEN_BACKLOG', 100);
 const PBKDF2_CONCURRENCY = 5;
 
@@ -24,7 +28,7 @@ let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const email = await createTestEmailConfig();
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -40,7 +44,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -63,11 +67,10 @@ async function requestForgot(email: string) {
     header: { 'accept-language': 'en' },
     json: { email },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.ok).toBe(true);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.ok).toBe(true);
+  });
 }
 
 async function createPasswordResetFixture(index: number) {
@@ -126,11 +129,10 @@ async function requestReset(token: string, password: string) {
   const response = await client.api.auth.password.reset.$post({
     json: { token, password },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.message).toContain('Password has been reset');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.message).toContain('Password has been reset');
+  });
 }
 
 describe('POST /api/auth/password/forgot perf', () => {
@@ -138,20 +140,13 @@ describe('POST /api/auth/password/forgot perf', () => {
     const email = generateUniqueEmail('password-forgot-perf');
     await createDbUserWithSession(app, services, email, 'Password123!');
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/password/forgot smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
       request: async () => requestForgot(email),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 
   test('handles password-reset requests with an existing token backlog through the real route', async () => {
@@ -159,20 +154,13 @@ describe('POST /api/auth/password/forgot perf', () => {
       'password-forgot-backlog-perf',
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/password/forgot token backlog smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
       request: async () => requestForgot(email),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(5000);
   });
 });
 
@@ -183,29 +171,16 @@ describe('POST /api/auth/password/reset perf', () => {
         createPasswordResetFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/password/reset smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing password reset fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestReset(fixture.token, fixture.newPassword);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(4000);
   });
 
   test('handles concurrent PBKDF2 password resets through the real route', async () => {
@@ -214,28 +189,15 @@ describe('POST /api/auth/password/reset perf', () => {
         createPasswordResetFixture(index + 1000),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/password/reset PBKDF2 concurrency smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: PBKDF2_CONCURRENCY,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing password reset fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestReset(fixture.token, fixture.newPassword);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(10000);
   });
 });

@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -13,18 +13,22 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 3;
+const WARMUP_REQUESTS = 4;
 const MEASURED_REQUESTS = 30;
 const LARGE_ROSTER_SIZE = 10;
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
-let cleanup: () => Promise<void>;
+let cleanup: () => Promise<void> = async () => {};
 
-beforeAll(async () => {
+async function setupPerfApp(): Promise<void> {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     auth: {
@@ -44,9 +48,19 @@ beforeAll(async () => {
   client = testClient(app);
   services = server.services;
   cleanup = server.cleanup;
+}
+
+async function resetPerfApp(): Promise<void> {
+  await cleanup();
+  cleanup = async () => {};
+  await setupPerfApp();
+}
+
+beforeEach(async () => {
+  await setupPerfApp();
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -127,13 +141,12 @@ async function requestSelect(sessionCookie: string, sub: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.ok).toBe(true);
-  expect(body.active_sub).toBe(sub);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.ok).toBe(true);
+    expect(body.active_sub).toBe(sub);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestRemove(sessionCookie: string, sub: string) {
@@ -143,12 +156,11 @@ async function requestRemove(sessionCookie: string, sub: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.ok).toBe(true);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.ok).toBe(true);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestSelectNotRemembered(sessionCookie: string) {
@@ -158,11 +170,10 @@ async function requestSelectNotRemembered(sessionCookie: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response, 400);
-
-  expect(body.code).toBe('ACCOUNT_NOT_REMEMBERED');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response, 400);
+    expect(body.code).toBe('ACCOUNT_NOT_REMEMBERED');
+  });
 }
 
 async function requestRemoveActiveAccount(sessionCookie: string, sub: string) {
@@ -172,18 +183,17 @@ async function requestRemoveActiveAccount(sessionCookie: string, sub: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response, 400);
-
-  expect(body.code).toBe('ACCOUNT_NOT_REMOVABLE');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response, 400);
+    expect(body.code).toBe('ACCOUNT_NOT_REMOVABLE');
+  });
 }
 
 describe('POST /api/auth/accounts/select perf', () => {
   test('handles repeated remembered-account selection through the real route', async () => {
     const session = await createRememberedAccountSession(2);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/accounts/select smoke',
       warmupRequests: 5,
       requests: 50,
@@ -191,18 +201,10 @@ describe('POST /api/auth/accounts/select perf', () => {
       request: async () =>
         requestSelect(session.sessionCookie, TEST_USER_CONFIG.sub),
     });
-
-    expect(result.totalRequests).toBe(50);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(50);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('does not grow pathologically when remembered-account roster size increases', async () => {
     const smallRoster = await createRememberedAccountSession(2);
-    const largeRoster = await createRememberedAccountSession(LARGE_ROSTER_SIZE);
 
     const smallResult = await runHttpPerf({
       name: 'POST /api/auth/accounts/select small roster',
@@ -217,6 +219,10 @@ describe('POST /api/auth/accounts/select perf', () => {
         return requestSelect(smallRoster.sessionCookie, sub);
       },
     });
+
+    await resetPerfApp();
+    const largeRoster = await createRememberedAccountSession(LARGE_ROSTER_SIZE);
+
     const largeResult = await runHttpPerf({
       name: 'POST /api/auth/accounts/select large roster',
       warmupRequests: WARMUP_REQUESTS,
@@ -231,23 +237,13 @@ describe('POST /api/auth/accounts/select perf', () => {
       },
     });
 
-    expect(smallResult.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(largeResult.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(smallResult.failed).toBe(0);
-    expect(largeResult.failed).toBe(0);
-    expect(smallResult.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(largeResult.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(smallResult.errorRate).toBe(0);
-    expect(largeResult.errorRate).toBe(0);
-    expect(largeResult.rps).toBeGreaterThan(3);
-    expect(largeResult.p95Ms).toBeLessThan(1500);
     expect(largeResult.p95Ms).toBeLessThan(smallResult.p95Ms * 5 + 100);
   });
 
   test('handles not-remembered selection failures through the real route', async () => {
     const session = await createRememberedAccountSession(2);
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/accounts/select not-remembered smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -255,13 +251,6 @@ describe('POST /api/auth/accounts/select perf', () => {
       expectedStatuses: [400],
       request: async () => requestSelectNotRemembered(session.sessionCookie),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });
 
@@ -272,35 +261,22 @@ describe('POST /api/auth/accounts/remove perf', () => {
         createTwoAccountSession(),
       ),
     );
-    let nextSession = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/accounts/remove smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
-      request: async () => {
-        const session = sessions[nextSession];
-        nextSession += 1;
-        if (session === undefined) {
-          throw new Error('Missing account removal session');
-        }
+      request: async (context) => {
+        const session = perfFixture(sessions, context, WARMUP_REQUESTS);
         return requestRemove(session.sessionCookie, TEST_USER_CONFIG.sub);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('handles active-account removal failures through the real route', async () => {
     const session = await createTwoAccountSession();
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/accounts/remove active-account smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -312,12 +288,5 @@ describe('POST /api/auth/accounts/remove perf', () => {
           session.secondUser.sub,
         ),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[400]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
@@ -15,12 +15,15 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
-const REFRESH_WARMUP_REQUESTS = 3;
-const REFRESH_MEASURED_REQUESTS = 20;
+const REFRESH_WARMUP_REQUESTS = 10;
+const REFRESH_MEASURED_REQUESTS = 50;
 const REFRESHABLE_CLIENT_ID = 'introspect-refresh-perf-id';
 const REFRESHABLE_CLIENT_SECRET = 'introspect-refresh-perf-secret';
 const REFRESHABLE_REDIRECT_URI =
@@ -43,7 +46,7 @@ let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -55,7 +58,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -68,22 +71,21 @@ async function requestTokenIntrospection(accessToken: string) {
       client_secret: TEST_OAUTH_CLIENT.clientSecret,
     },
   });
-  const body = await assertJsonBody(response);
-
-  expect(response.headers.get('content-type')).toContain('application/json');
-  expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(response.headers.get('pragma')).toBe('no-cache');
-  expect(body).toEqual(
-    expect.objectContaining({
-      active: true,
-      client_id: TEST_OAUTH_CLIENT.clientId,
-      sub: TEST_USER_CONFIG.sub,
-      token_type: 'Bearer',
-      scope: 'openid profile email',
-    }),
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('pragma')).toBe('no-cache');
+    expect(body).toEqual(
+      expect.objectContaining({
+        active: true,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        sub: TEST_USER_CONFIG.sub,
+        token_type: 'Bearer',
+        scope: 'openid profile email',
+      }),
+    );
+  });
 }
 
 async function createRefreshToken(): Promise<string> {
@@ -125,21 +127,20 @@ async function requestRefreshTokenIntrospection(refreshToken: string) {
       client_secret: REFRESHABLE_CLIENT_SECRET,
     },
   });
-  const body = await assertJsonBody(response);
-
-  expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(response.headers.get('pragma')).toBe('no-cache');
-  expect(body).toEqual(
-    expect.objectContaining({
-      active: true,
-      client_id: REFRESHABLE_CLIENT_ID,
-      sub: TEST_USER_CONFIG.sub,
-      token_type: 'Bearer',
-      scope: REFRESHABLE_SCOPE,
-    }),
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('pragma')).toBe('no-cache');
+    expect(body).toEqual(
+      expect.objectContaining({
+        active: true,
+        client_id: REFRESHABLE_CLIENT_ID,
+        sub: TEST_USER_CONFIG.sub,
+        token_type: 'Bearer',
+        scope: REFRESHABLE_SCOPE,
+      }),
+    );
+  });
 }
 
 async function requestInactiveTokenIntrospection() {
@@ -152,9 +153,9 @@ async function requestInactiveTokenIntrospection() {
     },
   });
 
-  expect(await assertJsonBody(response)).toEqual({ active: false });
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(await assertJsonBody(response)).toEqual({ active: false });
+  });
 }
 
 describe('POST /oauth/introspect perf', () => {
@@ -163,7 +164,7 @@ describe('POST /oauth/introspect perf', () => {
       scope: 'openid profile email',
     });
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/introspect active access-token smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -171,19 +172,12 @@ describe('POST /oauth/introspect perf', () => {
       expectedStatuses: [200],
       request: async () => requestTokenIntrospection(accessToken),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('introspects a pre-issued active refresh token through the real route', async () => {
     const refreshToken = await createRefreshToken();
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/introspect active refresh-token smoke',
       warmupRequests: REFRESH_WARMUP_REQUESTS,
       requests: REFRESH_MEASURED_REQUESTS,
@@ -191,17 +185,10 @@ describe('POST /oauth/introspect perf', () => {
       expectedStatuses: [200],
       request: async () => requestRefreshTokenIntrospection(refreshToken),
     });
-
-    expect(result.totalRequests).toBe(REFRESH_MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(REFRESH_MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('handles inactive token introspection through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/introspect inactive token smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -209,12 +196,5 @@ describe('POST /oauth/introspect perf', () => {
       expectedStatuses: [200],
       request: requestInactiveTokenIntrospection,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

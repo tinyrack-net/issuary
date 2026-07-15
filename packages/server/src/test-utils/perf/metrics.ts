@@ -1,4 +1,5 @@
 import { percentile } from './percentiles.js';
+import type { PerfBudget, PerfWorkloadKind } from './scenario-catalog.js';
 
 export type LatencySummary = {
   p50Ms: number;
@@ -9,8 +10,37 @@ export type LatencySummary = {
 
 export type StatusCounts = Record<number, number>;
 
+export type PerfPhase = 'warmup' | 'measure';
+
+export type PerfRequestContext = {
+  phase: PerfPhase;
+  index: number;
+};
+
+export type PerfWorkload = {
+  kind: PerfWorkloadKind;
+  warmupRequests: number;
+  requests: number;
+  concurrency: number;
+};
+
+export type PerfErrorStage = 'request' | 'status' | 'validation' | 'budget';
+
+export type PerfErrorSample = {
+  phase: PerfPhase | 'budget';
+  index: number | null;
+  stage: PerfErrorStage;
+  message: string;
+};
+
 export type HttpPerfResult = {
+  id: string;
   name: string;
+  source: string;
+  outcome: 'passed' | 'failed';
+  workload: PerfWorkload;
+  budget: PerfBudget;
+  measurementMs: number;
   totalRequests: number;
   success: number;
   failed: number;
@@ -21,6 +51,7 @@ export type HttpPerfResult = {
   maxMs: number;
   errorRate: number;
   statusCounts: StatusCounts;
+  errors: PerfErrorSample[];
 };
 
 function safeRate(numerator: number, denominator: number): number {
@@ -52,29 +83,41 @@ export function summarizeLatencies(values: readonly number[]): LatencySummary {
 }
 
 export function summarizeHttpPerf(input: {
+  id: string;
   name: string;
+  source: string;
+  workload: PerfWorkload;
+  budget: PerfBudget;
   totalRequests: number;
   success: number;
   failed: number;
-  totalMs: number;
+  measurementMs: number;
   latenciesMs: readonly number[];
   statusCounts: StatusCounts;
+  errors: readonly PerfErrorSample[];
 }): HttpPerfResult {
   const latencySummary = summarizeLatencies(input.latenciesMs);
   const rps =
-    input.totalMs > 0
-      ? safeRate(input.totalRequests, input.totalMs / 1_000)
+    input.measurementMs > 0
+      ? safeRate(input.totalRequests, input.measurementMs / 1_000)
       : 0;
   const errorRate = safeRate(input.failed, input.totalRequests);
 
   return {
+    id: input.id,
     name: input.name,
+    source: input.source,
+    outcome: input.failed === 0 ? 'passed' : 'failed',
+    workload: { ...input.workload },
+    budget: { ...input.budget },
+    measurementMs: input.measurementMs,
     totalRequests: input.totalRequests,
     success: input.success,
     failed: input.failed,
     rps,
     errorRate,
     statusCounts: { ...input.statusCounts },
+    errors: input.errors.map((error) => ({ ...error })),
     ...latencySummary,
   };
 }

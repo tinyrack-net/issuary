@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
@@ -15,11 +15,15 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 5;
+const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
-const REFRESH_WARMUP_REQUESTS = 3;
+const REFRESH_WARMUP_REQUESTS = 4;
 const REFRESH_MEASURED_REQUESTS = 20;
 const REFRESHABLE_CLIENT_ID = 'revoke-refresh-perf-id';
 const REFRESHABLE_CLIENT_SECRET = 'revoke-refresh-perf-secret';
@@ -43,7 +47,7 @@ let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
@@ -55,7 +59,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -70,13 +74,7 @@ async function createRevocationTokens(): Promise<string[]> {
   return tokens;
 }
 
-async function requestTokenRevocation(tokens: string[]) {
-  const token = tokens.shift();
-
-  if (!token) {
-    throw new Error('No pre-issued access token available for revocation');
-  }
-
+async function requestTokenRevocation(token: string) {
   const response = await client.oauth.revoke.$post({
     form: {
       token,
@@ -86,13 +84,13 @@ async function requestTokenRevocation(tokens: string[]) {
     },
   });
 
-  expect(response.status).toBe(200);
-  expect(response.headers.get('content-type')).toContain('application/json');
-  expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(response.headers.get('pragma')).toBe('no-cache');
-  expect(await assertJsonBody(response)).toEqual({});
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('pragma')).toBe('no-cache');
+    expect(await assertJsonBody(response)).toEqual({});
+  });
 }
 
 async function createRefreshRevocationTokens(): Promise<string[]> {
@@ -131,13 +129,7 @@ async function createRefreshRevocationTokens(): Promise<string[]> {
   return tokens;
 }
 
-async function requestRefreshTokenRevocation(tokens: string[]) {
-  const token = tokens.shift();
-
-  if (!token) {
-    throw new Error('No pre-issued refresh token available for revocation');
-  }
-
+async function requestRefreshTokenRevocation(token: string) {
   const response = await client.oauth.revoke.$post({
     form: {
       token,
@@ -147,12 +139,12 @@ async function requestRefreshTokenRevocation(tokens: string[]) {
     },
   });
 
-  expect(response.status).toBe(200);
-  expect(response.headers.get('cache-control')).toBe('no-store');
-  expect(response.headers.get('pragma')).toBe('no-cache');
-  expect(await assertJsonBody(response)).toEqual({});
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('pragma')).toBe('no-cache');
+    expect(await assertJsonBody(response)).toEqual({});
+  });
 }
 
 async function requestInvalidTokenRevocation() {
@@ -165,54 +157,44 @@ async function requestInvalidTokenRevocation() {
     },
   });
 
-  expect(await assertJsonBody(response)).toEqual({});
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    expect(await assertJsonBody(response)).toEqual({});
+  });
 }
 
 describe('POST /oauth/revoke perf', () => {
   test('revokes pre-issued access tokens through the real route', async () => {
     const tokens = await createRevocationTokens();
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/revoke access-token smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       expectedStatuses: [200],
-      request: async () => requestTokenRevocation(tokens),
+      request: async (context) =>
+        requestTokenRevocation(perfFixture(tokens, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('revokes pre-issued refresh tokens through the real route', async () => {
     const tokens = await createRefreshRevocationTokens();
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/revoke refresh-token smoke',
       warmupRequests: REFRESH_WARMUP_REQUESTS,
       requests: REFRESH_MEASURED_REQUESTS,
       concurrency: 3,
       expectedStatuses: [200],
-      request: async () => requestRefreshTokenRevocation(tokens),
+      request: async (context) =>
+        requestRefreshTokenRevocation(
+          perfFixture(tokens, context, REFRESH_WARMUP_REQUESTS),
+        ),
     });
-
-    expect(result.totalRequests).toBe(REFRESH_MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(REFRESH_MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(2);
-    expect(result.p95Ms).toBeLessThan(2500);
   });
 
   test('handles invalid token revocation idempotently through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /oauth/revoke invalid token smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -220,12 +202,5 @@ describe('POST /oauth/revoke perf', () => {
       expectedStatuses: [200],
       request: requestInvalidTokenRevocation,
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 });

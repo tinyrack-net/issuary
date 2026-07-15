@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -12,10 +12,14 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 1;
-const MEASURED_REQUESTS = 10;
+const WARMUP_REQUESTS = 4;
+const MEASURED_REQUESTS = 20;
 
 const webauthn = vi.hoisted(() => ({
   verifyAuthenticationResponse: vi.fn(),
@@ -35,7 +39,7 @@ let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   webauthn.verifyAuthenticationResponse.mockResolvedValue({
     verified: true,
     authenticationInfo: { newCounter: 1 },
@@ -55,7 +59,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -120,28 +124,15 @@ async function createPasskeyAuthenticationFixture(index: number) {
   };
 }
 
-function expectPerfResult(
-  result: Awaited<ReturnType<typeof runHttpPerf>>,
-  status: number,
-) {
-  expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-  expect(result.failed).toBe(0);
-  expect(result.statusCounts[status]).toBe(MEASURED_REQUESTS);
-  expect(result.errorRate).toBe(0);
-  expect(result.rps).toBeGreaterThan(1);
-  expect(result.p95Ms).toBeLessThan(3000);
-}
-
 async function requestPasskeyOptions() {
   const response = await client.api.auth.passkey.options.$post();
-  const body = await assertJsonBody(response);
-
-  expect(body.options?.challenge).toEqual(expect.any(String));
-  expect(body.options?.rpId).toBe('localhost');
-  expect(body.options?.allowCredentials).toHaveLength(0);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.options?.challenge).toEqual(expect.any(String));
+    expect(body.options?.rpId).toBe('localhost');
+    expect(body.options?.allowCredentials).toHaveLength(0);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestPasskeyVerifyWithoutChallenge() {
@@ -150,11 +141,10 @@ async function requestPasskeyVerifyWithoutChallenge() {
       response: createMockAuthenticationResponse(),
     },
   });
-  const body = await assertJsonBody(response, 400);
-
-  expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response, 400);
+    expect(body.code).toBe('PASSKEY_CHALLENGE_NOT_FOUND');
+  });
 }
 
 async function requestPasskeyVerifySuccess(fixture: {
@@ -173,25 +163,22 @@ async function requestPasskeyVerifySuccess(fixture: {
     },
     { headers: { Cookie: `session=${fixture.sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.sub).toBe(fixture.userSub);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.sub).toBe(fixture.userSub);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 describe('POST /api/auth/passkey/options perf', () => {
   test('smoke handles repeated authentication options requests through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/passkey/options smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
       request: requestPasskeyOptions,
     });
-
-    expectPerfResult(result, 200);
   });
 });
 
@@ -202,28 +189,20 @@ describe('POST /api/auth/passkey/verify perf', () => {
         createPasskeyAuthenticationFixture(index),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/passkey/verify success smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (!fixture) {
-          throw new Error('Missing passkey authentication fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestPasskeyVerifySuccess(fixture);
       },
     });
-
-    expectPerfResult(result, 200);
   });
 
   test('smoke handles missing-challenge validation failure through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/passkey/verify missing-challenge smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
@@ -231,7 +210,5 @@ describe('POST /api/auth/passkey/verify perf', () => {
       expectedStatuses: [400],
       request: requestPasskeyVerifyWithoutChallenge,
     });
-
-    expectPerfResult(result, 400);
   });
 });

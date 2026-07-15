@@ -2,6 +2,33 @@ import { describe, expect, it } from 'vitest';
 
 import { summarizeHttpPerf, summarizeLatencies } from './metrics.js';
 
+function summarize(input: {
+  totalRequests: number;
+  success: number;
+  failed: number;
+  measurementMs: number;
+}) {
+  return summarizeHttpPerf({
+    id: 'login',
+    name: 'login',
+    source: '<unit-test>',
+    workload: {
+      kind: 'standard',
+      warmupRequests: 0,
+      requests: input.totalRequests,
+      concurrency: 2,
+    },
+    budget: {},
+    totalRequests: input.totalRequests,
+    success: input.success,
+    failed: input.failed,
+    measurementMs: input.measurementMs,
+    latenciesMs: [100, 200, 300],
+    statusCounts: { 200: input.success, 500: input.failed },
+    errors: [],
+  });
+}
+
 describe('summarizeLatencies', () => {
   it('computes p50/p95/p99/max from latency samples', () => {
     expect(summarizeLatencies([400, 100, 200, 300, 500])).toEqual({
@@ -14,73 +41,36 @@ describe('summarizeLatencies', () => {
 });
 
 describe('summarizeHttpPerf', () => {
-  it('computes RPS as totalRequests / (totalMs / 1000)', () => {
-    expect(
-      summarizeHttpPerf({
-        name: 'login',
-        totalRequests: 50,
-        success: 48,
-        failed: 2,
-        totalMs: 2_000,
-        latenciesMs: [100],
-        statusCounts: { 200: 48, 500: 2 },
-      }).rps,
-    ).toBe(25);
+  it('computes RPS and error rate from the measured interval', () => {
+    const result = summarize({
+      totalRequests: 50,
+      success: 48,
+      failed: 2,
+      measurementMs: 2_000,
+    });
+
+    expect(result.rps).toBe(25);
+    expect(result.errorRate).toBe(0.04);
+    expect(result.outcome).toBe('failed');
   });
 
-  it('computes errorRate as failed / totalRequests', () => {
+  it('returns safe zero rates for empty or instantaneous measurements', () => {
     expect(
-      summarizeHttpPerf({
-        name: 'login',
-        totalRequests: 50,
-        success: 48,
-        failed: 2,
-        totalMs: 2_000,
-        latenciesMs: [100],
-        statusCounts: { 200: 48, 500: 2 },
-      }).errorRate,
-    ).toBe(0.04);
-  });
-
-  it('returns 0 RPS/errorRate safely when total requests or total milliseconds are zero', () => {
-    expect(
-      summarizeHttpPerf({
-        name: 'empty',
+      summarize({
         totalRequests: 0,
         success: 0,
         failed: 0,
-        totalMs: 1_000,
-        latenciesMs: [],
-        statusCounts: {},
+        measurementMs: 1_000,
       }),
-    ).toMatchObject({ rps: 0, errorRate: 0 });
+    ).toMatchObject({ rps: 0, errorRate: 0, outcome: 'passed' });
 
     expect(
-      summarizeHttpPerf({
-        name: 'instant',
+      summarize({
         totalRequests: 10,
         success: 10,
         failed: 0,
-        totalMs: 0,
-        latenciesMs: [],
-        statusCounts: {},
+        measurementMs: 0,
       }).rps,
     ).toBe(0);
-  });
-
-  it('preserves statusCounts values', () => {
-    const statusCounts = { 200: 9, 401: 1 };
-
-    expect(
-      summarizeHttpPerf({
-        name: 'login',
-        totalRequests: 10,
-        success: 9,
-        failed: 1,
-        totalMs: 1_000,
-        latenciesMs: [100, 200, 300],
-        statusCounts,
-      }).statusCounts,
-    ).toEqual(statusCounts);
   });
 });

@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
 import type { ServiceContainer } from '../../../../services/container.js';
@@ -14,9 +14,14 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
-import { runHttpPerf } from '../../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  perfRequestSequenceIndex,
+  runHttpPerf,
+} from '../../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 3;
+const WARMUP_REQUESTS = 4;
 const MEASURED_REQUESTS = 30;
 const TOKEN_BACKLOG_SIZE = getPerfInteger('TINYAUTH_PERF_TOKEN_BACKLOG', 100);
 const VALID_PASSWORD = 'Password12345!';
@@ -30,7 +35,7 @@ let client: ReturnType<typeof testClient<AppType>>;
 let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
-beforeAll(async () => {
+beforeEach(async () => {
   const mail = await createTestEmailConfig();
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -48,7 +53,7 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
 
@@ -127,26 +132,24 @@ async function requestRegister(email: string) {
       consents: REQUIRED_CONSENTS,
     },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.email).toBe(email);
-  expect(body.user?.email_verified).toBe(false);
-  expect(body.user?.email_verification_required).toBe(true);
-  expect(response.headers.get('set-cookie')).toBeNull();
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.email).toBe(email);
+    expect(body.user?.email_verified).toBe(false);
+    expect(body.user?.email_verification_required).toBe(true);
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
 }
 
 async function requestEmailVerify(token: string) {
   const response = await client.api.auth.email.verify.$post({
     json: { token },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.user?.email_verified).toBe(true);
-  expect(extractCookie(response, 'session')).toEqual(expect.any(String));
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.user?.email_verified).toBe(true);
+    expect(extractCookie(response, 'session')).toEqual(expect.any(String));
+  });
 }
 
 async function requestEmailResend(email: string) {
@@ -156,36 +159,29 @@ async function requestEmailResend(email: string) {
       email,
     },
   });
-  const body = await assertJsonBody(response);
-
-  expect(body.message).toContain('Verification email has been resent');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(body.message).toContain('Verification email has been resent');
+  });
 }
 
 describe('POST /api/auth/register perf', () => {
   test('handles unique user registration through the real route', async () => {
-    let nextEmail = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/register smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
-      request: async () => {
-        nextEmail += 1;
+      request: async (context) => {
+        const sequenceIndex = perfRequestSequenceIndex(
+          context,
+          WARMUP_REQUESTS,
+        );
         return requestRegister(
-          generateUniqueEmail(`register-perf-${nextEmail}`),
+          generateUniqueEmail(`register-perf-${sequenceIndex}`),
         );
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 });
 
@@ -196,29 +192,16 @@ describe('POST /api/auth/email/verify perf', () => {
         createUnverifiedUser('email-verify-perf'),
       ),
     );
-    let nextFixture = 0;
-
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/email/verify smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
-      request: async () => {
-        const fixture = fixtures[nextFixture];
-        nextFixture += 1;
-        if (fixture === undefined) {
-          throw new Error('Missing email verification fixture');
-        }
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
         return requestEmailVerify(fixture.token);
       },
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 });
 
@@ -226,20 +209,13 @@ describe('POST /api/auth/email/resend perf', () => {
   test('handles repeated resend requests for an unverified user through the real route', async () => {
     const fixture = await createUnverifiedUser('email-resend-perf');
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/email/resend smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
       request: async () => requestEmailResend(fixture.email),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(1500);
   });
 
   test('handles resend requests with an existing verification token backlog through the real route', async () => {
@@ -247,19 +223,12 @@ describe('POST /api/auth/email/resend perf', () => {
       'email-resend-backlog-perf',
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/auth/email/resend token backlog smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
       request: async () => requestEmailResend(fixture.email),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(3);
-    expect(result.p95Ms).toBeLessThan(3000);
   });
 });

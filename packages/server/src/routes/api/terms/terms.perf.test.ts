@@ -1,5 +1,5 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
@@ -11,10 +11,14 @@ import {
   MINIMAL_TEST_CONFIG,
   TEST_TERMS_CONFIG,
 } from '../../../test-utils/index.js';
-import { runHttpPerf } from '../../../test-utils/perf/index.js';
+import {
+  deferPerfResponseValidation,
+  perfFixture,
+  runHttpPerf,
+} from '../../../test-utils/perf/index.js';
 
-const WARMUP_REQUESTS = 3;
-const MEASURED_REQUESTS = 20;
+const WARMUP_REQUESTS = 10;
+const MEASURED_REQUESTS = 50;
 const TOTAL_REQUESTS = WARMUP_REQUESTS + MEASURED_REQUESTS;
 const LARGE_TERMS_COUNT = 30;
 
@@ -24,7 +28,8 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void> = async () => {};
 let emailCounter = 0;
 
-beforeAll(async () => {
+beforeEach(async () => {
+  emailCounter = 0;
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     terms: [...TEST_TERMS_CONFIG],
@@ -35,17 +40,9 @@ beforeAll(async () => {
   cleanup = server.cleanup;
 });
 
-afterAll(async () => {
+afterEach(async () => {
   await cleanup();
 });
-
-function nextItem<T>(items: T[]): T {
-  const item = items.shift();
-  if (item === undefined) {
-    throw new Error('Missing pre-created perf fixture');
-  }
-  return item;
-}
 
 function uniqueEmail(prefix: string): string {
   emailCounter += 1;
@@ -54,20 +51,19 @@ function uniqueEmail(prefix: string): string {
 
 async function requestTerms() {
   const response = await client.api.terms.$get({ query: {} });
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(Array.isArray(body.terms)).toBe(true);
-  expect(Array.isArray(body.pendingTerms)).toBe(true);
-  expect(body.terms.length).toBeGreaterThan(0);
-  const firstTerm = body.terms[0];
-  if (firstTerm === undefined) {
-    throw new Error('Expected at least one term');
-  }
-  expect(firstTerm).toHaveProperty('id');
-  expect(firstTerm).toHaveProperty('consentMode');
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(body.terms)).toBe(true);
+    expect(Array.isArray(body.pendingTerms)).toBe(true);
+    expect(body.terms.length).toBeGreaterThan(0);
+    const firstTerm = body.terms[0];
+    if (firstTerm === undefined) {
+      throw new Error('Expected at least one term');
+    }
+    expect(firstTerm).toHaveProperty('id');
+    expect(firstTerm).toHaveProperty('consentMode');
+  });
 }
 
 async function requestAuthenticatedTerms(sessionCookie: string) {
@@ -75,23 +71,22 @@ async function requestAuthenticatedTerms(sessionCookie: string) {
     { query: { lang: 'ko' } },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.terms).toHaveLength(2);
-  expect(body.pendingTerms).toEqual([]);
-  const firstTerm = body.terms[0];
-  if (firstTerm === undefined) {
-    throw new Error('Expected at least one authenticated term');
-  }
-  expect(firstTerm.userConsent).toEqual(
-    expect.objectContaining({
-      agreed: true,
-      requiresUpdate: false,
-    }),
-  );
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.terms).toHaveLength(2);
+    expect(body.pendingTerms).toEqual([]);
+    const firstTerm = body.terms[0];
+    if (firstTerm === undefined) {
+      throw new Error('Expected at least one authenticated term');
+    }
+    expect(firstTerm.userConsent).toEqual(
+      expect.objectContaining({
+        agreed: true,
+        requiresUpdate: false,
+      }),
+    );
+  });
 }
 
 async function requestTermsConsent(sessionCookie: string) {
@@ -106,13 +101,12 @@ async function requestTermsConsent(sessionCookie: string) {
     },
     { headers: { Cookie: `session=${sessionCookie}` } },
   );
-  const body = await assertJsonBody(response);
-
-  expect(response.status).toBe(200);
-  expect(body.ok).toBe(true);
-  expect(body.recorded).toBe(2);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const body = await assertJsonBody(response);
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    expect(body.recorded).toBe(2);
+  });
 }
 
 function createLargeTermsConfig(): NonNullable<
@@ -149,39 +143,31 @@ async function requestLargeTerms(
   const response = await largeTermsClient.api.terms.$get({
     query: { lang: 'ja' },
   });
-  const payloadResponse = response.clone();
-  const body = await assertJsonBody(response);
-  const payload = await payloadResponse.text();
-
-  expect(response.status).toBe(200);
-  expect(body.terms).toHaveLength(LARGE_TERMS_COUNT);
-  const firstTerm = body.terms[0];
-  if (firstTerm === undefined) {
-    throw new Error('Expected at least one large term');
-  }
-  expect(firstTerm.type).toBe('text');
-  expect(payload.length).toBeGreaterThan(20_000);
-  expect(payload.length).toBeLessThan(300_000);
-
-  return response;
+  return deferPerfResponseValidation(response, async () => {
+    const payloadResponse = response.clone();
+    const body = await assertJsonBody(response);
+    const payload = await payloadResponse.text();
+    expect(response.status).toBe(200);
+    expect(body.terms).toHaveLength(LARGE_TERMS_COUNT);
+    const firstTerm = body.terms[0];
+    if (firstTerm === undefined) {
+      throw new Error('Expected at least one large term');
+    }
+    expect(firstTerm.type).toBe('text');
+    expect(payload.length).toBeGreaterThan(20_000);
+    expect(payload.length).toBeLessThan(300_000);
+  });
 }
 
 describe('terms API perf', () => {
   test('GET /api/terms handles repeated public terms requests through the real route', async () => {
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/terms public smoke',
       warmupRequests: 5,
       requests: 50,
       concurrency: 5,
       request: requestTerms,
     });
-
-    expect(result.totalRequests).toBe(50);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(50);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(5);
-    expect(result.p95Ms).toBeLessThan(1000);
   });
 
   test('POST /api/terms/consent handles pre-authenticated consent submissions', async () => {
@@ -197,20 +183,14 @@ describe('terms API perf', () => {
       }),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'POST /api/terms/consent authenticated smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 4,
-      request: async () => requestTermsConsent(nextItem(sessions)),
+      request: async (context) =>
+        requestTermsConsent(perfFixture(sessions, context, WARMUP_REQUESTS)),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 
   test('GET /api/terms includes authenticated consent history without pending required terms', async () => {
@@ -227,20 +207,16 @@ describe('terms API perf', () => {
       }),
     );
 
-    const result = await runHttpPerf({
+    await runHttpPerf({
       name: 'GET /api/terms authenticated consent-history smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 4,
-      request: async () => requestAuthenticatedTerms(nextItem(sessions)),
+      request: async (context) =>
+        requestAuthenticatedTerms(
+          perfFixture(sessions, context, WARMUP_REQUESTS),
+        ),
     });
-
-    expect(result.totalRequests).toBe(MEASURED_REQUESTS);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts[200]).toBe(MEASURED_REQUESTS);
-    expect(result.errorRate).toBe(0);
-    expect(result.rps).toBeGreaterThan(1);
-    expect(result.p95Ms).toBeLessThan(2000);
   });
 
   test('GET /api/terms handles larger localized inline text terms payloads', async () => {
@@ -251,20 +227,13 @@ describe('terms API perf', () => {
 
     try {
       const largeTermsClient = testClient(server.app);
-      const result = await runHttpPerf({
+      await runHttpPerf({
         name: 'GET /api/terms large localized text smoke',
         warmupRequests: 5,
         requests: 50,
         concurrency: 5,
         request: async () => requestLargeTerms(largeTermsClient),
       });
-
-      expect(result.totalRequests).toBe(50);
-      expect(result.failed).toBe(0);
-      expect(result.statusCounts[200]).toBe(50);
-      expect(result.errorRate).toBe(0);
-      expect(result.rps).toBeGreaterThan(3);
-      expect(result.p95Ms).toBeLessThan(1500);
     } finally {
       await server.cleanup();
     }

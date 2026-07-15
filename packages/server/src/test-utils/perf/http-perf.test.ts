@@ -1,80 +1,247 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 
-import { runHttpPerf } from './http-perf.js';
+import { afterEach, describe, expect, it } from 'vitest';
+
+import { deferPerfResponseValidation } from './deferred-validation.js';
+import { PerfScenarioError, runHttpPerf } from './http-perf.js';
+import { PERF_EVENTS_PATH_ENV, parsePerfResultEvents } from './reporter.js';
+
+const temporaryDirectories: string[] = [];
+
+afterEach(async () => {
+  delete process.env[PERF_EVENTS_PATH_ENV];
+  await Promise.all(
+    temporaryDirectories
+      .splice(0)
+      .map((path) => rm(path, { force: true, recursive: true })),
+  );
+});
 
 describe('runHttpPerf', () => {
-  it('runs exactly warmupRequests + requests calls', async () => {
-    let calls = 0;
+  it('runs concurrent warmup and measurement with deterministic contexts', async () => {
+    const contexts: string[] = [];
+    let activeWarmups = 0;
+    let maxActiveWarmups = 0;
 
-    await runHttpPerf({
-      name: 'login',
+    const result = await runHttpPerf({
+      catalog: 'disabled',
+      name: 'context test',
       warmupRequests: 3,
       requests: 5,
       concurrency: 2,
-      request: async () => {
-        calls += 1;
+      request: async (context) => {
+        contexts.push(`${context.phase}:${String(context.index)}`);
+
+        if (context.phase === 'warmup') {
+          activeWarmups += 1;
+          maxActiveWarmups = Math.max(maxActiveWarmups, activeWarmups);
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          activeWarmups -= 1;
+        }
+
         return new Response(null, { status: 200 });
       },
     });
 
-    expect(calls).toBe(8);
+    expect(contexts.filter((value) => value.startsWith('warmup:'))).toEqual(
+      expect.arrayContaining(['warmup:0', 'warmup:1', 'warmup:2']),
+    );
+    expect(contexts.filter((value) => value.startsWith('measure:'))).toEqual(
+      expect.arrayContaining([
+        'measure:0',
+        'measure:1',
+        'measure:2',
+        'measure:3',
+        'measure:4',
+      ]),
+    );
+    expect(maxActiveWarmups).toBe(2);
+    expect(result.totalRequests).toBe(5);
+    expect(result.workload).toMatchObject({
+      warmupRequests: 3,
+      requests: 5,
+      concurrency: 2,
+    });
   });
 
-  it('throws warmup request failures instead of counting them', async () => {
-    let calls = 0;
-
-    await expect(
-      runHttpPerf({
-        name: 'login',
-        warmupRequests: 1,
-        requests: 3,
-        concurrency: 2,
-        request: async () => {
-          calls += 1;
-          throw new Error('warmup failed');
-        },
-      }),
-    ).rejects.toThrow('warmup failed');
-
-    expect(calls).toBe(1);
-  });
-
-  it('excludes warmup calls from totalRequests and status counts', async () => {
-    let calls = 0;
+  it('runs response validation after the measured request interval', async () => {
+    const measuredRequestIndexes: number[] = [];
+    let validations = 0;
+    const startedAt = performance.now();
 
     const result = await runHttpPerf({
-      name: 'login',
+      catalog: 'disabled',
+      name: 'deferred validation',
+      requests: 4,
+      concurrency: 2,
+      request: async (context) => {
+        if (context.phase === 'measure') {
+          measuredRequestIndexes.push(context.index);
+        }
+
+        const response = new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+        });
+        return deferPerfResponseValidation(response, async () => {
+          if (context.phase === 'measure') {
+            expect(measuredRequestIndexes).toHaveLength(4);
+            validations += 1;
+            await new Promise((resolve) => setTimeout(resolve, 60));
+          }
+        });
+      },
+    });
+    const elapsedMs = performance.now() - startedAt;
+
+    expect(validations).toBe(4);
+    expect(elapsedMs).toBeGreaterThanOrEqual(50);
+    expect(result.measurementMs).toBeLessThan(elapsedMs - 30);
+  });
+
+  it('runs the explicit validate callback after all measured responses arrive', async () => {
+    let measuredRequests = 0;
+    let measuredValidations = 0;
+
+    await runHttpPerf({
+      catalog: 'disabled',
+      name: 'explicit validation',
       warmupRequests: 2,
       requests: 3,
       concurrency: 2,
-      request: async () => {
-        calls += 1;
-        return new Response(null, { status: calls <= 2 ? 500 : 200 });
+      request: async (context) => {
+        if (context.phase === 'measure') {
+          measuredRequests += 1;
+        }
+
+        return new Response(null, { status: 200 });
+      },
+      validate: (_response, context) => {
+        if (context.phase === 'measure') {
+          expect(measuredRequests).toBe(3);
+          measuredValidations += 1;
+        }
       },
     });
 
-    expect(result.totalRequests).toBe(3);
-    expect(result.statusCounts).toEqual({ 200: 3 });
-    expect(result.success).toBe(3);
-    expect(result.failed).toBe(0);
+    expect(measuredValidations).toBe(3);
   });
 
-  it('counts successful 200 responses', async () => {
-    const result = await runHttpPerf({
-      name: 'login',
-      requests: 4,
-      concurrency: 2,
-      request: async () => new Response(null, { status: 200 }),
-    });
+  it('records a failing warmup before throwing', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    temporaryDirectories.push(directory);
+    const eventsPath = join(directory, 'events.jsonl');
+    process.env[PERF_EVENTS_PATH_ENV] = eventsPath;
 
-    expect(result.totalRequests).toBe(4);
-    expect(result.success).toBe(4);
-    expect(result.failed).toBe(0);
-    expect(result.statusCounts).toEqual({ 200: 4 });
+    await expect(
+      runHttpPerf({
+        catalog: 'disabled',
+        name: 'warmup failure',
+        warmupRequests: 2,
+        requests: 3,
+        concurrency: 2,
+        request: async (context) => {
+          if (context.phase === 'warmup' && context.index === 0) {
+            throw new Error('warmup failed');
+          }
+
+          return new Response(null, { status: 200 });
+        },
+      }),
+    ).rejects.toBeInstanceOf(PerfScenarioError);
+
+    const events = parsePerfResultEvents(await readFile(eventsPath, 'utf8'));
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      outcome: 'failed',
+      totalRequests: 0,
+      errors: [
+        {
+          phase: 'warmup',
+          index: 0,
+          stage: 'request',
+          message: 'warmup failed',
+        },
+      ],
+    });
+  });
+
+  it('records request, status, and validation failures with at most five details', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    temporaryDirectories.push(directory);
+    const eventsPath = join(directory, 'events.jsonl');
+    process.env[PERF_EVENTS_PATH_ENV] = eventsPath;
+
+    await expect(
+      runHttpPerf({
+        catalog: 'disabled',
+        name: 'measured failures',
+        requests: 8,
+        concurrency: 4,
+        request: async (context) => {
+          if (context.index === 0) {
+            throw new Error('request failed');
+          }
+
+          const response = new Response(null, {
+            status: context.index === 1 ? 500 : 200,
+          });
+          return deferPerfResponseValidation(response, () => {
+            throw new Error(`invalid body ${String(context.index)}`);
+          });
+        },
+      }),
+    ).rejects.toBeInstanceOf(PerfScenarioError);
+
+    const events = parsePerfResultEvents(await readFile(eventsPath, 'utf8'));
+    const result = events[0];
+    expect(result?.failed).toBe(8);
+    expect(result?.errors).toHaveLength(5);
+    expect(result?.errors.map((error) => error.stage)).toEqual(
+      expect.arrayContaining(['request', 'status', 'validation']),
+    );
+  });
+
+  it('records a budget violation before propagating the failure', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    temporaryDirectories.push(directory);
+    const eventsPath = join(directory, 'events.jsonl');
+    process.env[PERF_EVENTS_PATH_ENV] = eventsPath;
+
+    await expect(
+      runHttpPerf({
+        name: 'GET /.well-known/openid-configuration scaled clients',
+        warmupRequests: 10,
+        requests: 50,
+        concurrency: 50,
+        expectedStatuses: [200],
+        request: async () => {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          return new Response(null, { status: 200 });
+        },
+      }),
+    ).rejects.toBeInstanceOf(PerfScenarioError);
+
+    const events = parsePerfResultEvents(await readFile(eventsPath, 'utf8'));
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      outcome: 'failed',
+      totalRequests: 50,
+      errors: [
+        {
+          phase: 'budget',
+          index: null,
+          stage: 'budget',
+        },
+      ],
+    });
   });
 
   it('counts configured expected statuses as successful responses', async () => {
     const result = await runHttpPerf({
+      catalog: 'disabled',
       name: 'authorize redirect',
       requests: 4,
       concurrency: 2,
@@ -82,103 +249,16 @@ describe('runHttpPerf', () => {
       request: async () => new Response(null, { status: 302 }),
     });
 
-    expect(result.totalRequests).toBe(4);
     expect(result.success).toBe(4);
     expect(result.failed).toBe(0);
     expect(result.statusCounts).toEqual({ 302: 4 });
   });
 
-  it('counts mixed 200/401/500 statuses', async () => {
-    const statuses = [200, 401, 500, 200];
-    let index = 0;
-
-    const result = await runHttpPerf({
-      name: 'login',
-      requests: statuses.length,
-      concurrency: 2,
-      request: async () => {
-        const status = statuses[index] ?? 500;
-        index += 1;
-        return new Response(null, { status });
-      },
-    });
-
-    expect(result.success).toBe(2);
-    expect(result.failed).toBe(2);
-    expect(result.statusCounts).toEqual({ 200: 2, 401: 1, 500: 1 });
-  });
-
-  it('counts thrown request errors as failures', async () => {
+  it('returns safe zeros for a disabled-catalog zero-request run', async () => {
     let calls = 0;
 
     const result = await runHttpPerf({
-      name: 'login',
-      requests: 3,
-      concurrency: 2,
-      request: async () => {
-        calls += 1;
-
-        if (calls === 2) {
-          throw new Error('request failed');
-        }
-
-        return new Response(null, { status: 200 });
-      },
-    });
-
-    expect(result.totalRequests).toBe(3);
-    expect(result.success).toBe(2);
-    expect(result.failed).toBe(1);
-    expect(result.statusCounts).toEqual({ 200: 2 });
-  });
-
-  it('honors concurrency by reaching the configured number of simultaneous measured requests', async () => {
-    const waiters: Array<() => void> = [];
-    let active = 0;
-    let maxActive = 0;
-    let started = 0;
-
-    const resultPromise = runHttpPerf({
-      name: 'login',
-      requests: 4,
-      concurrency: 3,
-      request: async () => {
-        started += 1;
-        active += 1;
-        maxActive = Math.max(maxActive, active);
-
-        await new Promise<void>((resolve) => {
-          waiters.push(resolve);
-        });
-
-        active -= 1;
-        return new Response(null, { status: 200 });
-      },
-    });
-
-    await expect.poll(() => started).toBe(3);
-    expect(maxActive).toBe(3);
-
-    for (const resolve of waiters.splice(0)) {
-      resolve();
-    }
-
-    await expect.poll(() => started).toBe(4);
-
-    for (const resolve of waiters.splice(0)) {
-      resolve();
-    }
-
-    const result = await resultPromise;
-
-    expect(result.totalRequests).toBe(4);
-    expect(result.success).toBe(4);
-  });
-
-  it('returns safe zeros for requests: 0', async () => {
-    let calls = 0;
-
-    const result = await runHttpPerf({
+      catalog: 'disabled',
       name: 'empty',
       requests: 0,
       concurrency: 4,
@@ -189,8 +269,7 @@ describe('runHttpPerf', () => {
     });
 
     expect(calls).toBe(0);
-    expect(result).toEqual({
-      name: 'empty',
+    expect(result).toMatchObject({
       totalRequests: 0,
       success: 0,
       failed: 0,
@@ -202,49 +281,5 @@ describe('runHttpPerf', () => {
       errorRate: 0,
       statusCounts: {},
     });
-  });
-
-  it('normalizes concurrency: 0 to one worker', async () => {
-    const waiters: Array<() => void> = [];
-    let active = 0;
-    let maxActive = 0;
-    let started = 0;
-
-    const resultPromise = runHttpPerf({
-      name: 'login',
-      requests: 2,
-      concurrency: 0,
-      request: async () => {
-        started += 1;
-        active += 1;
-        maxActive = Math.max(maxActive, active);
-
-        await new Promise<void>((resolve) => {
-          waiters.push(resolve);
-        });
-
-        active -= 1;
-        return new Response(null, { status: 200 });
-      },
-    });
-
-    await expect.poll(() => started).toBe(1);
-    expect(maxActive).toBe(1);
-
-    for (const resolve of waiters.splice(0)) {
-      resolve();
-    }
-
-    await expect.poll(() => started).toBe(2);
-    expect(maxActive).toBe(1);
-
-    for (const resolve of waiters.splice(0)) {
-      resolve();
-    }
-
-    const result = await resultPromise;
-
-    expect(result.totalRequests).toBe(2);
-    expect(result.success).toBe(2);
   });
 });
