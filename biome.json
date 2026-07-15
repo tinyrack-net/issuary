@@ -16,6 +16,7 @@
       "**/*.css",
       "!**/node_modules",
       "!**/.next",
+      "!**/.react-router",
       "!**/dist",
       "!**/build",
       "!**/coverage",
@@ -80,7 +81,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/homepage/.astro/**"],
+      "includes": ["packages/homepage/.react-router/**"],
       "linter": {
         "enabled": false
       },
@@ -92,7 +93,7 @@
       }
     },
     {
-      "includes": ["packages/homepage/src/styles/**/*.css"],
+      "includes": ["packages/homepage/app/styles/**/*.css"],
       "linter": {
         "rules": {
           "complexity": {

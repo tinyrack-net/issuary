@@ -1,0 +1,49 @@
+---
+title: テーマ
+description: Tinyauth フロントエンドのテーマとダークモードの設定
+section: configuration
+order: 11
+---
+
+`tinyauth` のフロントエンドは [daisyUI](https://daisyui.com/)に基づいて構築されました。このおかげで、さまざまなテーマオプションを提供し、好みのインターフェースの外観と感触を指定できます。設定の例は次のとおりです。
+
+```yaml
+branding:
+  theme_mode: system
+  light_theme: light
+  dark_theme: dark
+```
+
+- `theme_mode`：テーマ切り替えモードを設定します。
+  - `system`：システム設定に応じてライトまたはダークモードを自動的に選択します。ユーザーにテーマ切り替えトグルが提供されます。
+  - `light`：常にライトモードのテーマを使用しています。
+  - `dark`：常にダークモードのテーマを使用しています。
+- `light_theme`：ライトモードで使用するテーマ名です。デフォルトは `light`はい。
+- `dark_theme`：ダークモードで使用するテーマ名です。デフォルトは `dark`はい。
+
+:::note
+利用可能なテーマの種類と応用姿は [daisyUIテーマドキュメント](https://daisyui.com/docs/themes/)で確認できます。現在利用可能なテーマのリストは次のとおりです。
+
+`light`, `dark`, `cupcake`, `bumblebee`, `emerald`, `corporate`, `synthwave`, `retro`, `cyberpunk`, `valentine`, `halloween`, `garden`, `forest`, `aqua`, `lofi`, `pastel`, `fantasy`, `wireframe`, `black`, `luxury`, `dracula`, `cmyk`, `autumn`, `business`, `acid`, `lemonade`, `night`, `coffee`, `winter`, `dim`, `nord`, `sunset`, `caramellatte`, `abyss`,
+:::
+
+---
+
+## 例
+
+もし `light` モードでは `cupcake` テーマ、 `dark` モードでは `dracula` テーマを使いたいなら、次のように設定できます。
+
+```yaml
+branding:
+  theme_mode: system
+  light_theme: cupcake
+  dark_theme: dracula
+```
+
+もし `light` モードで固定しながら `emerald` テーマを使いたいなら、次のように設定できます。
+
+```yaml
+branding:
+  theme_mode: light
+  light_theme: emerald
+```

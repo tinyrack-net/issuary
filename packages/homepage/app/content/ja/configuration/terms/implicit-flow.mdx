@@ -1,0 +1,123 @@
+---
+title: 暗黙的なフロー
+description: 利用規約の暗黙的な同意フローを構成する
+section: configuration
+order: 26
+---
+
+暗黙的な同意フローは、ユーザーがサービスに参加する行為自体が規約への同意と見なされる方法です。チェックボックスを表示せず、代わりに「続行すれば条件に同意するとみなします」などの案内フレーズを見せてください。
+
+---
+
+## 構成方法
+
+暗黙的な同意フローを使用するには、2つを設定する必要があります。
+
+### 1. 規約項目の定義
+
+`terms` セクションから `consent_mode`を `implicit`に設定します。
+
+```yaml
+# config.yaml
+terms:
+  - id: tos
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 이용약관
+        type: link
+        content: https://example.com/ko/terms
+      en:
+        title: Terms of Service
+        type: link
+        content: https://example.com/en/terms
+
+  - id: privacy
+    required: true
+    consent_mode: implicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 개인정보 처리방침
+        type: link
+        content: https://example.com/ko/privacy
+      en:
+        title: Privacy Policy
+        type: link
+        content: https://example.com/en/privacy
+```
+
+- `id`：利用規約の一意の識別子です。小文字の英数字、 `-`, `_`しか使えません。
+- `required`：同意が必要かどうか。デフォルトは `true`はい。
+- `consent_mode`: `implicit`に設定すると暗黙的同意フローが適用されます。
+- `version`：規約のバージョンです。バージョンを変更すると、既存のユーザーに再同意を求めることができます。
+- `content`：言語別の規約内容です。 `type`に従って外部リンク（`link`）またはインラインテキスト（`text`）が使えます。
+
+### 2. 案内フレーズの設定
+
+`registration.signup_notice` アイテムにユーザーに表示するガイドフレーズを言語別に設定します。 HTML タグが使えます。
+
+```yaml
+# config.yaml
+registration:
+  signup_notice:
+    ko: >-
+      계속하면 <a href="https://example.com/ko/terms" class="link">이용약관</a>
+      및 <a href="https://example.com/ko/privacy" class="link">개인정보 처리방침</a>에
+      동의하는 것으로 간주해요.
+    en: >-
+      By continuing, you agree to our
+      <a href="https://example.com/en/terms" class="link">Terms of Service</a>
+      and <a href="https://example.com/en/privacy" class="link">Privacy Policy</a>.
+```
+
+:::note
+案内フレーズは HTMLをサポートしているので `<a>` タグに規約の専門リンクを含めることができます。 `class="link"` クラスを使うと `tinyauth`の基本テーマに合ったリンクスタイルが適用されます。
+:::
+
+---
+
+## 動作方法
+
+暗黙的な同意フローでは、次のように動作します。
+
+1. **ログイン/会員登録ページ**: `registration.signup_notice`に設定した案内フレーズが表示されます。
+2. **会員登録時**：ユーザーが購読を完了すると、暗黙の条件に関する同意が自動的に記録されます。別のチェックボックスやユーザー操作が不要です。
+3. **OAuth ソーシャルログイン時**：ソーシャルログインボタンを押す行為自体が暗黙の同意で処理されます。
+
+---
+
+## 明示的な同意と混合の使用
+
+暗黙の同意と [明示的な同意](/ja/configuration/terms/explicit-flow)を一緒に使用できます。この場合、UIでは次のように表示されます。
+
+1. 暗黙の同意案内フレーズ
+2. 「そして」区切り線
+3. 明示的な同意チェックボックス
+
+```yaml
+# config.yaml
+terms:
+  # 암시적 동의 약관
+  - id: tos
+    consent_mode: implicit
+    version: "1.0.0"
+    content: { ... }
+
+  # 명시적 동의 약관
+  - id: marketing
+    required: false
+    consent_mode: explicit
+    version: "1.0.0"
+    content:
+      ko:
+        title: 마케팅 수신 동의
+        type: text
+        content: 마케팅 이메일 및 프로모션 알림을 수신하시겠어요?
+      en:
+        title: Marketing Communications
+        type: text
+        content: Would you like to receive marketing emails and promotional notifications?
+```

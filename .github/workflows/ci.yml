@@ -96,6 +96,38 @@ jobs:
       - name: Frontend smoke E2E
         run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
 
+  homepage:
+    name: Homepage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @tinyrack/tinyauth-homepage exec playwright install --with-deps chromium
+
+      - name: Build homepage
+        run: pnpm --filter @tinyrack/tinyauth-homepage run build
+
+      - name: Audit homepage
+        run: pnpm --filter @tinyrack/tinyauth-homepage run test:audit
+
+      - name: Verify Cloudflare deployment bundle
+        run: pnpm --filter @tinyrack/tinyauth-homepage run deploy:dry-run
+
   windows-compatibility:
     name: Windows Compatibility
     needs: build

@@ -1,0 +1,308 @@
+---
+title: Kubernetes
+description: Kubernetesに Tinyauthを配布する方法
+section: deployment
+order: 4
+---
+
+このガイドは Kubernetesに `tinyauth`を展開する方法を説明します。 ConfigMap、Secret、Deployment、Service、Ingress、およびデータのクリーンアップのためのCronJob構成について説明します。
+
+---
+
+## 事前準備
+
+- Kubernetes クラスタ(v1.25以上を推奨)
+- `kubectl` CLI ツール
+- Ingressコントローラ（例：nginx-ingress、traefik）
+- TLS 証明書の管理（例：cert-manager）
+
+---
+
+## 1. 名前空間の作成
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tinyauth
+```
+
+---
+
+## 2. 設定ファイル(ConfigMap)
+
+機密性の低い設定はConfigMapで管理します。
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tinyauth-config
+  namespace: tinyauth
+data:
+  config.yaml: |
+    server:
+      public_origin: https://auth.example.com
+      listen_port: 8080
+      trust_proxy: true
+
+    security:
+      session_secret: ${SESSION_SECRET}
+      hash_secret: ${HASH_SECRET}
+
+    registration:
+      enabled: false
+
+    database:
+      type: postgres
+      host: ${DATABASE_HOST}
+      port: ${DATABASE_PORT}
+      name: ${DATABASE_NAME}
+      user: ${DATABASE_USER}
+      password: ${DATABASE_PASSWORD}
+
+    email:
+      transport: smtp
+      host: smtp.example.com
+      port: 465
+      secure: true
+      user: ${SMTP_USER}
+      password: ${SMTP_PASSWORD}
+      from: "TinyAuth <noreply@example.com>"
+
+    scheduler:
+      enabled: false
+```
+
+この例は、独自の会員登録を閉じた基本的な配布の例です。公開会員登録が必要な場合 `registration.enabled: true`を指定してパスワード登録を使用する場合は、メール送信設定も一緒に確認してください。
+
+:::note
+Kubernetes 環境では、組み込みスケジューラを無効にする（`scheduler.enabled: false`）、代わりにCronJobでクリーンアップジョブを実行することをお勧めします。これにより、複数のパードが同時にクリーンアップジョブを実行するのを防ぐことができます。
+:::
+
+---
+
+## 3. 機密情報(Secret)
+
+パスワード、シークレットなど機密情報は Secret で管理します。
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tinyauth-secrets
+  namespace: tinyauth
+type: Opaque
+stringData:
+  SESSION_SECRET: "your-32-byte-random-session-secret"
+  HASH_SECRET: "your-base64url-hash-secret"
+  DATABASE_HOST: "postgres-host"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "tinyauth"
+  DATABASE_USER: "tinyauth"
+  DATABASE_PASSWORD: "your-database-password"
+  SMTP_USER: "smtp-user@example.com"
+  SMTP_PASSWORD: "your-smtp-password"
+```
+
+:::caution
+本番環境では `stringData` 代わりに外部秘密管理ツール（Vault、 AWS Secrets Manager、Sealed Secretsなど）を使用することをお勧めします。
+:::
+
+---
+
+## 4. Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+  labels:
+    app: tinyauth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tinyauth
+  template:
+    metadata:
+      labels:
+        app: tinyauth
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: tinyauth
+          image: ghcr.io/tinyrack-net/tinyauth:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: tinyauth-secrets
+          volumeMounts:
+            - name: config
+              mountPath: /opt/config.yaml
+              subPath: config.yaml
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: tinyauth-config
+        - name: tmp
+          emptyDir: {}
+```
+
+---
+
+## 5. Service
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+spec:
+  selector:
+    app: tinyauth
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+```
+
+---
+
+## 6. Ingress
+
+nginx-ingressを使用した例です。 cert-managerによる TLS 証明書を自動発行するとします。
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tinyauth
+  namespace: tinyauth
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - auth.example.com
+      secretName: tinyauth-tls
+  rules:
+    - host: auth.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tinyauth
+                port:
+                  number: 80
+```
+
+---
+
+## 7. CronJob(データの整理)
+
+組み込みスケジューラの代わりに Kubernetes CronJobでクリーンアップジョブを実行します。
+
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tinyauth-cleanup
+  namespace: tinyauth
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+          containers:
+            - name: cleanup
+              image: ghcr.io/tinyrack-net/tinyauth:latest
+              command: ["tinyauth", "cleanup"]
+              envFrom:
+                - secretRef:
+                    name: tinyauth-secrets
+              volumeMounts:
+                - name: config
+                  mountPath: /opt/config.yaml
+                  subPath: config.yaml
+                  readOnly: true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          restartPolicy: OnFailure
+          volumes:
+            - name: config
+              configMap:
+                name: tinyauth-config
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+```
+
+---
+
+## PostgreSQL メモ
+
+Kubernetesから `tinyauth`を運営するとき PostgreSQL 使用をお勧めします。
+
+- SQLiteは単一のパードでのみ利用可能です（ファイルベースなので、複数のパードで共有できません）。
+- PostgreSQLを使用すると水平方向に拡張（`replicas > 1`）が可能です。
+- 既存 PostgreSQL クラスターがあればそれを使うか、 [CloudNativePG](https://cloudnative-pg.io/)のような Kubernetes ネイティブ PostgreSQL オペレーターを検討してください。
+
+---
+
+## セキュリティ推奨事項
+
+- **readOnlyRootFilesystem**：コンテナのファイルシステムを読み取り専用に設定します。
+- **runAsNonRoot**：rootではなくユーザーとして実行します。
+- **allowPrivilegeEscalation: false**：特権の上昇を防ぎます。
+- **capabilities.drop: ALL**：不要なLinuxカーネル機能をすべて削除します。
+- **trust_proxy: true**：Ingressコントローラを介して着信X-Forwarded-*ヘッダを信頼するように設定します。
+- 機密情報は、必ず Secret または外部秘密管理ツールで管理します。

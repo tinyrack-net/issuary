@@ -1,0 +1,37 @@
+---
+title: 電子メール認証
+description: ユーザー登録用の電子メール認証の設定
+section: configuration
+order: 17
+---
+
+電子メール認証は、パスワードベースの会員登録を完了する前に電子メール確認手順を要求する機能です。
+次のオプションでこの機能を有効にできます。
+
+```yaml
+registration:
+  enabled: true
+  email_verification_required: true
+
+email:
+  transport: smtp
+  host: smtp.example.com
+  port: 465
+  secure: true
+  user: $EMAIL_USER
+  password: $EMAIL_PASSWORD
+  from: "TinyAuth <noreply@tinyauth.com>"
+```
+
+- `registration.email_verification_required`：パスワードでサインアップしたユーザーがEメール認証を完了しなければログインできません。デフォルトは `true`はい。
+- `registration.enabled`：自分の会員登録を実際に開いておくか決めます。電子メール認証は、会員登録が許可された状態でのみ意味があります。
+- `email`：認証コードとパスワードリセットメールを送信する送信手段です。本番では通常 SMTPを使用します。
+
+:::note
+この機能を使用するには `email` 設定が一緒に必要です。テスト環境では `transport: test`使用できます。
+:::
+
+この機能を有効にすると、ユーザーは次の機能を使用できるようになります。
+
+- ユーザー会員登録時に認証コードを送信する
+- ユーザーパスワード初期化リンク送信

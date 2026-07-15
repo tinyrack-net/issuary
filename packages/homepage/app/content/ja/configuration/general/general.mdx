@@ -1,0 +1,45 @@
+---
+title: 基本
+description: Tinyauthドラゴン PostgreSQL データベースの構成
+section: configuration
+order: 7
+---
+
+`tinyauth`は、できるだけ管理者の手動設定なしでスムーズに動作するように設計されていますが、本番で使用するには、一部の項目は明示的な設定が必要な場合があります。設定例は次のとおりです。
+
+```yaml
+# config.yaml
+server:
+  public_origin: ${PUBLIC_ORIGIN:-http://localhost:8080}
+  listen_port: ${LISTEN_PORT:-8080}
+
+security:
+  session_secret: ${SESSION_SECRET}
+  hash_secret: ${HASH_SECRET}
+```
+
+- `server.public_origin`: `tinyauth`への接続に使用する公開 URLを指定します。これは使用中のリバースプロキシ設定と一致する必要があり、公開サービスの場合 `https` プロトコルを使用することが重要です。 `http` プロトコルは一部の機能（パスキー）に制限があるかもしれません。
+- `server.listen_port`: `tinyauth` サーバーがリッスンするポートを指定します。
+- `security.session_secret`：セッションクッキーの署名に使用する秘密鍵です。 `tinyauth`は `HTTP Only` クッキー方式で無状態セッションを実装します。この値を途中で変更すると、既存のすべてのセッションが無効になります。
+- `security.hash_secret`：パスワードと各種パスワードハッシュに使用するbase64url 32バイトのルートシークレットです。
+
+:::note
+`security.session_secret`銀 `openssl rand -hex 32` 命令で生成できます。
+`security.hash_secret`銀 `openssl rand -base64 32 | tr '+/' '-_' | tr -d '='`命令で生成できます。
+:::
+
+---
+
+## 例
+
+`tinyauth`を `https://auth.tinyrack.net` ドメインで運営している場合は、次のように設定できます。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.tinyrack.net
+  listen_port: 8080
+security:
+  session_secret: 978aec42d5347fbbd6459948c558e8f5b9d0ee244bce983910a01aaf42692513
+  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY
+```

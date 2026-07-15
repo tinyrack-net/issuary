@@ -4,36 +4,41 @@
   "type": "module",
   "private": true,
   "license": "MIT",
-  "imports": {
-    "#homepage/*": {
-      "types": "./src/*",
-      "default": "./src/*"
-    }
-  },
   "scripts": {
     "generate:openapi": "node --conditions=@tinyauth/source --import tsx node_modules/@tinyrack/tinyauth-standalone/src/cli.ts export openapi public/openapi.json",
-    "dev": "pnpm generate:openapi && astro dev",
-    "build": "pnpm generate:openapi && astro check && astro build",
-    "preview": "astro preview",
+    "dev": "pnpm generate:openapi && tinyrack-docs dev",
+    "build": "pnpm generate:openapi && tinyrack-docs build",
+    "preview": "tinyrack-docs preview",
     "preview:worker": "wrangler dev",
+    "typecheck": "react-router typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:audit": "vitest run tests/browser.test.ts",
     "deploy": "wrangler deploy",
     "deploy:dry-run": "wrangler deploy --dry-run"
   },
   "dependencies": {
-    "@astrojs/starlight": "catalog:",
-    "@astrojs/starlight-tailwind": "catalog:",
-    "@scalar/astro": "catalog:",
-    "@tailwindcss/vite": "catalog:",
-    "astro": "catalog:",
-    "sharp": "catalog:",
-    "tailwindcss": "catalog:"
+    "@react-router/node": "8.2.0",
+    "@scalar/api-reference-react": "0.9.55",
+    "@tinyrack/docs": "0.3.3",
+    "@tinyrack/ui": "0.3.1",
+    "isbot": "5.2.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "8.2.0",
+    "shiki": "4.3.1"
   },
   "devDependencies": {
-    "@astrojs/check": "catalog:",
     "@biomejs/biome": "catalog:",
+    "@react-router/dev": "8.2.0",
     "@tinyrack/tinyauth-standalone": "workspace:*",
-    "wrangler": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "playwright": "1.61.1",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:",
+    "wrangler": "catalog:"
   }
 }

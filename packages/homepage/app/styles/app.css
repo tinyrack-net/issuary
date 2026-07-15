@@ -1,0 +1,80 @@
+@import "@tinyrack/docs/styles.css";
+@import "@tinyrack/ui/components/badge.css";
+@import "@tinyrack/ui/components/button.css";
+
+.tinyauth-home {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  justify-content: center;
+  min-block-size: calc(100dvh - 4rem);
+  overflow: hidden;
+  padding: clamp(3rem, 10vw, 8rem) 1.5rem;
+  position: relative;
+  text-align: center;
+}
+
+.tinyauth-home::before {
+  background: color-mix(in srgb, var(--tinyrack-accent) 12%, transparent);
+  border-radius: 50%;
+  block-size: 32rem;
+  content: "";
+  filter: blur(7rem);
+  inline-size: min(64rem, 90vw);
+  inset-block-start: -16rem;
+  pointer-events: none;
+  position: absolute;
+}
+
+.tinyauth-home-mark {
+  block-size: clamp(5rem, 12vw, 7rem);
+  color: var(--tinyrack-accent);
+  inline-size: clamp(5rem, 12vw, 7rem);
+}
+
+.tinyauth-home h1 {
+  font-size: clamp(1.35rem, 4vw, 2.5rem);
+  letter-spacing: -0.035em;
+  line-height: 1.3;
+  margin: 0;
+  min-block-size: 1.3em;
+}
+
+.tinyauth-typewriter,
+.tinyauth-typewriter-cursor {
+  color: var(--tinyrack-accent);
+}
+
+.tinyauth-typewriter-cursor {
+  animation: tinyauth-cursor 700ms step-end infinite;
+}
+
+.tinyauth-scalar,
+.tinyauth-scalar-loading {
+  min-block-size: 100dvh;
+}
+
+.tinyauth-scalar-loading {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+@keyframes tinyauth-cursor {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tinyauth-typewriter-cursor {
+    animation: none;
+  }
+}

@@ -1,0 +1,61 @@
+---
+title: パスキー
+description: Tinyrack Authから WebAuthn/パスキー認証を構成する
+section: configuration
+order: 19
+---
+
+パスキーはパスワードなしでバイオメトリックです。 PINを使って安全にログインできる次世代認証手段です。 [WebAuthn/FIDO2](https://webauthn.io/) 標準に基づいており、フィッシングに強く、ユーザー体験に優れています。設定例は次のとおりです。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+      - https://login.example.com
+```
+
+- `enabled`：パスキー認証を有効にするかどうか。デフォルトは `false`はい。
+- `rp_id`: WebAuthn Relying Party IDです。プロトコル（`https://`）またはポート（`:8080`）を除くドメインのみを入力する必要があります。指定しない場合 `server.public_origin`のホスト名から自動的に抽出されます。親ドメインを指定すると、サブドメイン間でパスキーを共有できます。
+- `origins`: WebAuthn 検証に許可するソース（origin）のリストです。指定しない場合 `server.public_origin` 値が基本として使用されます。複数のドメインで同じパスキーを使用する必要がある場合に便利です。
+
+:::caution
+パスキーはセキュリティ上の理由から `https` プロトコルでのみ正常に動作します（`localhost`は例外）。本番環境では必ず `https`を使用してください。
+:::
+
+---
+
+## 例
+
+`tinyauth`を `https://auth.example.com`で運営し、 `example.com`のすべてのサブドメインでパスキーを共有するには、次のように設定できます。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+    rp_id: example.com
+    origins:
+      - https://auth.example.com
+```
+
+単一ドメインでのみパスキーを使用する場合、 `rp_id`と `origins`を省略すると `server.public_origin`で自動的に設定されます。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+auth:
+  passkey:
+    enabled: true
+```

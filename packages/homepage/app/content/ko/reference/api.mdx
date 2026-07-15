@@ -1,0 +1,39 @@
+---
+title: API 레퍼런스
+description: Tinyrack Auth API 엔드포인트 레퍼런스
+section: reference
+order: 33
+---
+
+`tinyauth`는 OAuth2 및 OpenID Connect 운영을 위한 완전한 REST API를 제공해요.
+
+## 대화형 API 문서
+
+요청/응답 예시와 내장 API 클라이언트를 포함하는 완전하고 대화형인 API 레퍼런스는 **[대화형 API 문서](/ko/api-reference)** 에서 확인할 수 있어요.
+
+대화형 문서는 [Scalar](https://scalar.com)로 구동되며 다음을 포함해요.
+
+- 태그별로 분류된 모든 API 엔드포인트
+- 예시가 포함된 요청/응답 스키마
+- 엔드포인트 테스트를 위한 내장 API 클라이언트
+- 인증 지원 (Bearer JWT)
+
+## API 엔드포인트 그룹
+
+| 태그 | 설명 |
+|------|------|
+| **Auth** | 사용자 인증 (로그인, 회원가입, 비밀번호 관리) |
+| **User** | 사용자 프로필 및 계정 관리 |
+| **Consent** | OAuth 동의 관리 |
+| **Terms** | 이용약관 관리 |
+| **OAuth Connect** | 타사 OAuth 제공자 연결 |
+| **OpenID** | OpenID Connect 프로토콜 엔드포인트 (authorize, token, userinfo, JWKS) |
+| **Health** | 서버 상태 확인 |
+
+## OpenAPI 스펙
+
+원시 OpenAPI 3.1 스펙은 JSON 파일로 제공돼요.
+
+- **정적 스펙**: [`/openapi.json`](/openapi.json) (빌드 시 번들)
+- **라이브 UI** (`openapi.enabled: true`로 서버 실행 중): `GET /api/docs`
+- **라이브 스펙** (`openapi.enabled: true`로 서버 실행 중): `GET /api/docs/json`

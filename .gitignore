@@ -36,6 +36,8 @@ coverage/
 
 .aider*
 .astro
+.react-router
+build
 __screenshots__
 .opencode/
 .hermes/

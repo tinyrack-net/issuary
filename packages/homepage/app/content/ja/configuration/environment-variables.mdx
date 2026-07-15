@@ -1,0 +1,65 @@
+---
+title: 環境変数
+description: Tinyauth 環境変数リファレンス
+section: configuration
+order: 6
+---
+
+`tinyauth` の `config.yaml`を構成するとき、特定の設定は環境変数を参照することができます。これは機密情報を扱うのに役立ち、コンテナ化された展開やクラウド環境で機密設定を管理するのに役立ちます。簡単な使用例は次のとおりです。
+
+```yaml
+server:
+  public_origin: "${PUBLIC_ORIGIN}"
+security:
+  session_secret: "$SESSION_SECRET"
+  hash_secret: "$HASH_SECRET"
+```
+
+> `$VAR` または `${VAR}` 構文はすべて有効な表現です。
+
+上記の設定を使用する場合、 `docker`では、次のように環境変数を渡して使用できます。
+
+```bash
+docker run \
+  -p 8080:8080 \
+  -v ./config.yaml:/opt/config.yaml \
+  -e PUBLIC_ORIGIN=https://example.com \
+  -e SESSION_SECRET=your-session-secret \
+  -e HASH_SECRET=your-base64url-hash-secret \
+  ghcr.io/tinyrack-net/tinyauth
+```
+
+---
+
+## デフォルト値の指定
+
+環境変数があれば使用しますが、ない場合のデフォルト値を指定したい場合があります。そんな時は次のように使えます。
+
+```yaml
+server:
+  public_origin: "${PUBLIC_ORIGIN:-https://default-tinyauth-domain.com}"
+```
+
+この場合 `PUBLIC_ORIGIN` 環境変数が設定されている場合はその値を使用し、設定されていない場合 `https://default-tinyauth-domain.com` をデフォルトとして使用します。
+
+`tinyauth`既に設定の多くの部分で環境変数を最初に参照するようにデフォルト値が設定されています。たとえば、standaloneのデフォルト設定では、次の環境変数とデフォルト値が頻繁に使用されます。
+
+```yaml
+server:
+  public_origin: ${PUBLIC_ORIGIN:-http://localhost:8080}
+  listen_port: ${LISTEN_PORT:-8080}
+
+tokens:
+  access_token_ttl: ${ACCESS_TOKEN_TTL:-3600}
+  refresh_token_ttl: ${REFRESH_TOKEN_TTL:-2592000}
+  key_rotation:
+    enabled: ${JWT_KEY_ROTATION_ENABLED:-true}
+    interval_days: ${JWT_KEY_ROTATION_DAYS:-30}
+    overlap_days: ${JWT_KEY_OVERLAP_DAYS:-7}
+
+security:
+  session_secret: ${SESSION_SECRET}
+  hash_secret: ${HASH_SECRET}
+```
+
+環境変数全体とデフォルト値を確認するには [設定スキーマ文書](/ja/reference/configuration-schema)を参考にしてください。

@@ -1,0 +1,93 @@
+---
+title: PostgreSQL
+description: Tinyauth용 PostgreSQL 데이터베이스 구성하기
+section: configuration
+order: 15
+---
+
+PostgreSQL은 강력하고 확장 가능한 오픈 소스 관계형 데이터베이스 관리 시스템이에요. `tinyauth`는 PostgreSQL을 데이터베이스로 지원하며, 중대형 배포나 고성능이 요구되는 환경에 적합해요. 특히 Kubernetes와 같은 환경에서 여러 인스턴스를 운영하려면 PostgreSQL이 필요해요.
+
+```yaml
+# config.yaml
+database:
+  type: postgres
+  host: ${DATABASE_HOST:-localhost}
+  port: ${DATABASE_PORT:-5432}
+  name: ${DATABASE_NAME:-tinyauth}
+  user: ${DATABASE_USER:-tinyauth}
+  password: ${DATABASE_PASSWORD}
+```
+
+- `type`: `postgres`로 지정해요.
+- `host`: PostgreSQL 서버의 호스트 이름이에요. 기본값은 `localhost`예요.
+- `port`: PostgreSQL 서버의 포트예요. 기본값은 `5432`예요.
+- `name`: 사용할 데이터베이스 이름이에요.
+- `user`: 데이터베이스 접속 사용자예요.
+- `password`: 데이터베이스 접속 비밀번호예요.
+
+:::note
+PostgreSQL 연결은 기본적으로 SSL이 활성화되어 있어요. 로컬 개발 환경에서 SSL 없이 연결하려면 PostgreSQL 서버 설정을 확인해 주세요.
+:::
+
+---
+
+## Docker Compose 예시
+
+`tinyauth`와 PostgreSQL을 함께 Docker Compose로 운영하는 예시예요.
+
+```yaml
+# docker-compose.yml
+services:
+  tinyauth:
+    image: ghcr.io/tinyrack-net/tinyauth:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/opt/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tinyauth
+      POSTGRES_USER: tinyauth
+      POSTGRES_PASSWORD: your-strong-password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tinyauth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+```
+
+이 경우 `config.yaml`은 다음과 같이 설정해요.
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+security:
+  session_secret: your-session-secret
+  hash_secret: your-base64url-hash-secret
+
+database:
+  type: postgres
+  host: postgres
+  port: 5432
+  name: tinyauth
+  user: tinyauth
+  password: your-strong-password
+```
+
+:::caution
+프로덕션 환경에서는 데이터베이스 비밀번호를 `config.yaml`에 직접 기입하는 대신 [환경 변수](/ko/configuration/environment-variables)를 사용하는 것을 권장해요.
+:::

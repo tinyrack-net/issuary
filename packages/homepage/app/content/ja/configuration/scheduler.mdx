@@ -1,0 +1,191 @@
+---
+title: ジョブスケジューラ
+description: Tinyauthのデータクリーンアップスケジューラとクリーンアップポリシーの設定
+section: configuration
+order: 31
+---
+
+`tinyauth`は、期限切れのトークン、使用された認証コード、電子メール認証トークンなどの一時データを定期的に整理する組み込みスケジューラを提供します。この設定は `scheduler`と `cleanup` 最上位セクションで構成されています。
+
+---
+
+## スケジューラ設定
+
+```yaml
+# config.yaml
+scheduler:
+  enabled: true
+  mode: croner
+  cleanup_cron: '0 2 * * *'
+  # mode: database 를 사용할 때만 적용돼요.
+  poll_interval_ms: 5000
+  lock_ttl_ms: 60000
+  background_retry_delay_ms: 1000
+  background_max_attempts: 3
+  background_retention_ms: 604800000
+  instance_id: ''
+```
+
+- `scheduler.enabled`：組み込みスケジューラを有効にするかどうか。デフォルトは `true`はい。
+- `scheduler.mode`：スケジューラバックエンドです。 `croner`は単一プロセス用のインメモリスケジューラであり、 `database`は、DBリースを使用して複数のインスタンスのうちの1つだけがジョブを取得できるようにする分散スケジューラです。デフォルトは `croner`はい。
+- `scheduler.cleanup_cron`：組み込みクリーンアップジョブを実行します。標準5フィールドcron形式（`분 시 일 월 요일`）を使用してください。デフォルトは `0 2 * * *`（毎日午前2時）です。
+- `scheduler.poll_interval_ms`: `database` モードでデュージョブを確認するサイクルです。デフォルトは `5000`これです。
+- `scheduler.lock_ttl_ms`: `database` モードで job lease が有効な時間です。作業に時間がかかると、実行中にリースが自動更新されます。デフォルトは `60000`これです。
+- `scheduler.background_retry_delay_ms`: `database` モードで失敗したバックグラウンドジョブを再実行する前の待ち時間です。デフォルトは `1000`これです。
+- `scheduler.background_max_attempts`: `database` モードでバックグラウンドジョブを最後の失敗としてマークする前の最大試行回数。デフォルトは `3`これです。
+- `scheduler.background_retention_ms`: `database` モードで完了したbackground job（`succeeded`/`failed`）を保存する期間（ms）です。デフォルトは `604800000`（7日）です。 `pending`/`running` jobはこのクリーンアップポリシーで削除しません。
+- `scheduler.instance_id`: `database` モードでリースの所有者を識別する値です。空白にすると、プロセスごとに固有の値が自動的に生成されます。直接指定する場合、replica/processごとに必ず一意でなければなりません。
+
+:::note
+Kubernetes 環境では、単一の実行保証が必要な場合 `scheduler.mode: database`を使用するか、組み込みスケジューラの代わりにCronJobを使用することをお勧めします。 CronJobを使用する場合 `scheduler.enabled: false`に設定し、外部から `tinyauth cleanup` CLI コマンドを実行してください。詳しくは [Kubernetes 導入ガイド](/ja/deployment/kubernetes)を参考にしてください。
+:::
+
+:::caution
+`database` モードでは、すべてのタスクはat-least-once方式で実行されます。 leaseが期限切れになると、他のインスタンスが同じジョブを再取得できるようになります。
+:::
+
+---
+
+## クリーンアップポリシー（`cleanup`)
+
+各データタイプごとにクリーンアップポリシーを細かく設定できます。
+
+### 期間形式
+
+整理方針の保存期間（`retention`）は次の形式を使用します。
+
+| フォーマット | 意味 | 例 |
+|------|------|------|
+| `"0"` | 即時(保存期間なし) | 有効期限を即座に削除 |
+| `"30s"` | 秒 | 30秒 |
+| `"30m"` | 分 | 30分 |
+| `"24h"` | 時間 | 24時間 |
+| `"7d"` | 仕事 | 7日 |
+| `"1y"` | 年（365日） | 1年 |
+
+### キャンセルされたトークン（`revoked_tokens`)
+
+```yaml
+cleanup:
+  revoked_tokens:
+    enabled: true
+    retention: '0'
+```
+
+- `enabled`：キャンセルされたトークンクリーンアップを有効にするかどうか。デフォルトは `true`はい。
+- `retention`：トークン満了後の保存期間です。デフォルトは `"0"`（有効期限はすぐに削除）です。
+
+### OAuth 認証コード(`oauth_codes`)
+
+```yaml
+cleanup:
+  oauth_codes:
+    enabled: true
+    consumed_retention: '24h'
+```
+
+- `enabled`：認証コードクリーンアップを有効にするかどうか。デフォルトは `true`はい。
+- `consumed_retention`：使用された認証コードの保存期間です。デフォルトは `"24h"`はい。
+
+### メール認証(`email_verifications`)
+
+```yaml
+cleanup:
+  email_verifications:
+    enabled: true
+    retention: '0'
+```
+
+- `enabled`：期限切れの電子メール認証トークンクリーンアップを有効にするかどうか。デフォルトは `true`はい。
+- `retention`：有効期限後の保存期間です。デフォルトは `"0"`これです。
+
+### パスワードリセット(`password_resets`)
+
+```yaml
+cleanup:
+  password_resets:
+    enabled: true
+    retention: '0'
+```
+
+- `enabled`：有効期限が切れたパスワードリセットトークンクリーンアップを有効にするかどうか。デフォルトは `true`はい。
+- `retention`：有効期限後の保存期間です。デフォルトは `"0"`これです。
+
+### 待機中 OAuth 参加(`pending_oauth_registrations`)
+
+```yaml
+cleanup:
+  pending_oauth_registrations:
+    enabled: true
+    retention: '0'
+```
+
+- `enabled`：中断 OAuth 購読フロークリーンアップを有効にするかどうか。デフォルトは `true`はい。
+- `retention`：有効期限後の保存期間です。デフォルトは `"0"`これです。
+
+---
+
+## 関連設定
+
+- `account_deletion.enabled`：ユーザーが自分でアカウントの削除を要求できるかどうかを決定します。
+- `account_deletion.retention`：削除要求から実際の永久削除までの猶予期間です。 `tinyauth cleanup`この実行時にこのポリシーが適用されます。
+- `tokens.key_rotation.*`: JWT キー循環ポリシーです。整理作業のようなメンテナンスの時点で一緒に反映されます。
+
+---
+
+## 完全な例
+
+```yaml
+# config.yaml
+tokens:
+  key_rotation:
+    enabled: true
+    interval_days: 30
+    overlap_days: 7
+
+account_deletion:
+  enabled: true
+  retention: 30d
+
+scheduler:
+  enabled: true
+  mode: croner
+  cleanup_cron: '0 2 * * *'
+
+cleanup:
+  revoked_tokens:
+    enabled: true
+    retention: '0'
+  oauth_codes:
+    enabled: true
+    consumed_retention: '24h'
+  email_verifications:
+    enabled: true
+    retention: '0'
+  password_resets:
+    enabled: true
+    retention: '0'
+  pending_oauth_registrations:
+    enabled: true
+    retention: '0'
+```
+
+---
+
+## CLI 命令
+
+スケジューラとは別に、 CLIを介して手動でクリーンアップタスクを実行することもできます。
+
+```bash
+# 정리 작업 실행
+tinyauth cleanup
+
+# 실제 삭제 없이 대상만 확인 (드라이 런)
+tinyauth cleanup --dry-run
+
+# 상세 진행 상황 출력
+tinyauth cleanup --verbose
+
+# 커스텀 설정 파일 사용
+tinyauth cleanup -c /path/to/config.yaml
+```

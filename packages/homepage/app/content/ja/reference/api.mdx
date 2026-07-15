@@ -1,0 +1,39 @@
+---
+title: API リファレンス
+description: Tinyrack Auth API エンドポイントリファレンス
+section: reference
+order: 33
+---
+
+`tinyauth`はOAuth2と OpenID Connect 操作のための完全 REST APIを提供します。
+
+## インタラクティブ API 文書
+
+リクエスト/レスポンスの例と組み込み API クライアントを含む完全かつインタラクティブ API リファレンスは **[インタラクティブ API 文書](/ja/api-reference)** で確認できます。
+
+インタラクティブドキュメントは [Scalar](https://scalar.com)で駆動され、以下を含みます。
+
+- タグ別に分類されたすべて API エンドポイント
+- 例を含む要求/応答スキーマ
+- エンドポイントテスト用の組み込み API クライアント
+- 認証サポート(Bearer JWT)
+
+## API エンドポイントグループ
+
+| タグ | 説明 |
+|------|------|
+| **Auth** | ユーザー認証（ログイン、会員登録、パスワード管理） |
+| **User** | ユーザープロファイルとアカウントの管理 |
+| **Consent** | OAuth 同意管理 |
+| **Terms** | 利用規約の管理 |
+| **OAuth Connect** | 第三者 OAuth プロバイダの接続 |
+| **OpenID** | OpenID Connect プロトコルエンドポイント（authorize、token、userinfo、 JWKS) |
+| **Health** | サーバーの状態の確認 |
+
+## OpenAPI仕様
+
+生のOpenAPI 3.1仕様は JSON ファイルとして提供されます。
+
+- **静的仕様**: [`/openapi.json`](/openapi.json) （ビルド時バンドル）
+- **ライブUI** (`openapi.enabled: true`としてサーバーを実行しています）： `GET /api/docs`
+- **ライブ仕様** (`openapi.enabled: true`としてサーバーを実行しています）： `GET /api/docs/json`

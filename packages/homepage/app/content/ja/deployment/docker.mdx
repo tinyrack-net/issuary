@@ -1,0 +1,386 @@
+---
+title: Docker
+description: Dockerを使用して Tinyauthを配布する方法
+section: deployment
+order: 3
+---
+
+`Tinyauth`を Dockerで素早く配布できます。この資料では、単独で実行、 Nginx Proxy Manager 連携、 Traefik 連動の例を取り上げました。
+
+## 事前準備
+
+- Docker と Docker Composeのインストール
+- セッションシークレットとハッシュシークレット値
+
+---
+
+## 設定ファイル
+
+すべての例で共通に使用 `config.yaml` ファイルです。必要に応じて修正して使用してください。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+registration:
+  enabled: false
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
+
+database:
+  type: sqlite
+  path: /opt/tinyauth/database.db
+
+clients:
+  - id: my-app
+    name: My Application
+    client_id: my-app-client-id
+    client_secret: my-app-client-secret
+    redirect_uris:
+      - https://app.example.com/callback
+    response_types:
+      - code
+    grant_types:
+      - authorization_code
+      - refresh_token
+    scope: openid profile email
+```
+
+上記の例は、独自の会員登録を基本的に閉じている運用の開始点です。公開会員登録が必要な場合 [会員登録の設定](/ja/configuration/general/register) 文書のように `registration.enabled: true`を明示的に設定してください。
+
+---
+
+## 単独実行
+
+最も簡単な形で `Tinyauth`を実行する例です。
+
+### Docker Run
+
+```bash
+docker run -d \
+  --name tinyauth \
+  -p 8080:8080 \
+  -v $(pwd)/config.yaml:/opt/config.yaml:ro \
+  -v tinyauth-data:/opt/tinyauth \
+  -e NODE_ENV=production \
+  --restart unless-stopped \
+  ghcr.io/tinyrack-net/tinyauth:latest
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+services:
+  tinyauth:
+    image: ghcr.io/tinyrack-net/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./config.yaml:/opt/config.yaml:ro
+      - tinyauth-data:/opt/tinyauth
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: '1001:1001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/.well-known/openid-configuration']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  tinyauth-data:
+```
+
+実行後 `http://localhost:8080`で接続すると `Tinyauth`を確認できます。
+
+---
+
+## PostgreSQLと併用
+
+SQLite 代わりに PostgreSQLを使用したい場合は、以下の例を参照してください。
+
+### 設定ファイル
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+registration:
+  enabled: false
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
+
+database:
+  type: postgres
+  host: postgres
+  port: 5432
+  user: ${DB_USER:-tinyauth}
+  password: ${DB_PASSWORD:-tinyauth}
+  name: ${DB_NAME:-tinyauth}
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+services:
+  tinyauth:
+    image: ghcr.io/tinyrack-net/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      - NODE_ENV=production
+      - DB_USER=tinyauth
+      - DB_PASSWORD=tinyauth
+      - DB_NAME=tinyauth
+    volumes:
+      - ./config.yaml:/opt/config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: '1001:1001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/.well-known/openid-configuration']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: tinyauth-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tinyauth
+      POSTGRES_PASSWORD: tinyauth
+      POSTGRES_DB: tinyauth
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tinyauth']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+```
+
+---
+
+## Nginx Proxy Managerで使用
+
+[Nginx Proxy Manager](https://nginxproxymanager.com/)をリバースプロキシとして使用する構成です。 SSL 証明書管理とプロキシ設定をWeb UIで簡単にできます。
+
+### 設定ファイル
+
+`server.trust_proxy`を `true`に設定してプロキシヘッダを信頼するようにします。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+  trust_proxy: true
+
+registration:
+  enabled: false
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
+
+database:
+  type: sqlite
+  path: /opt/tinyauth/database.db
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+services:
+  npm:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '81:81'
+    volumes:
+      - npm-data:/data
+      - npm-letsencrypt:/etc/letsencrypt
+
+  tinyauth:
+    image: ghcr.io/tinyrack-net/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    expose:
+      - '8080'
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./config.yaml:/opt/config.yaml:ro
+      - tinyauth-data:/opt/tinyauth
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: '1001:1001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/.well-known/openid-configuration']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  npm-data:
+  npm-letsencrypt:
+  tinyauth-data:
+```
+
+### Nginx Proxy Managerの設定
+
+1. `http://localhost:81`ロー Nginx Proxy Manager管理画面にアクセスしてください
+2. デフォルトの管理者アカウントでログインしてください（Email： `admin@example.com`, Password: `changeme`)
+3. **Proxy Hosts** > **Add Proxy Host**をクリック
+4. 以下のように設定してください。
+   - **Domain Names**: `auth.example.com`
+   - **Scheme**: `http`
+   - **Forward Hostname / IP**: `tinyauth`
+   - **Forward Port**: `8080`
+   - **Websockets Support**: 有効
+5. **SSL** タブで Let's Encrypt 証明書を発行します
+
+---
+
+## Traefikと併用
+
+[Traefik](https://traefik.io/)をリバースプロキシとして使用する構成です。 Docker ラベルに基づいてルーティングを自動設定できます。
+
+### 設定ファイル
+
+Traefik同様に `server.trust_proxy`を `true`に設定する必要があります。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+  trust_proxy: true
+
+registration:
+  enabled: false
+
+security:
+  session_secret: your_session_secret_here_min_16_chars
+  hash_secret: your_base64url_hash_secret_here
+
+database:
+  type: sqlite
+  path: /opt/tinyauth/database.db
+```
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+services:
+  traefik:
+    image: traefik:v3.4
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge=true'
+      - '--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web'
+      - '--certificatesresolvers.letsencrypt.acme.email=admin@example.com'
+      - '--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json'
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8081:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+
+  tinyauth:
+    image: ghcr.io/tinyrack-net/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    expose:
+      - '8080'
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./config.yaml:/opt/config.yaml:ro
+      - tinyauth-data:/opt/tinyauth
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.tinyauth.rule=Host(`auth.example.com`)'
+      - 'traefik.http.routers.tinyauth.entrypoints=websecure'
+      - 'traefik.http.routers.tinyauth.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.tinyauth.loadbalancer.server.port=8080'
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    user: '1001:1001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:8080/.well-known/openid-configuration']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  traefik-letsencrypt:
+  tinyauth-data:
+```
+
+### HTTPから HTTPS リダイレクト
+
+HTTP リクエストを自動的に HTTPSにリダイレクトするには Traefik 設定に以下を追加します。
+
+```yaml
+command:
+  # ... 기존 설정에 추가
+  - '--entrypoints.web.http.redirections.entrypoint.to=websecure'
+  - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+```
+
+---
+
+## セキュリティ推奨事項
+
+- `security.session_secret`は必ず16文字以上のランダム文字列を使用してください
+- `security.hash_secret`はbase64url 32バイト値で作成してください
+- 本番環境では必ず HTTPSを適用
+- `read_only: true`と `no-new-privileges` オプションを使用
+- 非rootユーザー（`user: '1001:1001'`）でコンテナを実行する
+- 設定ファイルは読み取り専用（`:ro`）でマウントしてください
+- `security.session_secret`, `security.hash_secret`、データベースパスワードなどの機密値は、 Docker Secrets や環境変数を活用

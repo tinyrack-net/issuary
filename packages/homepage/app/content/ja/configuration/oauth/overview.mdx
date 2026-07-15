@@ -1,0 +1,84 @@
+---
+title: OAuth 概要
+description: Tinyauthから第三者 OAuth ログインプロバイダの設定
+section: configuration
+order: 20
+---
+
+`tinyauth`はサードパーティ OAuth プロバイダーによるソーシャルログインをサポートします。ユーザーは既存のアカウント（Google, GitHub, Apple など）で簡単にログインでき、最初の登録は `registration.enabled`が点灯しているときだけ許可されます。サードパーティのログインは `identity_providers` セクションで構成し、複数のプロバイダを同時にアクティブにできます。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: ${GOOGLE_CLIENT_ID}
+    client_secret: ${GOOGLE_CLIENT_SECRET}
+
+  - id: github
+    type: github
+    enabled: true
+    client_id: ${GITHUB_CLIENT_ID}
+    client_secret: ${GITHUB_CLIENT_SECRET}
+```
+
+:::note
+OAuth プロバイダを有効にしても新しいアカウントの作成は自動的に開かれません。初めてログイン OAuth ユーザーがアカウントを作成できるようにするには `registration.enabled: true`を一緒に設定してください。
+:::
+
+---
+
+## サポートするプロバイダの種類
+
+| タイプ | 説明 |
+|------|------|
+| `google` | Google アカウントログイン([設定ガイド](/ja/configuration/oauth/google)) |
+| `apple` | Apple IDログイン([設定ガイド](/ja/configuration/oauth/apple)) |
+| `github` | GitHub アカウントログイン([設定ガイド](/ja/configuration/oauth/github)) |
+| `generic_oauth` | その他 OAuth/OIDC プロバイダ([設定ガイド](/ja/configuration/oauth/others)) |
+
+---
+
+## 共通設定項目
+
+すべてのプロバイダタイプに共通して適用される設定項目です。
+
+| アイテム | 必須 | デフォルト | 説明 |
+|------|------|--------|------|
+| `id` | O | - | プロバイダの一意の識別子です。 URL そしてデータベースで使用されます。 |
+| `type` | O | - | プロバイダのタイプです。 `google`, `apple`, `github`, `generic_oauth` の一つです。 |
+| `enabled` | X | `false` | このプロバイダがアクティブかどうか。 |
+| `display_name` | △ | - | ログインボタンに表示される名前です。 `generic_oauth` タイプでは必須です。 |
+| `icon_url` | X | - | ログインボタンに表示されるアイコン URLこれです。 |
+| `client_id` | O | - | OAuth プロバイダから発行されたクライアントIDです。 |
+| `client_secret` | O | - | OAuth プロバイダから発行されたクライアントシークレットです。 |
+| `scopes` | X | タイプ別のデフォルト | OAuth スコープのリストです。指定しない場合、プロバイダータイプ固有のデフォルト値が使用されます。 |
+| `email_conflict_strategy` | X | `auto_link` | 既存のアカウントとメールが衝突したときの処理方法です。 |
+
+---
+
+## 電子メールの競合戦略
+
+ユーザーがすでにパスワードで登録している電子メールと同じ電子メールを持つ OAuth アカウントでログインしようとするときの処理方法を指定します。
+
+- `auto_link`：同じメールの既存のアカウントに OAuth アカウントを自動的にリンクします。ほとんどの場合、このアプローチは便利です。
+- `require_link`：自動接続せずにユーザーに直接接続を要求します。セキュリティがより重要な場合に使用します。
+
+---
+
+## コールバック URL
+
+OAuth プロバイダにアプリケーションを登録するときのコールバック（リダイレクト） URLを指定する必要があります。 `tinyauth`のコールバック URLは次の形式です。
+
+```
+{server.public_origin}/api/oauth/{id}/callback
+```
+
+例えば、 `server.public_origin`この `https://auth.example.com`あり `id`秋 `google`の場合:
+
+```
+https://auth.example.com/api/oauth/google/callback
+```
+
+各プロバイダー固有の詳細設定方法は、該当するガイドを参照してください。

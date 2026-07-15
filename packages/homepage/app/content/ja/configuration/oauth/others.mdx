@@ -1,0 +1,125 @@
+---
+title: その他
+description: Tinyauthからその他 OAuth/OIDC プロバイダの設定
+section: configuration
+order: 24
+---
+
+`tinyauth`で基本サポートされていません OAuth/OIDC プロバイダも `generic_oauth` タイプを通じて連動できます。カスタムエンドポイントとフィールドマッピングを直接指定する方法です。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: my-provider
+    type: generic_oauth
+    enabled: true
+    display_name: My Provider
+    icon_url: https://example.com/icon.png
+    client_id: ${MY_PROVIDER_CLIENT_ID}
+    client_secret: ${MY_PROVIDER_CLIENT_SECRET}
+    authorization_url: https://provider.com/oauth/authorize
+    token_url: https://provider.com/oauth/token
+    userinfo_url: https://provider.com/oauth/userinfo
+    scopes:
+      - openid
+      - email
+      - profile
+    userinfo_mapping:
+      id: sub
+      email: email
+      email_verified: email_verified
+      name: name
+      picture: picture
+```
+
+---
+
+## 設定項目
+
+[共通設定項目](/ja/configuration/oauth/overview)に加えて、 `generic_oauth` タイプでは、次の項目を指定する必要があります。
+
+| アイテム | 必須 | 説明 |
+|------|------|------|
+| `display_name` | O | ログインボタンに表示されるプロバイダ名です。 |
+| `authorization_url` | O | OAuth 認証エンドポイント URLこれです。 |
+| `token_url` | O | トークン交換エンドポイント URLこれです。 |
+| `userinfo_url` | X | ユーザー情報エンドポイント URLこれです。 IDトークンからユーザー情報を取得する場合は省略できます。 |
+| `email_url` | X | 電子メール情報を個別に取得する必要がある場合のエンドポイント URLこれです（GitHubようにメール APIが分離されている場合）。 |
+| `scopes` | O | 要求する OAuth スコープのリストです。 |
+| `response_mode` | X | OAuth 応答モードです。 `query`, `fragment`, `form_post` のいずれかを指定できます。 |
+
+---
+
+## ユーザー情報マッピング(`userinfo_mapping`)
+
+OAuth プロバイダごとにユーザー情報応答のフィールド名が異なります。 `userinfo_mapping`を通じて `tinyauth`どのフィールドからどの情報を取得するかを指定します。
+
+| アイテム | 必須 | 説明 |
+|------|------|------|
+| `id` | O | ユーザー固有のIDフィールド名です。 （例： `sub`, `id`, `user_id`) |
+| `email` | O | メールフィールド名です。 （例： `email`, `mail`) |
+| `email_verified` | X | メール認証かどうかフィールド名です。 （例： `email_verified`, `verified`) |
+| `name` | X | ユーザー名フィールド名です。 （例： `name`, `display_name`) |
+| `picture` | X | プロフィール画像 URL フィールド名です。 （例： `picture`, `avatar_url`) |
+
+---
+
+## 例: Kakao ログイン
+
+Kakao OAuthを連動する例です。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: kakao
+    type: generic_oauth
+    enabled: true
+    display_name: Kakao
+    icon_url: https://example.com/kakao-icon.png
+    client_id: ${KAKAO_CLIENT_ID}
+    client_secret: ${KAKAO_CLIENT_SECRET}
+    authorization_url: https://kauth.kakao.com/oauth/authorize
+    token_url: https://kauth.kakao.com/oauth/token
+    userinfo_url: https://kapi.kakao.com/v2/user/me
+    scopes:
+      - openid
+      - account_email
+      - profile_nickname
+    userinfo_mapping:
+      id: id
+      email: kakao_account.email
+      name: kakao_account.profile.nickname
+      picture: kakao_account.profile.profile_image_url
+```
+
+## 例: GitLab ログイン
+
+GitLab（自己ホスティングを含む） OAuthを連動する例です。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: gitlab
+    type: generic_oauth
+    enabled: true
+    display_name: GitLab
+    client_id: ${GITLAB_CLIENT_ID}
+    client_secret: ${GITLAB_CLIENT_SECRET}
+    authorization_url: https://gitlab.com/oauth/authorize
+    token_url: https://gitlab.com/oauth/token
+    userinfo_url: https://gitlab.com/oauth/userinfo
+    scopes:
+      - openid
+      - email
+      - profile
+    userinfo_mapping:
+      id: sub
+      email: email
+      email_verified: email_verified
+      name: name
+      picture: picture
+```
+
+:::note
+セルフホスティングGitLabの場合 URLの `gitlab.com` 部分を独自のホスティングドメインに変更してください。
+:::

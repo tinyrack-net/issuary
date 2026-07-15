@@ -1,0 +1,74 @@
+---
+title: Google
+description: Tinyauthから Google OAuth ログインの設定
+section: configuration
+order: 21
+---
+
+Google OAuthを使用すると、ユーザー Google アカウントで `tinyauth`にログインできます。このガイドは Google Cloud Consoleから OAuth クライアントを作成し、 `tinyauth`に連動する方法を説明します。
+
+---
+
+## 1. Google Cloud Console の設定
+
+1. [Google Cloud Console](https://console.cloud.google.com/)に接続します。
+2. プロジェクトを選択するか、新しいプロジェクトを作成します。
+3. 左メニューから **API とサービス** > **OAuth 同意画面**に行きます。
+4. 同意画面を設定します（アプリ名、ユーザーサポートのメールなどを入力）。
+5. **ユーザー認証情報** > **ユーザー認証情報の作成** > **OAuth クライアントID**をクリックしてください。
+6. アプリケーションタイプとして **Webアプリケーション**を選択してください。
+7. **承認されたリダイレクト URI**に次の値を追加します。
+   ```
+   https://내_도메인.com/api/oauth/google/callback
+   ```
+8. **作る**をクリックすると **クライアントID**と **クライアントセキュリティパスワード**が表示されます。この値を安全に保管してください。
+
+---
+
+## 2. Tinyauth 設定
+
+Google Cloud Consoleで発行された資格情報 `config.yaml`に設定します。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: ${GOOGLE_CLIENT_ID}
+    client_secret: ${GOOGLE_CLIENT_SECRET}
+```
+
+- `id`：これはプロバイダの一意の識別子です。コールバック URLに使われます。
+- `type`: `google`で指定します。
+- `client_id`: Google Cloud Console から発行されたクライアント ID です。
+- `client_secret`: Google Cloud Consoleから発行されたクライアントセキュリティパスワードです。
+
+:::note
+Google OAuthは基本的に `openid`, `email`, `profile` スコープを要求します。追加のスコープが必要な場合 `scopes` 項目として指定できます。
+:::
+
+---
+
+## 例
+
+`tinyauth`を `https://auth.example.com`で運営する場合の全体設定例です。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+identity_providers:
+  - id: google
+    type: google
+    enabled: true
+    client_id: 123456789-abcdefg.apps.googleusercontent.com
+    client_secret: GOCSPX-abcdefghijklmnop
+```
+
+この場合 Google Cloud Console の承認済みリダイレクト URIは、次のように設定する必要があります。
+
+```
+https://auth.example.com/api/oauth/google/callback
+```

@@ -1,0 +1,79 @@
+---
+title: Apple
+description: Tinyauthから Apple ログインの設定
+section: configuration
+order: 22
+---
+
+Apple ログイン（Sign in with Apple）を使用すると、ユーザーは Apple IDで `tinyauth`にログインできます。このガイドは Apple Developerでサービスを登録し、 `tinyauth`に連動する方法を説明します。
+
+---
+
+## 1. Apple 開発者設定
+
+1. [Apple Developer](https://developer.apple.com/)にアクセスしてログインします。
+2. **Certificates, Identifiers & Profiles**に行きます。
+3. **Identifiers**から新しい **App ID**を登録します。 **Sign in with Apple** 機能を有効にします。
+4. **Identifiers**から新しい **Services ID**を登録します。
+   - このサービスIDの **Identifier**秋 `client_id`になります。
+   - **Sign in with Apple**を有効にして **Configure**をクリックしてください。
+   - **Domains and Subdomains**にドメインを追加します（例： `auth.example.com`).
+   - **Return URLs**にコールバック URLを追加します。
+     ```
+     https://내_도메인.com/api/oauth/apple/callback
+     ```
+5. **Keys**で新しいキーを作成し、 **Sign in with Apple**を有効にします。ダウンロードした `.p8` ファイルと **Key ID**を安全に保管してください。
+
+:::note
+Apple ログイン `client_secret`銀 JWT 形式で生成する必要があります。 Team ID、Key ID、および `.p8` 秘密鍵を使用して生成できます。詳細な方法は [Apple 公式文書](https://developer.apple.com/documentation/sign_in_with_apple/generate_and_validate_tokens)を参考にしてください。
+:::
+
+---
+
+## 2. Tinyauth 設定
+
+Apple Developerで準備した資格証明 `config.yaml`に設定します。
+
+```yaml
+# config.yaml
+identity_providers:
+  - id: apple
+    type: apple
+    enabled: true
+    client_id: com.example.auth
+    client_secret: ${APPLE_CLIENT_SECRET}
+```
+
+- `id`：これはプロバイダの一意の識別子です。コールバック URLに使われます。
+- `type`: `apple`で指定します。
+- `client_id`: Apple Developerで登録したServices IDのIdentifierです。
+- `client_secret`：作成した JWT client secretです。
+
+:::caution
+Appleは基本的に `form_post` 応答モードを使用します。 `tinyauth`はこれを自動的に処理するので、別途設定は不要です。 Appleは、ユーザーの名前を最初のログイン時にのみ提供し、IDトークンを介してユーザー情報を渡します。
+:::
+
+---
+
+## 例
+
+`tinyauth`を `https://auth.example.com`で運営する場合の全体設定例です。
+
+```yaml
+# config.yaml
+server:
+  public_origin: https://auth.example.com
+
+identity_providers:
+  - id: apple
+    type: apple
+    enabled: true
+    client_id: com.example.auth
+    client_secret: eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+この場合 Apple DeveloperのReturn URLは、次のように設定する必要があります。
+
+```
+https://auth.example.com/api/oauth/apple/callback
+```
