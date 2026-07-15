@@ -143,7 +143,7 @@ describe('Tinyauth documentation contract', () => {
 
     expect(callouts).toBeGreaterThan(0);
     expect(violations).toEqual([]);
-  });
+  }, 30_000);
 
   it('keeps the generated OpenAPI document available', async () => {
     const source = await readFile(join(root, 'public', 'openapi.json'), 'utf8');

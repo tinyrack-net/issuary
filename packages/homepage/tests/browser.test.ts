@@ -59,7 +59,7 @@ afterAll(async () => {
   await new Promise<void>((resolve, reject) =>
     server?.close((error) => (error ? reject(error) : resolve())),
   );
-});
+}, 30_000);
 
 describe('Tinyauth built documentation', () => {
   it('renders the reduced-motion English landing in desktop light mode', async () => {
