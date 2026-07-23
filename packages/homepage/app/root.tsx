@@ -1,3 +1,4 @@
+import '@tinyrack/docs/styles.css';
 import './styles/app.css';
 
 import { Layout, links, meta } from '@tinyrack/docs/runtime';

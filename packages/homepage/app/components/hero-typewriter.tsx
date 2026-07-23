@@ -1,5 +1,5 @@
-import { Badge } from '@tinyrack/ui/components/badge';
-import { Button } from '@tinyrack/ui/components/button';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useEffect, useState } from 'react';
 
 type HeroTypewriterProps = {
@@ -81,7 +81,7 @@ export function HeroTypewriter({
 
   return (
     <section className="tinyauth-home">
-      <Badge variant="info">OpenID Connect Provider</Badge>
+      <TRBadge variant="info">OpenID Connect Provider</TRBadge>
       <svg
         aria-hidden="true"
         className="tinyauth-home-mark"
@@ -105,9 +105,9 @@ export function HeroTypewriter({
         </span>
         {suffix}
       </h1>
-      <Button render={<a href={docsPath} />} size="lg" variant="primary">
+      <TRButton intent="primary" render={<a href={docsPath} />} uiSize="lg">
         {docsLabel} →
-      </Button>
+      </TRButton>
     </section>
   );
 }

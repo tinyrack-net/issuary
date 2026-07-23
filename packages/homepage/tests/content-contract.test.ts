@@ -4,7 +4,7 @@ import { join, relative, resolve } from 'node:path';
 import { loadDocsManifest } from '@tinyrack/docs/config';
 import { describe, expect, it } from 'vitest';
 
-import config from '../docs.config.ts';
+import config from '../docs.config.js';
 
 const root = resolve(import.meta.dirname, '..');
 const contentRoot = join(root, 'app', 'content');
@@ -60,6 +60,24 @@ describe('Tinyauth documentation contract', () => {
 
     expect(manifest.pages).toHaveLength(108);
     expect(manifest.redirects).toEqual({ '/': '/en/' });
+    expect(manifest.locales['ko']?.messages).toMatchObject({
+      backToMainMenu: '문서 메뉴로 돌아가기',
+      siteNavigation: '메인 메뉴',
+      useDarkColorScheme: '어두운 색상 모드로 전환',
+      useLightColorScheme: '밝은 색상 모드로 전환',
+    });
+    expect(manifest.locales['ja']?.messages).toMatchObject({
+      backToMainMenu: 'ドキュメントメニューに戻る',
+      siteNavigation: 'メインメニュー',
+      useDarkColorScheme: 'ダークカラースキームに切り替え',
+      useLightColorScheme: 'ライトカラースキームに切り替え',
+    });
+
+    const sectionLabels = new Map([
+      ['en', 'Getting Started'],
+      ['ja', 'はじめに'],
+      ['ko', '시작하기'],
+    ]);
 
     for (const locale of ['en', 'ko', 'ja']) {
       const pages = manifest.pages.filter((page) => page.locale === locale);
@@ -70,11 +88,11 @@ describe('Tinyauth documentation contract', () => {
       expect(
         pages.find((page) => page.path === `/${locale}/api-reference`)?.layout,
       ).toBe('standalone');
-      expect(
-        pages.find((page) =>
-          page.path.endsWith('/getting-started/introduction'),
-        )?.layout,
-      ).toBe('docs');
+      const introduction = pages.find((page) =>
+        page.path.endsWith('/getting-started/introduction'),
+      );
+      expect(introduction?.layout).toBe('docs');
+      expect(introduction?.sectionLabel).toBe(sectionLabels.get(locale));
       expect(pages.every((page) => page.alternates.length === 3)).toBe(true);
     }
   });
