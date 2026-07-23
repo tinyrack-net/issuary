@@ -33,10 +33,10 @@ test('applies custom className to wrapper', async () => {
   expect(wrapper?.classList.contains('my-class')).toBe(true);
 });
 
-test('applies link-info class to the rendered component', async () => {
+test('applies tr-link class to the rendered component', async () => {
   const screen = await render(
     <FooterLink as="a" href="/" linkText="Click" text="" />,
   );
   const link = screen.getByText('Click').element();
-  expect(link.classList.contains('link-info')).toBe(true);
+  expect(link.classList.contains('tr-link')).toBe(true);
 });

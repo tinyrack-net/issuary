@@ -11,7 +11,7 @@ export const DEFAULT_HTML_VARIABLES = {
   DESCRIPTION: 'OIDC Provider for everyone',
   FAVICON_URL: '/vite.svg',
   COLOR_SCHEME: 'light dark',
-  THEME_COLOR: '#570df8',
+  THEME_COLOR: '#6b7280',
   OG_IMAGE_URL: '',
   OG_URL: '',
   APPLE_TOUCH_ICON_URL: '/vite.svg',
@@ -32,9 +32,7 @@ function deriveHtmlVariablesFromRuntime(
   const derived: HtmlVariables = {};
 
   if (options.branding) {
-    const { theme_mode, icon_url } = options.branding;
-    derived['COLOR_SCHEME'] =
-      theme_mode === 'system' ? 'light dark' : theme_mode;
+    const { icon_url } = options.branding;
     if (icon_url) {
       derived['FAVICON_URL'] = icon_url;
       derived['APPLE_TOUCH_ICON_URL'] = icon_url;

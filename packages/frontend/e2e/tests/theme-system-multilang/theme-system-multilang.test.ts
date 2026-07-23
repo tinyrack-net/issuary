@@ -14,9 +14,6 @@ const test = createScenarioFixture((backendPort) => ({
       fallback_language: 'en',
     },
     branding: {
-      light_theme: 'cupcake',
-      dark_theme: 'forest',
-      theme_mode: 'system',
       title: {
         en: 'Theme System Title',
       },
@@ -32,10 +29,9 @@ const test = createScenarioFixture((backendPort) => ({
   }),
 }));
 
-const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
 const LANGUAGE_STORAGE_KEY = 'tinyauth-language';
 
-test.describe('Theme system and language fallback behavior', () => {
+test.describe('Color scheme and language fallback behavior', () => {
   test('lang fallback uses English branding and implicit notice', async ({
     page,
   }) => {
@@ -49,12 +45,11 @@ test.describe('Theme system and language fallback behavior', () => {
       page.getByText(/Theme system.*implicit terms.*notice\./),
     ).toBeVisible();
 
-    const languageSelect = page.getByTestId('language-selector');
-    await expect(languageSelect).toBeVisible();
-    await expect(languageSelect.locator('option')).toHaveCount(3);
+    const languageSelector = page.getByTestId('language-selector');
+    await expect(languageSelector).toBeVisible();
   });
 
-  test('theme toggle cycles system to light to dark and back', async ({
+  test('color scheme toggle switches between light and dark', async ({
     page,
   }) => {
     await page.goto('/login');
@@ -66,31 +61,21 @@ test.describe('Theme system and language fallback behavior', () => {
     await expect
       .poll(async () => {
         return page.evaluate(() => ({
-          mode: localStorage.getItem('tinyauth-theme-mode'),
+          scheme: localStorage.getItem('tinyauth-color-scheme'),
           theme: document.documentElement.getAttribute('data-theme'),
         }));
       })
-      .toEqual({ mode: 'light', theme: 'cupcake' });
+      .toEqual({ scheme: 'dark', theme: 'tinyrack-dark' });
 
     await toggle.click();
     await expect
       .poll(async () => {
         return page.evaluate(() => ({
-          mode: localStorage.getItem('tinyauth-theme-mode'),
+          scheme: localStorage.getItem('tinyauth-color-scheme'),
           theme: document.documentElement.getAttribute('data-theme'),
         }));
       })
-      .toEqual({ mode: 'dark', theme: 'forest' });
-
-    await toggle.click();
-    await expect
-      .poll(async () => {
-        return page.evaluate(
-          (themeModeStorageKey) => localStorage.getItem(themeModeStorageKey),
-          THEME_MODE_STORAGE_KEY,
-        );
-      })
-      .toBeNull();
+      .toEqual({ scheme: 'light', theme: 'tinyrack-light' });
   });
 
   test('language selector updates persisted language preference', async ({
@@ -98,8 +83,10 @@ test.describe('Theme system and language fallback behavior', () => {
   }) => {
     await page.goto('/login');
 
-    const languageSelect = page.getByTestId('language-selector');
-    await languageSelect.selectOption('en');
+    const languageSelector = page.getByTestId('language-selector');
+    await languageSelector.click();
+
+    await page.getByRole('option', { name: 'English' }).click();
 
     await expect
       .poll(async () => {
@@ -116,9 +103,13 @@ test.describe('Theme system and language fallback behavior', () => {
   }) => {
     await page.goto('/login');
 
-    const languageSelect = page.getByTestId('language-selector');
-    await languageSelect.selectOption('en');
-    await languageSelect.selectOption('auto');
+    const languageSelector = page.getByTestId('language-selector');
+    await languageSelector.click();
+
+    await page.getByRole('option', { name: 'English' }).click();
+
+    await languageSelector.click();
+    await page.getByRole('option', { name: 'Auto' }).click();
 
     await expect
       .poll(async () => {
@@ -128,7 +119,5 @@ test.describe('Theme system and language fallback behavior', () => {
         );
       })
       .toBeNull();
-
-    await expect(languageSelect).toHaveValue('auto');
   });
 });

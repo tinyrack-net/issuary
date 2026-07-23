@@ -9,7 +9,7 @@ export function AdminDisabledPanel() {
       <h1 className="mb-2 text-center font-bold text-2xl">
         {t('admin.disabled')}
       </h1>
-      <p className="text-center text-base-content/60">
+      <p className="text-center text-muted-foreground">
         {t('admin.disabledDescription')}
       </p>
     </PageLayout>

@@ -55,10 +55,10 @@ function inlineCode(source: string) {
 }
 
 describe('Tinyauth documentation contract', () => {
-  it('builds 108 localized routes and all three layouts', () => {
+  it('builds 105 localized routes and all three layouts', () => {
     const manifest = loadDocsManifest(config, { root });
 
-    expect(manifest.pages).toHaveLength(108);
+    expect(manifest.pages).toHaveLength(105);
     expect(manifest.redirects).toEqual({ '/': '/en/' });
     expect(manifest.locales['ko']?.messages).toMatchObject({
       backToMainMenu: '문서 메뉴로 돌아가기',
@@ -81,7 +81,7 @@ describe('Tinyauth documentation contract', () => {
 
     for (const locale of ['en', 'ko', 'ja']) {
       const pages = manifest.pages.filter((page) => page.locale === locale);
-      expect(pages).toHaveLength(36);
+      expect(pages).toHaveLength(35);
       expect(pages.find((page) => page.path === `/${locale}`)?.layout).toBe(
         'splash',
       );
@@ -97,12 +97,12 @@ describe('Tinyauth documentation contract', () => {
     }
   });
 
-  it('contains 34 non-empty Japanese documents derived from Korean', async () => {
+  it('contains 33 non-empty Japanese documents derived from Korean', async () => {
     const allFiles = await contentFiles(contentRoot);
     const korean = documentationFiles('ko', allFiles);
     const japanese = documentationFiles('ja', allFiles);
-    expect(korean).toHaveLength(34);
-    expect(japanese).toHaveLength(34);
+    expect(korean).toHaveLength(33);
+    expect(japanese).toHaveLength(33);
 
     const japaneseByPath = new Map(
       japanese.map((file) => [relative(join(contentRoot, 'ja'), file), file]),

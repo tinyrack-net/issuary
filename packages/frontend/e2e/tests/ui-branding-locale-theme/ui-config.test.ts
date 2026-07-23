@@ -14,7 +14,6 @@ const test = createScenarioFixture((backendPort) => ({
       fallback_language: 'en',
     },
     branding: {
-      theme_mode: 'light',
       background_url: 'https://example.com/e2e-background.jpg',
       icon_url: 'https://example.com/e2e-icon.svg',
       title: {
@@ -56,15 +55,10 @@ test.describe('UI config driven rendering', () => {
     await page.goto('/login');
 
     await expect(page.getByTestId('language-selector')).toHaveCount(0);
-    await expect(page.getByTestId('theme-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('theme-toggle')).toBeVisible();
   });
 
-  test('fixed light theme ignores stored theme preference', async ({
-    page,
-  }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('tinyauth-theme-mode', 'dark');
-    });
+  test('theme toggle cycles through theme modes', async ({ page }) => {
     await page.goto('/login');
 
     await expect
@@ -73,6 +67,6 @@ test.describe('UI config driven rendering', () => {
           document.documentElement.getAttribute('data-theme'),
         );
       })
-      .toBe('light');
+      .toBe('tinyrack-light');
   });
 });

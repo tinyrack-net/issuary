@@ -1,3 +1,5 @@
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useState } from 'react';
 import type { TokenResponse } from '#example-react-spa/types/oidc.ts';
 
@@ -20,29 +22,30 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h2 className="card-title">Tokens</h2>
-
-        <div className="space-y-4">
-          <div className="rounded border border-base-300 p-4">
-            <div className="mb-2 flex items-center justify-between">
+    <TRCard.Root>
+      <TRCard.Header>
+        <TRCard.Title>Tokens</TRCard.Title>
+      </TRCard.Header>
+      <TRCard.Content className="space-y-4">
+        <TRCard.Root variant="outlined">
+          <TRCard.Content className="space-y-2">
+            <div className="flex items-center justify-between">
               <span className="font-semibold">Access Token</span>
               <div className="flex gap-2">
-                <button
-                  className="btn btn-ghost btn-xs"
+                <TRButton
+                  appearance="ghost"
                   onClick={() => setShowAccessToken(!showAccessToken)}
-                  type="button"
+                  uiSize="sm"
                 >
                   {showAccessToken ? 'Hide' : 'Show'}
-                </button>
-                <button
-                  className="btn btn-ghost btn-xs"
+                </TRButton>
+                <TRButton
+                  appearance="ghost"
                   onClick={() => copyToClipboard(tokens.access_token)}
-                  type="button"
+                  uiSize="sm"
                 >
                   Copy
-                </button>
+                </TRButton>
               </div>
             </div>
             <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
@@ -50,41 +53,41 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
                 ? tokens.access_token
                 : maskToken(tokens.access_token)}
             </pre>
-            <div className="mt-2 text-base-content/60 text-xs">
+            <div className="text-muted-foreground text-xs">
               Expires in: {tokens.expires_in} seconds | Type:{' '}
               {tokens.token_type}
             </div>
+          </TRCard.Content>
+        </TRCard.Root>
+
+        {tokens.refresh_token && (
+          <RefreshTokenSection
+            copyToClipboard={copyToClipboard}
+            maskToken={maskToken}
+            refreshToken={tokens.refresh_token}
+            setShowRefreshToken={setShowRefreshToken}
+            showRefreshToken={showRefreshToken}
+          />
+        )}
+
+        {tokens.id_token && (
+          <IdTokenSection
+            copyToClipboard={copyToClipboard}
+            idToken={tokens.id_token}
+            maskToken={maskToken}
+            setShowIdToken={setShowIdToken}
+            showIdToken={showIdToken}
+          />
+        )}
+
+        {tokens.scope && (
+          <div className="text-sm">
+            <span className="font-semibold">Granted Scopes: </span>
+            <span className="text-muted-foreground">{tokens.scope}</span>
           </div>
-
-          {tokens.refresh_token && (
-            <RefreshTokenSection
-              copyToClipboard={copyToClipboard}
-              maskToken={maskToken}
-              refreshToken={tokens.refresh_token}
-              setShowRefreshToken={setShowRefreshToken}
-              showRefreshToken={showRefreshToken}
-            />
-          )}
-
-          {tokens.id_token && (
-            <IdTokenSection
-              copyToClipboard={copyToClipboard}
-              idToken={tokens.id_token}
-              maskToken={maskToken}
-              setShowIdToken={setShowIdToken}
-              showIdToken={showIdToken}
-            />
-          )}
-
-          {tokens.scope && (
-            <div className="text-sm">
-              <span className="font-semibold">Granted Scopes: </span>
-              <span className="text-base-content/70">{tokens.scope}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+        )}
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }
 
@@ -104,30 +107,32 @@ function RefreshTokenSection({
   copyToClipboard,
 }: RefreshTokenSectionProps) {
   return (
-    <div className="rounded border border-base-300 p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold">Refresh Token</span>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-ghost btn-xs"
-            onClick={() => setShowRefreshToken(!showRefreshToken)}
-            type="button"
-          >
-            {showRefreshToken ? 'Hide' : 'Show'}
-          </button>
-          <button
-            className="btn btn-ghost btn-xs"
-            onClick={() => copyToClipboard(refreshToken)}
-            type="button"
-          >
-            Copy
-          </button>
+    <TRCard.Root variant="outlined">
+      <TRCard.Content className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">Refresh Token</span>
+          <div className="flex gap-2">
+            <TRButton
+              appearance="ghost"
+              onClick={() => setShowRefreshToken(!showRefreshToken)}
+              uiSize="sm"
+            >
+              {showRefreshToken ? 'Hide' : 'Show'}
+            </TRButton>
+            <TRButton
+              appearance="ghost"
+              onClick={() => copyToClipboard(refreshToken)}
+              uiSize="sm"
+            >
+              Copy
+            </TRButton>
+          </div>
         </div>
-      </div>
-      <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
-        {showRefreshToken ? refreshToken : maskToken(refreshToken)}
-      </pre>
-    </div>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
+          {showRefreshToken ? refreshToken : maskToken(refreshToken)}
+        </pre>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }
 
@@ -147,29 +152,31 @@ function IdTokenSection({
   copyToClipboard,
 }: IdTokenSectionProps) {
   return (
-    <div className="rounded border border-base-300 p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="font-semibold">ID Token</span>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-ghost btn-xs"
-            onClick={() => setShowIdToken(!showIdToken)}
-            type="button"
-          >
-            {showIdToken ? 'Hide' : 'Show'}
-          </button>
-          <button
-            className="btn btn-ghost btn-xs"
-            onClick={() => copyToClipboard(idToken)}
-            type="button"
-          >
-            Copy
-          </button>
+    <TRCard.Root variant="outlined">
+      <TRCard.Content className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">ID Token</span>
+          <div className="flex gap-2">
+            <TRButton
+              appearance="ghost"
+              onClick={() => setShowIdToken(!showIdToken)}
+              uiSize="sm"
+            >
+              {showIdToken ? 'Hide' : 'Show'}
+            </TRButton>
+            <TRButton
+              appearance="ghost"
+              onClick={() => copyToClipboard(idToken)}
+              uiSize="sm"
+            >
+              Copy
+            </TRButton>
+          </div>
         </div>
-      </div>
-      <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
-        {showIdToken ? idToken : maskToken(idToken)}
-      </pre>
-    </div>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
+          {showIdToken ? idToken : maskToken(idToken)}
+        </pre>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

@@ -1,4 +1,5 @@
 import { ShieldCheckIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useTranslation } from 'react-i18next';
 
 type TotpModalType = 'setup' | 'disable' | 'regenerate' | null;
@@ -21,19 +22,19 @@ export function TotpSection({
       <div className="flex items-center gap-3">
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            totpEnabled ? 'bg-success/10' : 'bg-base-200'
+            totpEnabled ? 'bg-success/10' : 'bg-muted'
           }`}
         >
           <ShieldCheckIcon
             className={`size-4 ${
-              totpEnabled ? 'text-success' : 'text-base-content/50'
+              totpEnabled ? 'text-success' : 'text-muted-foreground'
             }`}
             weight="regular"
           />
         </div>
         <div>
           <div className="font-medium text-sm">{t('profile.totp.title')}</div>
-          <div className="text-base-content/60 text-xs">
+          <div className="text-muted-foreground text-xs">
             {totpEnabled
               ? recoveryCodesMissing
                 ? t('profile.totp.status.recoveryCodesMissing')
@@ -45,32 +46,38 @@ export function TotpSection({
       <div className="flex flex-wrap justify-end gap-1">
         {totpEnabled ? (
           <>
-            <button
-              className="btn btn-ghost btn-xs text-primary"
+            <TRButton
+              appearance="ghost"
               data-testid="profile-totp-regenerate"
+              intent="primary"
               onClick={() => onOpenModal('regenerate')}
               type="button"
+              uiSize="sm"
             >
               {t('profile.totp.regenerate')}
-            </button>
-            <button
-              className="btn btn-ghost btn-xs text-error"
+            </TRButton>
+            <TRButton
+              appearance="ghost"
               data-testid="profile-totp-disable"
+              intent="danger"
               onClick={() => onOpenModal('disable')}
               type="button"
+              uiSize="sm"
             >
               {t('profile.totp.disable')}
-            </button>
+            </TRButton>
           </>
         ) : (
-          <button
-            className="btn btn-ghost btn-xs text-primary"
+          <TRButton
+            appearance="ghost"
             data-testid="profile-totp-enable"
+            intent="primary"
             onClick={() => onOpenModal('setup')}
             type="button"
+            uiSize="sm"
           >
             {t('profile.totp.enable')}
-          </button>
+          </TRButton>
         )}
       </div>
     </div>

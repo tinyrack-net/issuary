@@ -4,9 +4,14 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRTable } from '@tinyrack/ui/components/table';
+import type { FormEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { AdminDisabledPanel } from '#frontend/features/admin/admin-disabled-panel.tsx';
 import { AdminShell } from '#frontend/features/admin/admin-shell.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
@@ -20,7 +25,6 @@ import {
 } from '#frontend/queries/admin-users.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import type { SessionUser } from '#frontend/queries/session.ts';
-
 export const Route = createFileRoute('/admin/users/')({
   component: AdminUsersPage,
   beforeLoad: async ({ context }) => {
@@ -50,7 +54,7 @@ function AdminUsersPage() {
         <h1 className="mb-2 text-center font-bold text-2xl">
           {t('admin.accessRequired')}
         </h1>
-        <p className="text-center text-base-content/60">
+        <p className="text-center text-muted-foreground">
           {t('admin.accessRequiredDescription')}
         </p>
       </PageLayout>
@@ -192,7 +196,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
       title={t('admin.users.title')}
       user={user}
     >
-      <div className="stats stats-vertical lg:stats-horizontal w-full overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.035] shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+      <div className="flex flex-col overflow-hidden rounded-[1.5rem] border border-border bg-muted/30 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl lg:flex-row">
         <SummaryStat
           label={t('admin.users.activeOnPage')}
           value={activeUsers}
@@ -212,46 +216,48 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
           aria-live={notice.tone === 'success' ? 'polite' : 'assertive'}
           className={
             notice.tone === 'success'
-              ? 'alert mt-6 border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
-              : 'alert mt-6 border-red-300/20 bg-red-300/10 text-red-100'
+              ? 'mt-6 flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-emerald-100'
+              : 'mt-6 flex items-center gap-2 rounded-xl border border-red-300/20 bg-red-300/10 px-4 py-3 text-red-100'
           }
           role={notice.tone === 'success' ? 'status' : 'alert'}
         >
           <span>{notice.tone === 'success' ? '✓' : '!'}</span>
           <span>{notice.message}</span>
-          <button
-            aria-label={t('common.close')}
-            className="btn btn-ghost btn-xs ml-auto text-current"
+          <TRButton
+            appearance="ghost"
+            className="ml-auto"
             onClick={() => setNotice(null)}
             type="button"
+            uiSize="sm"
           >
             ×
-          </button>
+          </TRButton>
         </div>
       ) : null}
 
-      <section className="card mt-6 overflow-hidden border border-white/10 bg-white/[0.035] shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl">
-        <div className="card-body gap-5 p-0">
-          <div className="flex flex-col gap-4 border-white/10 border-b bg-white/[0.015] p-6 xl:flex-row xl:items-end xl:justify-between">
+      <TRCard.Root
+        className="mt-6 overflow-hidden border-border shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+        variant="outlined"
+      >
+        <TRCard.Content className="gap-5 p-0">
+          <div className="flex flex-col gap-4 border-border border-b bg-muted/20 p-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.75)]" />
-                <span className="font-medium text-slate-500 text-xs uppercase tracking-[0.18em]">
+                <span className="font-medium text-muted-foreground text-xs uppercase tracking-[0.18em]">
                   {t('admin.users.directoryEyebrow')}
                 </span>
               </div>
-              <h2 className="card-title text-slate-100">
-                {t('admin.users.directory')}
-              </h2>
-              <p className="mt-1 text-slate-400 text-sm">
+              <TRCard.Title>{t('admin.users.directory')}</TRCard.Title>
+              <TRCard.Description className="mt-1 text-sm">
                 {t('admin.users.total', { count: data.pagination.total })}
-              </p>
+              </TRCard.Description>
             </div>
             <div className="flex flex-col gap-3 xl:items-end">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
                 <input
                   aria-label={t('admin.users.searchPlaceholder')}
-                  className="input input-bordered h-11 w-full border-white/10 bg-black/20 text-slate-200 placeholder:text-slate-500 focus:border-[#7170ff]/60 lg:w-80"
+                  className="h-11 w-full rounded-lg border border-border bg-background/20 px-3 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden lg:w-80"
                   onChange={(event) => setDraftQuery(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') applySearch();
@@ -260,35 +266,37 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                   type="search"
                   value={draftQuery}
                 />
-                <label className="label cursor-pointer justify-start gap-2 rounded-box border border-white/10 bg-black/20 px-3 py-2">
+                <label className="flex cursor-pointer items-center justify-start gap-2 rounded-lg border border-border bg-background/20 px-3 py-2">
                   <input
                     checked={draftIncludeDeleted}
-                    className="checkbox checkbox-sm border-white/20 bg-white/[0.04] checked:border-[#7170ff] checked:bg-[#7170ff]"
+                    className="size-4 rounded border-border bg-background/40 accent-primary"
                     onChange={(event) =>
                       setDraftIncludeDeleted(event.target.checked)
                     }
                     type="checkbox"
                   />
-                  <span className="label-text text-slate-300">
+                  <span className="text-foreground/70 text-sm">
                     {t('admin.users.includeDeleted')}
                   </span>
                 </label>
-                <button
-                  className="btn btn-outline border-white/10 bg-white/[0.035] text-slate-200 hover:border-[#7170ff]/40 hover:bg-[#7170ff]/15"
+                <TRButton
+                  appearance="outline"
                   onClick={applySearch}
                   type="button"
+                  uiSize="sm"
                 >
                   {t('admin.users.search')}
-                </button>
-                <button
-                  className="btn btn-primary border-0 bg-[#7170ff] text-white shadow-[0_14px_40px_rgba(113,112,255,0.32)] hover:bg-[#828fff]"
+                </TRButton>
+                <TRButton
+                  intent="primary"
                   onClick={() => setModal({ type: 'create' })}
                   type="button"
+                  uiSize="sm"
                 >
                   {t('admin.users.create')}
-                </button>
+                </TRButton>
               </div>
-              <div className="join rounded-box border border-white/10 bg-black/20 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-background/20 p-1">
                 <QuickFilterButton
                   active={activeQuickFilter === 'all'}
                   label={t('admin.users.filter.all')}
@@ -315,7 +323,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-6">
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-slate-500">
+              <span className="text-muted-foreground">
                 {t('admin.users.showingRange', {
                   from: pageStart,
                   to: pageEnd,
@@ -323,35 +331,36 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 })}
               </span>
               {filters.query ? (
-                <span className="badge badge-outline border-[#7170ff]/30 bg-[#7170ff]/10 text-[#c7c8ff]">
+                <TRBadge uiSize="sm" variant="neutral">
                   {t('admin.users.queryChip', { query: filters.query })}
-                </span>
+                </TRBadge>
               ) : null}
               {filters.includeDeleted ? (
-                <span className="badge badge-outline border-amber-300/25 bg-amber-300/10 text-amber-100">
+                <TRBadge uiSize="sm" variant="warning">
                   {t('admin.users.includeDeleted')}
-                </span>
+                </TRBadge>
               ) : null}
               {activeQuickFilter !== 'all' ? (
-                <span className="badge badge-outline border-white/15 text-slate-300">
+                <TRBadge uiSize="sm">
                   {t(`admin.users.filter.${activeQuickFilter}`)}
-                </span>
+                </TRBadge>
               ) : null}
               {hasActiveFilters ? (
-                <button
-                  className="btn btn-ghost btn-xs text-slate-400"
+                <TRButton
+                  appearance="ghost"
                   onClick={clearFilters}
                   type="button"
+                  uiSize="sm"
                 >
                   {t('admin.users.clearFilters')}
-                </button>
+                </TRButton>
               ) : null}
             </div>
-            <label className="flex items-center gap-2 text-slate-500 text-sm">
+            <label className="flex items-center gap-2 text-muted-foreground text-sm">
               <span>{t('admin.users.pageSize')}</span>
               <select
                 aria-label={t('admin.users.pageSize')}
-                className="select select-bordered select-xs border-white/10 bg-black/20 text-slate-200"
+                className="rounded-md border border-border bg-background/20 px-2 py-1 text-foreground text-xs focus:outline-hidden"
                 onChange={(event) => setPageSize(Number(event.target.value))}
                 value={filters.pageSize}
               >
@@ -363,55 +372,57 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
           </div>
 
           <div className="overflow-x-auto px-0 pb-2">
-            <table className="table-zebra table [&_tbody_tr:hover]:bg-white/[0.04] [&_tbody_tr]:border-white/5 [&_tbody_tr]:transition [&_td]:border-white/5 [&_thead_th]:border-white/10 [&_thead_th]:bg-white/[0.035] [&_thead_th]:text-slate-500">
-              <thead>
-                <tr>
-                  <th>{t('profile.email.label')}</th>
-                  <th>{t('admin.users.role')}</th>
-                  <th>{t('admin.users.source')}</th>
-                  <th>{t('admin.users.emailVerified')}</th>
-                  <th>{t('admin.users.secondFactor')}</th>
-                  <th>{t('admin.users.status')}</th>
-                  <th>{t('admin.users.actions')}</th>
-                </tr>
-              </thead>
-              <tbody>
+            <TRTable.Root density="compact" striped>
+              <TRTable.Header>
+                <TRTable.Row>
+                  <TRTable.Head>{t('profile.email.label')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.role')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.source')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.emailVerified')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.secondFactor')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.status')}</TRTable.Head>
+                  <TRTable.Head>{t('admin.users.actions')}</TRTable.Head>
+                </TRTable.Row>
+              </TRTable.Header>
+              <TRTable.Body>
                 {data.users.map((managedUser) => (
-                  <tr key={managedUser.sub}>
-                    <td>
-                      <div className="font-medium text-slate-100">
+                  <TRTable.Row key={managedUser.sub}>
+                    <TRTable.Cell>
+                      <div className="font-medium text-foreground">
                         {managedUser.email}
                       </div>
-                      <div className="max-w-64 truncate font-mono text-slate-600 text-xs">
+                      <div className="max-w-64 truncate font-mono text-muted-foreground text-xs">
                         {managedUser.sub}
                       </div>
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
-                          managedUser.role === 'admin' ? 'neutral' : 'ghost'
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      <TRBadge
+                        uiSize="sm"
+                        variant={
+                          managedUser.role === 'admin' ? 'neutral' : undefined
                         }
                       >
                         {formatAdminRole(t, managedUser.role)}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
+                      </TRBadge>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      <TRBadge
+                        uiSize="sm"
+                        variant={
                           managedUser.managed_by === 'config'
                             ? 'warning'
                             : 'info'
                         }
                       >
                         {formatManagedBy(t, managedUser.managed_by)}
-                      </Badge>
-                    </td>
-                    <td>
+                      </TRBadge>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
                       {managedUser.email_verified
                         ? t('common.yes')
                         : t('common.no')}
-                    </td>
-                    <td>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
                       {managedUser.totp_registered
                         ? t('admin.users.secondFactorTotp')
                         : managedUser.passkey_count > 0
@@ -422,70 +433,74 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                               { count: managedUser.passkey_count },
                             )
                           : t('common.none')}
-                    </td>
-                    <td>
-                      <Badge
-                        tone={managedUser.deleted_at ? 'error' : 'success'}
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      <TRBadge
+                        uiSize="sm"
+                        variant={managedUser.deleted_at ? 'danger' : 'success'}
                       >
                         {managedUser.deleted_at
                           ? t('admin.users.deleted')
                           : t('admin.users.active')}
-                      </Badge>
-                    </td>
-                    <td>
+                      </TRBadge>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
                       {managedUser.managed_by === 'database' &&
                       !managedUser.deleted_at ? (
-                        <div className="join rounded-xl border border-white/10 bg-black/20">
-                          <button
+                        <div className="inline-flex items-center rounded-lg border border-border bg-background/20">
+                          <TRButton
+                            appearance="ghost"
                             aria-label={t('admin.users.editUser', {
                               email: managedUser.email,
                             })}
-                            className="btn join-item btn-ghost btn-xs text-slate-300 hover:bg-white/[0.06]"
                             onClick={() =>
                               setModal({ type: 'edit', user: managedUser })
                             }
                             type="button"
+                            uiSize="sm"
                           >
                             {t('admin.users.edit')}
-                          </button>
-                          <button
+                          </TRButton>
+                          <TRButton
+                            appearance="outline"
                             aria-label={t('admin.users.deleteUser', {
                               email: managedUser.email,
                             })}
-                            className="btn join-item btn-error btn-outline btn-xs border-red-400/25 bg-red-400/5 text-red-200 hover:bg-red-400/15"
+                            intent="danger"
                             onClick={() =>
                               setModal({ type: 'delete', user: managedUser })
                             }
                             type="button"
+                            uiSize="sm"
                           >
                             {t('admin.users.delete')}
-                          </button>
+                          </TRButton>
                         </div>
                       ) : (
-                        <span className="badge badge-outline border-white/15 text-slate-400">
+                        <TRBadge uiSize="sm">
                           {t('admin.users.readonly')}
-                        </span>
+                        </TRBadge>
                       )}
-                    </td>
-                  </tr>
+                    </TRTable.Cell>
+                  </TRTable.Row>
                 ))}
                 {data.users.length === 0 ? (
-                  <tr>
-                    <td
-                      className="py-12 text-center text-slate-500"
+                  <TRTable.Row>
+                    <TRTable.Cell
+                      className="py-12 text-center text-muted-foreground"
                       colSpan={7}
                     >
                       {t('admin.users.emptyFiltered')}
-                    </td>
-                  </tr>
+                    </TRTable.Cell>
+                  </TRTable.Row>
                 ) : null}
-              </tbody>
-            </table>
+              </TRTable.Body>
+            </TRTable.Root>
           </div>
 
-          <div className="flex items-center justify-between border-white/10 border-t bg-white/[0.015] p-5">
-            <button
-              className="btn btn-outline btn-sm border-white/10 bg-white/[0.035] text-slate-300 hover:border-[#7170ff]/40 hover:bg-[#7170ff]/15"
+          <div className="flex items-center justify-between border-border border-t bg-muted/20 p-5">
+            <TRButton
+              appearance="outline"
               disabled={filters.page <= 1}
               onClick={() =>
                 setFilters((current) => ({
@@ -494,14 +509,15 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 }))
               }
               type="button"
+              uiSize="sm"
             >
               {t('admin.users.previous')}
-            </button>
-            <span className="badge badge-ghost border-white/10 bg-black/20 text-slate-400">
+            </TRButton>
+            <TRBadge uiSize="sm">
               {t('admin.users.page', { page: data.pagination.page })}
-            </span>
-            <button
-              className="btn btn-outline btn-sm border-white/10 bg-white/[0.035] text-slate-300 hover:border-[#7170ff]/40 hover:bg-[#7170ff]/15"
+            </TRBadge>
+            <TRButton
+              appearance="outline"
               disabled={
                 data.pagination.page * data.pagination.page_size >=
                 data.pagination.total
@@ -513,12 +529,13 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 }))
               }
               type="button"
+              uiSize="sm"
             >
               {t('admin.users.next')}
-            </button>
+            </TRButton>
           </div>
-        </div>
-      </section>
+        </TRCard.Content>
+      </TRCard.Root>
 
       <UserFormModal
         isMutating={isMutating}
@@ -562,69 +579,43 @@ function UserFormModal({
     () => (modal?.type === 'edit' ? modal.user : null),
     [modal],
   );
-  const dialogRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!modal) return undefined;
-
-    const previousFocus =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(
-      'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    firstFocusable?.focus();
-
-    return () => {
-      previousFocus?.focus();
-    };
-  }, [modal]);
 
   if (!modal) return null;
 
   if (modal.type === 'delete') {
     return (
-      <div className="modal modal-open bg-black/70 backdrop-blur-sm">
-        <div
-          aria-labelledby="admin-delete-user-title"
-          aria-modal="true"
-          className="modal-box border border-white/10 bg-[#101217] text-slate-100 shadow-[0_32px_100px_rgba(0,0,0,0.55)]"
-          onKeyDown={(event) => trapDialogFocus(event, onClose)}
-          ref={dialogRef}
-          role="dialog"
-        >
-          <h3
-            className="font-semibold text-xl tracking-[-0.03em]"
-            id="admin-delete-user-title"
-          >
-            {t('admin.users.deleteTitle', { email: modal.user.email })}
-          </h3>
-          <div className="my-4 rounded-2xl border border-red-300/20 bg-red-400/10 p-4 text-red-100">
-            <p className="font-medium">{t('admin.users.deleteWarning')}</p>
-            <p className="mt-1 text-red-100/70 text-sm">
-              {t('admin.users.deleteDescription')}
-            </p>
-          </div>
-          <div className="modal-action">
-            <button
-              className="btn border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
-              onClick={onClose}
-              type="button"
-            >
-              {t('admin.users.cancel')}
-            </button>
-            <button
-              className="btn btn-error border-0 bg-red-500/80 text-white hover:bg-red-500"
-              disabled={isMutating}
-              onClick={() => onDelete(modal.user.sub)}
-              type="button"
-            >
-              {t('admin.users.deleteConfirm')}
-            </button>
-          </div>
+      <Modal
+        isOpen
+        onClose={onClose}
+        title={t('admin.users.deleteTitle', { email: modal.user.email })}
+        variant="destructive"
+      >
+        <div className="my-4 rounded-2xl border border-red-300/20 bg-red-400/10 p-4 text-red-100">
+          <p className="font-medium">{t('admin.users.deleteWarning')}</p>
+          <p className="mt-1 text-red-100/70 text-sm">
+            {t('admin.users.deleteDescription')}
+          </p>
         </div>
-      </div>
+        <ModalActions>
+          <TRButton
+            disabled={isMutating}
+            onClick={onClose}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.cancel')}
+          </TRButton>
+          <TRButton
+            disabled={isMutating}
+            intent="danger"
+            onClick={() => onDelete(modal.user.sub)}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.deleteConfirm')}
+          </TRButton>
+        </ModalActions>
+      </Modal>
     );
   }
 
@@ -659,135 +650,99 @@ function UserFormModal({
   };
 
   return (
-    <div className="modal modal-open bg-black/70 backdrop-blur-sm">
-      <div
-        aria-labelledby="admin-user-form-title"
-        aria-modal="true"
-        className="modal-box border border-white/10 bg-[#101217] text-slate-100 shadow-[0_32px_100px_rgba(0,0,0,0.55)]"
-        onKeyDown={(event) => trapDialogFocus(event, onClose)}
-        ref={dialogRef}
-        role="dialog"
-      >
-        <h3
-          className="font-semibold text-xl tracking-[-0.03em]"
-          id="admin-user-form-title"
-        >
-          {title}
-        </h3>
-        <p className="mt-2 text-slate-500 text-sm">
-          {modal.type === 'create'
-            ? t('admin.users.createHint')
-            : t('admin.users.editHint')}
-        </p>
-        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend text-slate-400">
-              {t('profile.email.label')}
-            </legend>
-            <input
-              aria-label={t('profile.email.label')}
-              className="input input-bordered w-full border-white/10 bg-black/20 text-slate-100 focus:border-[#7170ff]/60"
-              defaultValue={defaultValues?.email ?? ''}
-              name="email"
-              required
-              type="email"
-            />
-          </fieldset>
-          {modal.type === 'create' ? (
-            <fieldset className="fieldset">
-              <legend className="fieldset-legend text-slate-400">
-                {t('admin.users.password')}
-              </legend>
-              <input
-                aria-label={t('admin.users.password')}
-                className="input input-bordered w-full border-white/10 bg-black/20 text-slate-100 focus:border-[#7170ff]/60"
-                name="password"
-                required
-                type="password"
-              />
-            </fieldset>
-          ) : null}
-          <fieldset className="fieldset">
-            <legend className="fieldset-legend text-slate-400">
-              {t('admin.users.role')}
-            </legend>
-            <select
-              aria-label={t('admin.users.role')}
-              className="select select-bordered w-full border-white/10 bg-black/20 text-slate-100 focus:border-[#7170ff]/60"
-              defaultValue={defaultValues?.role ?? 'user'}
-              name="role"
-            >
-              <option value="user">{t('admin.users.roleUser')}</option>
-              <option value="admin">{t('admin.users.roleAdmin')}</option>
-            </select>
-          </fieldset>
-          <label className="label cursor-pointer justify-start gap-3 rounded-box border border-white/10 bg-black/20 px-3 py-2">
-            <input
-              className="checkbox border-white/20 bg-white/[0.04] checked:border-[#7170ff] checked:bg-[#7170ff]"
-              defaultChecked={defaultValues?.email_verified ?? false}
-              name="email_verified"
-              type="checkbox"
-            />
-            <span className="label-text text-slate-300">
-              {t('admin.users.emailVerified')}
-            </span>
+    <Modal
+      description={
+        modal.type === 'create'
+          ? t('admin.users.createHint')
+          : t('admin.users.editHint')
+      }
+      isOpen
+      onClose={onClose}
+      title={title}
+    >
+      <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label
+            className="mb-1 block font-medium text-muted-foreground text-sm"
+            htmlFor="admin-user-email"
+          >
+            {t('profile.email.label')}
           </label>
-          <div className="modal-action">
-            <button
-              className="btn border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
-              onClick={onClose}
-              type="button"
+          <input
+            className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden"
+            defaultValue={defaultValues?.email ?? ''}
+            id="admin-user-email"
+            name="email"
+            required
+            type="email"
+          />
+        </div>
+        {modal.type === 'create' ? (
+          <div>
+            <label
+              className="mb-1 block font-medium text-muted-foreground text-sm"
+              htmlFor="admin-user-password"
             >
-              {t('admin.users.cancel')}
-            </button>
-            <button
-              className="btn btn-primary border-0 bg-[#7170ff] text-white shadow-[0_14px_40px_rgba(113,112,255,0.32)] hover:bg-[#828fff]"
-              disabled={isMutating}
-              type="submit"
-            >
-              {submit}
-            </button>
+              {t('admin.users.password')}
+            </label>
+            <input
+              className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden"
+              id="admin-user-password"
+              name="password"
+              required
+              type="password"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        ) : null}
+        <div>
+          <label
+            className="mb-1 block font-medium text-muted-foreground text-sm"
+            htmlFor="admin-user-role"
+          >
+            {t('admin.users.role')}
+          </label>
+          <select
+            className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm focus:border-primary/60 focus:outline-hidden"
+            defaultValue={defaultValues?.role ?? 'user'}
+            id="admin-user-role"
+            name="role"
+          >
+            <option value="user">{t('admin.users.roleUser')}</option>
+            <option value="admin">{t('admin.users.roleAdmin')}</option>
+          </select>
+        </div>
+        <label className="flex cursor-pointer items-center justify-start gap-3 rounded-lg border border-border bg-background/20 px-3 py-2">
+          <input
+            className="size-4 rounded border-border bg-background/40 accent-primary"
+            defaultChecked={defaultValues?.email_verified ?? false}
+            name="email_verified"
+            type="checkbox"
+          />
+          <span className="text-foreground/70 text-sm">
+            {t('admin.users.emailVerified')}
+          </span>
+        </label>
+        <ModalActions>
+          <TRButton
+            disabled={isMutating}
+            onClick={onClose}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.cancel')}
+          </TRButton>
+          <TRButton
+            disabled={isMutating}
+            intent="primary"
+            type="submit"
+            uiSize="sm"
+          >
+            {submit}
+          </TRButton>
+        </ModalActions>
+      </form>
+    </Modal>
   );
-}
-
-function trapDialogFocus(
-  event: KeyboardEvent<HTMLDivElement>,
-  onClose: () => void,
-) {
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    onClose();
-    return;
-  }
-
-  if (event.key !== 'Tab') return;
-
-  const focusableElements = Array.from(
-    event.currentTarget.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    ),
-  );
-
-  if (focusableElements.length === 0) return;
-
-  const firstElement = focusableElements[0];
-  const lastElement = focusableElements.at(-1);
-  if (!firstElement || !lastElement) return;
-
-  if (event.shiftKey && document.activeElement === firstElement) {
-    event.preventDefault();
-    lastElement.focus();
-    return;
-  }
-
-  if (!event.shiftKey && document.activeElement === lastElement) {
-    event.preventDefault();
-    firstElement.focus();
-  }
 }
 
 function formatAdminRole(
@@ -831,47 +786,29 @@ function QuickFilterButton({
   onClick: () => void;
 }) {
   return (
-    <button
-      className={
-        active
-          ? 'btn join-item btn-xs border-0 bg-[#7170ff] text-white'
-          : 'btn join-item btn-ghost btn-xs text-slate-400 hover:bg-white/[0.06] hover:text-slate-100'
-      }
+    <TRButton
+      appearance={active ? 'solid' : 'ghost'}
+      intent={active ? 'primary' : undefined}
       onClick={onClick}
       type="button"
+      uiSize="sm"
     >
       {label}
-    </button>
+    </TRButton>
   );
 }
 
 function SummaryStat({ label, value }: { label: string; value: number }) {
   const { t } = useTranslation();
   return (
-    <div className="stat border-white/10 bg-transparent p-6">
-      <div className="stat-title text-slate-500">{label}</div>
-      <div className="stat-value mt-1 text-slate-50 tracking-[-0.06em]">
+    <div className="flex-1 border-border bg-transparent p-6">
+      <div className="text-muted-foreground text-sm">{label}</div>
+      <div className="mt-1 font-bold text-4xl text-foreground tracking-[-0.06em]">
         {value}
       </div>
-      <div className="stat-desc text-slate-600">
+      <div className="text-muted-foreground text-xs">
         {t('admin.users.currentPage')}
       </div>
     </div>
   );
-}
-
-type BadgeTone = 'neutral' | 'ghost' | 'warning' | 'info' | 'success' | 'error';
-
-const badgeClasses: Record<BadgeTone, string> = {
-  neutral: 'badge-primary border-[#7170ff]/30 bg-[#7170ff]/20 text-[#c7c8ff]',
-  ghost: 'badge-ghost border-white/10 bg-white/[0.035] text-slate-400',
-  warning: 'badge-warning border-amber-300/25 bg-amber-300/15 text-amber-100',
-  info: 'badge-info border-sky-300/25 bg-sky-300/15 text-sky-100',
-  success:
-    'badge-success border-emerald-300/25 bg-emerald-300/15 text-emerald-100',
-  error: 'badge-error border-red-300/25 bg-red-300/15 text-red-100',
-};
-
-function Badge({ tone, children }: { tone: BadgeTone; children: ReactNode }) {
-  return <span className={`badge ${badgeClasses[tone]}`}>{children}</span>;
 }

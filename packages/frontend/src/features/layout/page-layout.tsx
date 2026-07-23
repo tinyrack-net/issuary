@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
 import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
-import { useTheme } from '#frontend/hooks/use-theme.ts';
+import { useColorScheme } from '#frontend/hooks/use-theme.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 type PageLayoutProps = {
@@ -29,14 +29,7 @@ export function PageLayout({
   cardPadding = false,
   responsivePadding = false,
 }: PageLayoutProps) {
-  const {
-    themeMode,
-    darkTheme,
-    canToggleTheme,
-    cycleThemeMode,
-    isAutoMode,
-    detectedTheme,
-  } = useTheme();
+  const { colorScheme, toggleColorScheme } = useColorScheme();
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
   const backgroundUrl = configData.branding.background_url;
@@ -46,7 +39,7 @@ export function PageLayout({
 
   return (
     <div
-      className={`relative flex min-h-screen flex-col overflow-y-auto bg-base-200 bg-center bg-cover ${containerClass}`}
+      className={`relative flex min-h-screen flex-col overflow-y-auto bg-background bg-center bg-cover ${containerClass}`}
       style={
         backgroundUrl
           ? {
@@ -58,22 +51,13 @@ export function PageLayout({
       {backgroundUrl && (
         <div
           aria-hidden
-          className="absolute inset-0 bg-base-200/70 backdrop-blur-[1px]"
+          className="absolute inset-0 bg-background/70 backdrop-blur-[1px]"
         />
       )}
-      {canToggleTheme && (
-        <ThemeToggle
-          className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
-          darkTheme={darkTheme}
-          detectedTheme={detectedTheme}
-          isAutoMode={isAutoMode}
-          onCycle={cycleThemeMode}
-          themeMode={themeMode}
-        />
-      )}
+      <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
       <div className="relative z-10 flex flex-1 items-center justify-center py-6">
         <div
-          className={`card w-full border border-base-200 bg-base-100/95 shadow-lg ${cardClass}`}
+          className={`w-full rounded-xl border border-border bg-surface shadow-lg ${cardClass}`}
         >
           {children}
         </div>

@@ -1,4 +1,8 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRSeparator } from '@tinyrack/ui/components/separator';
 import { env } from '#example-react-spa/libs/env.ts';
 import {
   buildAuthorizationUrl,
@@ -10,7 +14,6 @@ import {
   generateState,
 } from '#example-react-spa/libs/pkce.ts';
 import { saveAuthState } from '#example-react-spa/libs/token-storage.ts';
-
 export const Route = createFileRoute('/')({
   component: HomePage,
   beforeLoad: ({ context }) => {
@@ -35,66 +38,66 @@ function HomePage() {
   const config = getOIDCConfig();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-full max-w-2xl bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h1 className="card-title text-3xl">React SPA OIDC Test Client</h1>
-          <p className="text-base-content/70">
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <TRCard.Root className="w-full max-w-2xl">
+        <TRCard.Header>
+          <TRCard.Title className="text-3xl">
+            React SPA OIDC Test Client
+          </TRCard.Title>
+          <TRCard.Description>
             Test the OpenID Connect authentication flow with your OIDC provider
             using a Public Client (PKCE).
-          </p>
+          </TRCard.Description>
+        </TRCard.Header>
 
-          <div className="mt-6 flex flex-col gap-4">
-            <button
-              className="btn btn-primary btn-lg"
-              onClick={handleLogin}
-              type="button"
-            >
-              Sign In with OIDC
-            </button>
+        <TRCard.Content className="flex flex-col gap-4">
+          <TRButton intent="primary" onClick={handleLogin} uiSize="lg">
+            Sign In with OIDC
+          </TRButton>
 
-            <Link className="btn btn-outline" to="/discovery">
-              View Discovery Endpoints
-            </Link>
-          </div>
+          <TRButton appearance="outline" render={<Link to="/discovery" />}>
+            View Discovery Endpoints
+          </TRButton>
 
-          <div className="divider" />
+          <TRSeparator className="my-4" />
 
-          <div className="rounded-lg bg-base-200 p-4">
+          <div className="rounded-lg border p-4">
             <h2 className="mb-3 font-semibold text-lg">Test Configuration</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex gap-2">
                 <dt className="font-medium">Issuer:</dt>
-                <dd className="font-mono text-base-content/70">
+                <dd className="font-mono text-muted-foreground">
                   {env.OIDC_ISSUER}
                 </dd>
               </div>
               <div className="flex gap-2">
                 <dt className="font-medium">Client ID:</dt>
-                <dd className="font-mono text-base-content/70">
+                <dd className="font-mono text-muted-foreground">
                   {config.client_id}
                 </dd>
               </div>
               <div className="flex gap-2">
                 <dt className="font-medium">Redirect URI:</dt>
-                <dd className="font-mono text-base-content/70">
+                <dd className="font-mono text-muted-foreground">
                   {config.redirect_uri}
                 </dd>
               </div>
               <div className="flex gap-2">
                 <dt className="font-medium">Scope:</dt>
-                <dd className="font-mono text-base-content/70">
+                <dd className="font-mono text-muted-foreground">
                   {config.scope}
                 </dd>
               </div>
               <div className="flex gap-2">
                 <dt className="font-medium">Client Type:</dt>
-                <dd className="badge badge-info">Public Client (PKCE)</dd>
+                <dd>
+                  <TRBadge variant="info">Public Client (PKCE)</TRBadge>
+                </dd>
               </div>
             </dl>
           </div>
-        </div>
-      </div>
+        </TRCard.Content>
+      </TRCard.Root>
     </div>
   );
 }

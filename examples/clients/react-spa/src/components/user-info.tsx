@@ -1,3 +1,8 @@
+import { TRAvatar } from '@tinyrack/ui/components/avatar';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRCode } from '@tinyrack/ui/components/code';
+import { TRSeparator } from '@tinyrack/ui/components/separator';
 import type { IDTokenPayload } from '#example-react-spa/types/oidc.ts';
 
 interface UserInfoProps {
@@ -10,17 +15,16 @@ export function UserInfo({ payload }: UserInfoProps) {
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h2 className="card-title">User Information</h2>
-
+    <TRCard.Root>
+      <TRCard.Header>
+        <TRCard.Title>User Information</TRCard.Title>
+      </TRCard.Header>
+      <TRCard.Content>
         <div className="flex items-start gap-4">
           {payload.picture && (
-            <div className="avatar">
-              <div className="w-16 rounded-full">
-                <img alt="Profile" src={payload.picture} />
-              </div>
-            </div>
+            <TRAvatar.Root shape="circle" uiSize="lg">
+              <TRAvatar.Image alt="Profile" src={payload.picture} />
+            </TRAvatar.Root>
           )}
 
           <div className="flex-1 space-y-2">
@@ -36,33 +40,35 @@ export function UserInfo({ payload }: UserInfoProps) {
                 <span className="font-semibold">Email: </span>
                 <span>{payload.email}</span>
                 {payload.email_verified !== undefined && (
-                  <span
-                    className={`badge badge-sm ml-2 ${payload.email_verified ? 'badge-success' : 'badge-warning'}`}
+                  <TRBadge
+                    className="ml-2"
+                    uiSize="sm"
+                    variant={payload.email_verified ? 'success' : 'warning'}
                   >
                     {payload.email_verified ? 'Verified' : 'Unverified'}
-                  </span>
+                  </TRBadge>
                 )}
               </div>
             )}
 
             <div>
               <span className="font-semibold">Subject (sub): </span>
-              <code className="text-sm">{payload.sub}</code>
+              <TRCode>{payload.sub}</TRCode>
             </div>
 
             <div>
               <span className="font-semibold">Issuer (iss): </span>
-              <code className="text-sm">{payload.iss}</code>
+              <TRCode>{payload.iss}</TRCode>
             </div>
 
             <div>
               <span className="font-semibold">Audience (aud): </span>
-              <code className="text-sm">{payload.aud}</code>
+              <TRCode>{payload.aud}</TRCode>
             </div>
           </div>
         </div>
 
-        <div className="divider" />
+        <TRSeparator className="my-4" />
 
         <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
           <div>
@@ -85,11 +91,11 @@ export function UserInfo({ payload }: UserInfoProps) {
           {payload.nonce && (
             <div>
               <span className="font-semibold">Nonce: </span>
-              <code className="text-xs">{payload.nonce}</code>
+              <TRCode>{payload.nonce}</TRCode>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

@@ -2,6 +2,9 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -95,31 +98,24 @@ export function DeleteAccountModal({
           </p>
         </AlertBanner>
 
-        <div className="form-control">
-          <label className="label w-full" htmlFor="delete-confirmation">
-            <span className="label-text text-xs">
-              {t('profile.deleteAccount.modal.confirmLabel')}
-            </span>
-          </label>
-          <input
-            className={`input input-bordered input-sm w-full ${
-              form.formState.errors.confirmation ? 'input-error' : ''
-            }`}
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="delete-confirmation">
+            {t('profile.deleteAccount.modal.confirmLabel')}
+          </TRField.Label>
+          <TRInput
+            autoComplete="off"
             id="delete-confirmation"
             placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
             type="text"
+            uiSize="sm"
             {...form.register('confirmation')}
-            autoComplete="off"
           />
           {form.formState.errors.confirmation && (
-            <span
-              className="label-text-alt mt-0.5 text-error"
-              data-testid="delete-account-error"
-            >
+            <div className="tr-field-error" data-testid="delete-account-error">
               {form.formState.errors.confirmation.message}
-            </span>
+            </div>
           )}
-        </div>
+        </TRField.Root>
 
         {form.formState.errors.root && (
           <AlertBanner variant="error">
@@ -128,30 +124,28 @@ export function DeleteAccountModal({
         )}
 
         <ModalActions>
-          <button
-            className="btn btn-sm"
+          <TRButton
             data-testid="delete-account-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
+            uiSize="sm"
           >
             {t('profile.deleteAccount.modal.cancel')}
-          </button>
-          <button
-            className="btn btn-sm btn-error"
+          </TRButton>
+          <TRButton
             data-testid="delete-account-submit"
             disabled={mutation.isPending}
+            intent="danger"
+            loading={mutation.isPending}
+            loadingLabel={t('profile.deleteAccount.modal.confirming')}
             type="submit"
+            uiSize="sm"
           >
-            {mutation.isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs" />
-                {t('profile.deleteAccount.modal.confirming')}
-              </>
-            ) : (
-              t('profile.deleteAccount.modal.confirm')
-            )}
-          </button>
+            {mutation.isPending
+              ? undefined
+              : t('profile.deleteAccount.modal.confirm')}
+          </TRButton>
         </ModalActions>
       </form>
     </Modal>

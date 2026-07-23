@@ -1,3 +1,4 @@
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useTranslation } from 'react-i18next';
 
 interface UserInfoSectionProps {
@@ -11,30 +12,30 @@ export function UserInfoSection({ user }: UserInfoSectionProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="rounded-xl border border-base-200">
-      <div className="border-base-200 border-b px-4 py-3">
-        <h2 className="font-semibold text-sm">{t('profile.account.title')}</h2>
-        <p className="text-base-content/60 text-xs">
+    <TRCard.Root variant="outlined">
+      <TRCard.Header className="border-border border-b px-4 py-3">
+        <TRCard.Title className="font-semibold text-sm">
+          {t('profile.account.title')}
+        </TRCard.Title>
+        <TRCard.Description className="text-muted-foreground text-xs">
           {t('profile.account.description')}
-        </p>
-      </div>
-      <div className="divide-y divide-base-200">
-        {/* User ID */}
+        </TRCard.Description>
+      </TRCard.Header>
+      <TRCard.Content className="divide-y divide-border p-0">
         <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <span className="shrink-0 text-base-content/60 text-xs">
+          <span className="shrink-0 text-muted-foreground text-xs">
             {t('profile.id.label')}
           </span>
           <span className="truncate font-medium text-sm">{user.sub}</span>
         </div>
 
-        {/* Email */}
         <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <span className="shrink-0 text-base-content/60 text-xs">
+          <span className="shrink-0 text-muted-foreground text-xs">
             {t('profile.email.label')}
           </span>
           <span className="truncate font-medium text-sm">{user.email}</span>
         </div>
-      </div>
-    </div>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

@@ -1,6 +1,10 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { FingerprintIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -104,7 +108,7 @@ export function SetupPasskeyModal({
     >
       {step === 'name' && (
         <form className="mt-4 space-y-3" onSubmit={handleRegister}>
-          <p className="text-base-content/60 text-xs">
+          <p className="text-muted-foreground text-xs">
             {t('profile.passkey.setupModal.description')}
           </p>
 
@@ -112,60 +116,56 @@ export function SetupPasskeyModal({
             <AlertBanner variant="error">{errorMessage}</AlertBanner>
           )}
 
-          <div className="form-control">
-            <label className="label w-full" htmlFor="passkey-name">
-              <span className="label-text text-xs">
-                {t('profile.passkey.setupModal.nameLabel')}
-              </span>
-            </label>
-            <input
-              className={`input input-bordered input-sm w-full ${
-                form.formState.errors.name ? 'input-error' : ''
-              }`}
+          <TRField.Root uiSize="sm">
+            <TRField.Label htmlFor="passkey-name">
+              {t('profile.passkey.setupModal.nameLabel')}
+            </TRField.Label>
+            <TRInput
               id="passkey-name"
               placeholder={t('profile.passkey.setupModal.namePlaceholder')}
               type="text"
+              uiSize="sm"
               {...form.register('name')}
             />
             {form.formState.errors.name && (
-              <span
-                className="label-text-alt mt-0.5 text-error"
-                data-testid="setup-passkey-error"
-              >
+              <div className="tr-field-error" data-testid="setup-passkey-error">
                 {form.formState.errors.name.message}
-              </span>
+              </div>
             )}
-            <span className="label-text-alt mt-0.5 text-base-content/50">
+            <TRField.Description>
               {t('profile.passkey.setupModal.nameHint')}
-            </span>
-          </div>
+            </TRField.Description>
+          </TRField.Root>
 
           <ModalActions>
-            <button
-              className="btn btn-sm"
+            <TRButton
               data-testid="setup-passkey-cancel"
               onClick={handleClose}
               type="button"
+              uiSize="sm"
             >
               {t('profile.passkey.setupModal.cancel')}
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </TRButton>
+            <TRButton
               data-testid="setup-passkey-continue"
+              intent="primary"
               type="submit"
+              uiSize="sm"
             >
               {t('profile.passkey.setupModal.continue')}
-            </button>
+            </TRButton>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
             <p className="mt-2 text-center text-xs">
-              <button
-                className="link link-primary"
+              <TRButton
+                appearance="ghost"
+                intent="primary"
                 onClick={onSwitchToTotp}
                 type="button"
+                uiSize="sm"
               >
                 {t('profile.passkey.setupModal.switchToTotp')}
-              </button>
+              </TRButton>
             </p>
           )}
         </form>
@@ -177,22 +177,22 @@ export function SetupPasskeyModal({
             className="flex flex-col items-center gap-3 py-6"
             data-testid="setup-passkey-loading"
           >
-            <span className="loading loading-spinner loading-md" />
-            <p className="text-center text-base-content/60 text-xs">
+            <TRSpinner uiSize="md" />
+            <p className="text-center text-muted-foreground text-xs">
               {t('profile.passkey.setupModal.waitingForDevice')}
             </p>
           </div>
 
           <ModalActions>
-            <button
-              className="btn btn-sm"
+            <TRButton
               data-testid="setup-passkey-cancel"
               disabled={isPending}
               onClick={handleClose}
               type="button"
+              uiSize="sm"
             >
               {t('profile.passkey.setupModal.cancel')}
-            </button>
+            </TRButton>
           </ModalActions>
         </div>
       )}

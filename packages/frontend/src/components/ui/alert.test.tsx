@@ -27,6 +27,9 @@ test('applies custom className', async () => {
       Content
     </Alert>,
   );
-  const alert = screen.getByText('Content').element().closest('.alert');
+  const alert = screen
+    .getByText('Content')
+    .element()
+    .closest('[data-testid="alert-success"]');
   expect(alert?.classList.contains('my-custom-class')).toBe(true);
 });

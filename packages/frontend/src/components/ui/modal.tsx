@@ -1,5 +1,6 @@
 import type { Icon } from '@phosphor-icons/react';
 import { XIcon } from '@phosphor-icons/react';
+import { TRDialog } from '@tinyrack/ui/components/dialog';
 import { type ReactNode, useEffect } from 'react';
 
 type ModalVariant = 'default' | 'destructive';
@@ -17,14 +18,14 @@ interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-sm',
-  md: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
-  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
 } as const;
 
 const iconVariantClasses: Record<ModalVariant, string> = {
   default: 'bg-primary/10 text-primary',
-  destructive: 'bg-error/10 text-error',
+  destructive: 'bg-red-500/10 text-red-500',
 };
 
 export function Modal({
@@ -40,8 +41,9 @@ export function Modal({
 }: ModalProps) {
   useEffect(() => {
     if (!isOpen) return;
+    if (preventClose) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !preventClose) {
+      if (e.key === 'Escape') {
         onClose();
       }
     };
@@ -53,53 +55,55 @@ export function Modal({
     return null;
   }
 
-  const handleBackdropClick = () => {
-    if (!preventClose) {
-      onClose();
-    }
-  };
-
   return (
-    <dialog className="modal modal-open">
-      <div
-        className={`modal-box max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}
-      >
-        <div className="flex items-start gap-2.5">
-          {IconComponent && (
-            <div
-              className={`flex size-8 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
-            >
-              <IconComponent className="size-4" weight="bold" />
+    <TRDialog.Root
+      defaultOpen
+      disablePointerDismissal={preventClose}
+      onOpenChange={(open) => {
+        if (!open && !preventClose) {
+          onClose();
+        }
+      }}
+    >
+      <TRDialog.Portal>
+        <TRDialog.Viewport>
+          <TRDialog.Backdrop />
+          <TRDialog.Popup
+            className={`max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}
+          >
+            <div className="flex items-start gap-2.5">
+              {IconComponent && (
+                <div
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
+                >
+                  <IconComponent className="size-4" weight="bold" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <TRDialog.Title className="font-bold text-base">
+                  {title}
+                </TRDialog.Title>
+                {description && (
+                  <TRDialog.Description className="mt-0.5 text-base-content/60 text-xs">
+                    {description}
+                  </TRDialog.Description>
+                )}
+              </div>
+              {!preventClose && (
+                <TRDialog.Close
+                  aria-label="Close"
+                  className="shrink-0"
+                  data-testid="modal-close"
+                >
+                  <XIcon className="size-3.5" />
+                </TRDialog.Close>
+              )}
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-base">{title}</h3>
-            {description && (
-              <p className="mt-0.5 text-base-content/60 text-xs">
-                {description}
-              </p>
-            )}
-          </div>
-          {!preventClose && (
-            <button
-              aria-label="Close"
-              className="btn btn-circle btn-ghost btn-xs shrink-0"
-              data-testid="modal-close"
-              onClick={onClose}
-              type="button"
-            >
-              <XIcon className="size-3.5" />
-            </button>
-          )}
-        </div>
-        {children}
-      </div>
-      <form className="modal-backdrop" method="dialog">
-        <button onClick={handleBackdropClick} type="button">
-          close
-        </button>
-      </form>
-    </dialog>
+            {children}
+          </TRDialog.Popup>
+        </TRDialog.Viewport>
+      </TRDialog.Portal>
+    </TRDialog.Root>
   );
 }
 
@@ -108,5 +112,5 @@ interface ModalActionsProps {
 }
 
 export function ModalActions({ children }: ModalActionsProps) {
-  return <div className="modal-action">{children}</div>;
+  return <div className="flex justify-end gap-2 pt-4">{children}</div>;
 }

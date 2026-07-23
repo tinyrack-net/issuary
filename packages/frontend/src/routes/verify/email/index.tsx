@@ -10,6 +10,8 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +23,7 @@ import { Alert } from '#frontend/components/ui/alert.tsx';
 import { Divider } from '#frontend/components/ui/divider.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -187,14 +190,15 @@ function VerifyEmail() {
           title={t('verifyEmail.success.subtitle')}
         />
 
-        <button
-          className="btn btn-block h-10 font-semibold text-[14px]"
+        <TRButton
+          className="w-full font-semibold text-[14px]"
           data-testid="email-verify-go-profile"
+          intent="primary"
           onClick={() => navigate({ to: '/profile' })}
           type="button"
         >
           {t('verifyEmail.success.goToProfile')}
-        </button>
+        </TRButton>
       </PageLayout>
     );
   }
@@ -246,22 +250,24 @@ function VerifyEmail() {
             </Alert>
           )}
 
-          <button
-            className="btn btn-ghost btn-sm w-full"
+          <TRButton
+            appearance="ghost"
+            className="w-full"
             data-testid="email-verify-resend"
             disabled={resendVerificationMutation.isPending || resendSuccess}
+            intent="neutral"
             onClick={handleResend}
             type="button"
           >
             {resendVerificationMutation.isPending ? (
               <>
-                <span className="loading loading-spinner loading-xs" />
+                <TRSpinner uiSize="sm" />
                 {t('verifyEmail.resending')}
               </>
             ) : (
               t('verifyEmail.resend')
             )}
-          </button>
+          </TRButton>
         </>
       )}
     </PageLayout>

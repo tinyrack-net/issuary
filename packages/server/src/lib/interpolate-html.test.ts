@@ -160,7 +160,6 @@ describe('resolveHtmlVariables', () => {
   test('derives variables from branding and server config', () => {
     const variables = resolveHtmlVariables({
       branding: BrandingConfigSchema.parse({
-        theme_mode: 'dark',
         icon_url: 'https://example.com/icon.png',
       }),
       server: ServerConfigSchema.parse({
@@ -168,7 +167,7 @@ describe('resolveHtmlVariables', () => {
       }),
     });
 
-    expect(variables['COLOR_SCHEME']).toBe('dark');
+    expect(variables['COLOR_SCHEME']).toBe('light dark');
     expect(variables['FAVICON_URL']).toBe('https://example.com/icon.png');
     expect(variables['APPLE_TOUCH_ICON_URL']).toBe(
       'https://example.com/icon.png',
@@ -179,7 +178,6 @@ describe('resolveHtmlVariables', () => {
   test('user overrides win over defaults and derived values', () => {
     const variables = resolveHtmlVariables({
       branding: BrandingConfigSchema.parse({
-        theme_mode: 'light',
         icon_url: 'https://example.com/default-icon.png',
       }),
       overrides: {

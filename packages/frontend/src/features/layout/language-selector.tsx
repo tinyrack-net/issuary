@@ -1,3 +1,5 @@
+import type { TRLanguageSelectOption } from '@tinyrack/ui/components/language-select';
+import { TRLanguageSelect } from '@tinyrack/ui/components/language-select';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '#frontend/hooks/use-language.ts';
 import { LANGUAGE_LABELS } from '#frontend/i18n/index.ts';
@@ -22,13 +24,19 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
     return null;
   }
 
-  // Build auto label with detected language name
   const detectedLanguageName =
     LANGUAGE_LABELS[detectedLanguage] || detectedLanguage;
   const autoLabel = `${t('common.language.auto')} (${detectedLanguageName})`;
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const options: readonly TRLanguageSelectOption[] = [
+    { label: autoLabel, value: 'auto' },
+    ...languages.map((lang) => ({
+      label: LANGUAGE_LABELS[lang] || lang,
+      value: lang,
+    })),
+  ];
+
+  const handleValueChange = (value: string, _eventDetails?: unknown) => {
     if (value === 'auto') {
       setAutoLanguage();
     } else {
@@ -40,20 +48,13 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
 
   return (
     <div className={className}>
-      <select
-        aria-label={t('common.language.select')}
-        className="select select-ghost select-sm text-base-content/60"
+      <TRLanguageSelect
         data-testid="language-selector"
-        onChange={handleChange}
+        label={t('common.language.select')}
+        onValueChange={handleValueChange}
+        options={options}
         value={currentValue}
-      >
-        <option value="auto">{autoLabel}</option>
-        {languages.map((lang) => (
-          <option key={lang} value={lang}>
-            {LANGUAGE_LABELS[lang] || lang}
-          </option>
-        ))}
-      </select>
+      />
     </div>
   );
 }

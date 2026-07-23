@@ -9,11 +9,11 @@ test('does not render when isOpen is false', async () => {
       Content
     </Modal>,
   );
-  expect(container.querySelector('dialog')).toBeNull();
+  expect(container.innerHTML).toBe('');
 });
 
 test('renders title, description, and children when open', async () => {
-  const { container } = await render(
+  const screen = await render(
     <Modal
       description="A description"
       isOpen={true}
@@ -23,14 +23,14 @@ test('renders title, description, and children when open', async () => {
       <p>Modal body</p>
     </Modal>,
   );
-  expect(container.querySelector('dialog')).not.toBeNull();
-  expect(container.textContent).toContain('My Modal');
-  expect(container.textContent).toContain('A description');
-  expect(container.textContent).toContain('Modal body');
+
+  await expect.element(screen.getByText('My Modal')).toBeVisible();
+  await expect.element(screen.getByText('A description')).toBeVisible();
+  await expect.element(screen.getByText('Modal body')).toBeVisible();
 });
 
 test('renders icon when provided', async () => {
-  const { container } = await render(
+  const screen = await render(
     <Modal
       icon={WarningCircleIcon}
       isOpen={true}
@@ -40,9 +40,9 @@ test('renders icon when provided', async () => {
       Content
     </Modal>,
   );
-  expect(container.textContent).toContain('Warning');
-  // Icon is rendered inside a rounded-full div
-  expect(container.querySelector('.rounded-full')).not.toBeNull();
+
+  await expect.element(screen.getByText('Warning')).toBeVisible();
+  expect(screen.baseElement.querySelector('.rounded-full')).not.toBeNull();
 });
 
 test('close button calls onClose', async () => {
@@ -53,7 +53,6 @@ test('close button calls onClose', async () => {
     </Modal>,
   );
 
-  // The close button has data-testid="modal-close"
   const closeBtn = screen.getByTestId('modal-close');
   await closeBtn.click();
   expect(onClose).toHaveBeenCalledOnce();
@@ -61,34 +60,30 @@ test('close button calls onClose', async () => {
 
 test('backdrop click calls onClose', async () => {
   const onClose = vi.fn();
-  const { container } = await render(
+  await render(
     <Modal isOpen={true} onClose={onClose} title="Test">
       Content
     </Modal>,
   );
 
-  // The backdrop button is inside a form.modal-backdrop.
-  // Playwright may not be able to click it normally because
-  // it's behind the modal overlay, so we dispatch the event directly.
-  const backdropButton = container.querySelector(
-    '.modal-backdrop button',
-  ) as HTMLButtonElement;
-  expect(backdropButton).not.toBeNull();
-  backdropButton.click();
-  expect(onClose).toHaveBeenCalledOnce();
+  const backdrop = document.querySelector('.tr-layer-backdrop');
+  await vi.waitFor(() => expect(backdrop).not.toBeNull());
+  (backdrop as HTMLElement).click();
+  await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
 });
 
 test('preventClose hides close button and ignores backdrop', async () => {
   const onClose = vi.fn();
-  const { container } = await render(
+  const screen = await render(
     <Modal isOpen={true} onClose={onClose} preventClose title="Locked">
       Content
     </Modal>,
   );
 
-  expect(container.textContent).toContain('Locked');
-  // No close button should be rendered
-  expect(container.querySelector('[data-testid="modal-close"]')).toBeNull();
+  await expect.element(screen.getByText('Locked')).toBeVisible();
+  expect(
+    screen.container.querySelector('[data-testid="modal-close"]'),
+  ).toBeNull();
 });
 
 test('ModalActions renders children', async () => {

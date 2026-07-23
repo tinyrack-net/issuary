@@ -4,6 +4,8 @@ import {
   createFileRoute,
   type ErrorComponentProps,
 } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -136,14 +138,16 @@ function Consent() {
       />
 
       {/* User info */}
-      <div className="mb-4 rounded-lg bg-base-200 p-3 text-center">
-        <p className="text-base-content/60 text-xs">
-          {t('consent.loggedInAs')}
-        </p>
-        <p className="font-medium text-sm" data-testid="consent-user-email">
-          {user.email}
-        </p>
-      </div>
+      <TRCard.Root className="mb-4" variant="outlined">
+        <TRCard.Content className="gap-1 p-3 text-center">
+          <p className="text-muted-foreground text-xs">
+            {t('consent.loggedInAs')}
+          </p>
+          <p className="font-medium text-sm" data-testid="consent-user-email">
+            {user.email}
+          </p>
+        </TRCard.Content>
+      </TRCard.Root>
 
       {/* Requested permissions */}
       <div className="mb-4">
@@ -153,7 +157,7 @@ function Consent() {
         <ul className="flex flex-col gap-2" data-testid="consent-scope-list">
           {scopes.map((scope: { name: string; description: string }) => (
             <li
-              className="flex items-start gap-3 rounded-lg bg-base-200 p-3"
+              className="flex items-start gap-3 rounded-lg bg-muted p-3"
               key={scope.name}
             >
               <div className="mt-0.5 rounded-full bg-primary/20 p-1">
@@ -174,22 +178,19 @@ function Consent() {
 
       {/* Action buttons */}
       <div className="flex gap-3">
-        <button
-          className="btn btn-outline h-10 flex-1 font-semibold text-[14px]"
+        <TRButton
+          appearance="outline"
+          className="flex-1 font-semibold text-[14px]"
           data-testid="consent-deny"
-          disabled={consentMutation.isPending}
+          intent="neutral"
+          loading={consentMutation.isPending}
+          loadingLabel={t('consent.deny')}
           onClick={handleDeny}
           type="button"
         >
-          {consentMutation.isPending ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <>
-              <XIcon className="size-4" weight="bold" />
-              {t('consent.deny')}
-            </>
-          )}
-        </button>
+          <XIcon className="size-4" weight="bold" />
+          {t('consent.deny')}
+        </TRButton>
         <button
           className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
           data-testid="consent-allow"

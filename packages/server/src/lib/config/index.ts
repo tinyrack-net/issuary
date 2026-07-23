@@ -15,8 +15,8 @@ export {
   PasswordAuthConfigSchema,
   PasswordPolicyConfigSchema,
 } from './auth.ts';
-export type { AppTheme, BrandingConfig } from './branding.ts';
-export { AppThemeSchema, BrandingConfigSchema } from './branding.ts';
+export type { BrandingConfig } from './branding.ts';
+export { BrandingConfigSchema } from './branding.ts';
 export type { CleanupConfig } from './cleanup.ts';
 export { CLEANUP_CONFIG_DEFAULT, CleanupConfigSchema } from './cleanup.ts';
 export type { ClientConfig } from './client.ts';

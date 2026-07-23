@@ -1,7 +1,13 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +17,7 @@ import { IconInput } from '#frontend/components/auth/icon-input.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -39,6 +46,7 @@ type ForgotPasswordFormValues = {
 
 function ForgotPassword() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [emailSent, setEmailSent] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
 
@@ -108,12 +116,13 @@ function ForgotPassword() {
           {t('forgotPassword.success.checkSpam')}
         </Alert>
 
-        <Link
-          className="btn btn-block h-10 font-semibold text-[14px]"
-          to="/login"
+        <TRButton
+          className="w-full font-semibold text-[14px]"
+          intent="primary"
+          onClick={() => navigate({ to: '/login' })}
         >
           {t('forgotPassword.backToLogin')}
-        </Link>
+        </TRButton>
       </PageLayout>
     );
   }

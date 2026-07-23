@@ -7,6 +7,11 @@ import {
   TrashIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -124,13 +129,13 @@ export function ManagePasskeysModal({
 
         {isLoading && (
           <div className="flex justify-center py-6">
-            <span className="loading loading-spinner loading-md" />
+            <TRSpinner uiSize="md" />
           </div>
         )}
 
         {!isLoading && passkeys.length === 0 && (
           <div
-            className="py-6 text-center text-base-content/60 text-sm"
+            className="py-6 text-center text-muted-foreground text-sm"
             data-testid="passkeys-empty"
           >
             <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
@@ -159,25 +164,26 @@ export function ManagePasskeysModal({
       </div>
 
       <ModalActions>
-        <button
-          className="btn btn-sm"
+        <TRButton
           data-testid="manage-passkeys-close"
           onClick={handleClose}
           type="button"
+          uiSize="sm"
         >
           {t('profile.passkey.manageModal.close')}
-        </button>
-        <button
-          className="btn btn-sm btn-primary"
+        </TRButton>
+        <TRButton
           data-testid="manage-passkeys-add-new"
+          intent="primary"
           onClick={() => {
             handleClose();
             onAddNew();
           }}
           type="button"
+          uiSize="sm"
         >
           {t('profile.passkey.manageModal.addNew')}
-        </button>
+        </TRButton>
       </ModalActions>
     </Modal>
   );
@@ -248,47 +254,46 @@ function PasskeyItem({
   if (isEditing) {
     return (
       <form
-        className="flex flex-col gap-1.5 rounded-lg bg-base-200 p-2"
+        className="flex flex-col gap-1.5 rounded-lg bg-muted p-2"
         onSubmit={handleRename}
       >
-        <input
-          className={`input input-bordered input-sm w-full ${
-            form.formState.errors.name ? 'input-error' : ''
-          }`}
-          data-testid="passkey-rename-input"
-          placeholder={t('profile.passkey.manageModal.namePlaceholder')}
-          type="text"
-          {...form.register('name')}
-        />
-        {form.formState.errors.name && (
-          <span
-            className="text-error text-xs"
-            data-testid="passkey-rename-error"
-          >
-            {form.formState.errors.name.message}
-          </span>
-        )}
+        <TRField.Root uiSize="sm">
+          <TRInput
+            data-testid="passkey-rename-input"
+            placeholder={t('profile.passkey.manageModal.namePlaceholder')}
+            type="text"
+            uiSize="sm"
+            {...form.register('name')}
+          />
+          {form.formState.errors.name && (
+            <div className="tr-field-error" data-testid="passkey-rename-error">
+              {form.formState.errors.name.message}
+            </div>
+          )}
+        </TRField.Root>
         <div className="flex justify-end gap-1">
-          <button
-            className="btn btn-ghost btn-xs"
+          <TRButton
+            appearance="ghost"
             disabled={renameMutation.isPending}
             onClick={() => {
               form.reset();
               onCancelEdit();
             }}
             type="button"
+            uiSize="sm"
           >
             {t('profile.passkey.manageModal.cancelEdit')}
-          </button>
-          <button
-            className="btn btn-primary btn-xs"
+          </TRButton>
+          <TRButton
             disabled={renameMutation.isPending}
+            intent="primary"
             type="submit"
+            uiSize="sm"
           >
             {renameMutation.isPending
               ? t('profile.passkey.manageModal.saving')
               : t('profile.passkey.manageModal.save')}
-          </button>
+          </TRButton>
         </div>
       </form>
     );
@@ -296,28 +301,30 @@ function PasskeyItem({
 
   if (isConfirmingDelete) {
     return (
-      <div className="flex items-center justify-between rounded-lg bg-error/10 p-2">
+      <div className="flex items-center justify-between rounded-lg bg-danger/10 p-2">
         <div className="flex items-center gap-2">
-          <TrashIcon className="size-4 text-error" weight="regular" />
-          <span className="text-error text-xs">
+          <TrashIcon className="size-4 text-danger" weight="regular" />
+          <span className="text-danger text-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
         </div>
         <div className="flex gap-1">
-          <button
-            className="btn btn-ghost btn-xs"
+          <TRButton
+            appearance="ghost"
             onClick={onCancelDelete}
             type="button"
+            uiSize="sm"
           >
             {t('profile.passkey.manageModal.cancelEdit')}
-          </button>
-          <button
-            className="btn btn-error btn-xs"
+          </TRButton>
+          <TRButton
+            intent="danger"
             onClick={onConfirmDelete}
             type="button"
+            uiSize="sm"
           >
             {t('profile.passkey.manageModal.delete')}
-          </button>
+          </TRButton>
         </div>
       </div>
     );
@@ -325,7 +332,7 @@ function PasskeyItem({
 
   return (
     <div
-      className="flex items-center justify-between rounded-lg bg-base-200 p-2"
+      className="flex items-center justify-between rounded-lg bg-muted p-2"
       data-testid="passkey-item"
     >
       <div className="flex items-center gap-2">
@@ -338,42 +345,44 @@ function PasskeyItem({
           <div className="font-medium text-xs">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </div>
-          <div className="flex items-center gap-1.5 text-base-content/60 text-xs">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
             <span>
               {t('profile.passkey.manageModal.createdAt', {
                 date: formatDate(passkey.created_at),
               })}
             </span>
             {passkey.backed_up && (
-              <span className="badge badge-success badge-xs">
+              <TRBadge uiSize="sm" variant="success">
                 {t('profile.passkey.manageModal.backedUp')}
-              </span>
+              </TRBadge>
             )}
           </div>
         </div>
       </div>
       <div className="flex gap-1">
-        <button
+        <TRButton
+          appearance="ghost"
           aria-label={t('profile.passkey.manageModal.rename')}
-          className="btn btn-ghost btn-xs"
           onClick={onEdit}
           type="button"
+          uiSize="sm"
         >
           <PencilSimpleIcon className="size-3.5" weight="regular" />
-        </button>
-        <button
+        </TRButton>
+        <TRButton
+          appearance="ghost"
           aria-label={t('profile.passkey.manageModal.delete')}
-          className="btn btn-ghost btn-xs text-error"
           disabled={isDeleting}
+          intent="danger"
+          loading={isDeleting}
           onClick={onRequestDelete}
           type="button"
+          uiSize="sm"
         >
-          {isDeleting ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
+          {isDeleting ? undefined : (
             <TrashIcon className="size-3.5" weight="regular" />
           )}
-        </button>
+        </TRButton>
       </div>
     </div>
   );

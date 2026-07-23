@@ -37,9 +37,10 @@ async function fillTotpCode(
   code: string,
 ) {
   const digits = code.split('');
+  const inputs = screen.getByRole('textbox').all();
 
   for (const [index, digit] of digits.entries()) {
-    await screen.getByLabelText(`Digit ${index + 1} of 6`).fill(digit);
+    await inputs[index].fill(digit);
   }
 }
 

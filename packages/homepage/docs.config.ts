@@ -58,7 +58,6 @@ export default defineDocsConfig({
             'register',
             'reverse-proxy',
             'client-security',
-            'theme',
             'language',
             'branding',
           ].map((slug) => page(`/configuration/general/${slug}`)),

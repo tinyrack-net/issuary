@@ -36,9 +36,6 @@ function buildConfigResponse(config: TinyAuthRuntimeConfig): ConfigResponse {
       fallback_language: config.i18n.fallback_language,
     },
     branding: {
-      light_theme: config.branding.light_theme,
-      dark_theme: config.branding.dark_theme,
-      theme_mode: config.branding.theme_mode,
       background_url: config.branding.background_url,
       icon_url: config.branding.icon_url,
       title: config.branding.title,

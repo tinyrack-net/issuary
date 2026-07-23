@@ -1,4 +1,6 @@
 import { GearIcon, InfoIcon, KeyIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRTooltip } from '@tinyrack/ui/components/tooltip';
 import { useTranslation } from 'react-i18next';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
@@ -25,12 +27,12 @@ export function PasswordSection({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            hasPassword ? 'bg-success/10' : 'bg-base-200'
+            hasPassword ? 'bg-success/10' : 'bg-muted'
           }`}
         >
           <KeyIcon
             className={`size-4 ${
-              hasPassword ? 'text-success' : 'text-base-content/50'
+              hasPassword ? 'text-success' : 'text-muted-foreground'
             }`}
             weight="regular"
           />
@@ -39,13 +41,13 @@ export function PasswordSection({
           <div className="font-medium text-sm">
             {t('profile.password.title')}
           </div>
-          <div className="text-base-content/60 text-xs">
+          <div className="text-muted-foreground text-xs">
             {hasPassword
               ? t('profile.password.status.set')
               : t('profile.password.status.notSet')}
           </div>
           {isConfigManaged && (
-            <div className="mt-0.5 flex items-center gap-1 text-base-content/40 text-xs">
+            <div className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs opacity-40">
               <GearIcon className="size-3 shrink-0" weight="fill" />
               <span>{t('profile.password.configManaged')}</span>
             </div>
@@ -56,52 +58,68 @@ export function PasswordSection({
         <div className="flex shrink-0 items-center gap-1">
           {hasPassword ? (
             <>
-              <button
-                className="btn btn-ghost btn-xs text-primary"
+              <TRButton
+                appearance="ghost"
                 data-testid="profile-password-change"
+                intent="primary"
                 onClick={() => onOpenModal('change')}
                 type="button"
+                uiSize="sm"
               >
                 {t('profile.password.change')}
-              </button>
+              </TRButton>
               {hasLinkedOAuth ? (
-                <button
-                  className="btn btn-ghost btn-xs text-error"
+                <TRButton
+                  appearance="ghost"
                   data-testid="profile-password-remove"
+                  intent="danger"
                   onClick={() => onOpenModal('remove')}
                   type="button"
+                  uiSize="sm"
                 >
                   {t('profile.password.remove')}
-                </button>
+                </TRButton>
               ) : null}
               {!hasLinkedOAuth && hasSecondFactorOnly && (
-                <div className="dropdown dropdown-end">
-                  <button
-                    className="btn btn-disabled btn-ghost btn-xs cursor-not-allowed text-base-content/30"
-                    type="button"
-                  >
-                    {t('profile.password.remove')}
-                  </button>
-                  <div className="dropdown-content z-50 w-64 rounded-xl border border-base-200 bg-base-100 p-4 shadow-lg">
-                    <div className="flex items-start gap-2">
-                      <InfoIcon className="size-4 shrink-0 text-warning" />
-                      <div className="text-xs">
-                        {t('profile.password.removeDisabledReason')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TRTooltip.Root>
+                  <TRTooltip.Trigger
+                    render={
+                      <TRButton
+                        appearance="ghost"
+                        disabled
+                        type="button"
+                        uiSize="sm"
+                      >
+                        {t('profile.password.remove')}
+                      </TRButton>
+                    }
+                  />
+                  <TRTooltip.Portal>
+                    <TRTooltip.Positioner>
+                      <TRTooltip.Popup className="max-w-64 rounded-xl border border-border bg-surface p-3 text-xs shadow-lg">
+                        <div className="flex items-start gap-2">
+                          <InfoIcon className="size-4 shrink-0 text-warning" />
+                          <div>
+                            {t('profile.password.removeDisabledReason')}
+                          </div>
+                        </div>
+                      </TRTooltip.Popup>
+                    </TRTooltip.Positioner>
+                  </TRTooltip.Portal>
+                </TRTooltip.Root>
               )}
             </>
           ) : (
-            <button
-              className="btn btn-ghost btn-xs text-primary"
+            <TRButton
+              appearance="ghost"
               data-testid="profile-password-set"
+              intent="primary"
               onClick={() => onOpenModal('set')}
               type="button"
+              uiSize="sm"
             >
               {t('profile.password.set')}
-            </button>
+            </TRButton>
           )}
         </div>
       )}

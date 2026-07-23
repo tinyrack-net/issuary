@@ -1,4 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { TRAlert } from '@tinyrack/ui/components/alert';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useEffect, useState } from 'react';
 import { exchangeCodeForTokens } from '#example-react-spa/libs/oidc-client.ts';
 import {
@@ -6,7 +10,6 @@ import {
   getAuthState,
   saveTokens,
 } from '#example-react-spa/libs/token-storage.ts';
-
 export const Route = createFileRoute('/callback')({
   component: CallbackPage,
 });
@@ -23,26 +26,22 @@ function CallbackPage() {
       const errorParam = params.get('error');
       const errorDescription = params.get('error_description');
 
-      // Check for error response from authorization server
       if (errorParam) {
         setError(`${errorParam}: ${errorDescription || 'Unknown error'}`);
         return;
       }
 
-      // Validate required parameters
       if (!code || !state) {
         setError('Missing code or state parameter');
         return;
       }
 
-      // Get and validate auth state
       const authState = getAuthState();
       if (!authState) {
         setError('No auth state found. Please start the login flow again.');
         return;
       }
 
-      // Verify state matches (CSRF protection)
       if (authState.state !== state) {
         setError('State mismatch - possible CSRF attack');
         clearAuthState();
@@ -50,17 +49,14 @@ function CallbackPage() {
       }
 
       try {
-        // Exchange code for tokens
         const tokens = await exchangeCodeForTokens(
           code,
           authState.code_verifier,
         );
 
-        // Save tokens and clear auth state
         saveTokens(tokens);
         clearAuthState();
 
-        // Redirect to profile
         navigate({ to: '/profile' });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -73,34 +69,40 @@ function CallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base-200">
-        <div className="card w-full max-w-md bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title text-error">Authentication Error</h2>
-            <p className="text-sm">{error}</p>
-            <div className="card-actions mt-4 justify-end">
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate({ to: '/' })}
-                type="button"
-              >
-                Back to Home
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <TRCard.Root className="w-full max-w-md">
+          <TRCard.Header>
+            <TRCard.Title className="text-red-600 dark:text-red-400">
+              Authentication Error
+            </TRCard.Title>
+            <TRCard.Description>
+              <TRAlert.Root variant="danger">
+                <TRAlert.Description>{error}</TRAlert.Description>
+              </TRAlert.Root>
+            </TRCard.Description>
+          </TRCard.Header>
+          <TRCard.Footer className="justify-end">
+            <TRButton
+              intent="primary"
+              onClick={() => navigate({ to: '/' })}
+              type="button"
+            >
+              Back to Home
+            </TRButton>
+          </TRCard.Footer>
+        </TRCard.Root>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
-        <div className="card-body items-center text-center">
-          <span className="loading loading-spinner loading-lg" />
-          <p className="mt-4">Processing authentication...</p>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <TRCard.Root className="w-full max-w-md">
+        <TRCard.Content className="flex flex-col items-center gap-4 text-center">
+          <TRSpinner uiSize="lg" />
+          <p>Processing authentication...</p>
+        </TRCard.Content>
+      </TRCard.Root>
     </div>
   );
 }

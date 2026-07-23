@@ -5,6 +5,9 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -93,86 +96,76 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
       title={t('profile.password.setModal.title')}
     >
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <div className="form-control">
-          <label className="label w-full" htmlFor="new-password">
-            <span className="label-text text-xs">
-              {t('profile.password.setModal.newPassword')}
-            </span>
-          </label>
-          <input
-            className={`input input-bordered input-sm w-full ${
-              form.formState.errors.password ? 'input-error' : ''
-            }`}
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="new-password">
+            {t('profile.password.setModal.newPassword')}
+          </TRField.Label>
+          <TRInput
             id="new-password"
             placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
             type="password"
+            uiSize="sm"
             {...form.register('password')}
           />
           {form.formState.errors.password && (
-            <span
-              className="label-text-alt mt-0.5 text-error"
+            <div
+              className="tr-field-error"
               data-testid="set-password-error-password"
             >
               {form.formState.errors.password.message}
-            </span>
+            </div>
           )}
-        </div>
-        <div className="form-control">
-          <label className="label w-full" htmlFor="confirm-password">
-            <span className="label-text text-xs">
-              {t('profile.password.setModal.confirmPassword')}
-            </span>
-          </label>
-          <input
-            className={`input input-bordered input-sm w-full ${
-              form.formState.errors.confirmPassword ? 'input-error' : ''
-            }`}
+        </TRField.Root>
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="confirm-password">
+            {t('profile.password.setModal.confirmPassword')}
+          </TRField.Label>
+          <TRInput
             id="confirm-password"
             placeholder={t(
               'profile.password.setModal.confirmPasswordPlaceholder',
             )}
             type="password"
+            uiSize="sm"
             {...form.register('confirmPassword')}
           />
           {form.formState.errors.confirmPassword && (
-            <span
-              className="label-text-alt mt-0.5 text-error"
+            <div
+              className="tr-field-error"
               data-testid="set-password-error-confirmPassword"
             >
               {form.formState.errors.confirmPassword.message}
-            </span>
+            </div>
           )}
-        </div>
+        </TRField.Root>
         {form.formState.errors.root && (
           <AlertBanner variant="error">
             {form.formState.errors.root.message}
           </AlertBanner>
         )}
         <ModalActions>
-          <button
-            className="btn btn-sm"
+          <TRButton
             data-testid="set-password-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
+            uiSize="sm"
           >
             {t('profile.password.setModal.cancel')}
-          </button>
-          <button
-            className="btn btn-sm btn-primary"
+          </TRButton>
+          <TRButton
             data-testid="set-password-submit"
             disabled={mutation.isPending}
+            intent="primary"
+            loading={mutation.isPending}
+            loadingLabel={t('profile.password.setModal.submitting')}
             type="submit"
+            uiSize="sm"
           >
-            {mutation.isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs" />
-                {t('profile.password.setModal.submitting')}
-              </>
-            ) : (
-              t('profile.password.setModal.submit')
-            )}
-          </button>
+            {mutation.isPending
+              ? undefined
+              : t('profile.password.setModal.submit')}
+          </TRButton>
         </ModalActions>
       </form>
     </Modal>

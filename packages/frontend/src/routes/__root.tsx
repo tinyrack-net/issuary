@@ -1,12 +1,11 @@
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { useTheme } from '#frontend/hooks/use-theme.ts';
+import { useColorScheme } from '#frontend/hooks/use-theme.ts';
 import type { AppRouterContext } from '#frontend/libs/router.ts';
 
 function RootComponent() {
-  // Initialize theme from server config
-  useTheme();
+  useColorScheme();
 
   return <Outlet />;
 }

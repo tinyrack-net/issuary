@@ -1,4 +1,6 @@
 import { LinkIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useTranslation } from 'react-i18next';
 
 interface OAuthProvider {
@@ -31,16 +33,16 @@ export function LinkedAccountsSection({
   }
 
   return (
-    <div className="rounded-xl border border-base-200">
-      <div className="border-base-200 border-b px-4 py-3">
-        <h2 className="font-semibold text-sm">
+    <TRCard.Root variant="outlined">
+      <TRCard.Header className="border-border border-b px-4 py-3">
+        <TRCard.Title className="font-semibold text-sm">
           {t('profile.linkedAccounts.title')}
-        </h2>
-        <p className="text-base-content/60 text-xs">
+        </TRCard.Title>
+        <TRCard.Description className="text-muted-foreground text-xs">
           {t('profile.linkedAccounts.description')}
-        </p>
-      </div>
-      <div className="divide-y divide-base-200">
+        </TRCard.Description>
+      </TRCard.Header>
+      <TRCard.Content className="divide-y divide-border p-0">
         {providers.map((provider) => (
           <div
             className="flex items-center justify-between p-4"
@@ -49,12 +51,12 @@ export function LinkedAccountsSection({
             <div className="flex items-center gap-3">
               <div
                 className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-                  provider.linked ? 'bg-success/10' : 'bg-base-200'
+                  provider.linked ? 'bg-success/10' : 'bg-muted'
                 }`}
               >
                 <LinkIcon
                   className={`size-4 ${
-                    provider.linked ? 'text-success' : 'text-base-content/50'
+                    provider.linked ? 'text-success' : 'text-muted-foreground'
                   }`}
                   weight="regular"
                 />
@@ -63,7 +65,7 @@ export function LinkedAccountsSection({
                 <div className="font-medium text-sm">
                   {provider.display_name}
                 </div>
-                <div className="text-base-content/60 text-xs">
+                <div className="text-muted-foreground text-xs">
                   {provider.linked
                     ? t('profile.linkedAccounts.connected')
                     : t('profile.linkedAccounts.notConnected')}
@@ -71,24 +73,22 @@ export function LinkedAccountsSection({
               </div>
             </div>
             {provider.linked ? (
-              <button
-                className="btn btn-ghost btn-xs text-error"
-                disabled={unlinkingProvider === provider.id}
+              <TRButton
+                appearance="ghost"
+                intent="danger"
+                loading={unlinkingProvider === provider.id}
+                loadingLabel={t('profile.linkedAccounts.unlinking')}
                 onClick={() => onUnlinkRequest(provider)}
                 type="button"
+                uiSize="sm"
               >
-                {unlinkingProvider === provider.id ? (
-                  <>
-                    <span className="loading loading-spinner loading-xs" />
-                    {t('profile.linkedAccounts.unlinking')}
-                  </>
-                ) : (
-                  t('profile.linkedAccounts.unlink')
-                )}
-              </button>
+                {unlinkingProvider !== provider.id
+                  ? t('profile.linkedAccounts.unlink')
+                  : undefined}
+              </TRButton>
             ) : (
               <a
-                className="btn btn-ghost btn-xs text-primary"
+                className="tr-btn inline-flex cursor-pointer items-center gap-2 border-border py-1.5 text-primary text-sm"
                 href={getAuthorizeUrl(provider.id, 'link', '/profile')}
               >
                 {t('profile.linkedAccounts.link')}
@@ -96,7 +96,7 @@ export function LinkedAccountsSection({
             )}
           </div>
         ))}
-      </div>
-    </div>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

@@ -2,6 +2,7 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import { z } from 'zod';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
 import {
   PinInput,
   type PinInputRef,
@@ -177,25 +179,28 @@ function VerifyTotp() {
       />
 
       {sessionExpired && (
-        <div
-          className="alert alert-warning mb-4"
+        <Alert
+          className="mb-4"
           data-testid="totp-verify-session-expired"
+          icon={WarningCircleIcon}
+          type="warning"
         >
-          <WarningCircleIcon className="size-5" weight="fill" />
           <div className="flex flex-col gap-1">
             <span>{t('verifyTotp.error.expired')}</span>
             <span className="text-sm opacity-80">
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
             </span>
-            <button
-              className="btn btn-sm btn-ghost mt-2 w-fit"
+            <TRButton
+              appearance="ghost"
+              className="mt-2 w-fit"
+              intent="neutral"
               onClick={redirectToLogin}
               type="button"
             >
               {t('verifyTotp.redirectNow')}
-            </button>
+            </TRButton>
           </div>
-        </div>
+        </Alert>
       )}
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
@@ -211,13 +216,14 @@ function VerifyTotp() {
         />
 
         {sessionExpired ? (
-          <button
-            className="btn btn-block btn-disabled mt-2"
+          <TRButton
+            className="mt-2 w-full"
             disabled
+            intent="primary"
             type="button"
           >
             {t('verifyTotp.submit')}
-          </button>
+          </TRButton>
         ) : (
           <SubmitButton
             className="mt-2"
@@ -230,9 +236,11 @@ function VerifyTotp() {
       </form>
 
       <div className="mt-4 text-center">
-        <button
-          className="link link-info font-medium text-xs"
+        <TRButton
+          appearance="ghost"
+          className="font-medium"
           data-testid="totp-verify-recovery-link"
+          intent="neutral"
           onClick={() =>
             router.navigate({
               to: '/verify/totp/recovery',
@@ -242,7 +250,7 @@ function VerifyTotp() {
           type="button"
         >
           {t('verifyTotp.useRecoveryCode')}
-        </button>
+        </TRButton>
       </div>
 
       <FooterLink

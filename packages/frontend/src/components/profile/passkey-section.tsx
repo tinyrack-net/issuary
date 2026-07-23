@@ -1,4 +1,5 @@
 import { FingerprintIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useTranslation } from 'react-i18next';
 
 type PasskeyModalType = 'setup' | 'manage' | null;
@@ -19,12 +20,12 @@ export function PasskeySection({
       <div className="flex items-center gap-3">
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            passkeyCount > 0 ? 'bg-success/10' : 'bg-base-200'
+            passkeyCount > 0 ? 'bg-success/10' : 'bg-muted'
           }`}
         >
           <FingerprintIcon
             className={`size-4 ${
-              passkeyCount > 0 ? 'text-success' : 'text-base-content/50'
+              passkeyCount > 0 ? 'text-success' : 'text-muted-foreground'
             }`}
             weight="regular"
           />
@@ -33,7 +34,7 @@ export function PasskeySection({
           <div className="font-medium text-sm">
             {t('profile.passkey.title')}
           </div>
-          <div className="text-base-content/60 text-xs">
+          <div className="text-muted-foreground text-xs">
             {passkeyCount > 0
               ? t('profile.passkey.status.enabled', { count: passkeyCount })
               : t('profile.passkey.status.disabled')}
@@ -42,21 +43,25 @@ export function PasskeySection({
       </div>
       <div className="flex gap-1">
         {passkeyCount > 0 ? (
-          <button
-            className="btn btn-ghost btn-xs text-primary"
+          <TRButton
+            appearance="ghost"
+            intent="primary"
             onClick={() => onOpenModal('manage')}
             type="button"
+            uiSize="sm"
           >
             {t('profile.passkey.manage')}
-          </button>
+          </TRButton>
         ) : (
-          <button
-            className="btn btn-ghost btn-xs text-primary"
+          <TRButton
+            appearance="ghost"
+            intent="primary"
             onClick={() => onOpenModal('setup')}
             type="button"
+            uiSize="sm"
           >
             {t('profile.passkey.add')}
-          </button>
+          </TRButton>
         )}
       </div>
     </div>

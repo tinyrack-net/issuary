@@ -47,10 +47,10 @@ function AuthorizationContextContent({
           <ShieldCheckIcon aria-hidden className="size-4" weight="fill" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-base-content text-sm">
+          <p className="font-medium text-foreground text-sm">
             {t('authorizationContext.title', { app: data.client.name })}
           </p>
-          <div className="mt-1 flex items-center gap-1.5 text-base-content/65 text-xs">
+          <div className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs">
             <GlobeSimpleIcon aria-hidden className="size-3.5 shrink-0" />
             <span className="truncate">
               {t('authorizationContext.redirect', {
@@ -60,14 +60,14 @@ function AuthorizationContextContent({
           </div>
 
           <div className="mt-3">
-            <p className="font-medium text-base-content/70 text-xs">
+            <p className="font-medium text-muted-foreground text-xs">
               {t('authorizationContext.permissions')}
             </p>
             {data.scopes.length > 0 ? (
               <ul className="mt-1 flex flex-wrap gap-1.5">
                 {data.scopes.map((scope) => (
                   <li
-                    className="rounded-full bg-base-100/80 px-2 py-1 text-base-content/75 text-xs"
+                    className="rounded-full bg-background/80 px-2 py-1 text-muted-foreground text-xs"
                     key={scope.name}
                   >
                     {t(`consent.scope.${scope.name}`, {
@@ -77,7 +77,7 @@ function AuthorizationContextContent({
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-base-content/60 text-xs">
+              <p className="mt-1 text-muted-foreground text-xs">
                 {t('authorizationContext.noScopes')}
               </p>
             )}
