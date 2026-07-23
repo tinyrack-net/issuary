@@ -25,24 +25,27 @@ export function AdminShell({
   const { t } = useTranslation();
 
   return (
-    <TRAppShell.Root breakpoint="lg" className="min-h-screen bg-background">
-      <TRAppShell.Sidebar className="flex w-80 flex-col border-border border-r bg-background p-5">
+    <TRAppShell.Root
+      breakpoint="lg"
+      className="min-h-screen bg-tinyrack-canvas"
+    >
+      <TRAppShell.Sidebar className="flex w-80 flex-col border-tinyrack-border border-r bg-tinyrack-surface p-5">
         <div className="mb-2 flex justify-end lg:hidden">
           <TRAppShell.Close aria-label={t('admin.nav.close')}>
             &times;
           </TRAppShell.Close>
         </div>
 
-        <div className="mb-8 rounded-3xl border border-border bg-muted p-4">
+        <div className="mb-8 rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface-muted p-4">
           <div className="flex items-center gap-3">
             <TRAvatar.Root shape="square" uiSize="lg">
-              <TRAvatar.Fallback className="bg-gradient-to-br from-primary to-emerald-400 text-primary-foreground">
+              <TRAvatar.Fallback className="bg-tinyrack-primary text-tinyrack-on-primary">
                 TA
               </TRAvatar.Fallback>
             </TRAvatar.Root>
             <div>
-              <p className="font-semibold text-foreground">TinyAuth</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="font-semibold text-tinyrack-text">TinyAuth</p>
+              <p className="text-tinyrack-text-muted text-tinyrack-xs">
                 {t('admin.console')}
               </p>
             </div>
@@ -64,10 +67,10 @@ export function AdminShell({
 
         <TRCard.Root className="mt-auto" variant="outlined">
           <TRCard.Content className="gap-2 p-4">
-            <p className="font-semibold text-muted-foreground text-xs uppercase tracking-[0.2em]">
+            <p className="font-semibold text-tinyrack-text-muted text-tinyrack-xs uppercase tracking-wide">
               {t('admin.signedInAs')}
             </p>
-            <p className="truncate font-medium text-foreground text-sm">
+            <p className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
               {user.email}
             </p>
             <div className="mt-2">
@@ -81,24 +84,26 @@ export function AdminShell({
         </TRCard.Root>
       </TRAppShell.Sidebar>
 
-      <TRAppShell.Header className="sticky top-0 z-20 flex items-center gap-3 border-border border-b bg-background px-4 lg:px-8">
+      <TRAppShell.Header className="sticky top-0 z-20 flex items-center gap-3 border-tinyrack-border border-b bg-tinyrack-surface px-4 lg:px-8">
         <div className="flex-none lg:hidden">
           <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
-            <span className="text-xl">&#9776;</span>
+            <span className="text-tinyrack-xl">&#9776;</span>
           </TRAppShell.Trigger>
         </div>
         <div className="min-w-0 flex-1">
           <nav
             aria-label={t('admin.breadcrumbLabel')}
-            className="hidden items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-muted-foreground text-sm lg:flex"
+            className="hidden items-center gap-2 rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-4 py-2 text-tinyrack-sm text-tinyrack-text-muted lg:flex"
           >
             <span>{t('admin.console')}</span>
-            <span className="text-border">/</span>
-            <span className="font-medium text-foreground">{title}</span>
+            <span className="text-tinyrack-text-placeholder">/</span>
+            <span className="font-medium text-tinyrack-text">{title}</span>
           </nav>
           <div className="lg:hidden">
-            <p className="font-semibold">{t('admin.mobileTitle')}</p>
-            <p className="truncate text-muted-foreground text-xs">
+            <p className="font-semibold text-tinyrack-text">
+              {t('admin.mobileTitle')}
+            </p>
+            <p className="truncate text-tinyrack-text-muted text-tinyrack-xs">
               {user.email}
             </p>
           </div>
@@ -107,8 +112,8 @@ export function AdminShell({
           <TRBadge uiSize="sm" variant="neutral">
             {t('admin.environment')}
           </TRBadge>
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-muted-foreground text-xs sm:flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <div className="hidden items-center gap-2 rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-3 py-1.5 text-tinyrack-text-muted text-tinyrack-xs sm:flex">
+            <span className="h-2 w-2 rounded-tinyrack-full bg-tinyrack-success" />
             {t('admin.livePolicy')}
           </div>
         </div>
@@ -119,17 +124,17 @@ export function AdminShell({
           <TRCard.Header className="p-6 lg:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <p className="font-semibold text-primary text-xs uppercase tracking-[0.26em]">
+                <p className="font-semibold text-tinyrack-primary text-tinyrack-xs uppercase tracking-wide">
                   {t('admin.eyebrow')}
                 </p>
-                <TRCard.Title className="mt-3 font-semibold text-4xl tracking-[-0.055em] lg:text-5xl">
+                <TRCard.Title className="mt-3 font-semibold text-tinyrack-3xl lg:text-tinyrack-4xl">
                   {title}
                 </TRCard.Title>
-                <TRCard.Description className="mt-3 max-w-2xl text-base leading-7">
+                <TRCard.Description className="mt-3 max-w-2xl text-tinyrack-md leading-7">
                   {description}
                 </TRCard.Description>
               </div>
-              <div className="max-w-xl rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-amber-600 text-sm dark:text-amber-400">
+              <div className="max-w-xl rounded-tinyrack-md border border-tinyrack-warning-border bg-tinyrack-warning-surface px-4 py-3 text-tinyrack-on-warning text-tinyrack-sm">
                 <span>{t('admin.readonlyNotice')}</span>
               </div>
             </div>
@@ -162,8 +167,8 @@ function AdminNavLink({ active, to, children }: AdminNavLinkProps) {
     <Link
       className={
         active
-          ? 'active flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2.5 font-medium text-foreground'
-          : 'flex items-center gap-2 rounded-2xl px-4 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground'
+          ? 'active flex items-center gap-2 rounded-tinyrack-md bg-tinyrack-surface-selected px-4 py-2.5 font-medium text-tinyrack-text'
+          : 'flex items-center gap-2 rounded-tinyrack-md px-4 py-2.5 text-tinyrack-text-muted hover:bg-tinyrack-surface-hover hover:text-tinyrack-text'
       }
       to={to}
     >

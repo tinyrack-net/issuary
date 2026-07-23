@@ -145,8 +145,10 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         )}
         <ModalActions>
           <TRButton
+            appearance="outline"
             data-testid="set-password-cancel"
             disabled={mutation.isPending}
+            intent="neutral"
             onClick={handleClose}
             type="button"
             uiSize="sm"

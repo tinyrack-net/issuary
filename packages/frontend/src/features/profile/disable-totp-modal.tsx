@@ -112,8 +112,10 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
 
         <ModalActions>
           <TRButton
+            appearance="outline"
             data-testid="disable-totp-cancel"
             disabled={mutation.isPending}
+            intent="neutral"
             onClick={handleClose}
             type="button"
             uiSize="sm"

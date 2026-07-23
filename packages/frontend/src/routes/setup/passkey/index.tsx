@@ -10,6 +10,10 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -153,8 +157,8 @@ function SetupPasskey() {
           title={t('setupPasskey.title')}
         />
         <div className="flex flex-col items-center gap-4 py-8">
-          <FingerprintIcon className="size-16 animate-pulse text-primary" />
-          <p className="text-center text-base-content/70">
+          <FingerprintIcon className="size-16 animate-pulse text-tinyrack-primary" />
+          <p className="text-center text-tinyrack-text-muted">
             {t('setupPasskey.waiting')}
           </p>
         </div>
@@ -174,19 +178,21 @@ function SetupPasskey() {
           {errorMessage}
         </Alert>
         {canUseTotpSetup && (
-          <Link
-            className="btn btn-primary btn-block mt-4"
-            search={extractOAuthParams(search)}
-            to="/setup/totp"
+          <TRLinkButton
+            className="mt-4 w-full gap-2"
+            intent="primary"
+            render={
+              <Link search={extractOAuthParams(search)} to="/setup/totp" />
+            }
           >
             <ShieldCheckIcon className="size-5" weight="regular" />
             {t('setupPasskey.useTotp')}
-          </Link>
+          </TRLinkButton>
         )}
-        <button
-          className={`btn btn-block mt-4 ${
-            canUseTotpSetup ? 'btn-outline' : 'btn-primary'
-          }`}
+        <TRButton
+          appearance={canUseTotpSetup ? 'outline' : 'solid'}
+          className="mt-4 w-full"
+          intent={canUseTotpSetup ? 'neutral' : 'primary'}
           onClick={() => {
             if (search.passkey_name) {
               setStep('registering');
@@ -199,7 +205,7 @@ function SetupPasskey() {
           type="button"
         >
           {t('setupPasskey.retry')}
-        </button>
+        </TRButton>
         <FooterLink
           as={Link}
           linkText={t('setupPasskey.backToLogin')}
@@ -223,7 +229,7 @@ function SetupPasskey() {
         {t('setupPasskey.required')}
       </Alert>
 
-      <p className="mt-4 text-center text-base-content/60 text-sm">
+      <p className="mt-4 text-center text-tinyrack-sm text-tinyrack-text-muted">
         {t('setupPasskey.description')}
       </p>
 
@@ -231,28 +237,29 @@ function SetupPasskey() {
         className="mt-4 flex flex-col gap-4"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <div className="form-control">
-          <label className="label" htmlFor="passkey-name">
-            <span className="label-text">{t('setupPasskey.name.label')}</span>
-          </label>
-          <input
-            className={`input input-bordered ${
-              errors.name ? 'input-error' : ''
-            }`}
+        <TRField.Root uiSize="md">
+          <TRField.Label htmlFor="passkey-name">
+            {t('setupPasskey.name.label')}
+          </TRField.Label>
+          <TRInput
+            aria-invalid={errors.name ? true : undefined}
+            data-invalid={errors.name ? '' : undefined}
             id="passkey-name"
             placeholder={t('setupPasskey.name.placeholder')}
             type="text"
             {...register('name')}
           />
-          <span className="label-text-alt mt-1 text-base-content/50">
-            {t('setupPasskey.name.hint')}
-          </span>
-          {errors.name && (
-            <span className="label-text-alt mt-1 text-error">
-              {errors.name.message}
-            </span>
+          {!errors.name && (
+            <TRField.Description>
+              {t('setupPasskey.name.hint')}
+            </TRField.Description>
           )}
-        </div>
+          {errors.name && (
+            <div className="tr-field-error" data-testid="field-error">
+              {errors.name.message}
+            </div>
+          )}
+        </TRField.Root>
 
         <SubmitButton
           className="mt-2"

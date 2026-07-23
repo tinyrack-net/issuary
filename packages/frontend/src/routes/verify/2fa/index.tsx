@@ -1,7 +1,7 @@
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { TRButton } from '@tinyrack/ui/components/button';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -33,7 +33,7 @@ function Verify2FA() {
       <div className="flex flex-col gap-4">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
-            <TRButton
+            <TRLinkButton
               appearance="outline"
               className="w-full justify-start gap-3"
               intent="neutral"
@@ -42,15 +42,15 @@ function Verify2FA() {
               <ShieldCheckIcon className="size-5" weight="regular" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">{t('verify2fa.totp.title')}</span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-tinyrack-text-muted text-tinyrack-xs">
                   {t('verify2fa.totp.description')}
                 </span>
               </div>
-            </TRButton>
+            </TRLinkButton>
           )}
 
         {appConfig.auth.passkey.enabled && (
-          <TRButton
+          <TRLinkButton
             appearance="outline"
             className="w-full justify-start gap-3"
             intent="neutral"
@@ -61,11 +61,11 @@ function Verify2FA() {
               <span className="font-medium">
                 {t('verify2fa.passkey.title')}
               </span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-tinyrack-text-muted text-tinyrack-xs">
                 {t('verify2fa.passkey.description')}
               </span>
             </div>
-          </TRButton>
+          </TRLinkButton>
         )}
       </div>
 

@@ -199,7 +199,7 @@ function VerifyRecovery() {
         >
           <div className="flex flex-col gap-1">
             <span>{t('verifyRecovery.error.expired')}</span>
-            <span className="text-sm opacity-80">
+            <span className="text-tinyrack-sm opacity-80">
               {t('verifyRecovery.redirecting', {
                 seconds: redirectCountdown,
               })}

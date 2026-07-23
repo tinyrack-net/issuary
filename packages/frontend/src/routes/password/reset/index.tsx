@@ -158,7 +158,7 @@ function ResetPassword() {
         />
 
         <TRButton
-          className="w-full font-semibold text-[14px]"
+          className="w-full font-semibold"
           data-testid="reset-password-go-login"
           intent="primary"
           onClick={() => navigate({ to: '/login' })}
@@ -227,9 +227,9 @@ function ResetPassword() {
         </SubmitButton>
       </form>
 
-      <div className="mt-6 text-center text-muted-foreground text-xs">
+      <div className="mt-6 text-center">
         <TRLink
-          className="font-medium"
+          className="text-tinyrack-sm"
           data-testid="reset-password-back-to-login"
           render={<Link to="/login" />}
         >

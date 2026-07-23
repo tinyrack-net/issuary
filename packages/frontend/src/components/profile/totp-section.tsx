@@ -21,20 +21,24 @@ export function TotpSection({
     <div className="flex items-center justify-between p-4">
       <div className="flex items-center gap-3">
         <div
-          className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            totpEnabled ? 'bg-success/10' : 'bg-muted'
+          className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
+            totpEnabled
+              ? 'bg-tinyrack-success-surface'
+              : 'bg-tinyrack-surface-muted'
           }`}
         >
           <ShieldCheckIcon
             className={`size-4 ${
-              totpEnabled ? 'text-success' : 'text-muted-foreground'
+              totpEnabled ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
             }`}
             weight="regular"
           />
         </div>
         <div>
-          <div className="font-medium text-sm">{t('profile.totp.title')}</div>
-          <div className="text-muted-foreground text-xs">
+          <div className="font-medium text-tinyrack-sm text-tinyrack-text">
+            {t('profile.totp.title')}
+          </div>
+          <div className="text-tinyrack-text-muted text-tinyrack-xs">
             {totpEnabled
               ? recoveryCodesMissing
                 ? t('profile.totp.status.recoveryCodesMissing')

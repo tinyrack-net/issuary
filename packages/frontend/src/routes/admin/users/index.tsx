@@ -7,6 +7,8 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
 import { TRTable } from '@tinyrack/ui/components/table';
 import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
@@ -51,10 +53,10 @@ function AdminUsersPage() {
   if (user?.role !== 'admin') {
     return (
       <PageLayout cardPadding maxWidth="md">
-        <h1 className="mb-2 text-center font-bold text-2xl">
+        <h1 className="mb-2 text-center font-bold text-tinyrack-2xl">
           {t('admin.accessRequired')}
         </h1>
-        <p className="text-center text-muted-foreground">
+        <p className="text-center text-tinyrack-text-muted">
           {t('admin.accessRequiredDescription')}
         </p>
       </PageLayout>
@@ -196,7 +198,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
       title={t('admin.users.title')}
       user={user}
     >
-      <div className="flex flex-col overflow-hidden rounded-[1.5rem] border border-border bg-muted/30 shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl lg:flex-row">
+      <div className="flex flex-col overflow-hidden rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface shadow-tinyrack-raised lg:flex-row lg:divide-x lg:divide-tinyrack-border">
         <SummaryStat
           label={t('admin.users.activeOnPage')}
           value={activeUsers}
@@ -216,8 +218,8 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
           aria-live={notice.tone === 'success' ? 'polite' : 'assertive'}
           className={
             notice.tone === 'success'
-              ? 'mt-6 flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-emerald-100'
-              : 'mt-6 flex items-center gap-2 rounded-xl border border-red-300/20 bg-red-300/10 px-4 py-3 text-red-100'
+              ? 'mt-6 flex items-center gap-2 rounded-tinyrack-md border border-tinyrack-success-border bg-tinyrack-success-surface px-4 py-3 text-tinyrack-success'
+              : 'mt-6 flex items-center gap-2 rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface px-4 py-3 text-tinyrack-danger'
           }
           role={notice.tone === 'success' ? 'status' : 'alert'}
         >
@@ -236,46 +238,47 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
       ) : null}
 
       <TRCard.Root
-        className="mt-6 overflow-hidden border-border shadow-[0_24px_80px_rgba(0,0,0,0.24)] backdrop-blur-xl"
+        className="mt-6 overflow-hidden shadow-tinyrack-raised"
         variant="outlined"
       >
         <TRCard.Content className="gap-5 p-0">
-          <div className="flex flex-col gap-4 border-border border-b bg-muted/20 p-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex flex-col gap-4 border-tinyrack-border border-b bg-tinyrack-surface-muted p-6 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.75)]" />
-                <span className="font-medium text-muted-foreground text-xs uppercase tracking-[0.18em]">
+                <span className="h-2 w-2 rounded-tinyrack-full bg-tinyrack-success" />
+                <span className="font-medium text-tinyrack-text-muted text-tinyrack-xs uppercase tracking-wider">
                   {t('admin.users.directoryEyebrow')}
                 </span>
               </div>
               <TRCard.Title>{t('admin.users.directory')}</TRCard.Title>
-              <TRCard.Description className="mt-1 text-sm">
+              <TRCard.Description className="mt-1 text-tinyrack-sm">
                 {t('admin.users.total', { count: data.pagination.total })}
               </TRCard.Description>
             </div>
             <div className="flex flex-col gap-3 xl:items-end">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-                <input
+                <TRInput
                   aria-label={t('admin.users.searchPlaceholder')}
-                  className="h-11 w-full rounded-lg border border-border bg-background/20 px-3 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden lg:w-80"
+                  className="w-full lg:w-80"
                   onChange={(event) => setDraftQuery(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') applySearch();
                   }}
                   placeholder={t('admin.users.searchPlaceholder')}
                   type="search"
+                  uiSize="sm"
                   value={draftQuery}
                 />
-                <label className="flex cursor-pointer items-center justify-start gap-2 rounded-lg border border-border bg-background/20 px-3 py-2">
+                <label className="flex cursor-pointer items-center justify-start gap-2 rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface px-3 py-2">
                   <input
                     checked={draftIncludeDeleted}
-                    className="size-4 rounded border-border bg-background/40 accent-primary"
+                    className="size-4 rounded-tinyrack-xs border-tinyrack-control-border accent-tinyrack-primary"
                     onChange={(event) =>
                       setDraftIncludeDeleted(event.target.checked)
                     }
                     type="checkbox"
                   />
-                  <span className="text-foreground/70 text-sm">
+                  <span className="text-tinyrack-sm text-tinyrack-text-muted">
                     {t('admin.users.includeDeleted')}
                   </span>
                 </label>
@@ -296,7 +299,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                   {t('admin.users.create')}
                 </TRButton>
               </div>
-              <div className="inline-flex items-center gap-0.5 rounded-lg border border-border bg-background/20 p-1">
+              <div className="inline-flex items-center gap-0.5 rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted p-1">
                 <QuickFilterButton
                   active={activeQuickFilter === 'all'}
                   label={t('admin.users.filter.all')}
@@ -322,8 +325,8 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 px-6">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-tinyrack-sm">
+              <span className="text-tinyrack-text-muted">
                 {t('admin.users.showingRange', {
                   from: pageStart,
                   to: pageEnd,
@@ -356,11 +359,11 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 </TRButton>
               ) : null}
             </div>
-            <label className="flex items-center gap-2 text-muted-foreground text-sm">
+            <label className="flex items-center gap-2 text-tinyrack-sm text-tinyrack-text-muted">
               <span>{t('admin.users.pageSize')}</span>
               <select
                 aria-label={t('admin.users.pageSize')}
-                className="rounded-md border border-border bg-background/20 px-2 py-1 text-foreground text-xs focus:outline-hidden"
+                className="rounded-tinyrack-sm border border-tinyrack-control-border bg-tinyrack-surface px-2 py-1 text-tinyrack-text text-tinyrack-xs focus:border-tinyrack-focus focus:outline-hidden"
                 onChange={(event) => setPageSize(Number(event.target.value))}
                 value={filters.pageSize}
               >
@@ -388,10 +391,10 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 {data.users.map((managedUser) => (
                   <TRTable.Row key={managedUser.sub}>
                     <TRTable.Cell>
-                      <div className="font-medium text-foreground">
+                      <div className="font-medium text-tinyrack-text">
                         {managedUser.email}
                       </div>
-                      <div className="max-w-64 truncate font-mono text-muted-foreground text-xs">
+                      <div className="max-w-64 truncate font-mono text-tinyrack-text-muted text-tinyrack-xs">
                         {managedUser.sub}
                       </div>
                     </TRTable.Cell>
@@ -447,7 +450,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                     <TRTable.Cell>
                       {managedUser.managed_by === 'database' &&
                       !managedUser.deleted_at ? (
-                        <div className="inline-flex items-center rounded-lg border border-border bg-background/20">
+                        <div className="inline-flex items-center rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted">
                           <TRButton
                             appearance="ghost"
                             aria-label={t('admin.users.editUser', {
@@ -487,7 +490,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                 {data.users.length === 0 ? (
                   <TRTable.Row>
                     <TRTable.Cell
-                      className="py-12 text-center text-muted-foreground"
+                      className="py-12 text-center text-tinyrack-text-muted"
                       colSpan={7}
                     >
                       {t('admin.users.emptyFiltered')}
@@ -498,7 +501,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
             </TRTable.Root>
           </div>
 
-          <div className="flex items-center justify-between border-border border-t bg-muted/20 p-5">
+          <div className="flex items-center justify-between border-tinyrack-border border-t bg-tinyrack-surface-muted p-5">
             <TRButton
               appearance="outline"
               disabled={filters.page <= 1}
@@ -590,9 +593,9 @@ function UserFormModal({
         title={t('admin.users.deleteTitle', { email: modal.user.email })}
         variant="destructive"
       >
-        <div className="my-4 rounded-2xl border border-red-300/20 bg-red-400/10 p-4 text-red-100">
+        <div className="my-4 rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-4 text-tinyrack-danger">
           <p className="font-medium">{t('admin.users.deleteWarning')}</p>
-          <p className="mt-1 text-red-100/70 text-sm">
+          <p className="mt-1 text-tinyrack-sm opacity-80">
             {t('admin.users.deleteDescription')}
           </p>
         </div>
@@ -661,48 +664,39 @@ function UserFormModal({
       title={title}
     >
       <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-        <div>
-          <label
-            className="mb-1 block font-medium text-muted-foreground text-sm"
-            htmlFor="admin-user-email"
-          >
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="admin-user-email">
             {t('profile.email.label')}
-          </label>
-          <input
-            className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden"
+          </TRField.Label>
+          <TRInput
             defaultValue={defaultValues?.email ?? ''}
             id="admin-user-email"
             name="email"
             required
             type="email"
+            uiSize="sm"
           />
-        </div>
+        </TRField.Root>
         {modal.type === 'create' ? (
-          <div>
-            <label
-              className="mb-1 block font-medium text-muted-foreground text-sm"
-              htmlFor="admin-user-password"
-            >
+          <TRField.Root uiSize="sm">
+            <TRField.Label htmlFor="admin-user-password">
               {t('admin.users.password')}
-            </label>
-            <input
-              className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:border-primary/60 focus:outline-hidden"
+            </TRField.Label>
+            <TRInput
               id="admin-user-password"
               name="password"
               required
               type="password"
+              uiSize="sm"
             />
-          </div>
+          </TRField.Root>
         ) : null}
-        <div>
-          <label
-            className="mb-1 block font-medium text-muted-foreground text-sm"
-            htmlFor="admin-user-role"
-          >
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="admin-user-role">
             {t('admin.users.role')}
-          </label>
+          </TRField.Label>
           <select
-            className="w-full rounded-lg border border-border bg-background/20 px-3 py-2 text-foreground text-sm focus:border-primary/60 focus:outline-hidden"
+            className="h-9 w-full rounded-tinyrack-sm border border-tinyrack-control-border bg-tinyrack-surface px-3 text-tinyrack-sm text-tinyrack-text focus:border-tinyrack-focus focus:outline-hidden"
             defaultValue={defaultValues?.role ?? 'user'}
             id="admin-user-role"
             name="role"
@@ -710,15 +704,15 @@ function UserFormModal({
             <option value="user">{t('admin.users.roleUser')}</option>
             <option value="admin">{t('admin.users.roleAdmin')}</option>
           </select>
-        </div>
-        <label className="flex cursor-pointer items-center justify-start gap-3 rounded-lg border border-border bg-background/20 px-3 py-2">
+        </TRField.Root>
+        <label className="flex cursor-pointer items-center justify-start gap-3 rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface px-3 py-2">
           <input
-            className="size-4 rounded border-border bg-background/40 accent-primary"
+            className="size-4 rounded-tinyrack-xs border-tinyrack-control-border accent-tinyrack-primary"
             defaultChecked={defaultValues?.email_verified ?? false}
             name="email_verified"
             type="checkbox"
           />
-          <span className="text-foreground/70 text-sm">
+          <span className="text-tinyrack-sm text-tinyrack-text-muted">
             {t('admin.users.emailVerified')}
           </span>
         </label>
@@ -801,12 +795,12 @@ function QuickFilterButton({
 function SummaryStat({ label, value }: { label: string; value: number }) {
   const { t } = useTranslation();
   return (
-    <div className="flex-1 border-border bg-transparent p-6">
-      <div className="text-muted-foreground text-sm">{label}</div>
-      <div className="mt-1 font-bold text-4xl text-foreground tracking-[-0.06em]">
+    <div className="flex-1 p-6">
+      <div className="text-tinyrack-sm text-tinyrack-text-muted">{label}</div>
+      <div className="mt-1 font-bold text-tinyrack-4xl text-tinyrack-text">
         {value}
       </div>
-      <div className="text-muted-foreground text-xs">
+      <div className="text-tinyrack-text-muted text-tinyrack-xs">
         {t('admin.users.currentPage')}
       </div>
     </div>

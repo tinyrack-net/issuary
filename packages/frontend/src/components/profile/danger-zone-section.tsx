@@ -21,25 +21,28 @@ export function DangerZoneSection({
   }
 
   return (
-    <TRCard.Root className="border-danger/60 border-l-4" variant="outlined">
-      <TRCard.Header className="border-border border-b px-4 py-3">
+    <TRCard.Root
+      className="border-tinyrack-danger-border bg-tinyrack-danger-surface"
+      variant="outlined"
+    >
+      <TRCard.Header className="border-tinyrack-danger-border border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <WarningIcon className="size-4 text-danger" weight="fill" />
-          <TRCard.Title className="font-semibold text-danger text-sm">
+          <WarningIcon className="size-4 text-tinyrack-danger" weight="fill" />
+          <TRCard.Title className="font-semibold text-tinyrack-danger text-tinyrack-md">
             {t('profile.dangerZone.title')}
           </TRCard.Title>
         </div>
-        <TRCard.Description className="mt-0.5 text-muted-foreground text-xs">
+        <TRCard.Description className="mt-0.5 text-tinyrack-text-muted text-tinyrack-xs">
           {t('profile.dangerZone.description')}
         </TRCard.Description>
       </TRCard.Header>
       <TRCard.Content className="px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm">
+            <p className="font-medium text-tinyrack-sm text-tinyrack-text">
               {t('profile.deleteAccount.title')}
             </p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-tinyrack-text-muted text-tinyrack-xs">
               {isConfigManaged
                 ? t('profile.deleteAccount.configManaged')
                 : t('profile.deleteAccount.description')}

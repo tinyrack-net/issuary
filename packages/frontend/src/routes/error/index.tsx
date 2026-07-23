@@ -1,5 +1,8 @@
 import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRLink } from '@tinyrack/ui/components/link';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -32,42 +35,45 @@ function ErrorPage() {
       <PageHeader subtitle={errorMessage} title={t('error.subtitle')} />
 
       {/* Error Code */}
-      <div className="mb-6 rounded-lg bg-base-200 p-4 text-center">
-        <p className="mb-1 text-base-content/50 text-xs">
+      <div className="mb-6 rounded-tinyrack-md bg-tinyrack-surface-muted p-4 text-center">
+        <p className="mb-1 text-tinyrack-text-muted text-tinyrack-xs">
           {t('error.codeLabel')}
         </p>
-        <code className="font-mono text-error text-sm" data-testid="error-code">
+        <code
+          className="font-mono text-tinyrack-danger text-tinyrack-sm"
+          data-testid="error-code"
+        >
           {errorCode}
         </code>
       </div>
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        <Link
-          className="btn btn-block h-10 font-semibold text-[14px]"
-          to="/login"
+        <TRLinkButton
+          className="w-full font-semibold"
+          intent="primary"
+          render={<Link to="/login" />}
         >
           {t('error.goToLogin')}
-        </Link>
-        <button
-          className="btn btn-ghost btn-block h-10 font-semibold text-[14px]"
+        </TRLinkButton>
+        <TRButton
+          appearance="outline"
+          className="w-full font-semibold"
+          intent="neutral"
           onClick={() => window.history.back()}
           type="button"
         >
           <HouseIcon className="size-4" weight="fill" />
           {t('error.goBack')}
-        </button>
+        </TRButton>
       </div>
 
       {/* Footer */}
-      <div className="mt-6 text-center text-base-content/70 text-xs">
+      <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
         {t('error.footer.needHelp')}{' '}
-        <a
-          className="link link-info font-medium"
-          href="mailto:support@example.com"
-        >
+        <TRLink className="font-medium" href="mailto:support@example.com">
           {t('error.footer.contactSupport')}
-        </a>
+        </TRLink>
       </div>
     </PageLayout>
   );

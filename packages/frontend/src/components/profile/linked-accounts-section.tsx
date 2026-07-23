@@ -1,6 +1,7 @@
 import { LinkIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useTranslation } from 'react-i18next';
 
 interface OAuthProvider {
@@ -34,15 +35,15 @@ export function LinkedAccountsSection({
 
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Header className="border-border border-b px-4 py-3">
-        <TRCard.Title className="font-semibold text-sm">
+      <TRCard.Header className="border-tinyrack-border border-b px-4 py-3">
+        <TRCard.Title className="font-semibold text-tinyrack-md text-tinyrack-text">
           {t('profile.linkedAccounts.title')}
         </TRCard.Title>
-        <TRCard.Description className="text-muted-foreground text-xs">
+        <TRCard.Description className="text-tinyrack-text-muted text-tinyrack-xs">
           {t('profile.linkedAccounts.description')}
         </TRCard.Description>
       </TRCard.Header>
-      <TRCard.Content className="divide-y divide-border p-0">
+      <TRCard.Content className="divide-y divide-tinyrack-border p-0">
         {providers.map((provider) => (
           <div
             className="flex items-center justify-between p-4"
@@ -50,22 +51,26 @@ export function LinkedAccountsSection({
           >
             <div className="flex items-center gap-3">
               <div
-                className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-                  provider.linked ? 'bg-success/10' : 'bg-muted'
+                className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
+                  provider.linked
+                    ? 'bg-tinyrack-success-surface'
+                    : 'bg-tinyrack-surface-muted'
                 }`}
               >
                 <LinkIcon
                   className={`size-4 ${
-                    provider.linked ? 'text-success' : 'text-muted-foreground'
+                    provider.linked
+                      ? 'text-tinyrack-success'
+                      : 'text-tinyrack-text-muted'
                   }`}
                   weight="regular"
                 />
               </div>
               <div>
-                <div className="font-medium text-sm">
+                <div className="font-medium text-tinyrack-sm text-tinyrack-text">
                   {provider.display_name}
                 </div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-tinyrack-text-muted text-tinyrack-xs">
                   {provider.linked
                     ? t('profile.linkedAccounts.connected')
                     : t('profile.linkedAccounts.notConnected')}
@@ -87,12 +92,16 @@ export function LinkedAccountsSection({
                   : undefined}
               </TRButton>
             ) : (
-              <a
-                className="tr-btn inline-flex cursor-pointer items-center gap-2 border-border py-1.5 text-primary text-sm"
-                href={getAuthorizeUrl(provider.id, 'link', '/profile')}
+              <TRLinkButton
+                appearance="outline"
+                intent="neutral"
+                render={
+                  <a href={getAuthorizeUrl(provider.id, 'link', '/profile')} />
+                }
+                uiSize="sm"
               >
                 {t('profile.linkedAccounts.link')}
-              </a>
+              </TRLinkButton>
             )}
           </div>
         ))}

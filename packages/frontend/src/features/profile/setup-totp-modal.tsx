@@ -104,7 +104,13 @@ export function SetupTotpModal({
             {t('profile.totp.setupModal.setupError')}
           </AlertBanner>
           <ModalActions>
-            <TRButton onClick={handleClose} type="button" uiSize="sm">
+            <TRButton
+              appearance="outline"
+              intent="neutral"
+              onClick={handleClose}
+              type="button"
+              uiSize="sm"
+            >
               {t('profile.totp.setupModal.cancel')}
             </TRButton>
             <TRButton
@@ -125,12 +131,18 @@ export function SetupTotpModal({
             additionalActions={
               <>
                 <ModalActions>
-                  <TRButton onClick={handleClose} type="button" uiSize="sm">
+                  <TRButton
+                    appearance="outline"
+                    intent="neutral"
+                    onClick={handleClose}
+                    type="button"
+                    uiSize="sm"
+                  >
                     {t('profile.totp.setupModal.cancel')}
                   </TRButton>
                 </ModalActions>
                 {canSwitchToPasskey && onSwitchToPasskey && (
-                  <p className="mt-2 text-center text-xs">
+                  <p className="mt-2 text-center text-tinyrack-xs">
                     <TRButton
                       appearance="ghost"
                       intent="primary"

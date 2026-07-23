@@ -6,6 +6,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRLink } from '@tinyrack/ui/components/link';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -278,12 +279,12 @@ function LoginPassword() {
 
           {configData.email.enabled && (
             <div className="flex items-center justify-end">
-              <Link
-                className="text-sm text-tinyrack-primary hover:underline"
-                to="/password/forgot"
+              <TRLink
+                className="text-tinyrack-sm"
+                render={<Link to="/password/forgot" />}
               >
                 {t('login.link.forgotPassword')}
-              </Link>
+              </TRLink>
             </div>
           )}
 
@@ -298,7 +299,7 @@ function LoginPassword() {
       )}
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-muted-foreground text-xs">
+        <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
             dangerouslySetInnerHTML={{ __html: implicitNotice }}
@@ -318,13 +319,12 @@ function LoginPassword() {
 
       {hasMultipleLoginMethods && (
         <div className="mt-3 text-center">
-          <Link
-            className="text-sm text-tinyrack-primary hover:underline"
-            search={extractOAuthParams(search)}
-            to="/login"
+          <TRLink
+            className="text-tinyrack-sm"
+            render={<Link search={extractOAuthParams(search)} to="/login" />}
           >
             {t('login.password.backToMethods')}
-          </Link>
+          </TRLink>
         </div>
       )}
     </PageLayout>

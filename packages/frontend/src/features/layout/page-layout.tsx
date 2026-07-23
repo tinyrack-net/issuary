@@ -39,7 +39,7 @@ export function PageLayout({
 
   return (
     <div
-      className={`relative flex min-h-screen flex-col overflow-y-auto bg-background bg-center bg-cover ${containerClass}`}
+      className={`relative flex min-h-screen flex-col overflow-y-auto bg-center bg-cover bg-tinyrack-canvas ${containerClass}`}
       style={
         backgroundUrl
           ? {
@@ -51,13 +51,13 @@ export function PageLayout({
       {backgroundUrl && (
         <div
           aria-hidden
-          className="absolute inset-0 bg-background/70 backdrop-blur-[1px]"
+          className="absolute inset-0 bg-tinyrack-canvas/70 backdrop-blur-sm"
         />
       )}
       <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
       <div className="relative z-10 flex flex-1 items-center justify-center py-6">
         <div
-          className={`w-full rounded-xl border border-border bg-surface shadow-lg ${cardClass}`}
+          className={`w-full rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface shadow-tinyrack-raised ${cardClass}`}
         >
           {children}
         </div>

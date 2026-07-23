@@ -1,4 +1,6 @@
 import { CheckIcon, CopyIcon, WarningIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -28,17 +30,17 @@ export function RecoveryCodesStep({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <p className="text-center text-base-content/60 text-xs">
+      <p className="text-center text-tinyrack-text-muted text-tinyrack-xs">
         {t('setupTotp.recoveryCodes.description')}
       </p>
 
       <div
-        className="grid grid-cols-2 gap-2 rounded-lg bg-base-200 p-3"
+        className="grid grid-cols-2 gap-2 rounded-tinyrack-md bg-tinyrack-surface-muted p-3"
         data-testid="recovery-codes-grid"
       >
         {recoveryCodes.map((code) => (
           <code
-            className="rounded bg-base-300 px-2 py-1 text-center font-mono text-sm"
+            className="rounded-tinyrack-sm bg-tinyrack-surface px-2 py-1 text-center font-mono text-tinyrack-sm text-tinyrack-text"
             key={code}
           >
             {code}
@@ -46,15 +48,20 @@ export function RecoveryCodesStep({
         ))}
       </div>
 
-      <div className="flex items-start gap-2 rounded-lg bg-warning/10 p-2.5 text-warning">
+      <div className="flex items-start gap-2 rounded-tinyrack-md border border-tinyrack-warning-border bg-tinyrack-warning-surface p-2.5 text-tinyrack-on-warning">
         <WarningIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
-        <p className="text-xs">{t('setupTotp.recoveryCodes.warning')}</p>
+        <p className="text-tinyrack-xs">
+          {t('setupTotp.recoveryCodes.warning')}
+        </p>
       </div>
 
-      <button
-        className="btn btn-sm btn-outline btn-block gap-2"
+      <TRButton
+        appearance="outline"
+        className="w-full gap-2"
+        intent="neutral"
         onClick={handleCopy}
         type="button"
+        uiSize="sm"
       >
         {copied ? (
           <>
@@ -67,35 +74,36 @@ export function RecoveryCodesStep({
             {t('setupTotp.recoveryCodes.copy')}
           </>
         )}
-      </button>
+      </TRButton>
 
+      {/* biome-ignore lint/a11y/noLabelWithoutControl: the label wraps TRCheckbox.Root, which renders the checkbox control */}
       <label className="flex cursor-pointer items-center gap-2">
-        <input
+        <TRCheckbox.Root
           checked={confirmed}
-          className="checkbox checkbox-sm"
           data-testid="recovery-codes-confirm"
           disabled={isLoading}
-          onChange={(event) => setConfirmed(event.target.checked)}
-          type="checkbox"
-        />
-        <span className="text-sm">
+          onCheckedChange={(checked) => setConfirmed(checked === true)}
+          uiSize="sm"
+        >
+          <TRCheckbox.Indicator />
+        </TRCheckbox.Root>
+        <span className="text-tinyrack-sm text-tinyrack-text">
           {t('setupTotp.recoveryCodes.confirmCheckbox')}
         </span>
       </label>
 
-      <button
-        className="btn btn-sm btn-primary btn-block"
+      <TRButton
+        className="w-full"
         data-testid="recovery-codes-submit"
         disabled={!confirmed || isLoading}
+        intent="primary"
+        loading={isLoading}
         onClick={onConfirm}
         type="button"
+        uiSize="sm"
       >
-        {isLoading ? (
-          <span className="loading loading-spinner loading-sm" />
-        ) : (
-          t('setupTotp.recoveryCodes.confirm')
-        )}
-      </button>
+        {t('setupTotp.recoveryCodes.confirm')}
+      </TRButton>
     </div>
   );
 }

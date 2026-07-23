@@ -1,6 +1,7 @@
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -35,41 +36,50 @@ function Setup2FA() {
         {t('setup2fa.required')}
       </Alert>
 
-      <div className="mt-4 flex flex-col gap-4">
+      <div className="mt-4 flex flex-col gap-3">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
-            <Link
-              className="btn btn-outline btn-block justify-start gap-3"
-              search={oauthParams}
-              to="/setup/totp"
+            <TRLinkButton
+              appearance="outline"
+              className="h-auto w-full cursor-pointer justify-start gap-3 py-3"
+              intent="neutral"
+              render={<Link search={oauthParams} to="/setup/totp" />}
+              uiSize="md"
             >
               <ShieldCheckIcon className="size-5" weight="regular" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">{t('setup2fa.totp.title')}</span>
-                <span className="text-xs opacity-70">
+                <span className="text-tinyrack-text-muted text-tinyrack-xs">
                   {t('setup2fa.totp.description')}
                 </span>
               </div>
-            </Link>
+            </TRLinkButton>
           )}
 
         {appConfig.auth.passkey.enabled && (
-          <Link
-            className="btn btn-outline btn-block justify-start gap-3"
-            search={{
-              ...oauthParams,
-              passkey_name: 'default',
-            }}
-            to="/setup/passkey"
+          <TRLinkButton
+            appearance="outline"
+            className="h-auto w-full cursor-pointer justify-start gap-3 py-3"
+            intent="neutral"
+            render={
+              <Link
+                search={{
+                  ...oauthParams,
+                  passkey_name: 'default',
+                }}
+                to="/setup/passkey"
+              />
+            }
+            uiSize="md"
           >
             <FingerprintIcon className="size-5" weight="regular" />
             <div className="flex flex-col items-start">
               <span className="font-medium">{t('setup2fa.passkey.title')}</span>
-              <span className="text-xs opacity-70">
+              <span className="text-tinyrack-text-muted text-tinyrack-xs">
                 {t('setup2fa.passkey.description')}
               </span>
             </div>
-          </Link>
+          </TRLinkButton>
         )}
       </div>
 

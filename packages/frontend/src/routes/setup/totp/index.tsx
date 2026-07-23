@@ -6,6 +6,9 @@ import {
 } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRAlert } from '@tinyrack/ui/components/alert';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
@@ -191,7 +194,7 @@ function SetupTotp() {
           className="flex justify-center py-8"
           data-testid="totp-setup-loading"
         >
-          <span className="loading loading-spinner loading-lg" />
+          <TRSpinner uiSize="lg" variant="primary" />
         </div>
       </PageLayout>
     );
@@ -207,27 +210,30 @@ function SetupTotp() {
             subtitle={t('setupTotp.subtitle')}
             title={t('setupTotp.title')}
           />
-          <div
-            className="alert alert-warning mb-4"
+          <TRAlert.Root
+            className="mb-4"
             data-testid="totp-setup-session-expired"
+            variant="warning"
           >
             <WarningCircleIcon className="size-5" weight="fill" />
-            <div className="flex flex-col gap-1">
-              <span>{t('setupTotp.error.expired')}</span>
-              <span className="text-sm opacity-80">
-                {t('setupTotp.redirecting', {
-                  seconds: redirectCountdown,
-                })}
-              </span>
-              <button
-                className="btn btn-sm btn-ghost mt-2 w-fit"
+            <TRAlert.Title>{t('setupTotp.error.expired')}</TRAlert.Title>
+            <TRAlert.Description>
+              {t('setupTotp.redirecting', {
+                seconds: redirectCountdown,
+              })}
+            </TRAlert.Description>
+            <TRAlert.Actions>
+              <TRButton
+                appearance="ghost"
+                intent="neutral"
                 onClick={redirectToLogin}
                 type="button"
+                uiSize="sm"
               >
                 {t('setupTotp.redirectNow')}
-              </button>
-            </div>
-          </div>
+              </TRButton>
+            </TRAlert.Actions>
+          </TRAlert.Root>
           <FooterLink
             as={Link}
             linkText={t('setupTotp.backToLogin')}
@@ -250,13 +256,14 @@ function SetupTotp() {
           <Alert className="mb-4" icon={InfoIcon} type="info">
             {t('setupTotp.error.alreadyEnabled')}
           </Alert>
-          <button
-            className="btn btn-primary btn-block"
+          <TRButton
+            className="w-full"
+            intent="primary"
             onClick={redirectToProfile}
             type="button"
           >
             {t('setupTotp.goToProfile')}
-          </button>
+          </TRButton>
           <FooterLink
             as={Link}
             linkText={t('setupTotp.backToLogin')}
@@ -278,14 +285,16 @@ function SetupTotp() {
         <Alert className="mb-4" icon={XCircleIcon} type="error">
           {t('setupTotp.error.setupFailed')}
         </Alert>
-        <button
-          className="btn btn-primary btn-block"
+        <TRButton
+          className="w-full"
           disabled={isSetupPending}
+          intent="primary"
+          loading={isSetupPending}
           onClick={startSetup}
           type="button"
         >
           {t('setupTotp.retry')}
-        </button>
+        </TRButton>
         <FooterLink
           as={Link}
           linkText={t('setupTotp.backToLogin')}
@@ -323,10 +332,9 @@ function SetupTotp() {
           title={t('setupTotp.title')}
         />
 
-        <div className="alert alert-info mb-4">
-          <ShieldCheckIcon className="size-5" weight="fill" />
-          <span>{t('setupTotp.required')}</span>
-        </div>
+        <Alert className="mb-4" icon={ShieldCheckIcon} type="info">
+          {t('setupTotp.required')}
+        </Alert>
 
         <QrStep onNext={goToVerify} setupData={setupData} />
 

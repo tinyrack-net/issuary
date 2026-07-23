@@ -16,7 +16,7 @@ export function SubmitButton({
 }: SubmitButtonProps) {
   return (
     <TRButton
-      className={`w-full font-semibold text-[14px] ${className}`}
+      className={`w-full font-semibold ${className}`}
       disabled={isPending || disabled}
       intent="primary"
       loading={isPending}

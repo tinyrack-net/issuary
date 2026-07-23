@@ -140,10 +140,13 @@ function Consent() {
       {/* User info */}
       <TRCard.Root className="mb-4" variant="outlined">
         <TRCard.Content className="gap-1 p-3 text-center">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-tinyrack-text-muted text-tinyrack-xs">
             {t('consent.loggedInAs')}
           </p>
-          <p className="font-medium text-sm" data-testid="consent-user-email">
+          <p
+            className="font-medium text-tinyrack-sm text-tinyrack-text"
+            data-testid="consent-user-email"
+          >
             {user.email}
           </p>
         </TRCard.Content>
@@ -151,22 +154,22 @@ function Consent() {
 
       {/* Requested permissions */}
       <div className="mb-4">
-        <h2 className="mb-3 font-semibold text-sm">
+        <h2 className="mb-3 font-semibold text-tinyrack-sm text-tinyrack-text">
           {t('consent.permissions.title')}
         </h2>
         <ul className="flex flex-col gap-2" data-testid="consent-scope-list">
           {scopes.map((scope: { name: string; description: string }) => (
             <li
-              className="flex items-start gap-3 rounded-lg bg-muted p-3"
+              className="flex items-start gap-3 rounded-tinyrack-md bg-tinyrack-surface-muted p-3"
               key={scope.name}
             >
-              <div className="mt-0.5 rounded-full bg-primary/20 p-1">
+              <div className="mt-0.5 rounded-tinyrack-full bg-tinyrack-info-surface p-1">
                 <ShieldCheckIcon
-                  className="size-4 text-primary"
+                  className="size-4 text-tinyrack-info"
                   weight="fill"
                 />
               </div>
-              <p className="font-medium text-sm">
+              <p className="font-medium text-tinyrack-sm text-tinyrack-text">
                 {t(`consent.scope.${scope.name}`, {
                   defaultValue: scope.description,
                 })}
@@ -180,7 +183,7 @@ function Consent() {
       <div className="flex gap-3">
         <TRButton
           appearance="outline"
-          className="flex-1 font-semibold text-[14px]"
+          className="flex-1 font-semibold"
           data-testid="consent-deny"
           intent="neutral"
           loading={consentMutation.isPending}
@@ -191,22 +194,18 @@ function Consent() {
           <XIcon className="size-4" weight="bold" />
           {t('consent.deny')}
         </TRButton>
-        <button
-          className="btn btn-primary h-10 flex-1 font-semibold text-[14px]"
+        <TRButton
+          className="flex-1 font-semibold"
           data-testid="consent-allow"
-          disabled={consentMutation.isPending}
+          intent="primary"
+          loading={consentMutation.isPending}
+          loadingLabel={t('consent.allow')}
           onClick={handleAllow}
           type="button"
         >
-          {consentMutation.isPending ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <>
-              <ShieldCheckIcon className="size-4" weight="fill" />
-              {t('consent.allow')}
-            </>
-          )}
-        </button>
+          <ShieldCheckIcon className="size-4" weight="fill" />
+          {t('consent.allow')}
+        </TRButton>
       </div>
     </PageLayout>
   );

@@ -24,8 +24,8 @@ const sizeClasses = {
 } as const;
 
 const iconVariantClasses: Record<ModalVariant, string> = {
-  default: 'bg-primary/10 text-primary',
-  destructive: 'bg-red-500/10 text-red-500',
+  default: 'bg-tinyrack-surface-muted text-tinyrack-text',
+  destructive: 'bg-tinyrack-danger-surface text-tinyrack-danger',
 };
 
 export function Modal({
@@ -80,11 +80,11 @@ export function Modal({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <TRDialog.Title className="font-bold text-base">
+                <TRDialog.Title className="font-bold text-tinyrack-md">
                   {title}
                 </TRDialog.Title>
                 {description && (
-                  <TRDialog.Description className="mt-0.5 text-base-content/60 text-xs">
+                  <TRDialog.Description className="mt-0.5 text-tinyrack-text-muted text-tinyrack-xs">
                     {description}
                   </TRDialog.Description>
                 )}
