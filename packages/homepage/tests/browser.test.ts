@@ -109,6 +109,16 @@ describe('Tinyauth built documentation', () => {
     await expect(
       page.locator('.tr-callout[data-variant="warning"]').isVisible(),
     ).resolves.toBe(true);
+    await page.getByRole('button', { name: 'ナビゲーションを開く' }).click();
+    await expect(
+      page.getByRole('button', { name: 'メインメニュー' }).isVisible(),
+    ).resolves.toBe(true);
+    await page.getByRole('button', { name: 'メインメニュー' }).click();
+    await expect(
+      page
+        .getByRole('button', { name: 'ドキュメントメニューに戻る' })
+        .isVisible(),
+    ).resolves.toBe(true);
     expect(await page.locator('html').getAttribute('data-theme')).toBe(
       'tinyrack-dark',
     );
