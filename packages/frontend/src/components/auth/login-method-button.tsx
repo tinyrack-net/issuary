@@ -4,6 +4,8 @@ import {
   GoogleLogoIcon,
   LinkIcon,
 } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { createElement, type ElementType, type ReactNode } from 'react';
 import type { OAuthProviderType } from '#frontend/queries/config.ts';
 
@@ -24,6 +26,9 @@ const PROVIDER_ICONS: Record<
   apple: <AppleLogoIcon className="size-6" weight="regular" />,
 };
 
+const COMMON_CLASSES =
+  'flex h-auto flex-row gap-2 py-3 sm:flex-col border-border';
+
 export function LoginMethodButton<C extends ElementType>({
   as: Component,
   icon,
@@ -43,22 +48,36 @@ export function LoginMethodButton<C extends ElementType>({
     iconElement = <LinkIcon className="size-6" weight="regular" />;
   }
 
-  const content = isLoading ? (
-    <span className="loading loading-spinner loading-md" />
-  ) : (
+  const content = (
     <>
       {iconElement}
       <span className="text-xs">{label}</span>
     </>
   );
 
+  if (Component === 'button') {
+    return (
+      <TRButton
+        appearance="ghost"
+        className={COMMON_CLASSES}
+        intent="neutral"
+        loading={isLoading}
+        uiSize="md"
+        {...rest}
+      >
+        {content}
+      </TRButton>
+    );
+  }
+
+  const linkContent = isLoading ? <TRSpinner uiSize="md" /> : content;
+
   return createElement(
     Component,
     {
-      className:
-        'btn btn-ghost flex h-auto flex-row gap-2 border-base-300 py-3 sm:flex-col',
+      className: `tr-btn cursor-pointer ${COMMON_CLASSES}`,
       ...rest,
     },
-    content,
+    linkContent,
   );
 }

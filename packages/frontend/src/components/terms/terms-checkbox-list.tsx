@@ -1,3 +1,6 @@
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { TRLink } from '@tinyrack/ui/components/link';
 import { useState } from 'react';
 import {
   type Control,
@@ -10,6 +13,7 @@ import {
   useWatch,
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+
 import type { TermItem } from '#frontend/queries/terms.ts';
 import { TermsContentModal } from './terms-content-modal.tsx';
 
@@ -35,9 +39,6 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
   const { t } = useTranslation();
   const [modalTerm, setModalTerm] = useState<TermItem | null>(null);
 
-  // react-hook-form's Path<T> cannot be narrowed from template literal
-  // strings when T is generic, so these casts are necessary to bridge
-  // the generic constraint with the known 'termsConsents' field shape.
   const termsConsents = useWatch({
     control,
     name: 'termsConsents' as Path<T>,
@@ -72,27 +73,28 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
   return (
     <>
       <div className="space-y-1">
-        {/* All terms checkbox */}
         {terms.length > 1 && (
-          <label className="flex cursor-pointer items-center gap-1.5 py-0.5">
-            <input
+          <div className="flex cursor-pointer items-center gap-1.5 py-0.5">
+            <TRCheckbox.Root
+              aria-labelledby="terms-all-label"
               checked={allChecked}
-              className="checkbox checkbox-primary checkbox-xs"
               data-testid="terms-checkbox"
               disabled={disabled}
-              onChange={(e) => handleAllChange(e.target.checked)}
-              type="checkbox"
-            />
-            <span className="font-medium text-xs">{t('terms.agreeAll')}</span>
+              onCheckedChange={handleAllChange}
+            >
+              <TRCheckbox.Indicator />
+            </TRCheckbox.Root>
+            <span className="font-medium text-xs" id="terms-all-label">
+              {t('terms.agreeAll')}
+            </span>
             {hasOptionalTerms && (
-              <span className="text-base-content/50 text-xs">
+              <span className="text-muted-foreground text-xs">
                 {t('terms.agreeAllOptionalIncluded')}
               </span>
             )}
-          </label>
+          </div>
         )}
 
-        {/* Individual terms */}
         {terms.map((term) => (
           <Controller
             control={control}
@@ -101,57 +103,62 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             render={({ field }) => (
               <div>
                 <div className="flex items-center gap-2 py-0.5">
-                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5">
-                    <input
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <TRCheckbox.Root
+                      aria-labelledby={`term-label-${term.id}`}
                       checked={field.value === true}
-                      className="checkbox checkbox-primary checkbox-xs"
                       data-testid="terms-checkbox"
                       disabled={disabled}
-                      onChange={(e) => field.onChange(e.target.checked)}
-                      type="checkbox"
-                    />
-                    <span className="truncate text-xs">
+                      onCheckedChange={(checked) =>
+                        field.onChange(checked === true)
+                      }
+                    >
+                      <TRCheckbox.Indicator />
+                    </TRCheckbox.Root>
+                    <span
+                      className="truncate text-xs"
+                      id={`term-label-${term.id}`}
+                    >
                       {getTermTitle(term)}
                     </span>
-                    <span
-                      className={`badge badge-xs shrink-0 ${
-                        term.required ? 'badge-error' : 'badge-ghost'
-                      }`}
+                    <TRBadge
                       data-testid={
                         term.required
                           ? 'terms-badge-required'
                           : 'terms-badge-optional'
                       }
+                      uiSize="sm"
+                      variant={term.required ? 'danger' : 'neutral'}
                     >
                       {term.required
                         ? t('terms.required')
                         : t('terms.optional')}
-                    </span>
-                  </label>
+                    </TRBadge>
+                  </div>
                   {term.type === 'link' && term.content && (
-                    <a
+                    <TRLink
                       aria-label={t('terms.viewSpecific', {
                         title: getTermTitle(term),
                       })}
-                      className="link link-primary shrink-0 text-xs"
+                      className="shrink-0 text-xs"
                       href={term.content}
                       rel="noopener noreferrer"
                       target="_blank"
                     >
                       {t('terms.view')}
-                    </a>
+                    </TRLink>
                   )}
                   {term.type === 'text' && term.content && (
-                    <button
+                    <TRLink
                       aria-label={t('terms.viewSpecific', {
                         title: getTermTitle(term),
                       })}
-                      className="link link-primary shrink-0 text-xs"
+                      className="shrink-0 text-xs"
                       onClick={() => setModalTerm(term)}
-                      type="button"
+                      render={<button type="button" />}
                     >
                       {t('terms.view')}
-                    </button>
+                    </TRLink>
                   )}
                 </div>
                 {term.userConsent?.requiresUpdate && (
@@ -173,7 +180,6 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
         ))}
       </div>
 
-      {/* Modal for text type terms */}
       <TermsContentModal
         content={modalTerm?.content ?? ''}
         isOpen={modalTerm !== null}

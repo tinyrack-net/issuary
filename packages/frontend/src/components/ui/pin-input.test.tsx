@@ -1,16 +1,21 @@
 import { expect, test, vi } from 'vitest';
+import type { RenderResult } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
 import { PinInput } from './pin-input';
 
+function getAllInputs(screen: RenderResult) {
+  return screen.getByRole('textbox').all();
+}
+
 test('renders 6 input fields by default', async () => {
   const screen = await render(<PinInput />);
-  const inputs = screen.getByRole('textbox').all();
+  const inputs = getAllInputs(screen);
   expect(inputs.length).toBe(6);
 });
 
 test('renders custom number of input fields', async () => {
   const screen = await render(<PinInput length={4} />);
-  const inputs = screen.getByRole('textbox').all();
+  const inputs = getAllInputs(screen);
   expect(inputs.length).toBe(4);
 });
 
@@ -18,9 +23,9 @@ test('accepts digit input and advances focus', async () => {
   const onChange = vi.fn();
   const screen = await render(<PinInput onChange={onChange} />);
 
-  const firstInput = screen.getByLabelText('Digit 1 of 6');
-  await firstInput.click();
-  await firstInput.fill('3');
+  const inputs = getAllInputs(screen);
+  await inputs[0].click();
+  await inputs[0].fill('3');
 
   expect(onChange).toHaveBeenCalledWith(expect.stringContaining('3'));
 });
@@ -31,9 +36,9 @@ test('calls onComplete when all digits are filled', async () => {
     <PinInput length={4} onComplete={onComplete} value="" />,
   );
 
-  for (let i = 1; i <= 4; i++) {
-    const input = screen.getByLabelText(`Digit ${i} of 4`);
-    await input.fill(String(i));
+  const inputs = getAllInputs(screen);
+  for (let i = 0; i < 4; i++) {
+    await inputs[i].fill(String(i + 1));
   }
 
   expect(onComplete).toHaveBeenCalled();
@@ -43,12 +48,10 @@ test('rejects non-digit characters', async () => {
   const onChange = vi.fn();
   const screen = await render(<PinInput onChange={onChange} />);
 
-  const firstInput = screen.getByLabelText('Digit 1 of 6');
-  await firstInput.click();
-  await firstInput.fill('a');
+  const inputs = getAllInputs(screen);
+  await inputs[0].click();
+  await inputs[0].fill('a');
 
-  // onChange should be called but with empty value for the digit
-  // since non-digits are stripped
   if (onChange.mock.calls.length > 0) {
     const lastValue = onChange.mock.calls.at(-1)?.[0] ?? '';
     expect(lastValue.replace(/\d/g, '')).toBe('');
@@ -64,7 +67,7 @@ test('shows error message when error prop is set', async () => {
 
 test('renders disabled inputs when disabled', async () => {
   const screen = await render(<PinInput disabled />);
-  const inputs = screen.getByRole('textbox').all();
+  const inputs = getAllInputs(screen);
   for (const input of inputs) {
     expect(input.element().hasAttribute('disabled')).toBe(true);
   }
@@ -72,7 +75,7 @@ test('renders disabled inputs when disabled', async () => {
 
 test('displays controlled value', async () => {
   const screen = await render(<PinInput value="123456" />);
-  const inputs = screen.getByRole('textbox').all();
+  const inputs = getAllInputs(screen);
   const values = inputs.map(
     (input) => (input.element() as HTMLInputElement).value,
   );
@@ -81,15 +84,13 @@ test('displays controlled value', async () => {
 
 test('handles paste with digits only', async () => {
   const onChange = vi.fn();
-  const { container } = await render(<PinInput onChange={onChange} />);
+  const screen = await render(<PinInput onChange={onChange} />);
 
-  const firstInput = container.querySelector('input') as HTMLInputElement;
+  const inputs = getAllInputs(screen);
+  const firstInput = inputs[0].element() as HTMLInputElement;
   expect(firstInput).not.toBeNull();
   firstInput.focus();
 
-  // Create paste event with clipboardData.
-  // Use Object.defineProperty because DataTransfer + ClipboardEvent
-  // constructor integration varies across browsers.
   const pasteEvent = new Event('paste', {
     bubbles: true,
     cancelable: true,
@@ -101,9 +102,7 @@ test('handles paste with digits only', async () => {
   });
   firstInput.dispatchEvent(pasteEvent);
 
-  // After paste, onChange should have been called with the digits
   expect(onChange).toHaveBeenCalled();
   const lastCall = onChange.mock.calls.at(-1)?.[0] ?? '';
-  // The pasted value should contain only digits
   expect(lastCall.replace(/\d/g, '')).toBe('');
 });

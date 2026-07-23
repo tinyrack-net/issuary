@@ -1,6 +1,8 @@
 import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
@@ -108,10 +110,10 @@ function VerifyPasskey() {
       <div className="flex flex-col items-center gap-6">
         {verifyMutation.isPending && (
           <div className="flex flex-col items-center gap-4">
-            <div className="flex size-20 items-center justify-center rounded-full bg-base-200">
-              <FingerprintIcon className="size-10 animate-pulse text-primary" />
+            <div className="flex size-20 items-center justify-center rounded-full bg-muted">
+              <TRSpinner uiSize="lg" />
             </div>
-            <p className="text-center text-base-content/70 text-sm">
+            <p className="text-center text-muted-foreground text-sm">
               {t('verifyPasskey.waiting')}
             </p>
           </div>
@@ -123,18 +125,20 @@ function VerifyPasskey() {
               {error.message}
             </Alert>
             {canUseTotp && (
-              <Link
-                className="btn btn-primary btn-block"
-                search={extractOAuthParams(search)}
-                to="/verify/totp"
+              <TRButton
+                className="w-full"
+                intent="primary"
+                render={
+                  <Link search={extractOAuthParams(search)} to="/verify/totp" />
+                }
               >
                 {t('verifyPasskey.useTotp')}
-              </Link>
+              </TRButton>
             )}
-            <button
-              className={`btn btn-block ${
-                canUseTotp ? 'btn-outline' : 'btn-primary'
-              }`}
+            <TRButton
+              appearance={canUseTotp ? 'outline' : 'solid'}
+              className="w-full"
+              intent={canUseTotp ? 'neutral' : 'primary'}
               onClick={() => {
                 setError(null);
                 verifyMutation.mutate();
@@ -143,7 +147,7 @@ function VerifyPasskey() {
             >
               <FingerprintIcon className="size-5" weight="regular" />
               {t('verifyPasskey.retry')}
-            </button>
+            </TRButton>
           </>
         )}
       </div>

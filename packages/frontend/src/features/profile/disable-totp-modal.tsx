@@ -1,6 +1,9 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -85,60 +88,51 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
           {t('profile.totp.disableModal.warning')}
         </AlertBanner>
 
-        <div className="form-control">
-          <label className="label w-full" htmlFor="disable-totp-code">
-            <span className="label-text text-xs">
-              {t('profile.totp.disableModal.codeLabel')}
-            </span>
-          </label>
-          <input
+        <TRField.Root uiSize="sm">
+          <TRField.Label htmlFor="disable-totp-code">
+            {t('profile.totp.disableModal.codeLabel')}
+          </TRField.Label>
+          <TRInput
             autoComplete="one-time-code"
-            className={`input input-bordered input-sm w-full text-center text-xl tracking-widest ${
-              form.formState.errors.code ? 'input-error' : ''
-            }`}
             id="disable-totp-code"
             inputMode="numeric"
             maxLength={6}
             pattern="[0-9]*"
             placeholder="000000"
             type="text"
+            uiSize="sm"
             {...form.register('code')}
           />
           {form.formState.errors.code && (
-            <span
-              className="label-text-alt mt-0.5 text-error"
-              data-testid="disable-totp-error"
-            >
+            <div className="tr-field-error" data-testid="disable-totp-error">
               {form.formState.errors.code.message}
-            </span>
+            </div>
           )}
-        </div>
+        </TRField.Root>
 
         <ModalActions>
-          <button
-            className="btn btn-sm"
+          <TRButton
             data-testid="disable-totp-cancel"
             disabled={mutation.isPending}
             onClick={handleClose}
             type="button"
+            uiSize="sm"
           >
             {t('profile.totp.disableModal.cancel')}
-          </button>
-          <button
-            className="btn btn-sm btn-error"
+          </TRButton>
+          <TRButton
             data-testid="disable-totp-submit"
             disabled={mutation.isPending}
+            intent="danger"
+            loading={mutation.isPending}
+            loadingLabel={t('profile.totp.disableModal.disabling')}
             type="submit"
+            uiSize="sm"
           >
-            {mutation.isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs" />
-                {t('profile.totp.disableModal.disabling')}
-              </>
-            ) : (
-              t('profile.totp.disableModal.disable')
-            )}
-          </button>
+            {mutation.isPending
+              ? undefined
+              : t('profile.totp.disableModal.disable')}
+          </TRButton>
         </ModalActions>
       </form>
     </Modal>

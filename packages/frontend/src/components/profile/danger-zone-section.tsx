@@ -1,4 +1,6 @@
 import { TrashIcon, WarningIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useTranslation } from 'react-i18next';
 
 interface DangerZoneSectionProps {
@@ -14,48 +16,49 @@ export function DangerZoneSection({
 }: DangerZoneSectionProps) {
   const { t } = useTranslation();
 
-  // Don't render if deletion is disabled
   if (!isDeletionEnabled) {
     return null;
   }
 
   return (
-    <div className="rounded-xl border border-base-200 border-l-4 border-l-error/60">
-      <div className="border-base-200 border-b px-4 py-3">
+    <TRCard.Root className="border-danger/60 border-l-4" variant="outlined">
+      <TRCard.Header className="border-border border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <WarningIcon className="size-4 text-error" weight="fill" />
-          <h2 className="font-semibold text-error text-sm">
+          <WarningIcon className="size-4 text-danger" weight="fill" />
+          <TRCard.Title className="font-semibold text-danger text-sm">
             {t('profile.dangerZone.title')}
-          </h2>
+          </TRCard.Title>
         </div>
-        <p className="mt-0.5 text-base-content/60 text-xs">
+        <TRCard.Description className="mt-0.5 text-muted-foreground text-xs">
           {t('profile.dangerZone.description')}
-        </p>
-      </div>
-      <div className="px-4 py-3">
+        </TRCard.Description>
+      </TRCard.Header>
+      <TRCard.Content className="px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-medium text-sm">
               {t('profile.deleteAccount.title')}
             </p>
-            <p className="text-base-content/60 text-xs">
+            <p className="text-muted-foreground text-xs">
               {isConfigManaged
                 ? t('profile.deleteAccount.configManaged')
                 : t('profile.deleteAccount.description')}
             </p>
           </div>
-          <button
-            className="btn btn-error btn-outline btn-sm gap-2"
+          <TRButton
+            appearance="outline"
             data-testid="profile-delete-account"
             disabled={isConfigManaged}
+            intent="danger"
             onClick={onDeleteClick}
             type="button"
+            uiSize="sm"
           >
             <TrashIcon className="size-4" weight="bold" />
             {t('profile.deleteAccount.button')}
-          </button>
+          </TRButton>
         </div>
-      </div>
-    </div>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

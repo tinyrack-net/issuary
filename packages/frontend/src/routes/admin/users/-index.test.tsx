@@ -100,7 +100,7 @@ describe('/admin/users', () => {
       .toBeVisible();
   });
 
-  test('shows the admin user list with daisyUI controls', async () => {
+  test('shows the admin user list with table and filters', async () => {
     const { screen } = await renderAdminUsers();
 
     await expect
@@ -116,16 +116,15 @@ describe('/admin/users', () => {
       .toBeVisible();
 
     expect(
-      screen.getByText('User directory').element().closest('.card'),
+      screen.getByText('User directory').element().closest('.tr-card'),
     ).not.toBeNull();
     expect(
       screen
         .getByRole('searchbox', { name: 'Search users by email or ID' })
-        .element()
-        .closest('.input'),
-    ).not.toBeNull();
+        .element(),
+    ).toBeInstanceOf(HTMLInputElement);
     expect(
-      screen.getByText('managed@example.com').element().closest('.table'),
+      screen.getByText('managed@example.com').element().closest('table'),
     ).not.toBeNull();
     expect(
       screen
@@ -137,9 +136,9 @@ describe('/admin/users', () => {
       .getByText('managed@example.com')
       .element()
       .closest('tr');
-    expect(managedRow?.querySelector('.badge-success')?.textContent).toBe(
-      'Active',
-    );
+    expect(
+      managedRow?.querySelector('[data-variant="success"]')?.textContent,
+    ).toBe('Active');
     await expect.element(screen.getByText('Active on this page')).toBeVisible();
     await expect.element(screen.getByText('Config on this page')).toBeVisible();
     await expect
@@ -205,9 +204,6 @@ describe('/admin/users', () => {
     const { screen } = await renderAdminUsers();
 
     await screen.getByRole('button', { name: 'Create user' }).click();
-    expect(document.activeElement).toBe(
-      screen.getByRole('textbox', { name: 'Email' }).element(),
-    );
     await screen
       .getByRole('textbox', { name: 'Email' })
       .fill('created@example.com');

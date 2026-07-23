@@ -1,6 +1,9 @@
 import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { ErrorComponentProps } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useTranslation } from 'react-i18next';
+import { Alert } from '#frontend/components/ui/alert.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 
 /**
@@ -12,9 +15,9 @@ import { TinyAuthError } from '#frontend/libs/error.ts';
  */
 function MinimalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-base-200 p-4">
+    <div className="flex min-h-screen flex-col bg-surface p-4">
       <div className="flex flex-1 items-center justify-center">
-        <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
+        <div className="w-full max-w-100 rounded-xl border border-surface-elevated bg-surface-elevated p-12 shadow-lg">
           {children}
         </div>
       </div>
@@ -67,7 +70,7 @@ export function RouteErrorFallback({
       return (
         <MinimalLayout>
           <div className="flex justify-center">
-            <span className="loading loading-spinner loading-md" />
+            <TRSpinner uiSize="md" />
           </div>
         </MinimalLayout>
       );
@@ -76,12 +79,11 @@ export function RouteErrorFallback({
     // Fallback: show a link to login.
     return (
       <MinimalLayout>
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-warning/10 p-3 text-warning">
-          <WarningCircleIcon className="size-5 shrink-0" weight="fill" />
-          <span className="text-sm">{t('error.sessionExpired')}</span>
-        </div>
+        <Alert className="mb-4" icon={WarningCircleIcon} type="warning">
+          {t('error.sessionExpired')}
+        </Alert>
         <a
-          className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
+          className="tr-btn tr-btn-primary w-full font-semibold text-[14px]"
           href="/login"
         >
           {t('error.goToLogin')}
@@ -98,44 +100,49 @@ export function RouteErrorFallback({
 
   return (
     <MinimalLayout>
-      <div className="mb-4 flex items-center gap-2 rounded-lg bg-error/10 p-3 text-error">
-        <WarningCircleIcon className="size-5 shrink-0" weight="fill" />
-        <span className="text-sm">{t('error.title')}</span>
-      </div>
+      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+        {t('error.title')}
+      </Alert>
 
       <h1 className="mb-0 text-center font-bold text-2xl">
         {t('error.subtitle')}
       </h1>
-      <p className="mb-6 text-center text-base-content/60 text-lg">
+      <p className="mb-6 text-center text-lg text-muted-foreground">
         {errorMessage}
       </p>
 
       {/* Error code */}
-      <div className="mb-6 rounded-lg bg-base-200 p-4 text-center">
-        <p className="mb-1 text-base-content/50 text-xs">
+      <div className="mb-6 rounded-lg bg-surface p-4 text-center">
+        <p className="mb-1 text-muted-foreground/50 text-xs">
           {t('error.codeLabel')}
         </p>
-        <code className="font-mono text-error text-sm" data-testid="error-code">
+        <code
+          className="font-mono text-danger text-sm"
+          data-testid="error-code"
+        >
           {errorCode}
         </code>
       </div>
 
       {/* Actions */}
       <div className="flex flex-col gap-3">
-        <button
-          className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
+        <TRButton
+          className="w-full font-semibold text-[14px]"
+          intent="primary"
           onClick={reset}
           type="button"
         >
           {t('error.retry')}
-        </button>
-        <button
-          className="btn btn-ghost btn-block h-10 font-semibold text-[14px]"
+        </TRButton>
+        <TRButton
+          appearance="ghost"
+          className="w-full font-semibold text-[14px]"
+          intent="neutral"
           onClick={() => window.history.back()}
           type="button"
         >
           {t('error.goBack')}
-        </button>
+        </TRButton>
       </div>
     </MinimalLayout>
   );

@@ -28,9 +28,6 @@ i18n:
   fallback_language: ${TINYAUTH_FALLBACK_LANGUAGE:-en}
 
 branding:
-  light_theme: ${TINYAUTH_LIGHT_THEME:-light}
-  dark_theme: ${TINYAUTH_DARK_THEME:-dark}
-  theme_mode: ${TINYAUTH_THEME_MODE:-system}
   background_url: ${TINYAUTH_BACKGROUND_URL:-https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071}
   # icon_url: ${TINYAUTH_ICON_URL:-https://example.com/icon.png}
   title:

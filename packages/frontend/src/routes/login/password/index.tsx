@@ -278,7 +278,10 @@ function LoginPassword() {
 
           {configData.email.enabled && (
             <div className="flex items-center justify-end">
-              <Link className="link text-sm" to="/password/forgot">
+              <Link
+                className="text-sm text-tinyrack-primary hover:underline"
+                to="/password/forgot"
+              >
                 {t('login.link.forgotPassword')}
               </Link>
             </div>
@@ -295,7 +298,7 @@ function LoginPassword() {
       )}
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-base-content/60 text-xs">
+        <div className="mt-6 text-center text-muted-foreground text-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
             dangerouslySetInnerHTML={{ __html: implicitNotice }}
@@ -316,7 +319,7 @@ function LoginPassword() {
       {hasMultipleLoginMethods && (
         <div className="mt-3 text-center">
           <Link
-            className="link text-sm"
+            className="text-sm text-tinyrack-primary hover:underline"
             search={extractOAuthParams(search)}
             to="/login"
           >

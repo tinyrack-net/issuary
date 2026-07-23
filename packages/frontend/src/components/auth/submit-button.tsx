@@ -1,3 +1,4 @@
+import { TRButton } from '@tinyrack/ui/components/button';
 export type SubmitButtonProps = {
   isPending: boolean;
   pendingText: string;
@@ -14,19 +15,15 @@ export function SubmitButton({
   disabled = false,
 }: SubmitButtonProps) {
   return (
-    <button
-      className={`btn btn-block h-10 font-semibold text-[14px] ${className}`}
+    <TRButton
+      className={`w-full font-semibold text-[14px] ${className}`}
       disabled={isPending || disabled}
+      intent="primary"
+      loading={isPending}
+      loadingLabel={pendingText}
       type="submit"
     >
-      {isPending ? (
-        <>
-          <span className="loading loading-spinner loading-sm" />
-          {pendingText}
-        </>
-      ) : (
-        children
-      )}
-    </button>
+      {children}
+    </TRButton>
   );
 }

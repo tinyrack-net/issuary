@@ -11,6 +11,7 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router';
+import { TRSeparator } from '@tinyrack/ui/components/separator';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,7 @@ import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-lis
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
+
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -306,7 +308,7 @@ function Register() {
 
           <div className="flex flex-col">
             {implicitNotice && (
-              <div className={'text-center text-base-content/60 text-xs'}>
+              <div className="text-center text-muted-foreground text-xs">
                 <div
                   className="prose prose-sm text-xs! **:text-xs!"
                   dangerouslySetInnerHTML={{
@@ -318,8 +320,12 @@ function Register() {
             )}
 
             {implicitNotice && hasExplicitTerms && (
-              <div className="divider text-xs">
-                {t('terms.additionalOptionalConsent')}
+              <div className="flex items-center gap-2 text-xs">
+                <TRSeparator className="flex-1" />
+                <span className="text-muted-foreground">
+                  {t('terms.additionalOptionalConsent')}
+                </span>
+                <TRSeparator className="flex-1" />
               </div>
             )}
 

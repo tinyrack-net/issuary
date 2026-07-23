@@ -1,5 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
@@ -25,17 +27,21 @@ function App() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-base-200">
-        <div className="card w-96 bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title text-error">Initialization Error</h2>
-            <p className="text-sm">{error}</p>
-            <p className="mt-2 text-base-content/60 text-xs">
-              Make sure the OIDC provider is running at the configured issuer
-              URL.
-            </p>
-          </div>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-surface">
+        <TRCard.Root className="w-96 shadow-xl">
+          <TRCard.Header>
+            <TRCard.Title className="text-red-600 dark:text-red-400">
+              Initialization Error
+            </TRCard.Title>
+            <TRCard.Description>
+              <p className="text-sm">{error}</p>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Make sure the OIDC provider is running at the configured issuer
+                URL.
+              </p>
+            </TRCard.Description>
+          </TRCard.Header>
+        </TRCard.Root>
       </div>
     );
   }
@@ -43,7 +49,7 @@ function App() {
   if (!initialized) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <span className="loading loading-spinner loading-lg" />
+        <TRSpinner uiSize="lg" />
       </div>
     );
   }
@@ -73,7 +79,7 @@ createRoot(rootElement).render(
       <Suspense
         fallback={
           <div className="flex min-h-screen items-center justify-center">
-            <span className="loading loading-spinner loading-lg" />
+            <TRSpinner uiSize="lg" />
           </div>
         }
       >

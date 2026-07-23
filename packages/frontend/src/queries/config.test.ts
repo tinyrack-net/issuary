@@ -14,9 +14,6 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    light_theme: 'light',
-    dark_theme: 'dark',
-    theme_mode: 'system',
     background_url: 'https://example.com/background.png',
     icon_url: 'https://example.com/icon.png',
     title: {

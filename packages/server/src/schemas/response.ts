@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  AppThemeSchema,
   PasskeyAuthConfigSchema,
   PasswordAuthConfigSchema,
   PasswordPolicyConfigSchema,
@@ -644,11 +643,6 @@ export const r = {
       fallback_language: z.string().describe('Fallback UI language'),
     }),
     branding: z.object({
-      light_theme: AppThemeSchema.describe('Theme preset used in light mode'),
-      dark_theme: AppThemeSchema.describe('Theme preset used in dark mode'),
-      theme_mode: z
-        .enum(['light', 'dark', 'system'])
-        .describe('Theme mode strategy'),
       background_url: z.url().optional().describe('Background image URL'),
       icon_url: z
         .url()

@@ -10,6 +10,8 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -153,7 +155,6 @@ function Profile() {
     await unlinkMutation.mutateAsync(unlinkModal.id);
   };
 
-  // Handle non-authenticated states (should be redirected, but fallback)
   if (!session.user) {
     return null;
   }
@@ -163,17 +164,14 @@ function Profile() {
   const hasLinkedOAuth = availableProviders.some((p) => p.linked);
   const isConfigManaged = user.managed_by === 'config';
 
-  // Check if TOTP and Passkey are enabled in config
   const passwordAuthMethod = appConfig.auth.password;
   const passkeyAuthMethod = appConfig.auth.passkey;
   const totpEnabled = passwordAuthMethod.totp.enabled;
   const passkeyEnabled = passkeyAuthMethod.enabled;
 
-  // Account deletion settings
   const accountDeletionEnabled = appConfig.account_deletion.enabled;
   const retentionPeriod = appConfig.account_deletion.retention;
 
-  // Parse retention period to get days for display
   const retentionDays = (() => {
     const match = retentionPeriod.match(/^(\d+)([dmy])$/);
     if (!match) return 30;
@@ -191,7 +189,6 @@ function Profile() {
     }
   })();
 
-  // Determine which security sections to show
   const showPasswordSection = true;
   const showTotpSection = !isConfigManaged && totpEnabled;
   const showPasskeySection = !isConfigManaged && passkeyEnabled;
@@ -201,39 +198,39 @@ function Profile() {
 
   return (
     <PageLayout maxWidth="xl" responsivePadding>
-      {/* Header */}
-      <div className="border-base-200 border-b p-6">
+      <div className="border-border border-b p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <InitialAvatar email={user.email} size="lg" />
             <div className="min-w-0">
               <h1 className="font-bold text-xl">{t('profile.title')}</h1>
               <p
-                className="truncate text-base-content/70 text-sm"
+                className="truncate text-muted-foreground text-sm"
                 data-testid="profile-user-email"
               >
                 {user.email}
               </p>
             </div>
           </div>
-          <button
-            className="btn btn-ghost btn-sm gap-2"
+          <TRButton
+            appearance="ghost"
             data-testid="profile-logout"
             disabled={logoutMutation.isPending}
+            loading={logoutMutation.isPending}
             onClick={() => logoutMutation.mutate()}
             type="button"
+            uiSize="sm"
           >
-            {logoutMutation.isPending ? (
-              <span className="loading loading-spinner loading-sm" />
-            ) : (
-              <SignOutIcon className="size-4" weight="bold" />
+            {logoutMutation.isPending ? undefined : (
+              <>
+                <SignOutIcon className="size-4" weight="bold" />
+                <span className="hidden sm:inline">{t('profile.logout')}</span>
+              </>
             )}
-            <span className="hidden sm:inline">{t('profile.logout')}</span>
-          </button>
+          </TRButton>
         </div>
       </div>
 
-      {/* OAuth Error Alert */}
       {oauthErrorMessage && (
         <div className="px-6 pt-4">
           <Alert icon={WarningCircleIcon} type="error">
@@ -242,25 +239,22 @@ function Profile() {
         </div>
       )}
 
-      {/* Content - Single Column */}
       <div className="space-y-5 p-6">
-        {/* Account Information */}
         {user && <UserInfoSection user={user} />}
 
-        {/* Security Options */}
         {hasSecurityOptions && (
-          <div className="rounded-xl border border-base-200">
-            <div className="border-base-200 border-b px-4 py-3">
-              <h2 className="font-semibold text-sm">
+          <TRCard.Root variant="outlined">
+            <TRCard.Header className="border-border border-b px-4 py-3">
+              <TRCard.Title className="font-semibold text-sm">
                 {t('profile.security.title')}
-              </h2>
-              <p className="text-base-content/60 text-xs">
+              </TRCard.Title>
+              <TRCard.Description className="text-muted-foreground text-xs">
                 {t('profile.security.description')}
-              </p>
-            </div>
+              </TRCard.Description>
+            </TRCard.Header>
             {showTotpSection && user.totp_recovery_codes_missing && (
               <div
-                className="border-base-200 border-b px-4 py-3"
+                className="border-border border-b px-4 py-3"
                 data-testid="profile-totp-recovery-warning"
               >
                 <Alert icon={WarningCircleIcon} type="warning">
@@ -268,7 +262,7 @@ function Profile() {
                 </Alert>
               </div>
             )}
-            <div className="divide-y divide-base-200">
+            <TRCard.Content className="divide-y divide-border p-0">
               {showPasswordSection && (
                 <PasswordSection
                   hasLinkedOAuth={hasLinkedOAuth}
@@ -295,11 +289,10 @@ function Profile() {
                   passkeyCount={user.passkey_count}
                 />
               )}
-            </div>
-          </div>
+            </TRCard.Content>
+          </TRCard.Root>
         )}
 
-        {/* Linked OAuth Accounts */}
         {showLinkedAccounts && (
           <LinkedAccountsSection
             getAuthorizeUrl={getOAuthAuthorizeUrl}
@@ -314,7 +307,6 @@ function Profile() {
           />
         )}
 
-        {/* Danger Zone */}
         <DangerZoneSection
           isConfigManaged={isConfigManaged}
           isDeletionEnabled={accountDeletionEnabled}
@@ -322,7 +314,6 @@ function Profile() {
         />
       </div>
 
-      {/* Password Modals */}
       <SetPasswordModal
         isOpen={passwordModal === 'set'}
         onClose={() => setPasswordModal(null)}
@@ -336,7 +327,6 @@ function Profile() {
         onClose={() => setPasswordModal(null)}
       />
 
-      {/* TOTP Modals */}
       <SetupTotpModal
         isOpen={totpModal === 'setup'}
         onClose={() => setTotpModal(null)}
@@ -350,7 +340,6 @@ function Profile() {
         onClose={() => setTotpModal(null)}
       />
 
-      {/* Passkey Modals */}
       <SetupPasskeyModal
         isOpen={passkeyModal === 'setup'}
         onClose={() => setPasskeyModal(null)}
@@ -361,7 +350,6 @@ function Profile() {
         onClose={() => setPasskeyModal(null)}
       />
 
-      {/* Unlink OAuth Modal */}
       <UnlinkOAuthModal
         isOpen={unlinkModal !== null}
         isPending={unlinkMutation.isPending}
@@ -370,7 +358,6 @@ function Profile() {
         providerName={unlinkModal?.name ?? ''}
       />
 
-      {/* Delete Account Modal */}
       <DeleteAccountModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

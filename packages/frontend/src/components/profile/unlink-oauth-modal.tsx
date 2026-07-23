@@ -1,4 +1,5 @@
 import { LinkBreakIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
@@ -60,31 +61,27 @@ export function UnlinkOAuthModal({
         {error && <AlertBanner variant="error">{error}</AlertBanner>}
 
         <ModalActions>
-          <button
-            className="btn btn-sm"
+          <TRButton
             data-testid="unlink-oauth-cancel"
             disabled={isPending}
             onClick={handleClose}
             type="button"
+            uiSize="sm"
           >
             {t('profile.linkedAccounts.unlinkModal.cancel')}
-          </button>
-          <button
-            className="btn btn-sm btn-error"
+          </TRButton>
+          <TRButton
             data-testid="unlink-oauth-unlink"
             disabled={isPending}
+            intent="danger"
+            loading={isPending}
+            loadingLabel={t('profile.linkedAccounts.unlinking')}
             onClick={handleConfirm}
             type="button"
+            uiSize="sm"
           >
-            {isPending ? (
-              <>
-                <span className="loading loading-spinner loading-xs" />
-                {t('profile.linkedAccounts.unlinking')}
-              </>
-            ) : (
-              t('profile.linkedAccounts.unlink')
-            )}
-          </button>
+            {t('profile.linkedAccounts.unlink')}
+          </TRButton>
         </ModalActions>
       </div>
     </Modal>

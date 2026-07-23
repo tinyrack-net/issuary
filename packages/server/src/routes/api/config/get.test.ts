@@ -62,7 +62,6 @@ describe('GET /api/config', () => {
     expect(json.i18n.default_language).toBeTypeOf('string');
     expect(json.i18n.fallback_language).toBeTypeOf('string');
     expect(json.branding).toBeDefined();
-    expect(json.branding.theme_mode).toBeTypeOf('string');
     expect(json.registration).toBeDefined();
     expect(json.registration.public_registration).toBeTypeOf('boolean');
     expect(json.registration.public_registration).toBe(true);

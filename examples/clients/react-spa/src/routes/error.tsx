@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import z from 'zod';
 
 const errorSearchSchema = z.object({
@@ -15,23 +18,27 @@ function ErrorPage() {
   const { error, description } = useSearch({ from: '/error' });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-base-200">
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title text-error">Error</h2>
-          {error && (
-            <div className="mt-2">
-              <span className="badge badge-error">{error}</span>
-            </div>
-          )}
-          {description && <p className="mt-2 text-sm">{description}</p>}
-          <div className="card-actions mt-4 justify-end">
-            <Link className="btn btn-primary" to="/">
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <TRCard.Root className="w-full max-w-md">
+        <TRCard.Header>
+          <TRCard.Title className="text-red-600 dark:text-red-400">
+            Error
+          </TRCard.Title>
+          <TRCard.Description>
+            {error && (
+              <div className="mt-2">
+                <TRBadge variant="danger">{error}</TRBadge>
+              </div>
+            )}
+            {description && <p className="mt-2 text-sm">{description}</p>}
+          </TRCard.Description>
+        </TRCard.Header>
+        <TRCard.Footer className="justify-end">
+          <TRButton intent="primary" render={<Link to="/" />}>
+            Back to Home
+          </TRButton>
+        </TRCard.Footer>
+      </TRCard.Root>
     </div>
   );
 }

@@ -1,171 +1,91 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
-import {
-  appConfigQueryOptions,
-  type Theme,
-  type ThemeMode,
-} from '#frontend/queries/config.ts';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-const THEME_MODE_STORAGE_KEY = 'tinyauth-theme-mode';
+type ColorScheme = 'light' | 'dark';
 
-/**
- * Get the system's preferred color scheme
- */
-function getSystemThemePreference(): 'light' | 'dark' {
+const STORAGE_KEY = 'tinyauth-color-scheme';
+
+const COLOR_SCHEME_CHANGE_EVENT = 'tinyauth-color-scheme-change';
+
+function getOsPreference(): ColorScheme {
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
 }
 
-/**
- * Get the stored theme mode from localStorage
- */
-function getStoredThemeMode(): ThemeMode | null {
+function getStoredColorScheme(): ColorScheme | null {
   if (typeof window === 'undefined') return null;
-  const stored = localStorage.getItem(THEME_MODE_STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark' || stored === 'system') {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') {
     return stored;
   }
   return null;
 }
 
-/**
- * Apply theme to the document
- */
-function applyTheme(theme: Theme) {
-  document.documentElement.setAttribute('data-theme', theme);
+function applyColorScheme(scheme: ColorScheme) {
+  document.documentElement.setAttribute(
+    'data-theme',
+    scheme === 'dark' ? 'tinyrack-dark' : 'tinyrack-light',
+  );
 }
 
-/**
- * Resolve the actual theme based on mode and server config
- */
-function resolveTheme(
-  mode: ThemeMode,
-  lightTheme: Theme,
-  darkTheme: Theme,
-): Theme {
-  if (mode === 'system') {
-    const systemPreference = getSystemThemePreference();
-    return systemPreference === 'dark' ? darkTheme : lightTheme;
-  }
-  return mode === 'dark' ? darkTheme : lightTheme;
-}
-
-// Custom event for theme mode changes
-const THEME_MODE_CHANGE_EVENT = 'tinyauth-theme-mode-change';
-
-function subscribeToThemeModeChanges(callback: () => void): () => void {
-  window.addEventListener(THEME_MODE_CHANGE_EVENT, callback);
+function subscribeToColorSchemeChanges(callback: () => void): () => void {
+  window.addEventListener(COLOR_SCHEME_CHANGE_EVENT, callback);
   window.addEventListener('storage', callback);
   return () => {
-    window.removeEventListener(THEME_MODE_CHANGE_EVENT, callback);
+    window.removeEventListener(COLOR_SCHEME_CHANGE_EVENT, callback);
     window.removeEventListener('storage', callback);
   };
 }
 
-function getThemeModeSnapshot(): ThemeMode | null {
-  return getStoredThemeMode();
+function getColorSchemeSnapshot(): ColorScheme | null {
+  return getStoredColorScheme();
 }
 
-function getServerThemeModeSnapshot(): ThemeMode | null {
+function getColorSchemeServerSnapshot(): ColorScheme | null {
   return null;
 }
 
-export function useTheme() {
-  const { data: config } = useSuspenseQuery(appConfigQueryOptions);
+/**
+ * Inline script string for anti-flicker.
+ * Place this in HTML <head> to set data-theme before React renders.
+ */
+export const colorSchemeInitScript = `(function(){var s=localStorage.getItem('${STORAGE_KEY}');var c=s||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',c==='dark'?'tinyrack-dark':'tinyrack-light')})()`;
 
-  // Get server defaults
-  const serverLightTheme = config.branding.light_theme;
-  const serverDarkTheme = config.branding.dark_theme;
-  const serverThemeMode = config.branding.theme_mode;
-
-  // Theme toggle is only allowed when server theme_mode is 'system'
-  const canToggleTheme = serverThemeMode === 'system';
-
-  // Subscribe to theme mode changes from localStorage
-  const storedThemeMode = useSyncExternalStore(
-    subscribeToThemeModeChanges,
-    getThemeModeSnapshot,
-    getServerThemeModeSnapshot,
+export function useColorScheme() {
+  const storedScheme = useSyncExternalStore(
+    subscribeToColorSchemeChanges,
+    getColorSchemeSnapshot,
+    getColorSchemeServerSnapshot,
   );
 
-  // Determine current theme mode
-  // If server mode is not 'system', always use server mode (user cannot override)
-  // If server mode is 'system', user preference takes priority
-  const themeMode = useMemo<ThemeMode>(() => {
-    if (!canToggleTheme) {
-      return serverThemeMode;
-    }
-    return storedThemeMode ?? serverThemeMode;
-  }, [canToggleTheme, storedThemeMode, serverThemeMode]);
+  const hasStoredPreference = storedScheme !== null;
 
-  // Resolve actual theme from mode
-  const currentTheme = useMemo<Theme>(() => {
-    return resolveTheme(themeMode, serverLightTheme, serverDarkTheme);
-  }, [themeMode, serverLightTheme, serverDarkTheme]);
+  const colorScheme: ColorScheme = hasStoredPreference
+    ? (storedScheme as ColorScheme)
+    : getOsPreference();
 
-  // Apply theme to document
   useEffect(() => {
-    applyTheme(currentTheme);
-  }, [currentTheme]);
+    applyColorScheme(colorScheme);
+  }, [colorScheme]);
 
-  // Listen for system theme changes when mode is 'system'
   useEffect(() => {
-    if (themeMode !== 'system') return;
+    if (hasStoredPreference) return;
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      const newTheme = resolveTheme(
-        'system',
-        serverLightTheme,
-        serverDarkTheme,
-      );
-      applyTheme(newTheme);
+      applyColorScheme(mediaQuery.matches ? 'dark' : 'light');
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [themeMode, serverLightTheme, serverDarkTheme]);
+  }, [hasStoredPreference]);
 
-  const cycleThemeMode = useCallback(() => {
-    // Only allow cycling if server allows it
-    if (!canToggleTheme) return;
+  const toggleColorScheme = useCallback(() => {
+    const next: ColorScheme = colorScheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem(STORAGE_KEY, next);
+    window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGE_EVENT));
+  }, [colorScheme]);
 
-    const currentMode = storedThemeMode ?? 'system';
-    // Cycle: system -> light -> dark -> system
-    let nextMode: ThemeMode;
-    if (currentMode === 'system') {
-      nextMode = 'light';
-    } else if (currentMode === 'light') {
-      nextMode = 'dark';
-    } else {
-      nextMode = 'system';
-    }
-
-    if (nextMode === 'system') {
-      localStorage.removeItem(THEME_MODE_STORAGE_KEY);
-    } else {
-      localStorage.setItem(THEME_MODE_STORAGE_KEY, nextMode);
-    }
-    window.dispatchEvent(new CustomEvent(THEME_MODE_CHANGE_EVENT));
-  }, [canToggleTheme, storedThemeMode]);
-
-  // Check if user is in auto mode (no localStorage preference)
-  const isAutoMode = storedThemeMode === null;
-
-  // Detected theme when in system mode
-  const detectedTheme = useMemo(() => {
-    const systemPref = getSystemThemePreference();
-    return systemPref === 'dark' ? serverDarkTheme : serverLightTheme;
-  }, [serverDarkTheme, serverLightTheme]);
-
-  return {
-    themeMode,
-    darkTheme: serverDarkTheme,
-    canToggleTheme,
-    cycleThemeMode,
-    isAutoMode,
-    detectedTheme,
-  };
+  return { colorScheme, toggleColorScheme };
 }

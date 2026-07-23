@@ -1,4 +1,6 @@
 import { ShieldCheckIcon } from '@phosphor-icons/react';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QrStep } from '#frontend/components/totp/qr-step.tsx';
@@ -51,14 +53,12 @@ export function SetupTotpModal({
     onClose();
   }, [onClose, reset]);
 
-  // Start setup when modal opens
   const handleModalOpen = useCallback(() => {
     if (!setupData && !isSetupPending) {
       startSetup();
     }
   }, [setupData, isSetupPending, startSetup]);
 
-  // Trigger setup on first render when open
   if (isOpen && !setupData && !isSetupPending && step !== 'error') {
     handleModalOpen();
   }
@@ -94,7 +94,7 @@ export function SetupTotpModal({
           className="flex justify-center py-6"
           data-testid="setup-totp-loading"
         >
-          <span className="loading loading-spinner loading-md" />
+          <TRSpinner uiSize="md" />
         </div>
       )}
 
@@ -104,16 +104,17 @@ export function SetupTotpModal({
             {t('profile.totp.setupModal.setupError')}
           </AlertBanner>
           <ModalActions>
-            <button className="btn btn-sm" onClick={handleClose} type="button">
+            <TRButton onClick={handleClose} type="button" uiSize="sm">
               {t('profile.totp.setupModal.cancel')}
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </TRButton>
+            <TRButton
+              intent="primary"
               onClick={startSetup}
               type="button"
+              uiSize="sm"
             >
               {t('profile.totp.setupModal.retry')}
-            </button>
+            </TRButton>
           </ModalActions>
         </div>
       )}
@@ -124,23 +125,21 @@ export function SetupTotpModal({
             additionalActions={
               <>
                 <ModalActions>
-                  <button
-                    className="btn btn-sm"
-                    onClick={handleClose}
-                    type="button"
-                  >
+                  <TRButton onClick={handleClose} type="button" uiSize="sm">
                     {t('profile.totp.setupModal.cancel')}
-                  </button>
+                  </TRButton>
                 </ModalActions>
                 {canSwitchToPasskey && onSwitchToPasskey && (
                   <p className="mt-2 text-center text-xs">
-                    <button
-                      className="link link-primary"
+                    <TRButton
+                      appearance="ghost"
+                      intent="primary"
                       onClick={onSwitchToPasskey}
                       type="button"
+                      uiSize="sm"
                     >
                       {t('profile.totp.setupModal.switchToPasskey')}
-                    </button>
+                    </TRButton>
                   </p>
                 )}
               </>

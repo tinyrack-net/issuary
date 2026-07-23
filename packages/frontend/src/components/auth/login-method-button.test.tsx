@@ -35,7 +35,7 @@ test('shows loading spinner when isLoading is true', async () => {
     <LoginMethodButton as="button" isLoading label="Loading" type="button" />,
   );
   const button = screen.getByRole('button').element();
-  const spinner = button.querySelector('.loading-spinner');
+  const spinner = button.querySelector('.tr-spinner');
   expect(spinner).not.toBeNull();
 });
 

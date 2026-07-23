@@ -4,6 +4,7 @@ import {
   KeyIcon,
   LockIcon,
   LockKeyIcon,
+  WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import {
@@ -12,6 +13,8 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRLink } from '@tinyrack/ui/components/link';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +25,7 @@ import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { resetPasswordMutationOptions } from '#frontend/queries/password-reset.ts';
 
@@ -153,14 +157,14 @@ function ResetPassword() {
           title={t('resetPassword.success.subtitle')}
         />
 
-        <button
-          className="btn btn-block h-10 font-semibold text-[14px]"
+        <TRButton
+          className="w-full font-semibold text-[14px]"
           data-testid="reset-password-go-login"
+          intent="primary"
           onClick={() => navigate({ to: '/login' })}
-          type="button"
         >
           {t('resetPassword.success.goToLogin')}
-        </button>
+        </TRButton>
       </PageLayout>
     );
   }
@@ -185,12 +189,13 @@ function ResetPassword() {
         )}
 
         {queryToken && errors.token && (
-          <div
-            className="alert alert-error"
+          <Alert
             data-testid="reset-password-token-error"
+            icon={WarningCircleIcon}
+            type="error"
           >
-            <span className="text-sm">{errors.token.message}</span>
-          </div>
+            {errors.token.message}
+          </Alert>
         )}
 
         <IconInput
@@ -222,14 +227,14 @@ function ResetPassword() {
         </SubmitButton>
       </form>
 
-      <div className="mt-6 text-center text-base-content/70 text-xs">
-        <Link
-          className="link link-info font-medium"
+      <div className="mt-6 text-center text-muted-foreground text-xs">
+        <TRLink
+          className="font-medium"
           data-testid="reset-password-back-to-login"
-          to="/login"
+          render={<Link to="/login" />}
         >
           {t('resetPassword.backToLogin')}
-        </Link>
+        </TRLink>
       </div>
     </PageLayout>
   );

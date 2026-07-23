@@ -44,7 +44,7 @@ test('401 error with onUnauthorized calls callback', async () => {
 
   expect(onUnauthorized).toHaveBeenCalledOnce();
   // Should show a loading spinner, not the error UI
-  const spinner = container.querySelector('.loading-spinner');
+  const spinner = container.querySelector('.tr-spinner');
   expect(spinner).not.toBeNull();
 });
 

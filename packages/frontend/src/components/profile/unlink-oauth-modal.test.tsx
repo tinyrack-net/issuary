@@ -97,5 +97,7 @@ test('disables both actions while an unlink request is pending', async () => {
   await expect
     .element(screen.getByTestId('unlink-oauth-unlink'))
     .toBeDisabled();
-  await expect.element(screen.getByText('Unlinking...')).toBeVisible();
+  await expect
+    .element(screen.getByRole('button', { name: 'Unlinking...' }))
+    .toBeVisible();
 });

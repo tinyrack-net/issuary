@@ -1,5 +1,7 @@
 import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -48,23 +50,26 @@ class AppErrorBoundary extends Component<
   override render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen flex-col bg-base-200 p-4">
+        <div className="flex min-h-screen flex-col bg-surface p-4">
           <div className="flex flex-1 items-center justify-center">
-            <div className="card w-full max-w-100 border border-base-200 bg-base-100 p-12 shadow-lg">
-              <h1 className="mb-2 text-center font-bold text-2xl">
-                Service Unavailable
-              </h1>
-              <p className="mb-6 text-center text-base-content/60">
-                Unable to load the application. Please try again later.
-              </p>
-              <button
-                className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
+            <TRCard.Root className="w-full max-w-100 border border-surface-elevated p-12 shadow-lg">
+              <TRCard.Header>
+                <TRCard.Title className="mb-2 text-center font-bold text-2xl">
+                  Service Unavailable
+                </TRCard.Title>
+                <TRCard.Description className="mb-6 text-center text-muted-foreground">
+                  Unable to load the application. Please try again later.
+                </TRCard.Description>
+              </TRCard.Header>
+              <TRButton
+                className="h-10 w-full font-semibold text-sm"
+                intent="primary"
                 onClick={() => window.location.reload()}
                 type="button"
               >
                 Reload
-              </button>
-            </div>
+              </TRButton>
+            </TRCard.Root>
           </div>
         </div>
       );

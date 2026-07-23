@@ -1,4 +1,6 @@
 import type { Icon } from '@phosphor-icons/react';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
 import { useId } from 'react';
 import type { FieldError } from 'react-hook-form';
 
@@ -33,22 +35,23 @@ export const IconInput = ({
   const describedBy = errorId ?? hintId;
 
   return (
-    <div className={className}>
-      <label className="mb-1.5 block font-medium text-sm" htmlFor={inputId}>
-        {label}
-      </label>
+    <TRField.Root className={className} uiSize="md">
+      <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
       <div
-        className={`input input-bordered flex items-center gap-2 ${
-          error ? 'input-error' : ''
-        }`}
+        className="tr-input-group"
+        data-invalid={error ? '' : undefined}
         data-testid={error ? 'input-error-wrapper' : undefined}
+        data-ui-size="md"
       >
-        <IconComponent aria-hidden className="size-5 opacity-70" />
-        <input
+        <span className="tr-input-group-adornment" data-side="start">
+          <IconComponent aria-hidden className="size-5 opacity-70" />
+        </span>
+        <TRInput
           aria-describedby={describedBy}
           aria-invalid={error ? true : undefined}
           autoComplete={autoComplete}
-          className="grow"
+          className="tr-input-group-input"
+          data-invalid={error ? '' : undefined}
           id={inputId}
           placeholder={placeholder}
           ref={ref}
@@ -57,19 +60,13 @@ export const IconInput = ({
         />
       </div>
       {hint && !error && (
-        <p className="mt-1 text-base-content/55 text-xs" id={hintId}>
-          {hint}
-        </p>
+        <TRField.Description id={hintId}>{hint}</TRField.Description>
       )}
       {error && (
-        <p
-          className="mt-1 text-error text-sm"
-          data-testid="field-error"
-          id={errorId}
-        >
+        <div className="tr-field-error" data-testid="field-error" id={errorId}>
           {error.message}
-        </p>
+        </div>
       )}
-    </div>
+    </TRField.Root>
   );
 };

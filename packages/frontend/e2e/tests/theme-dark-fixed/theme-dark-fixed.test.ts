@@ -7,23 +7,19 @@ import {
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
-  ...createTestConfig(backendPort, {
-    branding: {
-      theme_mode: 'dark',
-    },
-  }),
+  ...createTestConfig(backendPort, {}),
 }));
 
-test.describe('Fixed dark theme configuration', () => {
-  test('fixed dark mode hides theme toggle controls', async ({ page }) => {
+test.describe('Color scheme behavior', () => {
+  test('color scheme toggle is visible', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.getByTestId('theme-toggle')).toHaveCount(0);
+    await expect(page.getByTestId('theme-toggle')).toBeVisible();
   });
 
-  test('fixed dark mode ignores stored light preference', async ({ page }) => {
+  test('stored dark preference applies data-theme', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('tinyauth-theme-mode', 'light');
+      localStorage.setItem('tinyauth-color-scheme', 'dark');
     });
     await page.goto('/login');
 
@@ -33,6 +29,21 @@ test.describe('Fixed dark theme configuration', () => {
           document.documentElement.getAttribute('data-theme'),
         );
       })
-      .toBe('dark');
+      .toBe('tinyrack-dark');
+  });
+
+  test('stored light preference applies data-theme', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('tinyauth-color-scheme', 'light');
+    });
+    await page.goto('/login');
+
+    await expect
+      .poll(async () => {
+        return page.evaluate(() =>
+          document.documentElement.getAttribute('data-theme'),
+        );
+      })
+      .toBe('tinyrack-light');
   });
 });

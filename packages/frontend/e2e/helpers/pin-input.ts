@@ -8,7 +8,7 @@ import type { Page } from '@playwright/test';
  * auto-advances focus after each digit input.
  */
 export async function fillPinInput(page: Page, code: string): Promise<void> {
-  const firstDigit = page.locator('input[aria-label="Digit 1 of 6"]');
+  const firstDigit = page.locator('.tr-otp-field-digit').first();
   await firstDigit.click();
   for (const char of code) {
     await page.keyboard.press(char);

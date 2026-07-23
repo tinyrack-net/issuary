@@ -1,6 +1,7 @@
 import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -8,7 +9,6 @@ import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback
 import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
 import { extractOAuthParams } from '#frontend/libs/oauth-search.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
-
 export const Route = createFileRoute('/verify/2fa/')({
   component: Verify2FA,
   errorComponent: RouteErrorFallback,
@@ -33,37 +33,39 @@ function Verify2FA() {
       <div className="flex flex-col gap-4">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
-            <Link
-              className="btn btn-outline btn-block justify-start gap-3"
-              search={oauthParams}
-              to="/verify/totp"
+            <TRButton
+              appearance="outline"
+              className="w-full justify-start gap-3"
+              intent="neutral"
+              render={<Link search={oauthParams} to="/verify/totp" />}
             >
               <ShieldCheckIcon className="size-5" weight="regular" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">{t('verify2fa.totp.title')}</span>
-                <span className="text-xs opacity-70">
+                <span className="text-muted-foreground text-xs">
                   {t('verify2fa.totp.description')}
                 </span>
               </div>
-            </Link>
+            </TRButton>
           )}
 
         {appConfig.auth.passkey.enabled && (
-          <Link
-            className="btn btn-outline btn-block justify-start gap-3"
-            search={oauthParams}
-            to="/verify/passkey"
+          <TRButton
+            appearance="outline"
+            className="w-full justify-start gap-3"
+            intent="neutral"
+            render={<Link search={oauthParams} to="/verify/passkey" />}
           >
             <FingerprintIcon className="size-5" weight="regular" />
             <div className="flex flex-col items-start">
               <span className="font-medium">
                 {t('verify2fa.passkey.title')}
               </span>
-              <span className="text-xs opacity-70">
+              <span className="text-muted-foreground text-xs">
                 {t('verify2fa.passkey.description')}
               </span>
             </div>
-          </Link>
+          </TRButton>
         )}
       </div>
 

@@ -7,67 +7,29 @@ beforeAll(() => {
   initTestI18n();
 });
 
-test('renders and calls onCycle when clicked', async () => {
-  const onCycle = vi.fn();
+test('renders and calls onToggle when clicked', async () => {
+  const onToggle = vi.fn();
   const screen = await render(
-    <ThemeToggle
-      darkTheme="dark"
-      detectedTheme="light"
-      isAutoMode={false}
-      onCycle={onCycle}
-      themeMode="light"
-    />,
+    <ThemeToggle colorScheme="light" onToggle={onToggle} />,
   );
 
-  const button = screen.getByRole('button', { name: 'Select theme' });
+  const button = screen.getByTestId('theme-toggle');
   await button.click();
-  expect(onCycle).toHaveBeenCalledOnce();
+  expect(onToggle).toHaveBeenCalledOnce();
 });
 
-test('shows light icon for light theme mode', async () => {
+test('renders with light color scheme', async () => {
   const screen = await render(
-    <ThemeToggle
-      darkTheme="dark"
-      detectedTheme="light"
-      isAutoMode={false}
-      onCycle={() => {}}
-      themeMode="light"
-    />,
+    <ThemeToggle colorScheme="light" onToggle={() => {}} />,
   );
 
-  await expect
-    .element(screen.getByRole('button', { name: 'Select theme' }))
-    .toBeVisible();
+  await expect.element(screen.getByTestId('theme-toggle')).toBeVisible();
 });
 
-test('shows system icon for system theme mode', async () => {
+test('renders with dark color scheme', async () => {
   const screen = await render(
-    <ThemeToggle
-      darkTheme="dark"
-      detectedTheme="dark"
-      isAutoMode={true}
-      onCycle={() => {}}
-      themeMode="system"
-    />,
+    <ThemeToggle colorScheme="dark" onToggle={() => {}} />,
   );
 
-  await expect
-    .element(screen.getByRole('button', { name: 'Select theme' }))
-    .toBeVisible();
-});
-
-test('shows dark icon for dark theme mode', async () => {
-  const screen = await render(
-    <ThemeToggle
-      darkTheme="dark"
-      detectedTheme="dark"
-      isAutoMode={false}
-      onCycle={() => {}}
-      themeMode="dark"
-    />,
-  );
-
-  await expect
-    .element(screen.getByRole('button', { name: 'Select theme' }))
-    .toBeVisible();
+  await expect.element(screen.getByTestId('theme-toggle')).toBeVisible();
 });

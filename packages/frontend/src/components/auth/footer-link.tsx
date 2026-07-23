@@ -1,3 +1,4 @@
+import { TRLink } from '@tinyrack/ui/components/link';
 import { createElement, type ElementType } from 'react';
 
 type FooterLinkProps<C extends ElementType> = {
@@ -16,14 +17,15 @@ export function FooterLink<C extends ElementType>({
 }: FooterLinkProps<C>) {
   return (
     <div
-      className={`mt-6 text-center text-base-content/70 text-xs ${className}`}
+      className={`mt-6 text-center text-muted-foreground text-xs ${className}`}
     >
       {text}{' '}
-      {createElement(
-        Component,
-        { className: 'link link-info font-medium', ...linkProps },
-        linkText,
-      )}
+      <TRLink
+        className="font-medium"
+        render={createElement(Component, linkProps as object)}
+      >
+        {linkText}
+      </TRLink>
     </div>
   );
 }

@@ -13,9 +13,6 @@ const loginConfig = {
     fallback_language: 'en',
   },
   branding: {
-    light_theme: 'light',
-    dark_theme: 'dark',
-    theme_mode: 'system',
     background_url: '',
     icon_url: '',
     title: {

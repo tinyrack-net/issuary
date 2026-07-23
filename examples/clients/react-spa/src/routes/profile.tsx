@@ -4,6 +4,11 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router';
+import { TRAlert } from '@tinyrack/ui/components/alert';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRCodeBlock } from '@tinyrack/ui/components/code-block';
+import { TRTabs } from '@tinyrack/ui/components/tabs';
 import { useState } from 'react';
 import { TokenDisplay } from '#example-react-spa/components/token-display.tsx';
 import { UserInfo } from '#example-react-spa/components/user-info.tsx';
@@ -17,7 +22,6 @@ import {
   getTokens,
 } from '#example-react-spa/libs/token-storage.ts';
 import type { IntrospectionResponse } from '#example-react-spa/types/oidc.ts';
-
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,
   beforeLoad: ({ context }) => {
@@ -92,135 +96,154 @@ function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 p-8">
+    <div className="min-h-screen p-8">
       <div className="mx-auto max-w-4xl space-y-6">
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h1 className="card-title text-3xl">Authentication Successful</h1>
-            <p className="text-base-content/70">
+        <TRCard.Root>
+          <TRCard.Header>
+            <TRCard.Title className="text-3xl">
+              Authentication Successful
+            </TRCard.Title>
+            <TRCard.Description>
               You have successfully authenticated using OIDC with a Public
               Client (PKCE).
-            </p>
-          </div>
-        </div>
+            </TRCard.Description>
+          </TRCard.Header>
+        </TRCard.Root>
 
-        {idTokenPayload && <UserInfo payload={idTokenPayload} />}
+        <TRTabs.Root defaultValue="info">
+          <TRTabs.List>
+            <TRTabs.Tab value="info">User & Tokens</TRTabs.Tab>
+            <TRTabs.Tab value="introspect">Token Introspection</TRTabs.Tab>
+            <TRTabs.Tab value="revoke">Token Revocation</TRTabs.Tab>
+          </TRTabs.List>
 
-        <TokenDisplay tokens={tokens} />
+          <TRTabs.Panel className="space-y-6 pt-4" value="info">
+            {idTokenPayload && <UserInfo payload={idTokenPayload} />}
 
-        {idTokenPayload && (
-          <div className="card bg-base-100 shadow-xl">
-            <div className="card-body">
-              <h2 className="card-title">ID Token Payload (Decoded)</h2>
-              <pre className="overflow-x-auto rounded bg-base-200 p-4 font-mono text-xs">
-                {JSON.stringify(idTokenPayload, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
+            <TokenDisplay tokens={tokens} />
 
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">Token Introspection</h2>
-            <p className="text-base-content/70 text-sm">
-              RFC 7662 - Check the active state of a token
-            </p>
+            {idTokenPayload && (
+              <TRCard.Root>
+                <TRCard.Header>
+                  <TRCard.Title>ID Token Payload (Decoded)</TRCard.Title>
+                </TRCard.Header>
+                <TRCard.Content>
+                  <TRCodeBlock
+                    code={JSON.stringify(idTokenPayload, null, 2)}
+                    language="json"
+                  />
+                </TRCard.Content>
+              </TRCard.Root>
+            )}
+          </TRTabs.Panel>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                className="btn btn-outline btn-sm"
-                disabled={introspectionLoading}
-                onClick={() =>
-                  handleIntrospect(tokens.access_token, 'access_token')
-                }
-                type="button"
-              >
-                {introspectionLoading && (
-                  <span className="loading loading-spinner loading-xs" />
+          <TRTabs.Panel className="space-y-6 pt-4" value="introspect">
+            <TRCard.Root>
+              <TRCard.Header>
+                <TRCard.Title>Token Introspection</TRCard.Title>
+                <TRCard.Description>
+                  RFC 7662 - Check the active state of a token
+                </TRCard.Description>
+              </TRCard.Header>
+              <TRCard.Content className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <TRButton
+                    appearance="outline"
+                    disabled={introspectionLoading}
+                    loading={introspectionLoading}
+                    onClick={() =>
+                      handleIntrospect(tokens.access_token, 'access_token')
+                    }
+                    uiSize="sm"
+                  >
+                    Introspect Access Token
+                  </TRButton>
+                  {tokens.refresh_token && (
+                    <RefreshTokenIntrospectButton
+                      loading={introspectionLoading}
+                      onIntrospect={handleIntrospect}
+                      refreshToken={tokens.refresh_token}
+                    />
+                  )}
+                </div>
+
+                {introspectionError && (
+                  <TRAlert.Root variant="danger">
+                    <TRAlert.Description>
+                      {introspectionError}
+                    </TRAlert.Description>
+                  </TRAlert.Root>
                 )}
-                Introspect Access Token
-              </button>
-              {tokens.refresh_token && (
-                <RefreshTokenIntrospectButton
-                  loading={introspectionLoading}
-                  onIntrospect={handleIntrospect}
-                  refreshToken={tokens.refresh_token}
-                />
-              )}
-            </div>
 
-            {introspectionError && (
-              <div className="alert alert-error mt-4">
-                <span>{introspectionError}</span>
-              </div>
-            )}
-
-            {introspectionResult && (
-              <pre className="mt-4 overflow-x-auto rounded bg-base-200 p-4 font-mono text-xs">
-                {JSON.stringify(introspectionResult, null, 2)}
-              </pre>
-            )}
-          </div>
-        </div>
-
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">Token Revocation</h2>
-            <p className="text-base-content/70 text-sm">
-              RFC 7009 - Revoke tokens to invalidate them
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button
-                className="btn btn-error btn-outline btn-sm"
-                disabled={revokeLoading}
-                onClick={() =>
-                  handleRevoke(tokens.access_token, 'access_token')
-                }
-                type="button"
-              >
-                {revokeLoading && (
-                  <span className="loading loading-spinner loading-xs" />
+                {introspectionResult && (
+                  <TRCodeBlock
+                    code={JSON.stringify(introspectionResult, null, 2)}
+                    language="json"
+                  />
                 )}
-                Revoke Access Token
-              </button>
-              {tokens.refresh_token && (
-                <RefreshTokenRevokeButton
-                  loading={revokeLoading}
-                  onRevoke={handleRevoke}
-                  refreshToken={tokens.refresh_token}
-                />
-              )}
-            </div>
+              </TRCard.Content>
+            </TRCard.Root>
+          </TRTabs.Panel>
 
-            {revokeError && (
-              <div className="alert alert-error mt-4">
-                <span>{revokeError}</span>
-              </div>
-            )}
+          <TRTabs.Panel className="space-y-6 pt-4" value="revoke">
+            <TRCard.Root>
+              <TRCard.Header>
+                <TRCard.Title>Token Revocation</TRCard.Title>
+                <TRCard.Description>
+                  RFC 7009 - Revoke tokens to invalidate them
+                </TRCard.Description>
+              </TRCard.Header>
+              <TRCard.Content className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <TRButton
+                    appearance="outline"
+                    disabled={revokeLoading}
+                    intent="danger"
+                    loading={revokeLoading}
+                    onClick={() =>
+                      handleRevoke(tokens.access_token, 'access_token')
+                    }
+                    uiSize="sm"
+                  >
+                    Revoke Access Token
+                  </TRButton>
+                  {tokens.refresh_token && (
+                    <RefreshTokenRevokeButton
+                      loading={revokeLoading}
+                      onRevoke={handleRevoke}
+                      refreshToken={tokens.refresh_token}
+                    />
+                  )}
+                </div>
 
-            {revokeSuccess && (
-              <div className="alert alert-success mt-4">
-                <span>Token revoked successfully</span>
-              </div>
-            )}
-          </div>
-        </div>
+                {revokeError && (
+                  <TRAlert.Root variant="danger">
+                    <TRAlert.Description>{revokeError}</TRAlert.Description>
+                  </TRAlert.Root>
+                )}
+
+                {revokeSuccess && (
+                  <TRAlert.Root variant="success">
+                    <TRAlert.Description>
+                      Token revoked successfully
+                    </TRAlert.Description>
+                  </TRAlert.Root>
+                )}
+              </TRCard.Content>
+            </TRCard.Root>
+          </TRTabs.Panel>
+        </TRTabs.Root>
 
         <div className="flex flex-wrap gap-4">
-          <button
-            className="btn btn-error"
-            onClick={handleLogout}
-            type="button"
-          >
+          <TRButton intent="danger" onClick={handleLogout}>
             Logout
-          </button>
-          <Link className="btn btn-outline" to="/discovery">
+          </TRButton>
+          <TRButton appearance="outline" render={<Link to="/discovery" />}>
             Discovery Endpoints
-          </Link>
-          <Link className="btn btn-outline" to="/">
+          </TRButton>
+          <TRButton appearance="outline" render={<Link to="/" />}>
             Home
-          </Link>
+          </TRButton>
         </div>
       </div>
     </div>
@@ -242,15 +265,15 @@ function RefreshTokenIntrospectButton({
   loading,
 }: RefreshTokenIntrospectButtonProps) {
   return (
-    <button
-      className="btn btn-outline btn-sm"
+    <TRButton
+      appearance="outline"
       disabled={loading}
+      loading={loading}
       onClick={() => onIntrospect(refreshToken, 'refresh_token')}
-      type="button"
+      uiSize="sm"
     >
-      {loading && <span className="loading loading-spinner loading-xs" />}
       Introspect Refresh Token
-    </button>
+    </TRButton>
   );
 }
 
@@ -269,14 +292,15 @@ function RefreshTokenRevokeButton({
   loading,
 }: RefreshTokenRevokeButtonProps) {
   return (
-    <button
-      className="btn btn-error btn-outline btn-sm"
+    <TRButton
+      appearance="outline"
       disabled={loading}
+      intent="danger"
+      loading={loading}
       onClick={() => onRevoke(refreshToken, 'refresh_token')}
-      type="button"
+      uiSize="sm"
     >
-      {loading && <span className="loading loading-spinner loading-xs" />}
       Revoke Refresh Token
-    </button>
+    </TRButton>
   );
 }

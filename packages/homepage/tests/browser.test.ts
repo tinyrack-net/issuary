@@ -85,9 +85,6 @@ describe('Tinyauth built documentation', () => {
     await expect(
       page.getByText('Homelab', { exact: true }).isVisible(),
     ).resolves.toBe(true);
-    expect(await page.locator('html').getAttribute('data-theme')).toBe(
-      'tinyrack-light',
-    );
     await page.close();
   });
 
@@ -119,9 +116,6 @@ describe('Tinyauth built documentation', () => {
         .getByRole('button', { name: 'ドキュメントメニューに戻る' })
         .isVisible(),
     ).resolves.toBe(true);
-    expect(await page.locator('html').getAttribute('data-theme')).toBe(
-      'tinyrack-dark',
-    );
     await page.close();
   });
 

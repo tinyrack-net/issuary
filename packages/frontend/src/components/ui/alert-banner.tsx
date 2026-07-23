@@ -13,9 +13,9 @@ interface AlertBannerProps {
 }
 
 const variantClasses: Record<AlertBannerVariant, string> = {
-  error: 'bg-error/10 text-error',
-  warning: 'bg-warning/10 text-warning',
-  info: 'bg-info/10 text-info',
+  error: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
+  warning: 'bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
+  info: 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400',
 };
 
 const variantIcons: Record<AlertBannerVariant, typeof WarningIcon> = {
