@@ -50,19 +50,19 @@ class AppErrorBoundary extends Component<
   override render() {
     if (this.state.error) {
       return (
-        <div className="flex min-h-screen flex-col bg-surface p-4">
+        <div className="flex min-h-screen flex-col bg-tinyrack-canvas p-4">
           <div className="flex flex-1 items-center justify-center">
-            <TRCard.Root className="w-full max-w-100 border border-surface-elevated p-12 shadow-lg">
+            <TRCard.Root className="w-full max-w-100 border border-tinyrack-border p-12 shadow-tinyrack-raised">
               <TRCard.Header>
-                <TRCard.Title className="mb-2 text-center font-bold text-2xl">
+                <TRCard.Title className="mb-2 text-center font-bold text-tinyrack-2xl">
                   Service Unavailable
                 </TRCard.Title>
-                <TRCard.Description className="mb-6 text-center text-muted-foreground">
+                <TRCard.Description className="mb-6 text-center text-tinyrack-text-muted">
                   Unable to load the application. Please try again later.
                 </TRCard.Description>
               </TRCard.Header>
               <TRButton
-                className="h-10 w-full font-semibold text-sm"
+                className="w-full font-semibold"
                 intent="primary"
                 onClick={() => window.location.reload()}
                 type="button"

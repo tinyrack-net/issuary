@@ -198,14 +198,16 @@ function Profile() {
 
   return (
     <PageLayout maxWidth="xl" responsivePadding>
-      <div className="border-border border-b p-6">
+      <div className="border-tinyrack-border border-b p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <InitialAvatar email={user.email} size="lg" />
             <div className="min-w-0">
-              <h1 className="font-bold text-xl">{t('profile.title')}</h1>
+              <h1 className="font-bold text-tinyrack-text text-tinyrack-xl">
+                {t('profile.title')}
+              </h1>
               <p
-                className="truncate text-muted-foreground text-sm"
+                className="truncate text-tinyrack-sm text-tinyrack-text-muted"
                 data-testid="profile-user-email"
               >
                 {user.email}
@@ -244,17 +246,17 @@ function Profile() {
 
         {hasSecurityOptions && (
           <TRCard.Root variant="outlined">
-            <TRCard.Header className="border-border border-b px-4 py-3">
-              <TRCard.Title className="font-semibold text-sm">
+            <TRCard.Header className="border-tinyrack-border border-b px-4 py-3">
+              <TRCard.Title className="font-semibold text-tinyrack-md text-tinyrack-text">
                 {t('profile.security.title')}
               </TRCard.Title>
-              <TRCard.Description className="text-muted-foreground text-xs">
+              <TRCard.Description className="text-tinyrack-text-muted text-tinyrack-xs">
                 {t('profile.security.description')}
               </TRCard.Description>
             </TRCard.Header>
             {showTotpSection && user.totp_recovery_codes_missing && (
               <div
-                className="border-border border-b px-4 py-3"
+                className="border-tinyrack-border border-b px-4 py-3"
                 data-testid="profile-totp-recovery-warning"
               >
                 <Alert icon={WarningCircleIcon} type="warning">
@@ -262,7 +264,7 @@ function Profile() {
                 </Alert>
               </div>
             )}
-            <TRCard.Content className="divide-y divide-border p-0">
+            <TRCard.Content className="divide-y divide-tinyrack-border p-0">
               {showPasswordSection && (
                 <PasswordSection
                   hasLinkedOAuth={hasLinkedOAuth}

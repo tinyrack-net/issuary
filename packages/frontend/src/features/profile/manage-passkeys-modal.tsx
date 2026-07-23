@@ -135,7 +135,7 @@ export function ManagePasskeysModal({
 
         {!isLoading && passkeys.length === 0 && (
           <div
-            className="py-6 text-center text-muted-foreground text-sm"
+            className="py-6 text-center text-tinyrack-sm text-tinyrack-text-muted"
             data-testid="passkeys-empty"
           >
             <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
@@ -165,7 +165,9 @@ export function ManagePasskeysModal({
 
       <ModalActions>
         <TRButton
+          appearance="outline"
           data-testid="manage-passkeys-close"
+          intent="neutral"
           onClick={handleClose}
           type="button"
           uiSize="sm"
@@ -254,7 +256,7 @@ function PasskeyItem({
   if (isEditing) {
     return (
       <form
-        className="flex flex-col gap-1.5 rounded-lg bg-muted p-2"
+        className="flex flex-col gap-1.5 rounded-tinyrack-md bg-tinyrack-surface-muted p-2"
         onSubmit={handleRename}
       >
         <TRField.Root uiSize="sm">
@@ -301,10 +303,10 @@ function PasskeyItem({
 
   if (isConfirmingDelete) {
     return (
-      <div className="flex items-center justify-between rounded-lg bg-danger/10 p-2">
+      <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-2 text-tinyrack-on-danger">
         <div className="flex items-center gap-2">
-          <TrashIcon className="size-4 text-danger" weight="regular" />
-          <span className="text-danger text-xs">
+          <TrashIcon className="size-4" weight="regular" />
+          <span className="text-tinyrack-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
         </div>
@@ -332,20 +334,26 @@ function PasskeyItem({
 
   return (
     <div
-      className="flex items-center justify-between rounded-lg bg-muted p-2"
+      className="flex items-center justify-between rounded-tinyrack-md bg-tinyrack-surface-muted p-2"
       data-testid="passkey-item"
     >
       <div className="flex items-center gap-2">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon className="size-4 text-primary" weight="regular" />
+          <CloudIcon
+            className="size-4 text-tinyrack-primary"
+            weight="regular"
+          />
         ) : (
-          <DeviceMobileIcon className="size-4 text-primary" weight="regular" />
+          <DeviceMobileIcon
+            className="size-4 text-tinyrack-primary"
+            weight="regular"
+          />
         )}
         <div>
-          <div className="font-medium text-xs">
+          <div className="font-medium text-tinyrack-xs">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+          <div className="flex items-center gap-1.5 text-tinyrack-text-muted text-tinyrack-xs">
             <span>
               {t('profile.passkey.manageModal.createdAt', {
                 date: formatDate(passkey.created_at),

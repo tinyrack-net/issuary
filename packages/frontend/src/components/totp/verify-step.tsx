@@ -1,4 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -94,7 +95,7 @@ export function VerifyStep({
         />
 
         <SubmitButton
-          className="btn-sm mt-1"
+          className="mt-1"
           isPending={isPending}
           pendingText={pendingText ?? t('setupTotp.verifying')}
         >
@@ -104,15 +105,17 @@ export function VerifyStep({
 
       {onBack && (
         <div className="mt-3 text-center">
-          <button
-            className="btn btn-ghost btn-xs"
+          <TRButton
+            appearance="ghost"
             data-testid="totp-verify-back"
             disabled={isPending}
+            intent="neutral"
             onClick={onBack}
             type="button"
+            uiSize="sm"
           >
             {backLabel ?? t('setupTotp.back')}
-          </button>
+          </TRButton>
         </div>
       )}
     </div>

@@ -93,7 +93,7 @@ export function DeleteAccountModal({
               days: retentionDays,
             })}
           </p>
-          <p className="mt-0.5 text-xs opacity-80">
+          <p className="mt-0.5 text-tinyrack-xs opacity-80">
             {t('profile.deleteAccount.modal.warning')}
           </p>
         </AlertBanner>
@@ -125,8 +125,10 @@ export function DeleteAccountModal({
 
         <ModalActions>
           <TRButton
+            appearance="outline"
             data-testid="delete-account-cancel"
             disabled={mutation.isPending}
+            intent="neutral"
             onClick={handleClose}
             type="button"
             uiSize="sm"

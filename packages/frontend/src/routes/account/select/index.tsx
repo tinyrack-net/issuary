@@ -10,6 +10,9 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRIconButton } from '@tinyrack/ui/components/icon-button';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
@@ -107,14 +110,12 @@ function AccountSelect() {
         <div className="flex flex-col gap-2" data-testid="account-list">
           {data.accounts.map((account) => (
             <div
-              className="flex items-center gap-3 rounded-box border border-base-300 bg-base-100 p-3 shadow-sm"
+              className="flex items-center gap-3 rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-3"
               data-testid="remembered-account"
               key={account.sub}
             >
-              <div className="avatar placeholder">
-                <div className="w-10 rounded-full bg-primary/10 text-primary">
-                  <UserCircleIcon className="size-7" weight="duotone" />
-                </div>
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted text-tinyrack-text-muted">
+                <UserCircleIcon className="size-7" weight="duotone" />
               </div>
               <button
                 className="min-w-0 flex-1 text-left"
@@ -123,33 +124,35 @@ function AccountSelect() {
                 onClick={() => selectMutation.mutate({ sub: account.sub })}
                 type="button"
               >
-                <div className="truncate font-medium text-sm">
+                <div className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
                   {account.email}
                 </div>
-                <div className="text-base-content/60 text-xs">
+                <div className="text-tinyrack-text-muted text-tinyrack-xs">
                   {account.current
                     ? t('accountSelect.currentAccount')
                     : t('accountSelect.rememberedAccount')}
                 </div>
               </button>
               {account.current ? (
-                <span className="badge badge-primary badge-sm">
+                <TRBadge uiSize="sm" variant="info">
                   {t('accountSelect.current')}
-                </span>
+                </TRBadge>
               ) : null}
               {data.allow_remove_account && !account.current ? (
-                <button
+                <TRIconButton
+                  appearance="ghost"
                   aria-label={t('accountSelect.removeAccount', {
                     email: account.email,
                   })}
-                  className="btn btn-ghost btn-square btn-sm text-base-content/60"
                   data-testid={`remove-account-${account.sub}`}
                   disabled={removeMutation.isPending}
+                  intent="neutral"
                   onClick={() => removeMutation.mutate({ sub: account.sub })}
                   type="button"
+                  uiSize="sm"
                 >
                   <TrashIcon className="size-4" />
-                </button>
+                </TRIconButton>
               ) : null}
             </div>
           ))}
@@ -157,16 +160,18 @@ function AccountSelect() {
       )}
 
       {data.allow_add_account ? (
-        <a
-          className="btn btn-outline mt-4 w-full justify-between"
-          href={buildLoginHref(search)}
+        <TRLinkButton
+          appearance="outline"
+          className="mt-4 w-full justify-between"
+          intent="neutral"
+          render={<a href={buildLoginHref(search)} />}
         >
           <span className="inline-flex items-center gap-2">
             <PlusIcon className="size-4" />
             {t('accountSelect.useAnotherAccount')}
           </span>
           <ArrowRightIcon className="size-4" />
-        </a>
+        </TRLinkButton>
       ) : null}
     </PageLayout>
   );

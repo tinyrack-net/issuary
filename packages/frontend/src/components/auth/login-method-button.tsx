@@ -5,6 +5,7 @@ import {
   LinkIcon,
 } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { createElement, type ElementType, type ReactNode } from 'react';
 import type { OAuthProviderType } from '#frontend/queries/config.ts';
@@ -26,8 +27,7 @@ const PROVIDER_ICONS: Record<
   apple: <AppleLogoIcon className="size-6" weight="regular" />,
 };
 
-const COMMON_CLASSES =
-  'flex h-auto flex-row gap-2 py-3 sm:flex-col border-border';
+const COMMON_CLASSES = 'flex h-auto flex-row gap-2 py-3 sm:flex-col';
 
 export function LoginMethodButton<C extends ElementType>({
   as: Component,
@@ -51,14 +51,14 @@ export function LoginMethodButton<C extends ElementType>({
   const content = (
     <>
       {iconElement}
-      <span className="text-xs">{label}</span>
+      <span className="text-tinyrack-xs">{label}</span>
     </>
   );
 
   if (Component === 'button') {
     return (
       <TRButton
-        appearance="ghost"
+        appearance="outline"
         className={COMMON_CLASSES}
         intent="neutral"
         loading={isLoading}
@@ -72,12 +72,15 @@ export function LoginMethodButton<C extends ElementType>({
 
   const linkContent = isLoading ? <TRSpinner uiSize="md" /> : content;
 
-  return createElement(
-    Component,
-    {
-      className: `tr-btn cursor-pointer ${COMMON_CLASSES}`,
-      ...rest,
-    },
-    linkContent,
+  return (
+    <TRLinkButton
+      appearance="outline"
+      className={`cursor-pointer ${COMMON_CLASSES}`}
+      intent="neutral"
+      render={createElement(Component, rest as object)}
+      uiSize="md"
+    >
+      {linkContent}
+    </TRLinkButton>
   );
 }

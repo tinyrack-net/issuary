@@ -1,5 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckIcon, WarningIcon } from '@phosphor-icons/react';
+import { WarningIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -11,11 +11,13 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router';
+import { TRSeparator } from '@tinyrack/ui/components/separator';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   TermsCheckboxList,
   type TermsConsentsField,
@@ -197,7 +199,7 @@ function Terms() {
       <PageHeader title={t('terms.title')} />
 
       {implicitNotice && (
-        <div className="text-center text-base-content/60 text-xs">
+        <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
             dangerouslySetInnerHTML={{ __html: implicitNotice }}
@@ -206,8 +208,12 @@ function Terms() {
       )}
 
       {implicitNotice && hasExplicitTerms && (
-        <div className="divider text-xs">
-          {t('terms.additionalOptionalConsent')}
+        <div className="my-4 flex items-center gap-2 text-tinyrack-xs">
+          <TRSeparator className="flex-1" />
+          <span className="text-tinyrack-text-muted">
+            {t('terms.additionalOptionalConsent')}
+          </span>
+          <TRSeparator className="flex-1" />
         </div>
       )}
 
@@ -233,20 +239,12 @@ function Terms() {
         )}
 
         {/* Submit button */}
-        <button
-          className="btn btn-primary btn-block h-10 font-semibold text-[14px]"
-          disabled={consentMutation.isPending}
-          type="submit"
+        <SubmitButton
+          isPending={consentMutation.isPending}
+          pendingText={t('terms.submit')}
         >
-          {consentMutation.isPending ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <>
-              <CheckIcon className="size-4" weight="bold" />
-              {t('terms.submit')}
-            </>
-          )}
-        </button>
+          {t('terms.submit')}
+        </SubmitButton>
       </form>
     </PageLayout>
   );

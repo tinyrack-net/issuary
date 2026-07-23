@@ -308,7 +308,7 @@ function Register() {
 
           <div className="flex flex-col">
             {implicitNotice && (
-              <div className="text-center text-muted-foreground text-xs">
+              <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
                 <div
                   className="prose prose-sm text-xs! **:text-xs!"
                   dangerouslySetInnerHTML={{
@@ -320,9 +320,9 @@ function Register() {
             )}
 
             {implicitNotice && hasExplicitTerms && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-tinyrack-xs">
                 <TRSeparator className="flex-1" />
-                <span className="text-muted-foreground">
+                <span className="text-tinyrack-text-muted">
                   {t('terms.additionalOptionalConsent')}
                 </span>
                 <TRSeparator className="flex-1" />

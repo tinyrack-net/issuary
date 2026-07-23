@@ -26,28 +26,30 @@ export function PasswordSection({
     <div className="flex items-center justify-between gap-4 p-4">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div
-          className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            hasPassword ? 'bg-success/10' : 'bg-muted'
+          className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
+            hasPassword
+              ? 'bg-tinyrack-success-surface'
+              : 'bg-tinyrack-surface-muted'
           }`}
         >
           <KeyIcon
             className={`size-4 ${
-              hasPassword ? 'text-success' : 'text-muted-foreground'
+              hasPassword ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
             }`}
             weight="regular"
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="font-medium text-sm">
+          <div className="font-medium text-tinyrack-sm text-tinyrack-text">
             {t('profile.password.title')}
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-tinyrack-text-muted text-tinyrack-xs">
             {hasPassword
               ? t('profile.password.status.set')
               : t('profile.password.status.notSet')}
           </div>
           {isConfigManaged && (
-            <div className="mt-0.5 flex items-center gap-1 text-muted-foreground text-xs opacity-40">
+            <div className="mt-0.5 flex items-center gap-1 text-tinyrack-text-muted text-tinyrack-xs opacity-40">
               <GearIcon className="size-3 shrink-0" weight="fill" />
               <span>{t('profile.password.configManaged')}</span>
             </div>
@@ -96,9 +98,9 @@ export function PasswordSection({
                   />
                   <TRTooltip.Portal>
                     <TRTooltip.Positioner>
-                      <TRTooltip.Popup className="max-w-64 rounded-xl border border-border bg-surface p-3 text-xs shadow-lg">
+                      <TRTooltip.Popup className="max-w-64 rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface p-3 text-tinyrack-text text-tinyrack-xs shadow-tinyrack-overlay">
                         <div className="flex items-start gap-2">
-                          <InfoIcon className="size-4 shrink-0 text-warning" />
+                          <InfoIcon className="size-4 shrink-0 text-tinyrack-warning" />
                           <div>
                             {t('profile.password.removeDisabledReason')}
                           </div>

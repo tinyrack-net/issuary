@@ -108,7 +108,7 @@ export function SetupPasskeyModal({
     >
       {step === 'name' && (
         <form className="mt-4 space-y-3" onSubmit={handleRegister}>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-tinyrack-text-muted text-tinyrack-xs">
             {t('profile.passkey.setupModal.description')}
           </p>
 
@@ -139,7 +139,9 @@ export function SetupPasskeyModal({
 
           <ModalActions>
             <TRButton
+              appearance="outline"
               data-testid="setup-passkey-cancel"
+              intent="neutral"
               onClick={handleClose}
               type="button"
               uiSize="sm"
@@ -156,7 +158,7 @@ export function SetupPasskeyModal({
             </TRButton>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
-            <p className="mt-2 text-center text-xs">
+            <p className="mt-2 text-center text-tinyrack-xs">
               <TRButton
                 appearance="ghost"
                 intent="primary"
@@ -178,15 +180,17 @@ export function SetupPasskeyModal({
             data-testid="setup-passkey-loading"
           >
             <TRSpinner uiSize="md" />
-            <p className="text-center text-muted-foreground text-xs">
+            <p className="text-center text-tinyrack-text-muted text-tinyrack-xs">
               {t('profile.passkey.setupModal.waitingForDevice')}
             </p>
           </div>
 
           <ModalActions>
             <TRButton
+              appearance="outline"
               data-testid="setup-passkey-cancel"
               disabled={isPending}
+              intent="neutral"
               onClick={handleClose}
               type="button"
               uiSize="sm"

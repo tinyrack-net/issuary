@@ -98,7 +98,7 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
         </TROTPField.Root>
         {error && (
           <p
-            className="mt-2 text-center text-danger text-sm"
+            className="mt-2 text-center text-tinyrack-danger text-tinyrack-sm"
             data-testid="pin-input-error"
           >
             {error.message}

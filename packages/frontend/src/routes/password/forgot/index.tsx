@@ -117,7 +117,7 @@ function ForgotPassword() {
         </Alert>
 
         <TRButton
-          className="w-full font-semibold text-[14px]"
+          className="w-full font-semibold"
           intent="primary"
           onClick={() => navigate({ to: '/login' })}
         >

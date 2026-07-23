@@ -84,11 +84,11 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             >
               <TRCheckbox.Indicator />
             </TRCheckbox.Root>
-            <span className="font-medium text-xs" id="terms-all-label">
+            <span className="font-medium text-tinyrack-xs" id="terms-all-label">
               {t('terms.agreeAll')}
             </span>
             {hasOptionalTerms && (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-tinyrack-text-muted text-tinyrack-xs">
                 {t('terms.agreeAllOptionalIncluded')}
               </span>
             )}
@@ -116,7 +116,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       <TRCheckbox.Indicator />
                     </TRCheckbox.Root>
                     <span
-                      className="truncate text-xs"
+                      className="truncate text-tinyrack-xs"
                       id={`term-label-${term.id}`}
                     >
                       {getTermTitle(term)}
@@ -140,7 +140,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       aria-label={t('terms.viewSpecific', {
                         title: getTermTitle(term),
                       })}
-                      className="shrink-0 text-xs"
+                      className="shrink-0 text-tinyrack-xs"
                       href={term.content}
                       rel="noopener noreferrer"
                       target="_blank"
@@ -153,7 +153,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       aria-label={t('terms.viewSpecific', {
                         title: getTermTitle(term),
                       })}
-                      className="shrink-0 text-xs"
+                      className="shrink-0 text-tinyrack-xs"
                       onClick={() => setModalTerm(term)}
                       render={<button type="button" />}
                     >
@@ -162,13 +162,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   )}
                 </div>
                 {term.userConsent?.requiresUpdate && (
-                  <p className="ml-5 text-warning text-xs">
+                  <p className="ml-5 text-tinyrack-warning text-tinyrack-xs">
                     {t('terms.versionUpdated')}
                   </p>
                 )}
                 {termsConsentsErrors?.[term.id] && (
                   <p
-                    className="ml-5 text-error text-xs"
+                    className="ml-5 text-tinyrack-danger text-tinyrack-xs"
                     data-testid="terms-field-error"
                   >
                     {termsConsentsErrors[term.id]?.message}

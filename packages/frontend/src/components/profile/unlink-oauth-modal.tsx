@@ -62,8 +62,10 @@ export function UnlinkOAuthModal({
 
         <ModalActions>
           <TRButton
+            appearance="outline"
             data-testid="unlink-oauth-cancel"
             disabled={isPending}
+            intent="neutral"
             onClick={handleClose}
             type="button"
             uiSize="sm"

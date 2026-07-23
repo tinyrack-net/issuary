@@ -122,8 +122,10 @@ export function RemovePasswordModal({
         )}
         <ModalActions>
           <TRButton
+            appearance="outline"
             data-testid="remove-password-cancel"
             disabled={mutation.isPending}
+            intent="neutral"
             onClick={handleClose}
             type="button"
             uiSize="sm"

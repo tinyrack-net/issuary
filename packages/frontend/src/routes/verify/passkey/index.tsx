@@ -2,6 +2,7 @@ import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -110,10 +111,10 @@ function VerifyPasskey() {
       <div className="flex flex-col items-center gap-6">
         {verifyMutation.isPending && (
           <div className="flex flex-col items-center gap-4">
-            <div className="flex size-20 items-center justify-center rounded-full bg-muted">
+            <div className="flex size-20 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
               <TRSpinner uiSize="lg" />
             </div>
-            <p className="text-center text-muted-foreground text-sm">
+            <p className="text-center text-tinyrack-sm text-tinyrack-text-muted">
               {t('verifyPasskey.waiting')}
             </p>
           </div>
@@ -125,7 +126,7 @@ function VerifyPasskey() {
               {error.message}
             </Alert>
             {canUseTotp && (
-              <TRButton
+              <TRLinkButton
                 className="w-full"
                 intent="primary"
                 render={
@@ -133,7 +134,7 @@ function VerifyPasskey() {
                 }
               >
                 {t('verifyPasskey.useTotp')}
-              </TRButton>
+              </TRLinkButton>
             )}
             <TRButton
               appearance={canUseTotp ? 'outline' : 'solid'}

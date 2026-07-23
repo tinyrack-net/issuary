@@ -274,8 +274,8 @@ importers:
         specifier: 'catalog:'
         version: 1.170.17(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tinyrack/ui':
-        specifier: 0.5.0
-        version: 0.5.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
+        specifier: 0.7.0
+        version: 0.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
       jose:
         specifier: 'catalog:'
         version: 6.2.3
@@ -363,8 +363,8 @@ importers:
         specifier: 'catalog:'
         version: 1.170.17(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tinyrack/ui':
-        specifier: 0.5.0
-        version: 0.5.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
+        specifier: 0.7.0
+        version: 0.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
       hono:
         specifier: 'catalog:'
         version: 4.12.28
@@ -481,8 +481,8 @@ importers:
         specifier: 0.6.0
         version: 0.6.0(@tailwindcss/vite@4.3.2(vite@8.1.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0)))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react-router@8.2.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)(rollup@4.62.0)(tailwindcss@4.3.2)(typescript@5.9.3)(vite@8.1.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0))(wrangler@4.107.0)
       '@tinyrack/ui':
-        specifier: 0.6.0
-        version: 0.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
+        specifier: 0.7.0
+        version: 0.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
       isbot:
         specifier: 5.2.0
         version: 5.2.0
@@ -2967,16 +2967,16 @@ packages:
       tailwindcss: '>=4.3.0 <5.0.0'
       vite: '>=8.0.0 <9.0.0'
 
-  '@tinyrack/ui@0.5.0':
-    resolution: {integrity: sha512-pMn/LBnqsEkaZvSURD7j6C97zt0wA0AkHFJ8rB4t82eXZTVTw81po4PrajXGCuR7Ld0+vHxyYF6mizE1ynAiuQ==}
+  '@tinyrack/ui@0.6.0':
+    resolution: {integrity: sha512-X0jFn0YR2A9KfJuRV0FVXXoU+0x8MCM/Y+aqedV8IlaPkVDiRpb8Twe7jesoxC2HZZz6WYajLn90LXINzPgzcQ==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
       react: '>=19.0.0'
       react-dom: '>=19.0.0'
       tailwindcss: '>=4.3.0 <5.0.0'
 
-  '@tinyrack/ui@0.6.0':
-    resolution: {integrity: sha512-X0jFn0YR2A9KfJuRV0FVXXoU+0x8MCM/Y+aqedV8IlaPkVDiRpb8Twe7jesoxC2HZZz6WYajLn90LXINzPgzcQ==}
+  '@tinyrack/ui@0.7.0':
+    resolution: {integrity: sha512-w9NraGM3aPpDEvOWJCF+1Ha9NAvgsu7vjnMPCGo7K902SHQySC45Y5SfA35roZkbuUUZn4HALlu4FfiwW9fvNQ==}
     engines: {node: '>=24.0.0'}
     peerDependencies:
       react: '>=19.0.0'
@@ -7772,7 +7772,7 @@ snapshots:
       - typescript
       - wrangler
 
-  '@tinyrack/ui@0.5.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
+  '@tinyrack/ui@0.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
     dependencies:
       '@base-ui/react': 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       lucide-react: 1.23.0(react@19.2.7)
@@ -7785,7 +7785,7 @@ snapshots:
       - '@types/react'
       - date-fns
 
-  '@tinyrack/ui@0.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
+  '@tinyrack/ui@0.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
     dependencies:
       '@base-ui/react': 1.6.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       lucide-react: 1.23.0(react@19.2.7)

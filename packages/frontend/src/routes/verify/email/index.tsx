@@ -191,7 +191,7 @@ function VerifyEmail() {
         />
 
         <TRButton
-          className="w-full font-semibold text-[14px]"
+          className="w-full font-semibold"
           data-testid="email-verify-go-profile"
           intent="primary"
           onClick={() => navigate({ to: '/profile' })}

@@ -19,22 +19,26 @@ export function PasskeySection({
     <div className="flex items-center justify-between p-4">
       <div className="flex items-center gap-3">
         <div
-          className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
-            passkeyCount > 0 ? 'bg-success/10' : 'bg-muted'
+          className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
+            passkeyCount > 0
+              ? 'bg-tinyrack-success-surface'
+              : 'bg-tinyrack-surface-muted'
           }`}
         >
           <FingerprintIcon
             className={`size-4 ${
-              passkeyCount > 0 ? 'text-success' : 'text-muted-foreground'
+              passkeyCount > 0
+                ? 'text-tinyrack-success'
+                : 'text-tinyrack-text-muted'
             }`}
             weight="regular"
           />
         </div>
         <div>
-          <div className="font-medium text-sm">
+          <div className="font-medium text-tinyrack-sm text-tinyrack-text">
             {t('profile.passkey.title')}
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-tinyrack-text-muted text-tinyrack-xs">
             {passkeyCount > 0
               ? t('profile.passkey.status.enabled', { count: passkeyCount })
               : t('profile.passkey.status.disabled')}

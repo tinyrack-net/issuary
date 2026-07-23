@@ -256,7 +256,7 @@ function Login() {
       </LoginMethodList>
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-muted-foreground text-xs">
+        <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
           <div
             className="prose prose-sm text-xs! **:text-xs!"
             dangerouslySetInnerHTML={{ __html: implicitNotice }}

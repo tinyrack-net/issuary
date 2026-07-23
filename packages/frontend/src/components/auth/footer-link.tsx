@@ -17,7 +17,7 @@ export function FooterLink<C extends ElementType>({
 }: FooterLinkProps<C>) {
   return (
     <div
-      className={`mt-6 text-center text-muted-foreground text-xs ${className}`}
+      className={`mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs ${className}`}
     >
       {text}{' '}
       <TRLink
