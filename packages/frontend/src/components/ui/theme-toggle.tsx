@@ -28,8 +28,8 @@ export function ThemeToggle({
           data-testid="theme-toggle"
           render={
             <TRIconButton
-              aria-label={label}
               appearance="ghost"
+              aria-label={label}
               onClick={onToggle}
             >
               <Icon />

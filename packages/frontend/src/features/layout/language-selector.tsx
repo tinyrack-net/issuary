@@ -41,7 +41,6 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   return (
     <div className={className}>
       <TRSelect.Root
-        value={currentValue}
         onValueChange={(value) => {
           if (typeof value !== 'string') {
             return;
@@ -52,6 +51,7 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
             setLanguage(value);
           }
         }}
+        value={currentValue}
       >
         <TRSelect.Trigger data-testid="language-selector" uiSize="sm">
           <TRSelect.Value />
