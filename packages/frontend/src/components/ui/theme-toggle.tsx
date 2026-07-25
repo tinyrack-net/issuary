@@ -1,4 +1,5 @@
-import { TRColorSchemeToggle } from '@tinyrack/ui/components/color-scheme-toggle';
+import { MoonIcon, SunIcon } from '@phosphor-icons/react';
+import { TRIconButton } from '@tinyrack/ui/components/icon-button';
 import { TRTooltip } from '@tinyrack/ui/components/tooltip';
 import { useTranslation } from 'react-i18next';
 
@@ -18,18 +19,21 @@ export function ThemeToggle({
   const label =
     colorScheme === 'dark' ? t('common.theme.dark') : t('common.theme.light');
 
+  const Icon = colorScheme === 'dark' ? SunIcon : MoonIcon;
+
   return (
     <div className={className}>
       <TRTooltip.Root>
         <TRTooltip.Trigger
           data-testid="theme-toggle"
           render={
-            <TRColorSchemeToggle
-              onValueChange={(_value) => {
-                onToggle();
-              }}
-              value={colorScheme}
-            />
+            <TRIconButton
+              appearance="ghost"
+              aria-label={label}
+              onClick={onToggle}
+            >
+              <Icon />
+            </TRIconButton>
           }
         />
         <TRTooltip.Portal>
