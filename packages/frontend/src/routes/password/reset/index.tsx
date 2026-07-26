@@ -19,12 +19,12 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { resetPasswordMutationOptions } from '#frontend/queries/password-reset.ts';
@@ -147,12 +147,12 @@ function ResetPassword() {
 
   if (resetSuccess) {
     return (
-      <PageLayout cardPadding maxWidth="100">
+      <AuthLayout>
         <Alert className="mb-4" icon={CircleCheckIcon} type="success">
           {t('resetPassword.success.title')}
         </Alert>
 
-        <PageHeader
+        <AuthPageHeader
           subtitle={t('resetPassword.success.description')}
           title={t('resetPassword.success.subtitle')}
         />
@@ -165,13 +165,13 @@ function ResetPassword() {
         >
           {t('resetPassword.success.goToLogin')}
         </TRButton>
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('resetPassword.subtitle')}
         title={t('resetPassword.title')}
       />
@@ -236,6 +236,6 @@ function ResetPassword() {
           {t('resetPassword.backToLogin')}
         </TRLink>
       </div>
-    </PageLayout>
+    </AuthLayout>
   );
 }

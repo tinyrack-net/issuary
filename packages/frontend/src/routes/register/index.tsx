@@ -16,14 +16,14 @@ import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 
 import {
@@ -273,8 +273,8 @@ function Register() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('register.subtitle')}
         title={t('register.title')}
       />
@@ -357,6 +357,6 @@ function Register() {
         text={t('register.footer.haveAccount')}
         to="/login"
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

@@ -8,13 +8,13 @@ import { CircleAlertIcon, FingerprintIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
 import { LoginMethodList } from '#frontend/components/auth/login-method-list.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -114,14 +114,6 @@ function Login() {
   const isPasskeyEnabled = configData.auth.passkey.enabled;
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
-  // Config-based title/subtitle (overrides i18n defaults)
-  const customTitle =
-    configData.branding.title?.[lang] ??
-    configData.branding.title?.[configData.i18n.fallback_language];
-  const customSubtitle =
-    configData.branding.subtitle?.[lang] ??
-    configData.branding.subtitle?.[configData.i18n.fallback_language];
-
   const handlePasskeySuccess = async (data: AuthResponse) => {
     if (data.user) {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
@@ -190,11 +182,15 @@ function Login() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
-        iconUrl={configData.branding.icon_url}
-        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
-        title={customTitle ?? t('login.title')}
+    <AuthLayout>
+      {/*
+        Branding title and subtitle are rendered once, by the brand panel in
+        the layout. Repeating them here would give the page two copies of the
+        product name and two heading nodes with the same text.
+      */}
+      <AuthPageHeader
+        subtitle={t('login.selectMethod.subtitle') || undefined}
+        title={t('login.title')}
       />
 
       <AuthorizationContextBanner search={search} />
@@ -259,6 +255,6 @@ function Login() {
           />
         </div>
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }

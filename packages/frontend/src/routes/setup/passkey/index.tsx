@@ -18,12 +18,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -151,8 +151,8 @@ function SetupPasskey() {
   // Registering state - waiting for WebAuthn
   if (step === 'registering') {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupPasskey.subtitle')}
           title={t('setupPasskey.title')}
         />
@@ -162,15 +162,15 @@ function SetupPasskey() {
             {t('setupPasskey.waiting')}
           </p>
         </div>
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // Error state
   if (step === 'error') {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupPasskey.subtitle')}
           title={t('setupPasskey.title')}
         />
@@ -213,14 +213,14 @@ function SetupPasskey() {
           text=""
           to="/login"
         />
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // Form state
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('setupPasskey.subtitle')}
         title={t('setupPasskey.title')}
       />
@@ -277,6 +277,6 @@ function SetupPasskey() {
         text=""
         to="/login"
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

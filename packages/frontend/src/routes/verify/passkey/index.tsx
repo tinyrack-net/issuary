@@ -6,10 +6,10 @@ import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { CircleAlertIcon, FingerprintIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -102,8 +102,8 @@ function VerifyPasskey() {
   }, [verifyMutation]);
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyPasskey.subtitle')}
         title={t('verifyPasskey.title')}
       />
@@ -160,6 +160,6 @@ function VerifyPasskey() {
         text=""
         to="/login"
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

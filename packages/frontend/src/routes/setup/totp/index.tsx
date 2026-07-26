@@ -11,13 +11,13 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { QrStep } from '#frontend/components/totp/qr-step.tsx';
 import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
 import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
@@ -185,8 +185,8 @@ function SetupTotp() {
   // Loading state
   if (step === 'loading') {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.title')}
         />
@@ -196,7 +196,7 @@ function SetupTotp() {
         >
           <TRSpinner uiSize="lg" variant="primary" />
         </div>
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
@@ -205,8 +205,8 @@ function SetupTotp() {
     // Session expired error - show countdown and redirect
     if (errorType === 'session_expired') {
       return (
-        <PageLayout cardPadding maxWidth="100">
-          <PageHeader
+        <AuthLayout>
+          <AuthPageHeader
             subtitle={t('setupTotp.subtitle')}
             title={t('setupTotp.title')}
           />
@@ -241,15 +241,15 @@ function SetupTotp() {
             text=""
             to="/login"
           />
-        </PageLayout>
+        </AuthLayout>
       );
     }
 
     // TOTP already enabled error - redirect to profile
     if (errorType === 'already_enabled') {
       return (
-        <PageLayout cardPadding maxWidth="100">
-          <PageHeader
+        <AuthLayout>
+          <AuthPageHeader
             subtitle={t('setupTotp.subtitle')}
             title={t('setupTotp.title')}
           />
@@ -271,14 +271,14 @@ function SetupTotp() {
             text=""
             to="/login"
           />
-        </PageLayout>
+        </AuthLayout>
       );
     }
 
     // Generic error - show retry button
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.title')}
         />
@@ -302,15 +302,15 @@ function SetupTotp() {
           text=""
           to="/login"
         />
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // Recovery codes step
   if (step === 'recovery' && recoveryCodes.length > 0) {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.recoveryCodes.title')}
         />
@@ -319,15 +319,15 @@ function SetupTotp() {
           onConfirm={confirmRecoveryCodes}
           recoveryCodes={recoveryCodes}
         />
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // QR code step
   if (step === 'qr' && setupData) {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.title')}
         />
@@ -345,14 +345,14 @@ function SetupTotp() {
           text=""
           to="/login"
         />
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // Verify step
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('setupTotp.verifySubtitle')}
         title={t('setupTotp.verifyTitle')}
       />
@@ -362,6 +362,6 @@ function SetupTotp() {
         onBack={goToQr}
         onSubmit={handleVerify}
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

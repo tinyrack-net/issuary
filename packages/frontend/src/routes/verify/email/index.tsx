@@ -12,13 +12,13 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { Divider } from '#frontend/components/ui/divider.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -176,12 +176,12 @@ function VerifyEmail() {
 
   if (verified) {
     return (
-      <PageLayout cardPadding maxWidth="100">
+      <AuthLayout>
         <Alert className="mb-4" icon={CircleCheckIcon} type="success">
           {t('verifyEmail.success.title')}
         </Alert>
 
-        <PageHeader
+        <AuthPageHeader
           subtitle={t('verifyEmail.success.description')}
           title={t('verifyEmail.success.subtitle')}
         />
@@ -195,13 +195,13 @@ function VerifyEmail() {
         >
           {t('verifyEmail.success.goToProfile')}
         </TRButton>
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyEmail.subtitle')}
         title={t('verifyEmail.title')}
       />
@@ -266,6 +266,6 @@ function VerifyEmail() {
           </TRButton>
         </>
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }

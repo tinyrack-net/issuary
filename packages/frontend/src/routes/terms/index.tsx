@@ -16,7 +16,7 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   TermsCheckboxList,
@@ -24,7 +24,7 @@ import {
 } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { OAuthSearchSchema } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -195,8 +195,8 @@ function Terms() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader title={t('terms.title')} />
+    <AuthLayout width="wide">
+      <AuthPageHeader title={t('terms.title')} />
 
       {implicitNotice && (
         <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
@@ -246,6 +246,6 @@ function Terms() {
           {t('terms.submit')}
         </SubmitButton>
       </form>
-    </PageLayout>
+    </AuthLayout>
   );
 }

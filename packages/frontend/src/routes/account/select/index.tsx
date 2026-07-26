@@ -14,10 +14,10 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -94,8 +94,8 @@ function AccountSelect() {
   });
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout width="wide">
+      <AuthPageHeader
         subtitle={t('accountSelect.subtitle')}
         title={t('accountSelect.title')}
       />
@@ -173,6 +173,6 @@ function AccountSelect() {
           <ArrowRightIcon className="size-4" />
         </TRLinkButton>
       ) : null}
-    </PageLayout>
+    </AuthLayout>
   );
 }

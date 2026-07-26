@@ -5,9 +5,9 @@ import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { CircleAlertIcon, HouseIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
 const errorSearchSchema = z.object({
   code: z.string().optional(),
@@ -27,12 +27,12 @@ function ErrorPage() {
   const errorMessage = search.message || t('error.defaultMessage');
 
   return (
-    <PageLayout cardPadding maxWidth="100">
+    <AuthLayout>
       <Alert className="mb-4" icon={CircleAlertIcon} type="error">
         {t('error.title')}
       </Alert>
 
-      <PageHeader subtitle={errorMessage} title={t('error.subtitle')} />
+      <AuthPageHeader subtitle={errorMessage} title={t('error.subtitle')} />
 
       {/* Error Code */}
       <div className="mb-6 rounded-tinyrack-md bg-tinyrack-surface-muted p-4 text-center">
@@ -75,6 +75,6 @@ function ErrorPage() {
           {t('error.footer.contactSupport')}
         </TRLink>
       </div>
-    </PageLayout>
+    </AuthLayout>
   );
 }

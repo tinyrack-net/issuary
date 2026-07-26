@@ -3,11 +3,11 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { FingerprintIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { extractOAuthParams } from '#frontend/libs/oauth-search.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
@@ -26,8 +26,8 @@ function Setup2FA() {
   const oauthParams = extractOAuthParams(search);
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('setup2fa.subtitle')}
         title={t('setup2fa.title')}
       />
@@ -90,6 +90,6 @@ function Setup2FA() {
         text=""
         to="/login"
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

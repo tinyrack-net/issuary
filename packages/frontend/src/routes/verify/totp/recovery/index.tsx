@@ -9,11 +9,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -184,8 +184,8 @@ function VerifyRecovery() {
   const { ref: formRef, ...registerRest } = register('code');
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyRecovery.subtitle')}
         title={t('verifyRecovery.title')}
       />
@@ -284,6 +284,6 @@ function VerifyRecovery() {
         text=""
         to="/login"
       />
-    </PageLayout>
+    </AuthLayout>
   );
 }

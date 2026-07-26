@@ -11,13 +11,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -69,12 +69,6 @@ function LoginPassword() {
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
-  const customTitle =
-    configData.branding.title?.[lang] ??
-    configData.branding.title?.[configData.i18n.fallback_language];
-  const customSubtitle =
-    configData.branding.subtitle?.[lang] ??
-    configData.branding.subtitle?.[configData.i18n.fallback_language];
   const implicitNotice =
     configData.registration.signup_notice?.[lang] ??
     configData.registration.signup_notice?.[configData.i18n.fallback_language];
@@ -246,11 +240,11 @@ function LoginPassword() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
-        iconUrl={configData.branding.icon_url}
-        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
-        title={customTitle ?? t('login.title')}
+    <AuthLayout>
+      {/* Branding lives in the layout's brand panel — see /login. */}
+      <AuthPageHeader
+        subtitle={t('login.selectMethod.subtitle') || undefined}
+        title={t('login.title')}
       />
 
       <AuthorizationContextBanner search={search} />
@@ -327,6 +321,6 @@ function LoginPassword() {
           </TRLink>
         </div>
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }
