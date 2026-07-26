@@ -7,6 +7,8 @@
   "common.theme.select": "테마 선택",
   "common.yes": "예",
   "common.dismiss": "닫기",
+  "common.otp.label": "인증 코드",
+  "common.otp.digit": "{{total}}자리 중 {{position}}번째",
   "common.password.show": "비밀번호 표시",
   "common.password.hide": "비밀번호 숨기기",
   "common.no": "아니오",

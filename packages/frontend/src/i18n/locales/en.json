@@ -7,6 +7,8 @@
   "common.theme.select": "Select theme",
   "common.yes": "Yes",
   "common.dismiss": "Dismiss",
+  "common.otp.label": "Verification code",
+  "common.otp.digit": "Digit {{position}} of {{total}}",
   "common.password.show": "Show password",
   "common.password.hide": "Hide password",
   "common.no": "No",

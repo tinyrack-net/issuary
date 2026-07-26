@@ -7,6 +7,8 @@
   "common.theme.select": "テーマを選択",
   "common.yes": "はい",
   "common.dismiss": "閉じる",
+  "common.otp.label": "認証コード",
+  "common.otp.digit": "{{total}}桁中{{position}}桁目",
   "common.password.show": "パスワードを表示",
   "common.password.hide": "パスワードを非表示",
   "common.no": "いいえ",

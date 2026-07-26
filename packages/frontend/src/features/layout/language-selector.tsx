@@ -53,7 +53,16 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
         }}
         value={currentValue}
       >
-        <TRSelect.Trigger data-testid="language-selector" uiSize="sm">
+        {/*
+          The trigger's visible content is the current value, which the
+          combobox role does not expose as its own name, so without this the
+          control announces as an unnamed button.
+        */}
+        <TRSelect.Trigger
+          aria-label={t('common.language.select')}
+          data-testid="language-selector"
+          uiSize="sm"
+        >
           <TRSelect.Value />
         </TRSelect.Trigger>
         <TRSelect.Portal>
