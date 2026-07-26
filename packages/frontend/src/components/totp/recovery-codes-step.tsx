@@ -1,6 +1,6 @@
-import { CheckIcon, CopyIcon, WarningIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { CheckIcon, CopyIcon, TriangleAlertIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -49,7 +49,7 @@ export function RecoveryCodesStep({
       </div>
 
       <div className="flex items-start gap-2 rounded-tinyrack-md border border-tinyrack-warning-border bg-tinyrack-warning-surface p-2.5 text-tinyrack-on-warning">
-        <WarningIcon className="mt-0.5 size-4 shrink-0" weight="fill" />
+        <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />
         <p className="text-tinyrack-xs">
           {t('setupTotp.recoveryCodes.warning')}
         </p>

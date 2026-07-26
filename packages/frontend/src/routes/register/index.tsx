@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -12,6 +11,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { LockIcon, MailIcon } from 'lucide-react';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -286,7 +286,7 @@ function Register() {
           <IconInput
             autoComplete="email"
             error={errors.email}
-            icon={EnvelopeSimpleIcon}
+            icon={MailIcon}
             label={t('register.email.label')}
             placeholder={t('register.email.placeholder')}
             {...register('email')}

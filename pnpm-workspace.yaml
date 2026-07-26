@@ -21,7 +21,6 @@ catalog:
   "@mikro-orm/postgresql": ^7.1.5
   "@mikro-orm/seeder": ^7.1.5
   "@mikro-orm/sql": ^7.1.5
-  "@phosphor-icons/react": ^2.1.10
   "@playwright/test": ^1.61.1
   "@react-email/components": ^1.0.12
   "@react-email/preview-server": ^5.2.10
@@ -61,6 +60,7 @@ catalog:
   i18next: ^26.3.4
   jose: ^6.2.3
   kysely: ^0.29.3
+  lucide-react: ^1.25.0
   next: ^16.2.10
   nodemailer: ^9.0.3
   otplib: ^13.4.1

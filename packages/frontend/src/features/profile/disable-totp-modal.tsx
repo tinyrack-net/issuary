@@ -1,9 +1,9 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

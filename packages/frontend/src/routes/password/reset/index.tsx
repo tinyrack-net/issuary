@@ -1,11 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import {
-  CheckCircleIcon,
-  KeyIcon,
-  LockIcon,
-  LockKeyIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import {
   createFileRoute,
@@ -15,6 +8,13 @@ import {
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLink } from '@tinyrack/ui/components/link';
+import {
+  CircleAlertIcon,
+  CircleCheckIcon,
+  KeyRoundIcon,
+  LockIcon,
+  LockKeyholeIcon,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -148,7 +148,7 @@ function ResetPassword() {
   if (resetSuccess) {
     return (
       <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
+        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
           {t('resetPassword.success.title')}
         </Alert>
 
@@ -180,7 +180,7 @@ function ResetPassword() {
         {!queryToken && (
           <IconInput
             error={errors.token}
-            icon={KeyIcon}
+            icon={KeyRoundIcon}
             label={t('resetPassword.token.label')}
             placeholder={t('resetPassword.token.placeholder')}
             {...register('token')}
@@ -191,7 +191,7 @@ function ResetPassword() {
         {queryToken && errors.token && (
           <Alert
             data-testid="reset-password-token-error"
-            icon={WarningCircleIcon}
+            icon={CircleAlertIcon}
             type="error"
           >
             {errors.token.message}
@@ -211,7 +211,7 @@ function ResetPassword() {
         <IconInput
           autoComplete="new-password"
           error={errors.confirmPassword}
-          icon={LockKeyIcon}
+          icon={LockKeyholeIcon}
           label={t('resetPassword.confirmPassword.label')}
           placeholder={t('resetPassword.confirmPassword.placeholder')}
           {...register('confirmPassword')}

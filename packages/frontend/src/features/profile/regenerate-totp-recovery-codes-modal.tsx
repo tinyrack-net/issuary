@@ -1,10 +1,10 @@
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';

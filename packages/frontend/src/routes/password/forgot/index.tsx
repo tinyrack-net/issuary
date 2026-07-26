@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { CheckCircleIcon, EnvelopeSimpleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import {
   createFileRoute,
@@ -8,6 +7,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { CircleCheckIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -101,7 +101,7 @@ function ForgotPassword() {
   if (emailSent) {
     return (
       <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
+        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
           {t('forgotPassword.success.title')}
         </Alert>
 
@@ -112,7 +112,7 @@ function ForgotPassword() {
           title={t('forgotPassword.success.subtitle')}
         />
 
-        <Alert className="mb-4" icon={EnvelopeSimpleIcon} type="info">
+        <Alert className="mb-4" icon={MailIcon} type="info">
           {t('forgotPassword.success.checkSpam')}
         </Alert>
 
@@ -138,7 +138,7 @@ function ForgotPassword() {
         <IconInput
           autoComplete="email"
           error={errors.email}
-          icon={EnvelopeSimpleIcon}
+          icon={MailIcon}
           label={t('forgotPassword.email.label')}
           placeholder={t('forgotPassword.email.placeholder')}
           {...register('email')}

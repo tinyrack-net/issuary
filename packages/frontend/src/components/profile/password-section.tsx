@@ -1,6 +1,6 @@
-import { GearIcon, InfoIcon, KeyIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRTooltip } from '@tinyrack/ui/components/tooltip';
+import { InfoIcon, KeyRoundIcon, SettingsIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type PasswordModalType = 'set' | 'change' | 'remove' | null;
@@ -32,11 +32,10 @@ export function PasswordSection({
               : 'bg-tinyrack-surface-muted'
           }`}
         >
-          <KeyIcon
+          <KeyRoundIcon
             className={`size-4 ${
               hasPassword ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
             }`}
-            weight="regular"
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -50,7 +49,7 @@ export function PasswordSection({
           </div>
           {isConfigManaged && (
             <div className="mt-0.5 flex items-center gap-1 text-tinyrack-text-muted text-tinyrack-xs opacity-40">
-              <GearIcon className="size-3 shrink-0" weight="fill" />
+              <SettingsIcon className="size-3 shrink-0" />
               <span>{t('profile.password.configManaged')}</span>
             </div>
           )}

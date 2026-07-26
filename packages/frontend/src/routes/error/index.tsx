@@ -1,8 +1,8 @@
-import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLink } from '@tinyrack/ui/components/link';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { CircleAlertIcon, HouseIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -28,7 +28,7 @@ function ErrorPage() {
 
   return (
     <PageLayout cardPadding maxWidth="100">
-      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+      <Alert className="mb-4" icon={CircleAlertIcon} type="error">
         {t('error.title')}
       </Alert>
 
@@ -63,7 +63,7 @@ function ErrorPage() {
           onClick={() => window.history.back()}
           type="button"
         >
-          <HouseIcon className="size-4" weight="fill" />
+          <HouseIcon className="size-4" />
           {t('error.goBack')}
         </TRButton>
       </div>

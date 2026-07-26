@@ -1,4 +1,3 @@
-import { ShieldCheckIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import {
   createFileRoute,
@@ -6,6 +5,7 @@ import {
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { ShieldCheckIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -164,10 +164,7 @@ function Consent() {
               key={scope.name}
             >
               <div className="mt-0.5 rounded-tinyrack-full bg-tinyrack-info-surface p-1">
-                <ShieldCheckIcon
-                  className="size-4 text-tinyrack-info"
-                  weight="fill"
-                />
+                <ShieldCheckIcon className="size-4 text-tinyrack-info" />
               </div>
               <p className="font-medium text-tinyrack-sm text-tinyrack-text">
                 {t(`consent.scope.${scope.name}`, {
@@ -191,7 +188,7 @@ function Consent() {
           onClick={handleDeny}
           type="button"
         >
-          <XIcon className="size-4" weight="bold" />
+          <XIcon className="size-4" />
           {t('consent.deny')}
         </TRButton>
         <TRButton
@@ -203,7 +200,7 @@ function Consent() {
           onClick={handleAllow}
           type="button"
         >
-          <ShieldCheckIcon className="size-4" weight="fill" />
+          <ShieldCheckIcon className="size-4" />
           {t('consent.allow')}
         </TRButton>
       </div>

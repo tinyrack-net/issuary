@@ -1,4 +1,3 @@
-import { SignOutIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -12,6 +11,7 @@ import {
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { CircleAlertIcon, LogOutIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -225,7 +225,7 @@ function Profile() {
           >
             {logoutMutation.isPending ? undefined : (
               <>
-                <SignOutIcon className="size-4" weight="bold" />
+                <LogOutIcon className="size-4" />
                 <span className="hidden sm:inline">{t('profile.logout')}</span>
               </>
             )}
@@ -235,7 +235,7 @@ function Profile() {
 
       {oauthErrorMessage && (
         <div className="px-6 pt-4">
-          <Alert icon={WarningCircleIcon} type="error">
+          <Alert icon={CircleAlertIcon} type="error">
             {oauthErrorMessage}
           </Alert>
         </div>
@@ -259,7 +259,7 @@ function Profile() {
                 className="border-tinyrack-border border-b px-4 py-3"
                 data-testid="profile-totp-recovery-warning"
               >
-                <Alert icon={WarningCircleIcon} type="warning">
+                <Alert icon={CircleAlertIcon} type="warning">
                   {t('profile.totp.recoveryCodesMissing')}
                 </Alert>
               </div>

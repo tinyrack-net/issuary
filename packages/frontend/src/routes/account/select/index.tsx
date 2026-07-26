@@ -1,10 +1,4 @@
 import {
-  ArrowRightIcon,
-  PlusIcon,
-  TrashIcon,
-  UserCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -13,6 +7,12 @@ import { createFileRoute } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRIconButton } from '@tinyrack/ui/components/icon-button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import {
+  ArrowRightIcon,
+  CircleUserRoundIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
@@ -101,7 +101,7 @@ function AccountSelect() {
       />
 
       {data.accounts.length === 0 ? (
-        <Alert className="mb-4" icon={UserCircleIcon} type="info">
+        <Alert className="mb-4" icon={CircleUserRoundIcon} type="info">
           {accountSelectionUnavailable
             ? t('accountSelect.unavailable')
             : t('accountSelect.noRememberedAccounts')}
@@ -115,7 +115,7 @@ function AccountSelect() {
               key={account.sub}
             >
               <div className="flex size-10 shrink-0 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted text-tinyrack-text-muted">
-                <UserCircleIcon className="size-7" weight="duotone" />
+                <CircleUserRoundIcon className="size-7" />
               </div>
               <button
                 className="min-w-0 flex-1 text-left"
@@ -151,7 +151,7 @@ function AccountSelect() {
                   type="button"
                   uiSize="sm"
                 >
-                  <TrashIcon className="size-4" />
+                  <Trash2Icon className="size-4" />
                 </TRIconButton>
               ) : null}
             </div>

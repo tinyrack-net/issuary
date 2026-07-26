@@ -1,6 +1,6 @@
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QrStep } from '#frontend/components/totp/qr-step.tsx';

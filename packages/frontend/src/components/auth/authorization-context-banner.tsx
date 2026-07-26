@@ -1,5 +1,5 @@
-import { GlobeSimpleIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { GlobeIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   type AuthorizationContextSearch,
@@ -44,14 +44,14 @@ function AuthorizationContextContent({
     >
       <div className="flex items-start gap-3">
         <div className="mt-0.5 rounded-tinyrack-full bg-tinyrack-info-surface p-1.5 text-tinyrack-info">
-          <ShieldCheckIcon aria-hidden className="size-4" weight="fill" />
+          <ShieldCheckIcon aria-hidden className="size-4" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-medium text-tinyrack-sm text-tinyrack-text">
             {t('authorizationContext.title', { app: data.client.name })}
           </p>
           <div className="mt-1 flex items-center gap-1.5 text-tinyrack-text-muted text-tinyrack-xs">
-            <GlobeSimpleIcon aria-hidden className="size-3.5 shrink-0" />
+            <GlobeIcon aria-hidden className="size-3.5 shrink-0" />
             <span className="truncate">
               {t('authorizationContext.redirect', {
                 origin: data.redirect_origin,

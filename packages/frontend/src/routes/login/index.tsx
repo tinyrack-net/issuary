@@ -1,14 +1,10 @@
 import {
-  EnvelopeSimpleIcon,
-  FingerprintIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { CircleAlertIcon, FingerprintIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -204,13 +200,13 @@ function Login() {
       <AuthorizationContextBanner search={search} />
 
       {oauthErrorMessage && (
-        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+        <Alert className="mb-4" icon={CircleAlertIcon} type="error">
           {oauthErrorMessage}
         </Alert>
       )}
 
       {passkeyError && (
-        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+        <Alert className="mb-4" icon={CircleAlertIcon} type="error">
           {passkeyError}
         </Alert>
       )}
@@ -233,7 +229,7 @@ function Login() {
           <LoginMethodButton
             as="a"
             href={buildPasswordLoginHref()}
-            icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
+            icon={<MailIcon className="size-6" />}
             label={t('login.method.password')}
           />
         )}
@@ -243,7 +239,7 @@ function Login() {
           <LoginMethodButton
             as="button"
             disabled={passkeyLoginMutation.isPending}
-            icon={<FingerprintIcon className="size-6" weight="regular" />}
+            icon={<FingerprintIcon className="size-6" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => {

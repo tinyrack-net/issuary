@@ -1,10 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
-  CheckCircleIcon,
-  EnvelopeSimpleIcon,
-  KeyIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -12,6 +7,7 @@ import {
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { CircleCheckIcon, KeyRoundIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -181,7 +177,7 @@ function VerifyEmail() {
   if (verified) {
     return (
       <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
+        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
           {t('verifyEmail.success.title')}
         </Alert>
 
@@ -211,7 +207,7 @@ function VerifyEmail() {
       />
 
       {email && (
-        <Alert className="mb-4" icon={EnvelopeSimpleIcon} type="info">
+        <Alert className="mb-4" icon={MailIcon} type="info">
           <div className="text-left">
             <p className="font-semibold">{t('register.success.subtitle')}</p>
             <p className="text-xs">
@@ -224,7 +220,7 @@ function VerifyEmail() {
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
         <IconInput
           error={errors.token}
-          icon={KeyIcon}
+          icon={KeyRoundIcon}
           label={t('verifyEmail.token.label')}
           placeholder={t('verifyEmail.token.placeholder')}
           {...register('token')}
@@ -245,7 +241,7 @@ function VerifyEmail() {
           <Divider />
 
           {resendSuccess && (
-            <Alert className="mb-2" icon={CheckCircleIcon} type="success">
+            <Alert className="mb-2" icon={CircleCheckIcon} type="success">
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}

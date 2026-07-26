@@ -1,5 +1,5 @@
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type TotpModalType = 'setup' | 'disable' | 'regenerate' | null;
@@ -31,7 +31,6 @@ export function TotpSection({
             className={`size-4 ${
               totpEnabled ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
             }`}
-            weight="regular"
           />
         </div>
         <div>

@@ -1,10 +1,10 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -194,7 +194,7 @@ function VerifyRecovery() {
         <Alert
           className="mb-4"
           data-testid="recovery-session-expired"
-          icon={WarningCircleIcon}
+          icon={CircleAlertIcon}
           type="warning"
         >
           <div className="flex flex-col gap-1">

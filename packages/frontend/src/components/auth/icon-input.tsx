@@ -1,11 +1,11 @@
-import type { Icon } from '@phosphor-icons/react';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import type { LucideIcon } from 'lucide-react';
 import { useId } from 'react';
 import type { FieldError } from 'react-hook-form';
 
 type IconInputProps = {
-  icon: Icon;
+  icon: LucideIcon;
   type?: 'email' | 'password' | 'text';
   label: string;
   placeholder: string;

@@ -1,7 +1,7 @@
-import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { FingerprintIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { PageHeader } from '#frontend/components/auth/page-header.tsx';
@@ -46,7 +46,7 @@ function Setup2FA() {
               render={<Link search={oauthParams} to="/setup/totp" />}
               uiSize="md"
             >
-              <ShieldCheckIcon className="size-5" weight="regular" />
+              <ShieldCheckIcon className="size-5" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">{t('setup2fa.totp.title')}</span>
                 <span className="text-tinyrack-text-muted text-tinyrack-xs">
@@ -72,7 +72,7 @@ function Setup2FA() {
             }
             uiSize="md"
           >
-            <FingerprintIcon className="size-5" weight="regular" />
+            <FingerprintIcon className="size-5" />
             <div className="flex flex-col items-start">
               <span className="font-medium">{t('setup2fa.passkey.title')}</span>
               <span className="text-tinyrack-text-muted text-tinyrack-xs">

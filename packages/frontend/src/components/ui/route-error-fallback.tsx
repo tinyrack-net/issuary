@@ -1,8 +1,8 @@
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -80,7 +80,7 @@ export function RouteErrorFallback({
     // Fallback: show a link to login.
     return (
       <MinimalLayout>
-        <Alert className="mb-4" icon={WarningCircleIcon} type="warning">
+        <Alert className="mb-4" icon={CircleAlertIcon} type="warning">
           {t('error.sessionExpired')}
         </Alert>
         <TRLinkButton
@@ -102,7 +102,7 @@ export function RouteErrorFallback({
 
   return (
     <MinimalLayout>
-      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+      <Alert className="mb-4" icon={CircleAlertIcon} type="error">
         {t('error.title')}
       </Alert>
 

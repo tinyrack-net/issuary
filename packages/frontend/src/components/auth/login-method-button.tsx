@@ -1,13 +1,13 @@
-import {
-  AppleLogoIcon,
-  GithubLogoIcon,
-  GoogleLogoIcon,
-  LinkIcon,
-} from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { LinkIcon } from 'lucide-react';
 import { createElement, type ElementType, type ReactNode } from 'react';
+import {
+  AppleLogo,
+  GithubLogo,
+  GoogleLogo,
+} from '#frontend/components/auth/provider-logos.tsx';
 import type { OAuthProviderType } from '#frontend/queries/config.ts';
 
 type LoginMethodButtonProps<C extends ElementType> = {
@@ -22,9 +22,9 @@ const PROVIDER_ICONS: Record<
   Exclude<OAuthProviderType, 'generic_oauth'>,
   ReactNode
 > = {
-  google: <GoogleLogoIcon className="size-6" weight="regular" />,
-  github: <GithubLogoIcon className="size-6" weight="regular" />,
-  apple: <AppleLogoIcon className="size-6" weight="regular" />,
+  google: <GoogleLogo className="size-6" />,
+  github: <GithubLogo className="size-6" />,
+  apple: <AppleLogo className="size-6" />,
 };
 
 const COMMON_CLASSES = 'flex h-auto flex-row gap-2 py-3 sm:flex-col';
@@ -45,7 +45,7 @@ export function LoginMethodButton<C extends ElementType>({
   } else if (icon) {
     iconElement = icon;
   } else {
-    iconElement = <LinkIcon className="size-6" weight="regular" />;
+    iconElement = <LinkIcon className="size-6" />;
   }
 
   const content = (

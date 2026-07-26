@@ -1,6 +1,6 @@
-import { MoonIcon, SunIcon } from '@phosphor-icons/react';
 import { TRIconButton } from '@tinyrack/ui/components/icon-button';
 import { TRTooltip } from '@tinyrack/ui/components/tooltip';
+import { MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type ThemeToggleProps = {
@@ -19,7 +19,7 @@ export function ThemeToggle({
   const label =
     colorScheme === 'dark' ? t('common.theme.dark') : t('common.theme.light');
 
-  const Icon = colorScheme === 'dark' ? SunIcon : MoonIcon;
+  const SchemeIcon = colorScheme === 'dark' ? SunIcon : MoonIcon;
 
   return (
     <div className={className}>
@@ -32,7 +32,7 @@ export function ThemeToggle({
               aria-label={label}
               onClick={onToggle}
             >
-              <Icon />
+              <SchemeIcon />
             </TRIconButton>
           }
         />

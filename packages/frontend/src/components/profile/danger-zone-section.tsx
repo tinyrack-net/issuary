@@ -1,6 +1,6 @@
-import { TrashIcon, WarningIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { Trash2Icon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface DangerZoneSectionProps {
@@ -27,7 +27,7 @@ export function DangerZoneSection({
     >
       <TRCard.Header className="border-tinyrack-danger-border border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <WarningIcon className="size-4 text-tinyrack-danger" weight="fill" />
+          <TriangleAlertIcon className="size-4 text-tinyrack-danger" />
           <TRCard.Title className="font-semibold text-tinyrack-danger text-tinyrack-md">
             {t('profile.dangerZone.title')}
           </TRCard.Title>
@@ -57,7 +57,7 @@ export function DangerZoneSection({
             type="button"
             uiSize="sm"
           >
-            <TrashIcon className="size-4" weight="bold" />
+            <Trash2Icon className="size-4" />
             {t('profile.deleteAccount.button')}
           </TRButton>
         </div>

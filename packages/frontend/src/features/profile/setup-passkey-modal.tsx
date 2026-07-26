@@ -1,10 +1,10 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { FingerprintIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { FingerprintIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';

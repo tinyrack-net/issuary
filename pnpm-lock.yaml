@@ -39,9 +39,6 @@ catalogs:
     '@mikro-orm/sql':
       specifier: ^7.1.5
       version: 7.1.5
-    '@phosphor-icons/react':
-      specifier: ^2.1.10
-      version: 2.1.10
     '@playwright/test':
       specifier: ^1.61.1
       version: 1.61.1
@@ -156,6 +153,9 @@ catalogs:
     kysely:
       specifier: ^0.29.3
       version: 0.29.3
+    lucide-react:
+      specifier: ^1.25.0
+      version: 1.25.0
     next:
       specifier: ^16.2.10
       version: 16.2.10
@@ -356,9 +356,6 @@ importers:
       '@hookform/resolvers':
         specifier: 'catalog:'
         version: 5.4.0(react-hook-form@7.81.0(react@19.2.7))
-      '@phosphor-icons/react':
-        specifier: 'catalog:'
-        version: 2.1.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 13.3.0
@@ -380,6 +377,9 @@ importers:
       i18next:
         specifier: 'catalog:'
         version: 26.3.4(typescript@5.9.3)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.25.0(react@19.2.7)
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -2164,13 +2164,6 @@ packages:
 
   '@phosphor-icons/core@2.1.1':
     resolution: {integrity: sha512-v4ARvrip4qBCImOE5rmPUylOEK4iiED9ZyKjcvzuezqMaiRASCHKcRIuvvxL/twvLpkfnEODCOJp5dM4eZilxQ==}
-
-  '@phosphor-icons/react@2.1.10':
-    resolution: {integrity: sha512-vt8Tvq8GLjheAZZYa+YG/pW7HDbov8El/MANW8pOAz4eGxrwhnbfrQZq0Cp4q8zBEu8NIhHdnr+r8thnfRSNYA==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: '>= 16.8'
-      react-dom: '>= 16.8'
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -7019,11 +7012,6 @@ snapshots:
       tsyringe: 4.10.0
 
   '@phosphor-icons/core@2.1.1': {}
-
-  '@phosphor-icons/react@2.1.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
-    dependencies:
-      react: 19.2.7
-      react-dom: 19.2.7(react@19.2.7)
 
   '@pinojs/redact@0.4.0': {}
 

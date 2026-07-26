@@ -1,10 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
-  FingerprintIcon,
-  ShieldCheckIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -14,6 +9,11 @@ import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import {
+  CircleAlertIcon,
+  FingerprintIcon,
+  ShieldCheckIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -174,7 +174,7 @@ function SetupPasskey() {
           subtitle={t('setupPasskey.subtitle')}
           title={t('setupPasskey.title')}
         />
-        <Alert icon={WarningCircleIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {errorMessage}
         </Alert>
         {canUseTotpSetup && (
@@ -185,7 +185,7 @@ function SetupPasskey() {
               <Link search={extractOAuthParams(search)} to="/setup/totp" />
             }
           >
-            <ShieldCheckIcon className="size-5" weight="regular" />
+            <ShieldCheckIcon className="size-5" />
             {t('setupPasskey.useTotp')}
           </TRLinkButton>
         )}

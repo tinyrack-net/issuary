@@ -1,9 +1,9 @@
-import { FingerprintIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { CircleAlertIcon, FingerprintIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
@@ -122,7 +122,7 @@ function VerifyPasskey() {
 
         {error && (
           <>
-            <Alert className="w-full" icon={WarningCircleIcon} type="error">
+            <Alert className="w-full" icon={CircleAlertIcon} type="error">
               {error.message}
             </Alert>
             {canUseTotp && (
@@ -146,7 +146,7 @@ function VerifyPasskey() {
               }}
               type="button"
             >
-              <FingerprintIcon className="size-5" weight="regular" />
+              <FingerprintIcon className="size-5" />
               {t('verifyPasskey.retry')}
             </TRButton>
           </>

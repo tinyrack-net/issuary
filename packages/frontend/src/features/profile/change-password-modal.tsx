@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { KeyIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -8,6 +7,7 @@ import {
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -110,7 +110,7 @@ export function ChangePasswordModal({
   return (
     <Modal
       description={t('profile.password.changeModal.description')}
-      icon={KeyIcon}
+      icon={KeyRoundIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.changeModal.title')}

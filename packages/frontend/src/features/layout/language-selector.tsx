@@ -1,5 +1,5 @@
-import { CheckIcon } from '@phosphor-icons/react';
 import { TRSelect } from '@tinyrack/ui/components/select';
+import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '#frontend/hooks/use-language.ts';
 import { LANGUAGE_LABELS } from '#frontend/i18n/index.ts';

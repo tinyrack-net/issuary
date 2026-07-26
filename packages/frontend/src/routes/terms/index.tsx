@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -12,6 +11,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { TriangleAlertIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -233,7 +233,7 @@ function Terms() {
 
         {/* Error message */}
         {consentMutation.isError && (
-          <Alert className="mb-4" icon={WarningIcon} type="error">
+          <Alert className="mb-4" icon={TriangleAlertIcon} type="error">
             {t('terms.error.submitFailed')}
           </Alert>
         )}

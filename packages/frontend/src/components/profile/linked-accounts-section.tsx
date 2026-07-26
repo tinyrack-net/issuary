@@ -1,7 +1,7 @@
-import { LinkIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { LinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface OAuthProvider {
@@ -63,7 +63,6 @@ export function LinkedAccountsSection({
                       ? 'text-tinyrack-success'
                       : 'text-tinyrack-text-muted'
                   }`}
-                  weight="regular"
                 />
               </div>
               <div>

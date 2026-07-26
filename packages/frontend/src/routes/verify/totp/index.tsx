@@ -1,8 +1,8 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -182,7 +182,7 @@ function VerifyTotp() {
         <Alert
           className="mb-4"
           data-testid="totp-verify-session-expired"
-          icon={WarningCircleIcon}
+          icon={CircleAlertIcon}
           type="warning"
         >
           <div className="flex flex-col gap-1">

@@ -1,5 +1,5 @@
-import { FingerprintIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { FingerprintIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 type PasskeyModalType = 'setup' | 'manage' | null;
@@ -31,7 +31,6 @@ export function PasskeySection({
                 ? 'text-tinyrack-success'
                 : 'text-tinyrack-text-muted'
             }`}
-            weight="regular"
           />
         </div>
         <div>

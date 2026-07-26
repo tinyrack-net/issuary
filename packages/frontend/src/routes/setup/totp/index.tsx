@@ -1,14 +1,14 @@
-import {
-  InfoIcon,
-  ShieldCheckIcon,
-  WarningCircleIcon,
-  XCircleIcon,
-} from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRAlert } from '@tinyrack/ui/components/alert';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import {
+  CircleAlertIcon,
+  CircleXIcon,
+  InfoIcon,
+  ShieldCheckIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
@@ -215,7 +215,7 @@ function SetupTotp() {
             data-testid="totp-setup-session-expired"
             variant="warning"
           >
-            <WarningCircleIcon className="size-5" weight="fill" />
+            <CircleAlertIcon className="size-5" />
             <TRAlert.Title>{t('setupTotp.error.expired')}</TRAlert.Title>
             <TRAlert.Description>
               {t('setupTotp.redirecting', {
@@ -282,7 +282,7 @@ function SetupTotp() {
           subtitle={t('setupTotp.subtitle')}
           title={t('setupTotp.title')}
         />
-        <Alert className="mb-4" icon={XCircleIcon} type="error">
+        <Alert className="mb-4" icon={CircleXIcon} type="error">
           {t('setupTotp.error.setupFailed')}
         </Alert>
         <TRButton

@@ -1,17 +1,17 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import {
-  CloudIcon,
-  DeviceMobileIcon,
-  FingerprintIcon,
-  PencilSimpleIcon,
-  TrashIcon,
-} from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import {
+  CloudIcon,
+  FingerprintIcon,
+  PencilIcon,
+  SmartphoneIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -305,7 +305,7 @@ function PasskeyItem({
     return (
       <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-2 text-tinyrack-on-danger">
         <div className="flex items-center gap-2">
-          <TrashIcon className="size-4" weight="regular" />
+          <Trash2Icon className="size-4" />
           <span className="text-tinyrack-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
@@ -339,15 +339,9 @@ function PasskeyItem({
     >
       <div className="flex items-center gap-2">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon
-            className="size-4 text-tinyrack-primary"
-            weight="regular"
-          />
+          <CloudIcon className="size-4 text-tinyrack-primary" />
         ) : (
-          <DeviceMobileIcon
-            className="size-4 text-tinyrack-primary"
-            weight="regular"
-          />
+          <SmartphoneIcon className="size-4 text-tinyrack-primary" />
         )}
         <div>
           <div className="font-medium text-tinyrack-xs">
@@ -375,7 +369,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          <PencilSimpleIcon className="size-3.5" weight="regular" />
+          <PencilIcon className="size-3.5" />
         </TRButton>
         <TRButton
           appearance="ghost"
@@ -387,9 +381,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          {isDeleting ? undefined : (
-            <TrashIcon className="size-3.5" weight="regular" />
-          )}
+          {isDeleting ? undefined : <Trash2Icon className="size-3.5" />}
         </TRButton>
       </div>
     </div>

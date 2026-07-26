@@ -1,6 +1,6 @@
-import type { Icon } from '@phosphor-icons/react';
-import { XIcon } from '@phosphor-icons/react';
 import { TRDialog } from '@tinyrack/ui/components/dialog';
+import type { LucideIcon } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import { type ReactNode, useEffect } from 'react';
 
 type ModalVariant = 'default' | 'destructive';
@@ -13,7 +13,7 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg';
   preventClose?: boolean;
-  icon?: Icon;
+  icon?: LucideIcon;
   variant?: ModalVariant;
 }
 
@@ -76,7 +76,7 @@ export function Modal({
                 <div
                   className={`flex size-8 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
                 >
-                  <IconComponent className="size-4" weight="bold" />
+                  <IconComponent className="size-4" />
                 </div>
               )}
               <div className="min-w-0 flex-1">

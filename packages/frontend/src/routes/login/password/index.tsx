@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -7,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRLink } from '@tinyrack/ui/components/link';
+import { LockIcon, MailIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -260,7 +260,7 @@ function LoginPassword() {
           <IconInput
             autoComplete="username webauthn"
             error={errors.email}
-            icon={EnvelopeSimpleIcon}
+            icon={MailIcon}
             label={t('login.email.label')}
             placeholder={t('login.email.placeholder')}
             {...register('email')}
