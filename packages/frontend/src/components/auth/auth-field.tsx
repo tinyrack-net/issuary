@@ -23,9 +23,8 @@ type AuthFieldProps = {
 /**
  * The auth surface's text input.
  *
- * Built on the `tr-input-group` contract from `@tinyrack/ui`'s input CSS,
- * which supports a leading adornment and a trailing action but has no React
- * export yet — worth proposing upstream as `TRInput.Group`.
+ * Composes `TRInput.Group` so the icon, field, and reveal toggle read as one
+ * control.
  *
  * Password fields get a reveal toggle. It is a real button in the tab order
  * with a state-dependent accessible name, and it never changes the field's
@@ -62,22 +61,19 @@ export function AuthField({
         <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
         {labelAction}
       </div>
-      <div
-        className="tr-input-group"
+      <TRInput.Group
         data-invalid={error ? '' : undefined}
         data-testid={error ? 'input-error-wrapper' : undefined}
-        data-ui-size="md"
       >
         {Icon && (
-          <span className="tr-input-group-adornment" data-side="start">
+          <TRInput.Adornment>
             <Icon aria-hidden className="size-5 opacity-70" />
-          </span>
+          </TRInput.Adornment>
         )}
         <TRInput
           aria-describedby={describedBy}
           aria-invalid={error ? true : undefined}
           autoComplete={autoComplete}
-          className="tr-input-group-input"
           data-invalid={error ? '' : undefined}
           id={inputId}
           placeholder={placeholder}
@@ -86,22 +82,20 @@ export function AuthField({
           {...props}
         />
         {canReveal && (
-          <button
+          <TRInput.Action
             aria-label={
               revealed ? t('common.password.hide') : t('common.password.show')
             }
-            className="tr-input-group-action"
             onClick={() => setRevealed((value) => !value)}
-            type="button"
           >
             {revealed ? (
               <EyeOffIcon aria-hidden className="size-4" />
             ) : (
               <EyeIcon aria-hidden className="size-4" />
             )}
-          </button>
+          </TRInput.Action>
         )}
-      </div>
+      </TRInput.Group>
       {hint && !error && (
         <TRField.Description id={hintId}>{hint}</TRField.Description>
       )}
