@@ -27,6 +27,10 @@ dist-ssr
 # Vitest browser-mode failure screenshots
 .vitest-attachments/
 
+# Ad-hoc visual QA scratch (see shot.mjs)
+.shots/
+shot.mjs
+
 # Playwright
 test-results/
 playwright-report/
