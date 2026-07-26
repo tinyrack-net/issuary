@@ -24,6 +24,9 @@ dist-ssr
 *.sw?
 *.tsbuildinfo
 
+# Vitest browser-mode failure screenshots
+.vitest-attachments/
+
 # Playwright
 test-results/
 playwright-report/
