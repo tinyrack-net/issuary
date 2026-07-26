@@ -12,7 +12,11 @@ type ThemeToggleProps = {
 export function ThemeToggle({
   colorScheme,
   onToggle,
-  className = 'fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4',
+  /**
+   * Unpositioned by default: the auth header bar lays it out. Profile and
+   * admin still pass their own positioning classes.
+   */
+  className = '',
 }: ThemeToggleProps) {
   const { t } = useTranslation();
 

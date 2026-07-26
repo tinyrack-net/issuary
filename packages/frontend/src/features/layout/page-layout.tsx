@@ -54,7 +54,11 @@ export function PageLayout({
           className="absolute inset-0 bg-tinyrack-canvas/70 backdrop-blur-sm"
         />
       )}
-      <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
+      <ThemeToggle
+        className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
+        colorScheme={colorScheme}
+        onToggle={toggleColorScheme}
+      />
       <div className="relative z-10 flex flex-1 items-center justify-center py-6">
         <div
           className={`w-full rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface shadow-tinyrack-raised ${cardClass}`}

@@ -41,8 +41,13 @@ export function AuthLayout({
       <div className="col-span-full flex min-w-0 flex-col md:col-span-8 lg:col-span-7">
         <AuthHeaderBar />
         <main className="flex flex-1 items-center justify-center px-tinyrack-lg py-tinyrack-xl">
+          {/*
+            The stack owns vertical rhythm so screens compose as a flat list of
+            blocks — header, alerts, form, footer — instead of each one
+            hand-rolling `mb-4`/`mt-6` margins that drift apart over time.
+          */}
           <div
-            className={`auth-enter w-full rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl md:border-0 md:bg-transparent md:p-0 ${widthClasses[width]}`}
+            className={`auth-enter flex w-full flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl md:border-0 md:bg-transparent md:p-0 ${widthClasses[width]}`}
             key={animationKey}
           >
             {children}

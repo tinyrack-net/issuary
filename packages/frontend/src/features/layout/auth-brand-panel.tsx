@@ -21,7 +21,18 @@ export function AuthBrandPanel({ lang }: AuthBrandPanelProps) {
   const { title, subtitle, iconUrl, backgroundUrl } = useBranding(lang);
 
   return (
-    <div className="relative isolate col-span-full flex flex-row items-center gap-tinyrack-md overflow-hidden bg-tinyrack-surface-inverse px-tinyrack-lg py-tinyrack-md text-tinyrack-text-inverse md:col-span-4 md:flex-col md:items-start md:justify-between md:gap-tinyrack-2xl md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5">
+    /*
+     * Pinned to the dark theme rather than using the `inverse` tokens.
+     * `--tinyrack-text-inverse` flips with the active theme, so in dark mode it
+     * resolves to near-black — which is illegible over the always-dark scrim a
+     * background image sits under. Scoping `data-theme` here makes every
+     * token inside the panel resolve consistently, so the brand surface reads
+     * the same in both app themes and the scrim always works.
+     */
+    <div
+      className="relative isolate col-span-full flex h-16 flex-row items-center gap-tinyrack-md overflow-hidden border-tinyrack-border border-b bg-tinyrack-surface-muted px-tinyrack-lg text-tinyrack-text md:col-span-4 md:h-auto md:flex-col md:items-start md:justify-between md:gap-tinyrack-2xl md:border-e md:border-b-0 md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5"
+      data-theme="tinyrack-dark"
+    >
       {backgroundUrl && (
         <>
           {/*
