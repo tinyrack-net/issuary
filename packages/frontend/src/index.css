@@ -1,3 +1,23 @@
+/*
+ * IBM Plex Sans is the only typeface the Tinyrack design system allows, but
+ * `@tinyrack/ui` ships no `@font-face` — the consumer has to load it.
+ *
+ * Latin uses the variable build because `--tinyrack-weight-heading` is 650,
+ * which has no static counterpart in fontsource.
+ *
+ * KR/JP have no variable build published, so they use the numbered-subset
+ * entrypoints (`400.css`, not `korean-400.css`): those split each weight into
+ * ~95 `unicode-range` chunks, so a browser only downloads the chunks holding
+ * glyphs it actually paints. The `korean-*.css` / `japanese-*.css`
+ * entrypoints are single unchunked 0.5-0.9 MB files and must not be used.
+ */
+@import "@fontsource-variable/ibm-plex-sans/wght.css";
+@import "@fontsource/ibm-plex-sans-kr/400.css";
+@import "@fontsource/ibm-plex-sans-kr/600.css";
+@import "@fontsource/ibm-plex-sans-kr/700.css";
+@import "@fontsource/ibm-plex-sans-jp/400.css";
+@import "@fontsource/ibm-plex-sans-jp/600.css";
+@import "@fontsource/ibm-plex-sans-jp/700.css";
 @import "tailwindcss";
 @import "@tinyrack/ui/core.css";
 @import "@tinyrack/ui/components/accordion.css";
@@ -37,3 +57,30 @@
 @import "@tinyrack/ui/components/toggle.css";
 @import "@tinyrack/ui/components/toggle-group.css";
 @import "@tinyrack/ui/components/tooltip.css";
+
+/*
+ * Local corrections to the design system's font tokens. Upstream declares them
+ * as a bare `"IBM Plex Sans"` with no fallback stack, which (a) never matches
+ * the variable build's `IBM Plex Sans Variable` family name, (b) leaves no
+ * safety net while a webfont loads, and (c) points the mono token at a
+ * proportional face. Tracked for an upstream fix in `@tinyrack/ui`.
+ */
+:root {
+  --tinyrack-font-body:
+    "IBM Plex Sans Variable", "IBM Plex Sans", "IBM Plex Sans KR",
+    "IBM Plex Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tinyrack-font-heading: var(--tinyrack-font-body);
+  --tinyrack-font-mono:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/*
+ * `core.css` never applies a family to the document, and overlays (dialog,
+ * toast, select popups) portal outside `#root`, so this has to live on `body`
+ * rather than on a React-rendered wrapper.
+ */
+html,
+body {
+  font-family: var(--tinyrack-font-body);
+  -webkit-font-smoothing: antialiased;
+}
