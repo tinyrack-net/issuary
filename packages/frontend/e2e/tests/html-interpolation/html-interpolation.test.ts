@@ -153,7 +153,10 @@ testPartial.describe('HTML interpolation - partial variables', () => {
       const themeColor = await page
         .locator('meta[name="theme-color"]')
         .getAttribute('content');
-      expect(themeColor).toBe('#570df8');
+      // Matches DEFAULT_HTML_VARIABLES in the server's interpolate-html. The
+      // old value here was the DaisyUI purple, which the move to the Tinyrack
+      // design system deliberately dropped for a neutral.
+      expect(themeColor).toBe('#6b7280');
 
       const appleTouchIcon = await page
         .locator('link[rel="apple-touch-icon"]')
