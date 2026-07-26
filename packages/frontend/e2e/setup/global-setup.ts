@@ -7,32 +7,41 @@ import { createServer as createViteServer, type ViteDevServer } from 'vite';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '../..');
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
+/**
+ * Every worker shares this one Vite dev server, so any module still cold when
+ * the run starts gets transformed while the machine is at its busiest and every
+ * worker waiting on it stalls. Warming by directory rather than by filename
+ * keeps that from silently rotting: the previous hand-listed set still named
+ * components that had been deleted, so the login route — the first page nearly
+ * every test loads — was only partly warm.
+ *
+ * Test files are excluded; they are never requested by the browser.
+ */
 const E2E_FRONTEND_WARMUP_FILES = [
   'src/main.tsx',
   'src/routeTree.gen.ts',
-  'src/routes/login/index.tsx',
-  'src/routes/login/password/index.tsx',
-  'src/components/auth/auth-field.tsx',
-  'src/components/auth/auth-method-tile.tsx',
-  'src/features/layout/auth-layout.tsx',
-  'src/features/layout/auth-brand-panel.tsx',
+  'src/components/**/*.tsx',
+  'src/features/**/*.tsx',
+  'src/routes/**/*.tsx',
   'src/hooks/**/*.ts',
   'src/i18n/**/*.ts',
   'src/libs/**/*.ts',
   'src/queries/**/*.ts',
+  '!src/**/*.test.tsx',
+  '!src/**/*.test.ts',
+  '!src/test-utils/**',
 ];
+
+/**
+ * TanStack Router serves route components from a `?tsr-split=component` URL,
+ * which the glob warmup above does not cover, so the two entry routes are
+ * requested in that exact form as well.
+ */
 const E2E_FRONTEND_WARMUP_URLS = [
   '/src/main.tsx',
   '/src/routeTree.gen.ts',
   '/src/routes/login/index.tsx?tsr-split=component',
   '/src/routes/login/password/index.tsx?tsr-split=component',
-  '/src/components/auth/auth-field.tsx',
-  '/src/components/auth/auth-method-tile.tsx',
-  '/src/features/layout/auth-layout.tsx',
-  '/src/features/layout/auth-brand-panel.tsx',
-  '/src/queries/config.ts',
-  '/src/queries/session.ts',
-  '/src/libs/oauth-search.ts',
 ];
 
 function getListeningPort(address: AddressInfo | string | null): number {

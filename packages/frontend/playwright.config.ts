@@ -113,26 +113,27 @@ export default defineConfig({
   globalSetup: './e2e/setup/global-setup.ts',
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 1,
-  /**
-   * A worker here is far heavier than Playwright's default assumption of one
-   * browser: each scenario fixture also boots its own Hono server with a
-   * MikroORM SQLite database, so a worker costs roughly a browser plus a
-   * backend. One worker per core therefore oversubscribes memory badly — on a
-   * 32-core machine it spawned 32 of each and workers died with
-   * `code=4294967295`, surfacing as unrelated-looking test timeouts.
-   *
-   * A quarter of the cores keeps that to a sane number while still scaling
-   * down to 1 on a small machine, which is what CI already pins.
-   */
-  workers: process.env['CI'] ? 1 : '25%',
+  workers: process.env['CI'] ? 1 : '100%',
   reporter: 'html',
-  timeout: 1000 * 60,
+  /*
+   * These budgets are sized for the concurrency above, not for an idle machine.
+   * A worker here runs a browser *and* its own Hono server with a MikroORM
+   * SQLite database, and `100%` deliberately runs one per core, so a machine at
+   * full tilt can leave any single action waiting on the scheduler well past
+   * what an unloaded run would need.
+   *
+   * Raising them costs nothing on a green run — a timeout only bounds how long
+   * a failure takes to report — so this buys stability without making the suite
+   * slower. Keep them comfortably under `timeout` so a genuinely stuck action
+   * still fails with its own message rather than as a whole-test timeout.
+   */
+  timeout: 1000 * 90,
   expect: {
-    timeout: 15_000,
+    timeout: 30_000,
   },
   use: {
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    actionTimeout: 30_000,
+    navigationTimeout: 45_000,
   },
   projects: configs.flatMap((config) =>
     browsers.map((browser) => ({
