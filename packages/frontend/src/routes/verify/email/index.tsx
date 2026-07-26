@@ -8,6 +8,7 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { TRText } from '@tinyrack/ui/components/text';
+import { TRToast } from '@tinyrack/ui/components/toast';
 import { CircleCheckIcon, KeyRoundIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -71,7 +72,8 @@ function VerifyEmail() {
   const search = Route.useSearch();
   const { token: queryToken, email } = search;
   const [verified, setVerified] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(false);
+  const toast = TRToast.useToastManager();
   const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   const verifyEmailSchema = useMemo(
@@ -138,8 +140,11 @@ function VerifyEmail() {
   const resendVerificationMutation = useMutation({
     ...resendVerificationMutationOptions,
     onSuccess: () => {
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000);
+      toast.add({ title: t('verifyEmail.resendSuccess') });
+      // Separate from the message: a short cooldown so the button cannot be
+      // used to spam the address with mail.
+      setResendCooldown(true);
+      setTimeout(() => setResendCooldown(false), 5000);
     },
   });
 
@@ -261,17 +266,11 @@ function VerifyEmail() {
         <div className="flex flex-col gap-tinyrack-md">
           <LabeledSeparator />
 
-          {resendSuccess && (
-            <Alert icon={CircleCheckIcon} type="success">
-              {t('verifyEmail.resendSuccess')}
-            </Alert>
-          )}
-
           <TRButton
             appearance="ghost"
             className="w-full"
             data-testid="email-verify-resend"
-            disabled={resendVerificationMutation.isPending || resendSuccess}
+            disabled={resendVerificationMutation.isPending || resendCooldown}
             intent="neutral"
             onClick={handleResend}
             type="button"

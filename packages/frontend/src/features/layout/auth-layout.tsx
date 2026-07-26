@@ -1,3 +1,4 @@
+import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { AuthBrandPanel } from '#frontend/features/layout/auth-brand-panel.tsx';
 import { AuthHeaderBar } from '#frontend/features/layout/auth-header-bar.tsx';
 
@@ -37,6 +38,7 @@ export function AuthLayout({
 }: AuthLayoutProps) {
   return (
     <div className="grid min-h-dvh grid-cols-1 bg-tinyrack-canvas md:grid-cols-12">
+      <Toaster />
       <AuthBrandPanel />
       <div className="col-span-full flex min-w-0 flex-col md:col-span-8 lg:col-span-7">
         <AuthHeaderBar />

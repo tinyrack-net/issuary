@@ -1,7 +1,8 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRField } from '@tinyrack/ui/components/field';
-import { CheckIcon, CopyIcon, TriangleAlertIcon } from 'lucide-react';
+import { TRToast } from '@tinyrack/ui/components/toast';
+import { CopyIcon, TriangleAlertIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '#frontend/components/ui/alert.tsx';
@@ -20,15 +21,15 @@ export function RecoveryCodesStep({
   className = '',
 }: RecoveryCodesStepProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const toast = TRToast.useToastManager();
   const [confirmed, setConfirmed] = useState(false);
 
+  // The toast manager owns the dismissal timer, so this no longer keeps a
+  // "copied" flag alive with its own setTimeout.
   const handleCopy = useCallback(async () => {
-    const text = recoveryCodes.join('\n');
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [recoveryCodes]);
+    await navigator.clipboard.writeText(recoveryCodes.join('\n'));
+    toast.add({ title: t('setupTotp.recoveryCodes.copied') });
+  }, [recoveryCodes, toast, t]);
 
   return (
     <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
@@ -46,7 +47,7 @@ export function RecoveryCodesStep({
       >
         {recoveryCodes.map((code) => (
           <code
-            className="rounded-tinyrack-sm bg-tinyrack-surface-muted px-tinyrack-sm py-tinyrack-3xs text-center font-mono text-tinyrack-sm text-tinyrack-text"
+            className="rounded-tinyrack-sm bg-tinyrack-surface-muted px-tinyrack-sm py-tinyrack-3xs text-center font-tinyrack-mono text-tinyrack-sm text-tinyrack-text"
             key={code}
           >
             {code}
@@ -65,17 +66,8 @@ export function RecoveryCodesStep({
         onClick={handleCopy}
         type="button"
       >
-        {copied ? (
-          <>
-            <CheckIcon aria-hidden className="size-4" />
-            {t('setupTotp.recoveryCodes.copied')}
-          </>
-        ) : (
-          <>
-            <CopyIcon aria-hidden className="size-4" />
-            {t('setupTotp.recoveryCodes.copy')}
-          </>
-        )}
+        <CopyIcon aria-hidden className="size-4" />
+        {t('setupTotp.recoveryCodes.copy')}
       </TRButton>
 
       {/*
