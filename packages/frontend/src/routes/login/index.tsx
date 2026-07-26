@@ -213,11 +213,10 @@ function Login() {
             key={provider.id}
             label={provider.display_name}
             providerType={provider.type}
-            render={
-              // Leaves the SPA for the provider, so a plain anchor, not a
-              // router link.
-              <a href={buildOAuthUrl(provider.id)}>{provider.display_name}</a>
-            }
+            // Leaves the SPA for the provider, so a plain anchor rather than a
+            // router link. No children here — the tile supplies them, and an
+            // element passed to `render` would override them.
+            render={<a href={buildOAuthUrl(provider.id)} />}
           />
         ))}
 
@@ -225,7 +224,7 @@ function Login() {
           <AuthMethodTile
             icon={<MailIcon aria-hidden className="size-5" />}
             label={t('login.method.password')}
-            render={<a href={buildPasswordLoginHref()}>{null}</a>}
+            render={<a href={buildPasswordLoginHref()} />}
           />
         )}
 

@@ -6,8 +6,11 @@ import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { CircleAlertIcon, FingerprintIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
@@ -103,17 +106,27 @@ function VerifyPasskey() {
 
   return (
     <AuthLayout>
+      {/*
+        Centred: this screen has no form to scan, only a device prompt to wait
+        on, so the eye has nothing to follow down a left edge.
+      */}
       <AuthPageHeader
+        align="center"
         subtitle={t('verifyPasskey.subtitle')}
         title={t('verifyPasskey.title')}
       />
 
-      <div className="flex flex-col items-center gap-6">
+      <div className="flex flex-col items-center gap-tinyrack-lg">
+        <div className="flex size-16 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
+          <FingerprintIcon
+            aria-hidden
+            className="size-8 text-tinyrack-text-muted"
+          />
+        </div>
+
         {verifyMutation.isPending && (
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex size-20 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
-              <TRSpinner uiSize="lg" />
-            </div>
+          <div className="flex flex-col items-center gap-tinyrack-sm">
+            <TRSpinner uiSize="md" />
             <p className="text-center text-tinyrack-sm text-tinyrack-text-muted">
               {t('verifyPasskey.waiting')}
             </p>
@@ -121,7 +134,7 @@ function VerifyPasskey() {
         )}
 
         {error && (
-          <>
+          <div className="flex w-full flex-col items-center gap-tinyrack-md">
             <Alert className="w-full" icon={CircleAlertIcon} type="error">
               {error.message}
             </Alert>
@@ -132,6 +145,7 @@ function VerifyPasskey() {
                 render={
                   <Link search={extractOAuthParams(search)} to="/verify/totp" />
                 }
+                uiSize="lg"
               >
                 {t('verifyPasskey.useTotp')}
               </TRLinkButton>
@@ -145,21 +159,23 @@ function VerifyPasskey() {
                 verifyMutation.mutate();
               }}
               type="button"
+              uiSize="lg"
             >
-              <FingerprintIcon className="size-5" />
               {t('verifyPasskey.retry')}
             </TRButton>
-          </>
+          </div>
         )}
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('verifyPasskey.backToLogin')}
-        search={search}
-        text=""
-        to="/login"
-      />
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={search} to="/login">
+              {t('verifyPasskey.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

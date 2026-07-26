@@ -9,10 +9,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
@@ -192,12 +195,11 @@ function VerifyRecovery() {
 
       {sessionExpired && (
         <Alert
-          className="mb-4"
           data-testid="recovery-session-expired"
           icon={CircleAlertIcon}
           type="warning"
         >
-          <div className="flex flex-col gap-1">
+          <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyRecovery.error.expired')}</span>
             <span className="text-tinyrack-sm opacity-80">
               {t('verifyRecovery.redirecting', {
@@ -206,18 +208,21 @@ function VerifyRecovery() {
             </span>
             <TRButton
               appearance="ghost"
-              className="mt-2 w-fit"
               intent="neutral"
               onClick={redirectToLogin}
               type="button"
+              uiSize="sm"
             >
               {t('verifyRecovery.redirectNow')}
             </TRButton>
-          </div>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <TRField.Root uiSize="md">
           <TRInput
             {...registerRest}
@@ -241,28 +246,34 @@ function VerifyRecovery() {
 
         {sessionExpired ? (
           <TRButton
-            className="mt-2 w-full"
+            className="w-full"
             disabled
             intent="primary"
             type="button"
+            uiSize="lg"
           >
             {t('verifyRecovery.submit')}
           </TRButton>
         ) : (
-          <SubmitButton
-            className="mt-2"
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyRecovery.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={verifyMutation.isPending}
+            loadingLabel={t('verifyRecovery.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('verifyRecovery.submit')}
-          </SubmitButton>
+          </TRButton>
         )}
       </form>
 
-      <div className="mt-4 text-center">
+      {/* Mirrors /verify/totp: the other second factor sits below the rule. */}
+      <div className="flex flex-col gap-tinyrack-md">
+        <LabeledSeparator label={t('common.or')} />
         <TRButton
           appearance="ghost"
-          className="font-medium"
+          className="w-full"
           data-testid="recovery-back-to-totp"
           intent="neutral"
           onClick={() =>
@@ -277,13 +288,15 @@ function VerifyRecovery() {
         </TRButton>
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('verifyRecovery.backToLogin')}
-        search={extractOAuthParams(search)}
-        text=""
-        to="/login"
-      />
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('verifyRecovery.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

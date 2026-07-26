@@ -7,10 +7,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import {
   PinInput,
   type PinInputRef,
@@ -180,30 +183,32 @@ function VerifyTotp() {
 
       {sessionExpired && (
         <Alert
-          className="mb-4"
           data-testid="totp-verify-session-expired"
           icon={CircleAlertIcon}
           type="warning"
         >
-          <div className="flex flex-col gap-1">
+          <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyTotp.error.expired')}</span>
             <span className="text-tinyrack-sm opacity-80">
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
             </span>
             <TRButton
               appearance="ghost"
-              className="mt-2 w-fit"
               intent="neutral"
               onClick={redirectToLogin}
               type="button"
+              uiSize="sm"
             >
               {t('verifyTotp.redirectNow')}
             </TRButton>
-          </div>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <PinInput
           autoFocus
           disabled={sessionExpired}
@@ -217,28 +222,37 @@ function VerifyTotp() {
 
         {sessionExpired ? (
           <TRButton
-            className="mt-2 w-full"
+            className="w-full"
             disabled
             intent="primary"
             type="button"
+            uiSize="lg"
           >
             {t('verifyTotp.submit')}
           </TRButton>
         ) : (
-          <SubmitButton
-            className="mt-2"
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyTotp.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={verifyMutation.isPending}
+            loadingLabel={t('verifyTotp.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('verifyTotp.submit')}
-          </SubmitButton>
+          </TRButton>
         )}
       </form>
 
-      <div className="mt-4 text-center">
+      {/*
+        The recovery code is the way out when the authenticator is gone, so it
+        sits below the rule rather than in the footer with the navigation.
+      */}
+      <div className="flex flex-col gap-tinyrack-md">
+        <LabeledSeparator label={t('common.or')} />
         <TRButton
           appearance="ghost"
-          className="font-medium"
+          className="w-full"
           data-testid="totp-verify-recovery-link"
           intent="neutral"
           onClick={() =>
@@ -253,13 +267,15 @@ function VerifyTotp() {
         </TRButton>
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('verifyTotp.backToLogin')}
-        search={extractOAuthParams(search)}
-        text=""
-        to="/login"
-      />
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('verifyTotp.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

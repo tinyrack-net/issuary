@@ -10,18 +10,22 @@ import {
   redirect,
   useNavigate,
 } from '@tanstack/react-router';
-import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { LockIcon, MailIcon } from 'lucide-react';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { PasswordStrength } from '#frontend/components/auth/password-strength.tsx';
 import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -242,6 +246,7 @@ function Register() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     defaultValues: {
@@ -254,6 +259,8 @@ function Register() {
     resolver: standardSchemaResolver(registerSchema),
     mode: 'onChange',
   });
+
+  const passwordValue = watch('password');
 
   const onSubmit = (values: RegisterFormValues) => {
     // Build consents array for registration
@@ -282,8 +289,11 @@ function Register() {
       <AuthorizationContextBanner search={search} />
 
       {isPasswordAuthEnabled && (
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-          <IconInput
+        <form
+          className="flex flex-col gap-tinyrack-lg"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <AuthField
             autoComplete="email"
             error={errors.email}
             icon={MailIcon}
@@ -293,20 +303,27 @@ function Register() {
             type="email"
           />
 
-          <IconInput
-            autoComplete="new-password"
-            error={errors.password}
-            hint={t('register.password.hint', {
-              count: passwordPolicy.min_length,
-            })}
-            icon={LockIcon}
-            label={t('register.password.label')}
-            placeholder={t('register.password.placeholder')}
-            {...register('password')}
-            type="password"
-          />
+          <div className="flex flex-col gap-tinyrack-sm">
+            <AuthField
+              autoComplete="new-password"
+              error={errors.password}
+              hint={t('register.password.hint', {
+                count: passwordPolicy.min_length,
+              })}
+              icon={LockIcon}
+              label={t('register.password.label')}
+              placeholder={t('register.password.placeholder')}
+              {...register('password')}
+              type="password"
+            />
 
-          <div className="flex flex-col">
+            <PasswordStrength
+              password={passwordValue}
+              policy={passwordPolicy}
+            />
+          </div>
+
+          <div className="flex flex-col gap-tinyrack-md">
             {implicitNotice && (
               <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
                 <div
@@ -320,13 +337,7 @@ function Register() {
             )}
 
             {implicitNotice && hasExplicitTerms && (
-              <div className="flex items-center gap-2 text-tinyrack-xs">
-                <TRSeparator className="flex-1" />
-                <span className="text-tinyrack-text-muted">
-                  {t('terms.additionalOptionalConsent')}
-                </span>
-                <TRSeparator className="flex-1" />
-              </div>
+              <LabeledSeparator label={t('terms.additionalOptionalConsent')} />
             )}
 
             {hasTerms && hasExplicitTerms && (
@@ -340,23 +351,29 @@ function Register() {
             )}
           </div>
 
-          <SubmitButton
-            className="mt-6"
-            isPending={registerMutation.isPending}
-            pendingText={t('register.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={registerMutation.isPending}
+            loadingLabel={t('register.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('register.submit')}
-          </SubmitButton>
+          </TRButton>
         </form>
       )}
 
-      <FooterLink
-        as={Link}
-        linkText={t('register.link.login')}
-        search={extractOAuthParams(search)}
-        text={t('register.footer.haveAccount')}
-        to="/login"
-      />
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('register.link.login')}
+            </Link>
+          }
+          text={t('register.footer.haveAccount')}
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

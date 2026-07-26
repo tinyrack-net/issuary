@@ -1,4 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRCard } from '@tinyrack/ui/components/card';
+import { TRText } from '@tinyrack/ui/components/text';
 import { GlobeIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,53 +40,60 @@ function AuthorizationContextContent({
   );
 
   return (
-    <section
+    <TRCard.Root
       aria-label={t('authorizationContext.label')}
-      className={`mb-5 rounded-tinyrack-md border border-tinyrack-info-border bg-tinyrack-info-surface-subtle p-3 text-left ${className}`}
+      className={className}
       data-testid="authorization-context"
+      padding="lg"
+      render={<section />}
+      variant="outlined"
     >
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-tinyrack-full bg-tinyrack-info-surface p-1.5 text-tinyrack-info">
-          <ShieldCheckIcon aria-hidden className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-tinyrack-sm text-tinyrack-text">
+      <TRCard.Content className="flex flex-col gap-tinyrack-sm">
+        <div className="flex items-center gap-tinyrack-sm">
+          <ShieldCheckIcon
+            aria-hidden
+            className="size-4 shrink-0 text-tinyrack-info"
+          />
+          <TRText variant="body" weight="medium">
             {t('authorizationContext.title', { app: data.client.name })}
-          </p>
-          <div className="mt-1 flex items-center gap-1.5 text-tinyrack-text-muted text-tinyrack-xs">
-            <GlobeIcon aria-hidden className="size-3.5 shrink-0" />
-            <span className="truncate">
-              {t('authorizationContext.redirect', {
-                origin: data.redirect_origin,
-              })}
-            </span>
-          </div>
+          </TRText>
+        </div>
 
-          <div className="mt-3">
-            <p className="font-medium text-tinyrack-text-muted text-tinyrack-xs">
-              {t('authorizationContext.permissions')}
-            </p>
-            {data.scopes.length > 0 ? (
-              <ul className="mt-1 flex flex-wrap gap-1.5">
-                {data.scopes.map((scope) => (
-                  <li
-                    className="rounded-tinyrack-full bg-tinyrack-surface px-2 py-1 text-tinyrack-text-muted text-tinyrack-xs"
-                    key={scope.name}
-                  >
+        <div className="flex min-w-0 items-center gap-tinyrack-xs">
+          <GlobeIcon
+            aria-hidden
+            className="size-4 shrink-0 text-tinyrack-text-muted"
+          />
+          <TRText color="muted" truncate variant="caption">
+            {t('authorizationContext.redirect', {
+              origin: data.redirect_origin,
+            })}
+          </TRText>
+        </div>
+
+        <div className="flex flex-col gap-tinyrack-xs">
+          <TRText color="muted" variant="caption" weight="medium">
+            {t('authorizationContext.permissions')}
+          </TRText>
+          {data.scopes.length > 0 ? (
+            <ul className="flex flex-wrap gap-tinyrack-xs">
+              {data.scopes.map((scope) => (
+                <li key={scope.name}>
+                  <TRBadge uiSize="sm" variant="neutral">
                     {t(`consent.scope.${scope.name}`, {
                       defaultValue: scope.description,
                     })}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-1 text-tinyrack-text-muted text-tinyrack-xs">
-                {t('authorizationContext.noScopes')}
-              </p>
-            )}
-          </div>
+                  </TRBadge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <TRText color="muted" variant="caption">
+              {t('authorizationContext.noScopes')}
+            </TRText>
+          )}
         </div>
-      </div>
-    </section>
+      </TRCard.Content>
+    </TRCard.Root>
   );
 }

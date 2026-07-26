@@ -7,7 +7,6 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRLink } from '@tinyrack/ui/components/link';
 import {
   CircleAlertIcon,
   CircleCheckIcon,
@@ -19,9 +18,14 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { PasswordStrength } from '#frontend/components/auth/password-strength.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -107,6 +111,7 @@ function ResetPassword() {
     register,
     setError,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ResetPasswordFormValues>({
     defaultValues: {
@@ -116,6 +121,8 @@ function ResetPassword() {
     },
     resolver: standardSchemaResolver(resetPasswordSchema),
   });
+
+  const passwordValue = watch('password');
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     try {
@@ -148,23 +155,36 @@ function ResetPassword() {
   if (resetSuccess) {
     return (
       <AuthLayout>
-        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
-          {t('resetPassword.success.title')}
-        </Alert>
-
-        <AuthPageHeader
-          subtitle={t('resetPassword.success.description')}
-          title={t('resetPassword.success.subtitle')}
-        />
-
-        <TRButton
-          className="w-full font-semibold"
-          data-testid="reset-password-go-login"
-          intent="primary"
-          onClick={() => navigate({ to: '/login' })}
-        >
-          {t('resetPassword.success.goToLogin')}
-        </TRButton>
+        {/*
+          The testid stays on a wrapper: e2e treats "the success alert" as the
+          whole terminal state, which is now the outcome block rather than a
+          banner stacked above a header.
+        */}
+        <div data-testid="alert-success">
+          <AuthOutcome
+            description={
+              <>
+                {t('resetPassword.success.subtitle')}
+                <br />
+                {t('resetPassword.success.description')}
+              </>
+            }
+            icon={CircleCheckIcon}
+            title={t('resetPassword.success.title')}
+            tone="success"
+          >
+            <TRButton
+              className="w-full"
+              data-testid="reset-password-go-login"
+              intent="primary"
+              onClick={() => navigate({ to: '/login' })}
+              type="button"
+              uiSize="lg"
+            >
+              {t('resetPassword.success.goToLogin')}
+            </TRButton>
+          </AuthOutcome>
+        </div>
       </AuthLayout>
     );
   }
@@ -176,9 +196,12 @@ function ResetPassword() {
         title={t('resetPassword.title')}
       />
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         {!queryToken && (
-          <IconInput
+          <AuthField
             error={errors.token}
             icon={KeyRoundIcon}
             label={t('resetPassword.token.label')}
@@ -188,6 +211,11 @@ function ResetPassword() {
           />
         )}
 
+        {/*
+          A token that arrived in the URL has no field to attach an error to,
+          so a rejected link is reported as a banner above the form. The form
+          stays put: the user can paste a fresh token without a round trip.
+        */}
         {queryToken && errors.token && (
           <Alert
             data-testid="reset-password-token-error"
@@ -198,17 +226,21 @@ function ResetPassword() {
           </Alert>
         )}
 
-        <IconInput
-          autoComplete="new-password"
-          error={errors.password}
-          icon={LockIcon}
-          label={t('resetPassword.password.label')}
-          placeholder={t('resetPassword.password.placeholder')}
-          {...register('password')}
-          type="password"
-        />
+        <div className="flex flex-col gap-tinyrack-sm">
+          <AuthField
+            autoComplete="new-password"
+            error={errors.password}
+            icon={LockIcon}
+            label={t('resetPassword.password.label')}
+            placeholder={t('resetPassword.password.placeholder')}
+            {...register('password')}
+            type="password"
+          />
 
-        <IconInput
+          <PasswordStrength password={passwordValue} policy={passwordPolicy} />
+        </div>
+
+        <AuthField
           autoComplete="new-password"
           error={errors.confirmPassword}
           icon={LockKeyholeIcon}
@@ -218,24 +250,27 @@ function ResetPassword() {
           type="password"
         />
 
-        <SubmitButton
-          className="mt-2"
-          isPending={resetPasswordMutation.isPending}
-          pendingText={t('resetPassword.submitting')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={resetPasswordMutation.isPending}
+          loadingLabel={t('resetPassword.submitting')}
+          type="submit"
+          uiSize="lg"
         >
           {t('resetPassword.submit')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
-      <div className="mt-6 text-center">
-        <TRLink
-          className="text-tinyrack-sm"
-          data-testid="reset-password-back-to-login"
-          render={<Link to="/login" />}
-        >
-          {t('resetPassword.backToLogin')}
-        </TRLink>
-      </div>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link data-testid="reset-password-back-to-login" to="/login">
+              {t('resetPassword.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

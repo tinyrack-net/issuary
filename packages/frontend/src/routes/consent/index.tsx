@@ -5,10 +5,12 @@ import {
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRText } from '@tinyrack/ui/components/text';
 import { ShieldCheckIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
+import { InitialAvatar } from '#frontend/components/ui/initial-avatar.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
@@ -137,70 +139,87 @@ function Consent() {
         title={t('consent.title')}
       />
 
-      {/* User info */}
-      <TRCard.Root className="mb-4" variant="outlined">
-        <TRCard.Content className="gap-1 p-3 text-center">
-          <p className="text-tinyrack-text-muted text-tinyrack-xs">
-            {t('consent.loggedInAs')}
-          </p>
-          <p
-            className="font-medium text-tinyrack-sm text-tinyrack-text"
-            data-testid="consent-user-email"
-          >
-            {user.email}
-          </p>
+      {/*
+        Who is about to hand out access. The decision is meaningless without
+        it, so it sits above the scopes rather than in fine print.
+      */}
+      <TRCard.Root padding="lg" variant="outlined">
+        <TRCard.Content className="flex items-center gap-tinyrack-md">
+          <InitialAvatar email={user.email} size="sm" />
+          <span className="flex min-w-0 flex-col">
+            <TRText color="muted" variant="caption">
+              {t('consent.loggedInAs')}
+            </TRText>
+            <TRText
+              data-testid="consent-user-email"
+              truncate
+              variant="body"
+              weight="medium"
+            >
+              {user.email}
+            </TRText>
+          </span>
         </TRCard.Content>
       </TRCard.Root>
 
       {/* Requested permissions */}
-      <div className="mb-4">
-        <h2 className="mb-3 font-semibold text-tinyrack-sm text-tinyrack-text">
+      <div className="flex flex-col gap-tinyrack-sm">
+        <TRText as="h3" variant="label">
           {t('consent.permissions.title')}
-        </h2>
-        <ul className="flex flex-col gap-2" data-testid="consent-scope-list">
+        </TRText>
+        <ul
+          className="flex flex-col gap-tinyrack-xs"
+          data-testid="consent-scope-list"
+        >
           {scopes.map((scope: { name: string; description: string }) => (
             <li
-              className="flex items-start gap-3 rounded-tinyrack-md bg-tinyrack-surface-muted p-3"
+              className="flex items-center gap-tinyrack-sm rounded-tinyrack-md bg-tinyrack-surface-muted px-tinyrack-md py-tinyrack-sm"
               key={scope.name}
             >
-              <div className="mt-0.5 rounded-tinyrack-full bg-tinyrack-info-surface p-1">
-                <ShieldCheckIcon className="size-4 text-tinyrack-info" />
-              </div>
-              <p className="font-medium text-tinyrack-sm text-tinyrack-text">
+              <ShieldCheckIcon
+                aria-hidden
+                className="size-4 shrink-0 text-tinyrack-info"
+              />
+              <TRText variant="body">
                 {t(`consent.scope.${scope.name}`, {
                   defaultValue: scope.description,
                 })}
-              </p>
+              </TRText>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-3">
+      {/*
+        Sticky so the decision stays reachable when a client asks for a long
+        list of scopes and the page scrolls.
+      */}
+      <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t bg-tinyrack-canvas/80 py-tinyrack-md backdrop-blur-sm">
         <TRButton
           appearance="outline"
-          className="flex-1 font-semibold"
+          className="flex-1"
           data-testid="consent-deny"
           intent="neutral"
           loading={consentMutation.isPending}
           loadingLabel={t('consent.deny')}
           onClick={handleDeny}
           type="button"
+          uiSize="lg"
         >
-          <XIcon className="size-4" />
+          <XIcon aria-hidden className="size-4" />
           {t('consent.deny')}
         </TRButton>
         <TRButton
-          className="flex-1 font-semibold"
+          className="flex-1"
           data-testid="consent-allow"
           intent="primary"
           loading={consentMutation.isPending}
           loadingLabel={t('consent.allow')}
           onClick={handleAllow}
           type="button"
+          uiSize="lg"
         >
-          <ShieldCheckIcon className="size-4" />
+          <ShieldCheckIcon aria-hidden className="size-4" />
           {t('consent.allow')}
         </TRButton>
       </div>

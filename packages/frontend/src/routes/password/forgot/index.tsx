@@ -7,17 +7,19 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { CircleCheckIcon, MailIcon } from 'lucide-react';
+import { TRText } from '@tinyrack/ui/components/text';
+import { MailCheckIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
-import { Alert } from '#frontend/components/ui/alert.tsx';
-
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -101,28 +103,40 @@ function ForgotPassword() {
   if (emailSent) {
     return (
       <AuthLayout>
-        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
-          {t('forgotPassword.success.title')}
-        </Alert>
-
-        <AuthPageHeader
-          subtitle={t('forgotPassword.success.description', {
-            email: submittedEmail,
-          })}
-          title={t('forgotPassword.success.subtitle')}
-        />
-
-        <Alert className="mb-4" icon={MailIcon} type="info">
-          {t('forgotPassword.success.checkSpam')}
-        </Alert>
-
-        <TRButton
-          className="w-full font-semibold"
-          intent="primary"
-          onClick={() => navigate({ to: '/login' })}
-        >
-          {t('forgotPassword.backToLogin')}
-        </TRButton>
+        {/*
+          The testid stays on a wrapper: e2e treats "the success alert" as the
+          whole terminal state, which is now the outcome block rather than a
+          banner stacked above a header.
+        */}
+        <div data-testid="alert-success">
+          <AuthOutcome
+            description={
+              <>
+                {t('forgotPassword.success.subtitle')}
+                <br />
+                {t('forgotPassword.success.description', {
+                  email: submittedEmail,
+                })}
+              </>
+            }
+            icon={MailCheckIcon}
+            title={t('forgotPassword.success.title')}
+            tone="success"
+          >
+            <TRButton
+              className="w-full"
+              intent="primary"
+              onClick={() => navigate({ to: '/login' })}
+              type="button"
+              uiSize="lg"
+            >
+              {t('forgotPassword.backToLogin')}
+            </TRButton>
+            <TRText align="center" color="muted" variant="caption">
+              {t('forgotPassword.success.checkSpam')}
+            </TRText>
+          </AuthOutcome>
+        </div>
       </AuthLayout>
     );
   }
@@ -134,8 +148,11 @@ function ForgotPassword() {
         title={t('forgotPassword.title')}
       />
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <IconInput
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <AuthField
           autoComplete="email"
           error={errors.email}
           icon={MailIcon}
@@ -145,21 +162,24 @@ function ForgotPassword() {
           type="email"
         />
 
-        <SubmitButton
-          className="mt-2"
-          isPending={forgotPasswordMutation.isPending}
-          pendingText={t('forgotPassword.submitting')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={forgotPasswordMutation.isPending}
+          loadingLabel={t('forgotPassword.submitting')}
+          type="submit"
+          uiSize="lg"
         >
           {t('forgotPassword.submit')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
-      <FooterLink
-        as={Link}
-        linkText={t('register.link.login')}
-        text={t('forgotPassword.footer.rememberedPassword')}
-        to="/login"
-      />
+      <AuthFooter>
+        <AuthFooterLink
+          link={<Link to="/login">{t('register.link.login')}</Link>}
+          text={t('forgotPassword.footer.rememberedPassword')}
+        />
+      </AuthFooter>
     </AuthLayout>
   );
 }

@@ -7,16 +7,17 @@ import {
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleCheckIcon, KeyRoundIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { Divider } from '#frontend/components/ui/divider.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
@@ -177,24 +178,36 @@ function VerifyEmail() {
   if (verified) {
     return (
       <AuthLayout>
-        <Alert className="mb-4" icon={CircleCheckIcon} type="success">
-          {t('verifyEmail.success.title')}
-        </Alert>
-
-        <AuthPageHeader
-          subtitle={t('verifyEmail.success.description')}
-          title={t('verifyEmail.success.subtitle')}
-        />
-
-        <TRButton
-          className="w-full font-semibold"
-          data-testid="email-verify-go-profile"
-          intent="primary"
-          onClick={() => navigate({ to: '/profile' })}
-          type="button"
-        >
-          {t('verifyEmail.success.goToProfile')}
-        </TRButton>
+        {/*
+          The testid stays on a wrapper: e2e treats "the success alert" as the
+          whole terminal state, which is now the outcome block rather than a
+          banner stacked above a header.
+        */}
+        <div data-testid="alert-success">
+          <AuthOutcome
+            description={
+              <>
+                {t('verifyEmail.success.subtitle')}
+                <br />
+                {t('verifyEmail.success.description')}
+              </>
+            }
+            icon={CircleCheckIcon}
+            title={t('verifyEmail.success.title')}
+            tone="success"
+          >
+            <TRButton
+              className="w-full"
+              data-testid="email-verify-go-profile"
+              intent="primary"
+              onClick={() => navigate({ to: '/profile' })}
+              type="button"
+              uiSize="lg"
+            >
+              {t('verifyEmail.success.goToProfile')}
+            </TRButton>
+          </AuthOutcome>
+        </div>
       </AuthLayout>
     );
   }
@@ -207,18 +220,23 @@ function VerifyEmail() {
       />
 
       {email && (
-        <Alert className="mb-4" icon={MailIcon} type="info">
-          <div className="text-left">
-            <p className="font-semibold">{t('register.success.subtitle')}</p>
-            <p className="text-xs">
+        <Alert icon={MailIcon} type="info">
+          <span className="flex flex-col gap-tinyrack-3xs text-left">
+            <TRText variant="body" weight="strong">
+              {t('register.success.subtitle')}
+            </TRText>
+            <TRText color="muted" variant="caption">
               {t('register.success.description', { email })}
-            </p>
-          </div>
+            </TRText>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <IconInput
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <AuthField
           error={errors.token}
           icon={KeyRoundIcon}
           label={t('verifyEmail.token.label')}
@@ -227,21 +245,24 @@ function VerifyEmail() {
           type="text"
         />
 
-        <SubmitButton
-          className="mt-2"
-          isPending={verifyEmailMutation.isPending}
-          pendingText={t('verifyEmail.submitting')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={verifyEmailMutation.isPending}
+          loadingLabel={t('verifyEmail.submitting')}
+          type="submit"
+          uiSize="lg"
         >
           {t('verifyEmail.submit')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
       {email && (
-        <>
-          <Divider />
+        <div className="flex flex-col gap-tinyrack-md">
+          <LabeledSeparator />
 
           {resendSuccess && (
-            <Alert className="mb-2" icon={CircleCheckIcon} type="success">
+            <Alert icon={CircleCheckIcon} type="success">
               {t('verifyEmail.resendSuccess')}
             </Alert>
           )}
@@ -264,7 +285,7 @@ function VerifyEmail() {
               t('verifyEmail.resend')
             )}
           </TRButton>
-        </>
+        </div>
       )}
     </AuthLayout>
   );
