@@ -61,7 +61,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "react-i18next": "catalog:",
-    "@tinyrack/ui": "0.9.1",
+    "@tinyrack/ui": "0.10.0",
     "zod": "catalog:"
   },
   "devDependencies": {
