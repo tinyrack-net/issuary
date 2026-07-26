@@ -57,7 +57,7 @@ export function AuthField({
   const resolvedType = canReveal && revealed ? 'text' : type;
 
   return (
-    <TRField.Root className={className} uiSize="md">
+    <TRField.Root className={className}>
       <div className="flex items-baseline justify-between gap-tinyrack-sm">
         <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
         {labelAction}

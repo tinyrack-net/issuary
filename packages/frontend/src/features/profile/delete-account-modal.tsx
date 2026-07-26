@@ -98,7 +98,7 @@ export function DeleteAccountModal({
           </p>
         </AlertBanner>
 
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="delete-confirmation">
             {t('profile.deleteAccount.modal.confirmLabel')}
           </TRField.Label>

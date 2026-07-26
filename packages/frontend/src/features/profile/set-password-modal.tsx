@@ -96,7 +96,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
       title={t('profile.password.setModal.title')}
     >
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="new-password">
             {t('profile.password.setModal.newPassword')}
           </TRField.Label>
@@ -116,7 +116,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
             </div>
           )}
         </TRField.Root>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="confirm-password">
             {t('profile.password.setModal.confirmPassword')}
           </TRField.Label>

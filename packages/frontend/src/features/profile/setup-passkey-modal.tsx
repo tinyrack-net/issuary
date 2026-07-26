@@ -116,7 +116,7 @@ export function SetupPasskeyModal({
             <AlertBanner variant="error">{errorMessage}</AlertBanner>
           )}
 
-          <TRField.Root uiSize="sm">
+          <TRField.Root>
             <TRField.Label htmlFor="passkey-name">
               {t('profile.passkey.setupModal.nameLabel')}
             </TRField.Label>

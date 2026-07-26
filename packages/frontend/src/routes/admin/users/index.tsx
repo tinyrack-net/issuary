@@ -664,7 +664,7 @@ function UserFormModal({
       title={title}
     >
       <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="admin-user-email">
             {t('profile.email.label')}
           </TRField.Label>
@@ -678,7 +678,7 @@ function UserFormModal({
           />
         </TRField.Root>
         {modal.type === 'create' ? (
-          <TRField.Root uiSize="sm">
+          <TRField.Root>
             <TRField.Label htmlFor="admin-user-password">
               {t('admin.users.password')}
             </TRField.Label>
@@ -691,7 +691,7 @@ function UserFormModal({
             />
           </TRField.Root>
         ) : null}
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="admin-user-role">
             {t('admin.users.role')}
           </TRField.Label>

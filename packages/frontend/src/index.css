@@ -18,6 +18,12 @@
 @import "@fontsource/ibm-plex-sans-jp/400.css";
 @import "@fontsource/ibm-plex-sans-jp/600.css";
 @import "@fontsource/ibm-plex-sans-jp/700.css";
+/*
+ * Required since `@tinyrack/ui` 0.11.0, which pointed `--tinyrack-font-mono` at
+ * a real monospace face. Recovery codes and error codes are the surfaces that
+ * depend on it, and they only need the regular weight.
+ */
+@import "@fontsource/ibm-plex-mono/400.css";
 @import "tailwindcss";
 @import "@tinyrack/ui/core.css";
 @import "@tinyrack/ui/components/accordion.css";
@@ -53,31 +59,30 @@
 @import "@tinyrack/ui/components/table.css";
 @import "@tinyrack/ui/components/tabs.css";
 @import "@tinyrack/ui/components/text.css";
-@import "@tinyrack/ui/components/textarea.css";
 @import "@tinyrack/ui/components/toast.css";
 @import "@tinyrack/ui/components/toggle.css";
 @import "@tinyrack/ui/components/toggle-group.css";
 @import "@tinyrack/ui/components/tooltip.css";
 
 /*
- * Local corrections to the design system's font tokens. Upstream declares them
- * as a bare `"IBM Plex Sans"` with no fallback stack, which (a) never matches
- * the variable build's `IBM Plex Sans Variable` family name, (b) leaves no
- * safety net while a webfont loads, and (c) points the mono token at a
- * proportional face. Tracked for an upstream fix in `@tinyrack/ui`.
+ * Extends the design system's prose font tokens for this app.
+ *
+ * Upstream deliberately names a single family with no fallback so the typeface
+ * is never silently substituted, and documents font loading as the consumer's
+ * job — `@tinyrack/docs` extends the stack for its own surfaces the same way.
+ * Two things have to be added here: the variable build registers under the
+ * family name `IBM Plex Sans Variable`, which the bare upstream value never
+ * matches, and this app ships Korean and Japanese, whose faces the Latin one
+ * does not cover.
+ *
+ * The mono token is left alone — since 0.11.0 upstream resolves it to a real
+ * monospace face, which is why `@fontsource/ibm-plex-mono` is loaded above.
  */
 :root {
   --tinyrack-font-body:
     "IBM Plex Sans Variable", "IBM Plex Sans", "IBM Plex Sans KR",
     "IBM Plex Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
   --tinyrack-font-heading: var(--tinyrack-font-body);
-  /*
-   * IBM Plex Mono is not bundled — recovery codes and error codes are rare
-   * enough that another webfont is not worth the bytes. It is named first so a
-   * machine that already has it uses it, and the platform mono face otherwise.
-   */
-  --tinyrack-font-mono:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /*

@@ -223,7 +223,7 @@ function VerifyRecovery() {
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <TRField.Root uiSize="md">
+        <TRField.Root>
           <TRInput
             {...registerRest}
             autoComplete="off"

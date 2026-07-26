@@ -259,7 +259,7 @@ function PasskeyItem({
         className="flex flex-col gap-1.5 rounded-tinyrack-md bg-tinyrack-surface-muted p-2"
         onSubmit={handleRename}
       >
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRInput
             data-testid="passkey-rename-input"
             placeholder={t('profile.passkey.manageModal.namePlaceholder')}

@@ -96,7 +96,7 @@ export function RemovePasswordModal({
       variant="destructive"
     >
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="current-password-remove">
             {t('profile.password.removeModal.currentPassword')}
           </TRField.Label>

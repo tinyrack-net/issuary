@@ -41,9 +41,16 @@ function ErrorPage() {
         title={t('error.subtitle')}
         tone="danger"
       >
-        <TRText className="font-tinyrack-mono" color="muted" variant="caption">
+        {/*
+          Mono on the code itself, not the label: a font utility on `TRText`
+          loses to the component's own per-variant `font-family` rule, and only
+          the identifier needs fixed-width anyway.
+        */}
+        <TRText color="muted" variant="caption">
           {t('error.codeLabel')}{' '}
-          <span data-testid="error-code">{errorCode}</span>
+          <span className="font-tinyrack-mono" data-testid="error-code">
+            {errorCode}
+          </span>
         </TRText>
 
         <TRLinkButton

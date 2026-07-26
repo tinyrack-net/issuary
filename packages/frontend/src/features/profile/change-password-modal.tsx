@@ -116,7 +116,7 @@ export function ChangePasswordModal({
       title={t('profile.password.changeModal.title')}
     >
       <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="current-password">
             {t('profile.password.changeModal.currentPassword')}
           </TRField.Label>
@@ -138,7 +138,7 @@ export function ChangePasswordModal({
             </div>
           )}
         </TRField.Root>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="new-password-change">
             {t('profile.password.changeModal.newPassword')}
           </TRField.Label>
@@ -160,7 +160,7 @@ export function ChangePasswordModal({
             </div>
           )}
         </TRField.Root>
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="confirm-password-change">
             {t('profile.password.changeModal.confirmPassword')}
           </TRField.Label>

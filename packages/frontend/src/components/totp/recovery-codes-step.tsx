@@ -75,7 +75,7 @@ export function RecoveryCodesStep({
         keeps its own focus ring instead of being swallowed by a wrapping
         `<label>` that had none.
       */}
-      <TRField.Root uiSize="md">
+      <TRField.Root>
         <div className="flex items-center gap-tinyrack-sm">
           <TRCheckbox.Root
             checked={confirmed}

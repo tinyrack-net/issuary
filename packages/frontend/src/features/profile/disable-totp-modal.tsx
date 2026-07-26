@@ -88,7 +88,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
           {t('profile.totp.disableModal.warning')}
         </AlertBanner>
 
-        <TRField.Root uiSize="sm">
+        <TRField.Root>
           <TRField.Label htmlFor="disable-totp-code">
             {t('profile.totp.disableModal.codeLabel')}
           </TRField.Label>
