@@ -113,7 +113,18 @@ export default defineConfig({
   globalSetup: './e2e/setup/global-setup.ts',
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 1,
-  workers: process.env['CI'] ? 1 : '100%',
+  /**
+   * A worker here is far heavier than Playwright's default assumption of one
+   * browser: each scenario fixture also boots its own Hono server with a
+   * MikroORM SQLite database, so a worker costs roughly a browser plus a
+   * backend. One worker per core therefore oversubscribes memory badly — on a
+   * 32-core machine it spawned 32 of each and workers died with
+   * `code=4294967295`, surfacing as unrelated-looking test timeouts.
+   *
+   * A quarter of the cores keeps that to a sane number while still scaling
+   * down to 1 on a small machine, which is what CI already pins.
+   */
+  workers: process.env['CI'] ? 1 : '25%',
   reporter: 'html',
   timeout: 1000 * 60,
   expect: {
@@ -129,6 +140,15 @@ export default defineConfig({
       testDir: config.testDir,
       use: {
         trace: 'on-first-retry' as const,
+        /*
+         * Auth screen content animates in, and Playwright waits for an element
+         * to stop moving before acting on it. That is correct, but it puts a
+         * stability window in front of nearly every interaction in this suite
+         * for the sake of decoration. Asking for reduced motion takes the app's
+         * own `prefers-reduced-motion` path, so content is final as soon as it
+         * mounts.
+         */
+        reducedMotion: 'reduce' as const,
         ...browser.device,
       },
     })),

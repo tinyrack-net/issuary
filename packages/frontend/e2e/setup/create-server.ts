@@ -1,5 +1,6 @@
 import { createSign, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
+import { Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
 import { serve } from '@hono/node-server';
@@ -51,7 +52,9 @@ async function closeServer(server: ReturnType<typeof serve>): Promise<void> {
       closeAllConnections.call(server);
     }
     server.close((error) => {
-      if (error) {
+      // Already closed is the state we want, not a failure. Rejecting here
+      // aborts the rest of teardown, which leaks the database handle.
+      if (error && Reflect.get(error, 'code') !== 'ERR_SERVER_NOT_RUNNING') {
         reject(error);
         return;
       }
@@ -639,6 +642,24 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       hostname: '127.0.0.1',
     });
 
+    /*
+     * Node reaps idle keep-alive sockets after 5s by default. Playwright's
+     * request context pools connections, so a test that drives the browser for
+     * longer than that between two API calls can send on a socket the server is
+     * closing and fail with ECONNRESET — the OAuth tests do exactly that,
+     * completing a consent flow before exchanging the code.
+     *
+     * Outliving the 60s per-test timeout means a socket is only ever reaped
+     * between tests. `headersTimeout` has to stay above `keepAliveTimeout` or
+     * Node reintroduces the same race itself.
+     */
+    // `serve()` is typed as HTTP/1 or HTTP/2; only the former has these, and
+    // only the former is what we asked for.
+    if (backendServer instanceof HttpServer) {
+      backendServer.keepAliveTimeout = 90_000;
+      backendServer.headersTimeout = 95_000;
+    }
+
     try {
       if (!backendServer.listening) {
         await Promise.race([
@@ -660,15 +681,26 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     }
 
     // 3. Return server handle
+    //
+    // Teardown is idempotent and memoized. `cleanup()` disposes the ORM, and
+    // running that twice closes a native handle that is already closing, which
+    // aborts the whole Node process — it surfaces as Playwright reporting
+    // "worker process exited unexpectedly" against whichever tests happened to
+    // be in flight, rather than as an error here.
+    let teardownPromise: Promise<void> | undefined;
+
     return {
       app: testApp,
       backendPort,
       auxiliaryPort,
       releaseAuxiliaryPort: auxiliaryPortReservation.release,
-      teardown: async () => {
-        await closeServer(backendServer);
-        await auxiliaryPortReservation.release();
-        await cleanup();
+      teardown: () => {
+        teardownPromise ??= (async () => {
+          await closeServer(backendServer);
+          await auxiliaryPortReservation.release();
+          await cleanup();
+        })();
+        return teardownPromise;
       },
     };
   }

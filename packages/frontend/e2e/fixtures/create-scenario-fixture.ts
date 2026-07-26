@@ -54,7 +54,6 @@ type ServerInfo = {
   backendPort: number;
   auxiliaryPort: number;
   releaseAuxiliaryPort: () => Promise<void>;
-  teardown: () => Promise<void>;
 };
 
 /**
@@ -74,11 +73,13 @@ export function createScenarioFixture(configFactory: ConfigFactory) {
     serverInfo: [
       async ({ browserName: _browserName }, use) => {
         const server = await createE2EServer(configFactory);
+        // Teardown is not handed to tests: the worker fixture owns the
+        // server's lifetime, and a second caller disposing the ORM would take
+        // the whole worker process down with it.
         await use({
           backendPort: server.backendPort,
           auxiliaryPort: server.auxiliaryPort,
           releaseAuxiliaryPort: server.releaseAuxiliaryPort,
-          teardown: server.teardown,
         });
         await server.teardown();
       },
