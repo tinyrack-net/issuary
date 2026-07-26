@@ -1,18 +1,23 @@
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRText } from '@tinyrack/ui/components/text';
 import { ChevronRightIcon, type LucideIcon } from 'lucide-react';
-import { createElement, type ElementType, type ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
-type AuthChoiceRowProps<C extends ElementType> = {
-  as: C;
+type AuthChoiceRowProps = {
+  /**
+   * The element the row navigates with, styled by `TRLinkButton`. These stay
+   * real anchors with an `href` — the e2e suite selects the second-factor
+   * choices by href, and they must survive a middle click.
+   */
+  render: ReactElement;
   icon?: LucideIcon;
   /** Replaces `icon` when the leading slot needs richer content (an avatar). */
   leading?: ReactNode;
   label: string;
   description?: string;
-  /** Trailing slot for a badge or a secondary action. */
+  /** Trailing slot outside the row's control, e.g. a remove button. */
   trailing?: ReactNode;
-} & Omit<React.ComponentPropsWithoutRef<C>, 'as' | 'children'>;
+};
 
 /**
  * A full-width, tappable row for picking one of several options.
@@ -22,25 +27,24 @@ type AuthChoiceRowProps<C extends ElementType> = {
  * button with a gap, another as a bare `<button>` inside a bordered div that
  * had no focus ring of its own.
  *
- * The whole row is one control, so there is a single tab stop and the label
- * and description are both part of its accessible name.
+ * The row itself is one control, so it is a single tab stop and its label and
+ * description are both part of its accessible name.
  */
-export function AuthChoiceRow<C extends ElementType>({
-  as: Component,
+export function AuthChoiceRow({
+  render,
   icon: Icon,
   leading,
   label,
   description,
   trailing,
-  ...rest
-}: AuthChoiceRowProps<C>) {
+}: AuthChoiceRowProps) {
   return (
     <div className="flex items-center gap-tinyrack-xs">
       <TRLinkButton
         appearance="outline"
-        className="h-auto flex-1 justify-start gap-tinyrack-md px-tinyrack-lg py-tinyrack-md text-start transition-colors duration-tinyrack-fast ease-tinyrack-standard"
+        className="h-auto min-w-0 flex-1 justify-start gap-tinyrack-md px-tinyrack-lg py-tinyrack-md text-start transition-colors duration-tinyrack-fast ease-tinyrack-standard"
         intent="neutral"
-        render={createElement(Component, rest)}
+        render={render}
       >
         {leading ??
           (Icon ? <Icon aria-hidden className="size-5 shrink-0" /> : null)}

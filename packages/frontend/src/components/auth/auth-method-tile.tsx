@@ -2,7 +2,7 @@ import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRText } from '@tinyrack/ui/components/text';
 import { LinkIcon } from 'lucide-react';
-import { createElement, type ElementType, type ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import {
   AppleLogo,
   GithubLogo,
@@ -10,14 +10,30 @@ import {
 } from '#frontend/components/auth/provider-logos.tsx';
 import type { OAuthProviderType } from '#frontend/queries/config.ts';
 
-type AuthMethodTileProps<C extends ElementType> = {
-  as: C;
+type AuthMethodTileBaseProps = {
   /** A provider icon URL, or a ready-made element. */
   icon?: string | ReactNode;
   label: string;
   providerType?: OAuthProviderType;
-  isLoading?: boolean;
-} & Omit<React.ComponentPropsWithoutRef<C>, 'as' | 'children'>;
+};
+
+type AuthMethodTileProps = AuthMethodTileBaseProps &
+  (
+    | {
+        /** Navigating method (OAuth, or the email form). Must be a real anchor. */
+        render: ReactElement;
+        onClick?: never;
+        isLoading?: never;
+        disabled?: never;
+      }
+    | {
+        render?: never;
+        /** In-page method (passkey), which runs a ceremony instead of navigating. */
+        onClick: () => void;
+        isLoading?: boolean;
+        disabled?: boolean;
+      }
+  );
 
 const PROVIDER_LOGOS: Record<
   Exclude<OAuthProviderType, 'generic_oauth'>,
@@ -34,18 +50,16 @@ const PROVIDER_LOGOS: Record<
  * Full-width rows at every breakpoint. The previous three-across grid gave
  * each tile a third of the card, so provider names wrapped onto two lines and
  * the icons and labels never lined up between tiles.
- *
- * OAuth entries must stay real anchors with a full `href` — they leave the SPA
- * for the provider, and the e2e suite selects them by `href`.
  */
-export function AuthMethodTile<C extends ElementType>({
-  as: Component,
+export function AuthMethodTile({
   icon,
   label,
   providerType,
+  render,
+  onClick,
   isLoading,
-  ...rest
-}: AuthMethodTileProps<C>) {
+  disabled,
+}: AuthMethodTileProps) {
   let leading: ReactNode;
   if (providerType && providerType !== 'generic_oauth') {
     leading = PROVIDER_LOGOS[providerType];
@@ -71,30 +85,32 @@ export function AuthMethodTile<C extends ElementType>({
   const className =
     'w-full justify-start gap-tinyrack-md transition-colors duration-tinyrack-fast ease-tinyrack-standard';
 
-  if (Component === 'button') {
+  if (render) {
     return (
-      <TRButton
+      <TRLinkButton
         appearance="outline"
-        className={className}
+        className={`cursor-pointer ${className}`}
         intent="neutral"
-        loading={isLoading}
+        render={render}
         uiSize="lg"
-        {...rest}
       >
         {content}
-      </TRButton>
+      </TRLinkButton>
     );
   }
 
   return (
-    <TRLinkButton
+    <TRButton
       appearance="outline"
-      className={`cursor-pointer ${className}`}
+      className={className}
+      disabled={disabled}
       intent="neutral"
-      render={createElement(Component, rest)}
+      loading={isLoading}
+      onClick={onClick}
+      type="button"
       uiSize="lg"
     >
       {content}
-    </TRLinkButton>
+    </TRButton>
   );
 }

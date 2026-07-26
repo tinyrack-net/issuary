@@ -1,6 +1,6 @@
 import { TRLink } from '@tinyrack/ui/components/link';
 import { TRText } from '@tinyrack/ui/components/text';
-import { createElement, type ElementType, type ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 type AuthFooterProps = {
   children: ReactNode;
@@ -23,28 +23,22 @@ export function AuthFooter({ children }: AuthFooterProps) {
   );
 }
 
-type AuthFooterLinkProps<C extends ElementType> = {
-  as: C;
+type AuthFooterLinkProps = {
   /** Optional lead-in, e.g. "Don't have an account?". */
   text?: string;
-  linkText: string;
-} & Omit<React.ComponentPropsWithoutRef<C>, 'as' | 'children'>;
+  /**
+   * The link element itself, styled by `TRLink`. Passing the element rather
+   * than an `as` component plus loose props keeps the router's `to`/`search`
+   * types checked at the call site.
+   */
+  link: ReactElement;
+};
 
-export function AuthFooterLink<C extends ElementType>({
-  as: Component,
-  text,
-  linkText,
-  ...linkProps
-}: AuthFooterLinkProps<C>) {
+export function AuthFooterLink({ text, link }: AuthFooterLinkProps) {
   return (
     <TRText color="muted" variant="caption">
       {text ? `${text} ` : null}
-      <TRLink
-        className="font-tinyrack-medium"
-        render={createElement(Component, linkProps)}
-      >
-        {linkText}
-      </TRLink>
+      <TRLink className="font-tinyrack-medium" render={link} />
     </TRText>
   );
 }

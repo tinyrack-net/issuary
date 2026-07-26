@@ -8,10 +8,9 @@ import { CircleAlertIcon, FingerprintIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthMethodTile } from '#frontend/components/auth/auth-method-tile.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
-import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
-import { LoginMethodList } from '#frontend/components/auth/login-method-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -196,64 +195,59 @@ function Login() {
       <AuthorizationContextBanner search={search} />
 
       {oauthErrorMessage && (
-        <Alert className="mb-4" icon={CircleAlertIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {oauthErrorMessage}
         </Alert>
       )}
 
       {passkeyError && (
-        <Alert className="mb-4" icon={CircleAlertIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {passkeyError}
         </Alert>
       )}
 
-      <LoginMethodList>
-        {/* OAuth Providers */}
+      <div className="flex flex-col gap-tinyrack-sm">
         {oauthProviders.map((provider) => (
-          <LoginMethodButton
-            as="a"
-            href={buildOAuthUrl(provider.id)}
+          <AuthMethodTile
             icon={provider.icon_url}
             key={provider.id}
             label={provider.display_name}
             providerType={provider.type}
+            render={
+              // Leaves the SPA for the provider, so a plain anchor, not a
+              // router link.
+              <a href={buildOAuthUrl(provider.id)}>{provider.display_name}</a>
+            }
           />
         ))}
 
-        {/* Password Login */}
         {isPasswordAuthEnabled && (
-          <LoginMethodButton
-            as="a"
-            href={buildPasswordLoginHref()}
-            icon={<MailIcon className="size-6" />}
+          <AuthMethodTile
+            icon={<MailIcon aria-hidden className="size-5" />}
             label={t('login.method.password')}
+            render={<a href={buildPasswordLoginHref()}>{null}</a>}
           />
         )}
 
-        {/* Passkey Login */}
         {isPasskeyEnabled && (
-          <LoginMethodButton
-            as="button"
+          <AuthMethodTile
             disabled={passkeyLoginMutation.isPending}
-            icon={<FingerprintIcon className="size-6" />}
+            icon={<FingerprintIcon aria-hidden className="size-5" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => {
               setPasskeyError(null);
               passkeyLoginMutation.mutate();
             }}
-            type="button"
           />
         )}
-      </LoginMethodList>
+      </div>
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
-          <div
-            className="prose prose-sm text-xs! **:text-xs!"
-            dangerouslySetInnerHTML={{ __html: implicitNotice }}
-          />
-        </div>
+        <div
+          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          dangerouslySetInnerHTML={{ __html: implicitNotice }}
+        />
       )}
     </AuthLayout>
   );
