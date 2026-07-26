@@ -24,11 +24,21 @@ export function LabeledSeparator({
 
   return (
     <div className={`flex items-center gap-tinyrack-md ${className}`}>
-      <TRSeparator className="flex-1" orientation="horizontal" />
+      {/*
+        The rules are wrapped rather than flexed directly: TRSeparator sets its
+        own `inline-size`, which a width utility on the element does not
+        override, so each rule would demand the full container width and the
+        row would overflow as soon as the label is more than a word or two.
+      */}
+      <div className="min-w-0 flex-1">
+        <TRSeparator orientation="horizontal" />
+      </div>
       <TRText color="muted" variant="caption">
         {label}
       </TRText>
-      <TRSeparator className="flex-1" orientation="horizontal" />
+      <div className="min-w-0 flex-1">
+        <TRSeparator orientation="horizontal" />
+      </div>
     </div>
   );
 }

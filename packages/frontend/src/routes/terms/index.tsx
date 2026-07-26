@@ -10,13 +10,13 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { TriangleAlertIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   TermsCheckboxList,
   type TermsConsentsField,
@@ -236,12 +236,16 @@ function Terms() {
           only action off the bottom of the screen.
         */}
         <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t bg-tinyrack-canvas/80 py-tinyrack-md backdrop-blur-sm">
-          <SubmitButton
-            isPending={consentMutation.isPending}
-            pendingText={t('terms.submit')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={consentMutation.isPending}
+            loadingLabel={t('terms.submit')}
+            type="submit"
+            uiSize="lg"
           >
             {t('terms.submit')}
-          </SubmitButton>
+          </TRButton>
         </div>
       </form>
     </AuthLayout>
