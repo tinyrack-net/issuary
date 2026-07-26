@@ -73,7 +73,8 @@ export function AuthBrandPanel({ lang }: AuthBrandPanelProps) {
         <TRText
           align="start"
           as="p"
-          className="hidden max-w-tinyrack-measure-xl opacity-tinyrack-hover md:block"
+          className="hidden max-w-tinyrack-measure-xl md:block"
+          color="muted"
           variant="headingSm"
           weight="regular"
         >
