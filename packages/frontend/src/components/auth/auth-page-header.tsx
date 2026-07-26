@@ -1,4 +1,5 @@
 import { TRText } from '@tinyrack/ui/components/text';
+import { useBranding } from '#frontend/features/layout/use-branding.ts';
 
 type AuthPageHeaderProps = {
   title: string;
@@ -12,8 +13,10 @@ type AuthPageHeaderProps = {
 /**
  * Titles the current screen.
  *
- * This is an `h2`: the deployment's name in the brand panel is the page's
- * `h1`, so the outline reads "product > what you are doing here".
+ * Heading level follows the brand panel: when the deployment has configured a
+ * product name that name is the page's `h1`, so this is an `h2` beneath it.
+ * With no branding there is no other heading, so this becomes the `h1` rather
+ * than leaving the page starting at level 2.
  *
  * Left-aligned by default. Centred auth copy reads as a consumer sign-up;
  * aligning it with the fields below reads as a console and gives the eye one
@@ -27,12 +30,15 @@ export function AuthPageHeader({
   eyebrow,
   align = 'start',
 }: AuthPageHeaderProps) {
+  const { title: brandTitle } = useBranding();
+  const headingTag = brandTitle ? 'h2' : 'h1';
+
   return (
     <div
       className={`flex flex-col gap-tinyrack-xs ${align === 'center' ? 'items-center text-center' : 'items-start text-start'}`}
     >
       {eyebrow}
-      <TRText align={align} as="h2" variant="headingLg">
+      <TRText align={align} as={headingTag} variant="headingLg">
         {title}
       </TRText>
       {subtitle && (

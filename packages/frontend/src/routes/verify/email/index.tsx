@@ -140,7 +140,7 @@ function VerifyEmail() {
   const resendVerificationMutation = useMutation({
     ...resendVerificationMutationOptions,
     onSuccess: () => {
-      toast.add({ title: t('verifyEmail.resendSuccess') });
+      toast.add({ title: t('verifyEmail.resendSuccess'), type: 'success' });
       // Separate from the message: a short cooldown so the button cannot be
       // used to spam the address with mail.
       setResendCooldown(true);

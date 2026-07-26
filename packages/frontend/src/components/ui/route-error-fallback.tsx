@@ -113,7 +113,7 @@ export function RouteErrorFallback({
         title={t('error.subtitle')}
         tone="danger"
       >
-        <TRText className="font-mono" color="muted" variant="caption">
+        <TRText className="font-tinyrack-mono" color="muted" variant="caption">
           {t('error.codeLabel')}{' '}
           <span data-testid="error-code">{errorCode}</span>
         </TRText>

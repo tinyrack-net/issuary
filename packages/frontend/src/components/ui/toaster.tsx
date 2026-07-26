@@ -11,6 +11,10 @@ import { useTranslation } from 'react-i18next';
  * error, a session-expiry countdown, or anything gating a decision. Those stay
  * inline next to the thing they describe, where a screen reader meets them in
  * document order.
+ *
+ * No `variant` is passed: `TRToast.Root` derives it from each toast's own
+ * `type`, so hardcoding one here would render an error with the success
+ * accent.
  */
 export function Toaster() {
   const { t } = useTranslation();
@@ -20,7 +24,7 @@ export function Toaster() {
     <TRToast.Portal>
       <TRToast.Viewport position="block-start-center">
         {toasts.map((toast) => (
-          <TRToast.Root key={toast.id} toast={toast} variant="success">
+          <TRToast.Root key={toast.id} toast={toast}>
             <TRToast.Content>
               <TRToast.Title />
               <TRToast.Description />

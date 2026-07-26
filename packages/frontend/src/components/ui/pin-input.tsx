@@ -112,16 +112,25 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
           value={internalValue}
         >
           {/*
-            Each box is a separate input, so each needs its own name — without
-            one they announce as unlabelled fields and there is no way to tell
-            which position has focus.
+            Each box is a separate input, so each needs to say which position
+            it is. Two Base UI behaviours shape this: the first box ignores
+            `aria-label` outright (it is the one password managers autofill, so
+            it takes the field's own label), and on the rest an `aria-label`
+            *replaces* the inherited field name rather than adding to it. So
+            the field name is folded into the per-box string, and box one is
+            left to the label above.
           */}
           {Array.from({ length }, (_, index) => (
             <TROTPField.Input
-              aria-label={t('common.otp.digit', {
-                position: index + 1,
-                total: length,
-              })}
+              aria-label={
+                index === 0
+                  ? undefined
+                  : t('common.otp.digit', {
+                      label: t('common.otp.label'),
+                      position: index + 1,
+                      total: length,
+                    })
+              }
               autoFocus={autoFocus && index === 0}
               key={index}
             />

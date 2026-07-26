@@ -1,10 +1,6 @@
 import { TRText } from '@tinyrack/ui/components/text';
 import { useBranding } from '#frontend/features/layout/use-branding.ts';
 
-type AuthBrandPanelProps = {
-  lang?: string;
-};
-
 /**
  * The deployment's identity, rendered once for the whole auth surface.
  *
@@ -14,31 +10,31 @@ type AuthBrandPanelProps = {
  * title two heading nodes and the icon two `img` nodes, which both the e2e
  * assertions and assistive technology would read as duplicates.
  *
- * This is the page's `h1`. Screen titles below it are `h2`, so the heading
- * outline reads "product > what you are doing here".
+ * When the deployment has configured a product name, that name is the page's
+ * `h1` and screen titles sit under it as `h2`. When it has not, the panel has
+ * no heading and the screen title becomes the `h1` — see `AuthPageHeader`.
+ *
+ * Pinned to the dark theme rather than using the `inverse` tokens.
+ * `--tinyrack-text-inverse` flips with the active theme, so in dark mode it
+ * resolves to near-black — which is illegible over the always-dark scrim a
+ * background image sits under. Scoping `data-theme` here makes every token
+ * inside the panel resolve consistently, so the brand surface reads the same
+ * in both app themes and the scrim always works.
  */
-export function AuthBrandPanel({ lang }: AuthBrandPanelProps) {
-  const { title, subtitle, iconUrl, backgroundUrl } = useBranding(lang);
+export function AuthBrandPanel() {
+  const { title, subtitle, iconUrl, backgroundUrl } = useBranding();
 
   return (
-    /*
-     * Pinned to the dark theme rather than using the `inverse` tokens.
-     * `--tinyrack-text-inverse` flips with the active theme, so in dark mode it
-     * resolves to near-black — which is illegible over the always-dark scrim a
-     * background image sits under. Scoping `data-theme` here makes every
-     * token inside the panel resolve consistently, so the brand surface reads
-     * the same in both app themes and the scrim always works.
-     */
     <div
-      className="relative isolate col-span-full flex h-16 flex-row items-center gap-tinyrack-md overflow-hidden border-tinyrack-border border-b bg-tinyrack-surface-muted px-tinyrack-lg text-tinyrack-text md:col-span-4 md:h-auto md:flex-col md:items-start md:justify-between md:gap-tinyrack-2xl md:border-e md:border-b-0 md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5"
+      className="relative isolate col-span-full flex flex-col items-start justify-between gap-tinyrack-xs overflow-hidden border-tinyrack-border border-b bg-tinyrack-surface-muted px-tinyrack-lg py-tinyrack-md text-tinyrack-text md:col-span-4 md:gap-tinyrack-2xl md:border-e md:border-b-0 md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5"
       data-theme="tinyrack-dark"
     >
       {backgroundUrl && (
         <>
           {/*
-           * Kept as an inline style rather than an arbitrary Tailwind class:
-           * the URL is runtime config, so it cannot be part of the CSS build.
-           */}
+            Kept as an inline style rather than an arbitrary Tailwind class: the
+            URL is runtime config, so it cannot be part of the CSS build.
+          */}
           <div
             aria-hidden
             className="absolute inset-0 -z-10 bg-center bg-cover"
@@ -51,7 +47,7 @@ export function AuthBrandPanel({ lang }: AuthBrandPanelProps) {
         </>
       )}
 
-      <div className="flex flex-row items-center gap-tinyrack-sm md:flex-col md:items-start md:gap-tinyrack-lg">
+      <div className="flex min-w-0 flex-row items-center gap-tinyrack-sm md:flex-col md:items-start md:gap-tinyrack-lg">
         {iconUrl && (
           <img
             alt=""
@@ -59,24 +55,37 @@ export function AuthBrandPanel({ lang }: AuthBrandPanelProps) {
             src={iconUrl}
           />
         )}
-        <TRText
-          align="start"
-          as="h1"
-          className="text-tinyrack-lg md:text-tinyrack-3xl"
-          weight="heading"
-        >
-          {title}
-        </TRText>
+        {/*
+          Sized through `--tr-text-font-size`, the override hook TRText exposes,
+          rather than a `text-*` utility: the component's own per-variant rule
+          is more specific than a utility class, so a utility is ignored. Still
+          token-only, and responsive because the mobile banner has far less
+          room than the panel.
+        */}
+        {title && (
+          <TRText
+            align="start"
+            as="h1"
+            className="[--tr-text-font-size:var(--tinyrack-text-lg)] md:[--tr-text-font-size:var(--tinyrack-text-3xl)]"
+            weight="heading"
+          >
+            {title}
+          </TRText>
+        )}
       </div>
 
+      {/*
+        Shown at every width — this is the deployment's own copy, so hiding it
+        on phones would drop configured content. One line in the mobile banner,
+        the full string beside the form. Sized through the component's override
+        hook for the same reason as the title above.
+      */}
       {subtitle && (
         <TRText
           align="start"
           as="p"
-          className="hidden max-w-tinyrack-measure-xl md:block"
+          className="max-w-tinyrack-measure-xl truncate [--tr-text-font-size:var(--tinyrack-text-xs)] md:overflow-visible md:whitespace-normal md:[--tr-text-font-size:var(--tinyrack-text-lg)]"
           color="muted"
-          variant="headingSm"
-          weight="regular"
         >
           {subtitle}
         </TRText>

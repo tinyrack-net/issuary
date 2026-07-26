@@ -10,11 +10,6 @@ type AuthLayoutProps = {
    * account selection, recovery codes.
    */
   width?: 'form' | 'wide';
-  /**
-   * Replays the entry animation when it changes. Pass a wizard step so each
-   * step animates in; leave unset for a plain screen.
-   */
-  animationKey?: string;
 };
 
 const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
@@ -31,11 +26,7 @@ const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
  * box inside a box. Below `md:` the panel collapses to a banner and the form
  * does get a surface, because on a phone it would otherwise float unanchored.
  */
-export function AuthLayout({
-  children,
-  width = 'form',
-  animationKey,
-}: AuthLayoutProps) {
+export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
   return (
     <div className="grid min-h-dvh grid-cols-1 bg-tinyrack-canvas md:grid-cols-12">
       <Toaster />
@@ -50,7 +41,6 @@ export function AuthLayout({
           */}
           <div
             className={`auth-enter flex w-full flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl md:border-0 md:bg-transparent md:p-0 ${widthClasses[width]}`}
-            key={animationKey}
           >
             {children}
           </div>

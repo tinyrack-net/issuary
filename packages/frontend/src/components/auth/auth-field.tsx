@@ -92,7 +92,6 @@ export function AuthField({
             }
             className="tr-input-group-action"
             onClick={() => setRevealed((value) => !value)}
-            tabIndex={-1}
             type="button"
           >
             {revealed ? (

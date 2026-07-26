@@ -28,7 +28,7 @@ export function RecoveryCodesStep({
   // "copied" flag alive with its own setTimeout.
   const handleCopy = useCallback(async () => {
     await navigator.clipboard.writeText(recoveryCodes.join('\n'));
-    toast.add({ title: t('setupTotp.recoveryCodes.copied') });
+    toast.add({ title: t('setupTotp.recoveryCodes.copied'), type: 'success' });
   }, [recoveryCodes, toast, t]);
 
   return (

@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
+import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
 import { useColorScheme } from '#frontend/hooks/use-theme.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -54,6 +55,12 @@ export function PageLayout({
           className="absolute inset-0 bg-tinyrack-canvas/70 backdrop-blur-sm"
         />
       )}
+      {/*
+        Profile hosts the TOTP recovery-codes step, which confirms a copy with
+        a toast. Without a viewport here that confirmation would go nowhere on
+        the one screen where losing the codes is unrecoverable.
+      */}
+      <Toaster />
       <ThemeToggle
         className="fixed start-3 top-3 z-50 sm:absolute sm:start-4 sm:top-4"
         colorScheme={colorScheme}

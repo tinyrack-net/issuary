@@ -52,6 +52,7 @@
 @import "@tinyrack/ui/components/switch.css";
 @import "@tinyrack/ui/components/table.css";
 @import "@tinyrack/ui/components/tabs.css";
+@import "@tinyrack/ui/components/text.css";
 @import "@tinyrack/ui/components/textarea.css";
 @import "@tinyrack/ui/components/toast.css";
 @import "@tinyrack/ui/components/toggle.css";
@@ -70,6 +71,11 @@
     "IBM Plex Sans Variable", "IBM Plex Sans", "IBM Plex Sans KR",
     "IBM Plex Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
   --tinyrack-font-heading: var(--tinyrack-font-body);
+  /*
+   * IBM Plex Mono is not bundled — recovery codes and error codes are rare
+   * enough that another webfont is not worth the bytes. It is named first so a
+   * machine that already has it uses it, and the platform mono face otherwise.
+   */
   --tinyrack-font-mono:
     "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }

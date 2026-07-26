@@ -227,7 +227,7 @@ function VerifyRecovery() {
           <TRInput
             {...registerRest}
             autoComplete="off"
-            className="w-full text-center font-mono"
+            className="w-full text-center font-tinyrack-mono"
             data-testid="recovery-code-input"
             disabled={sessionExpired}
             placeholder={t('verifyRecovery.placeholder')}

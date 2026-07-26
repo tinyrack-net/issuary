@@ -28,6 +28,10 @@ const ROUTES = [
   '/verify/email?email=someone@example.com',
   '/verify/totp',
   '/verify/totp/recovery',
+  '/verify/2fa',
+  '/verify/passkey',
+  '/setup/2fa',
+  '/setup/passkey',
   '/error?code=EXAMPLE&message=Example',
 ];
 

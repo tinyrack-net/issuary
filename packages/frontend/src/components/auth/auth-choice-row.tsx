@@ -48,12 +48,18 @@ export function AuthChoiceRow({
       >
         {leading ??
           (Icon ? <Icon aria-hidden className="size-5 shrink-0" /> : null)}
-        <span className="flex min-w-0 flex-1 flex-col">
-          <TRText truncate variant="body" weight="medium">
+        {/*
+          Wraps rather than truncates. These rows carry the only description of
+          what each option does, and at phone width even the English strings
+          exceed the available space — silently clipping them would hide the
+          difference between the choices.
+        */}
+        <span className="flex min-w-0 flex-1 flex-col whitespace-normal">
+          <TRText variant="body" weight="medium">
             {label}
           </TRText>
           {description && (
-            <TRText color="muted" truncate variant="caption">
+            <TRText color="muted" variant="caption">
               {description}
             </TRText>
           )}
