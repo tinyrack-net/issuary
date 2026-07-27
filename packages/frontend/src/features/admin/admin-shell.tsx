@@ -162,7 +162,12 @@ export function AdminShell({
         </div>
       </TRAppShell.Sidebar>
 
-      <TRAppShell.Header className="sticky top-0 z-tinyrack-dropdown flex items-center gap-tinyrack-md border-tinyrack-border border-b bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
+      {/*
+        `chrome`, not `dropdown`. The header only has to out-paint the content
+        scrolling under it; on the dropdown layer it sat above every scrim, so
+        opening a dialog dimmed the console but left its own header bright.
+      */}
+      <TRAppShell.Header className="sticky top-0 z-tinyrack-chrome flex items-center gap-tinyrack-md border-tinyrack-border border-b bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
         <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
           <MenuIcon aria-hidden className="size-5" />
         </TRAppShell.Trigger>
