@@ -143,7 +143,10 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
                         </span>
                       </TRText>
                     </div>
+                    {/* `shrink-0`: without it the tile squeezes the badge and
+                        "User" wraps to two lines. */}
                     <TRBadge
+                      className="shrink-0"
                       uiSize="sm"
                       variant={
                         managedUser.role === 'admin' ? 'neutral' : undefined
