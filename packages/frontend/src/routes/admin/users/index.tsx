@@ -14,9 +14,13 @@ import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
-import { AdminDisabledPanel } from '#frontend/features/admin/admin-disabled-panel.tsx';
+import { AdminGateScreen } from '#frontend/features/admin/admin-gate-screen.tsx';
 import { AdminShell } from '#frontend/features/admin/admin-shell.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AdminStat } from '#frontend/features/admin/admin-stat.tsx';
+import {
+  formatAdminRole,
+  formatManagedBy,
+} from '#frontend/features/admin/format-admin-user.ts';
 import {
   type AdminUser,
   adminUsersQueryOptions,
@@ -47,20 +51,10 @@ type QuickFilter = 'all' | 'database' | 'config' | 'admins';
 type NoticeState = { tone: 'success' | 'error'; message: string } | null;
 
 function AdminUsersPage() {
-  const { t } = useTranslation();
   const user = Route.useRouteContext({ select: (context) => context.user });
 
   if (user?.role !== 'admin') {
-    return (
-      <PageLayout cardPadding maxWidth="md">
-        <h1 className="mb-2 text-center font-bold text-tinyrack-2xl">
-          {t('admin.accessRequired')}
-        </h1>
-        <p className="text-center text-tinyrack-text-muted">
-          {t('admin.accessRequiredDescription')}
-        </p>
-      </PageLayout>
-    );
+    return <AdminGateScreen reason="access-required" />;
   }
 
   return <AdminUsersGate user={user} />;
@@ -69,7 +63,7 @@ function AdminUsersPage() {
 function AdminUsersGate({ user }: { user: SessionUser }) {
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
   if (!config.admin.enabled) {
-    return <AdminDisabledPanel />;
+    return <AdminGateScreen reason="console-disabled" />;
   }
   return <AdminUsersContent user={user} />;
 }
@@ -739,24 +733,6 @@ function UserFormModal({
   );
 }
 
-function formatAdminRole(
-  t: ReturnType<typeof useTranslation>['t'],
-  role: AdminUser['role'],
-) {
-  return role === 'admin'
-    ? t('admin.users.roleAdmin')
-    : t('admin.users.roleUser');
-}
-
-function formatManagedBy(
-  t: ReturnType<typeof useTranslation>['t'],
-  managedBy: AdminUser['managed_by'],
-) {
-  return managedBy === 'database'
-    ? t('admin.users.sourceDatabase')
-    : t('admin.users.sourceConfig');
-}
-
 function parseUserRole(value: FormDataEntryValue | null): 'user' | 'admin' {
   return value === 'admin' ? 'admin' : 'user';
 }
@@ -795,14 +771,10 @@ function QuickFilterButton({
 function SummaryStat({ label, value }: { label: string; value: number }) {
   const { t } = useTranslation();
   return (
-    <div className="flex-1 p-6">
-      <div className="text-tinyrack-sm text-tinyrack-text-muted">{label}</div>
-      <div className="mt-1 font-bold text-tinyrack-4xl text-tinyrack-text">
-        {value}
-      </div>
-      <div className="text-tinyrack-text-muted text-tinyrack-xs">
-        {t('admin.users.currentPage')}
-      </div>
-    </div>
+    <AdminStat
+      hint={t('admin.users.currentPage')}
+      label={label}
+      value={value}
+    />
   );
 }

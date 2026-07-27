@@ -1,11 +1,36 @@
-import { Link } from '@tanstack/react-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useRouter } from '@tanstack/react-router';
 import { TRAppShell } from '@tinyrack/ui/components/app-shell';
 import { TRAvatar } from '@tinyrack/ui/components/avatar';
 import { TRBadge } from '@tinyrack/ui/components/badge';
-import { TRCard } from '@tinyrack/ui/components/card';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRText } from '@tinyrack/ui/components/text';
+import {
+  ChevronRightIcon,
+  LayoutDashboardIcon,
+  LogOutIcon,
+  type LucideIcon,
+  MenuIcon,
+  ShieldIcon,
+  TriangleAlertIcon,
+  UsersIcon,
+  XIcon,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SessionUser } from '#frontend/queries/session.ts';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
+import { Toaster } from '#frontend/components/ui/toaster.tsx';
+import { formatAdminRole } from '#frontend/features/admin/format-admin-user.ts';
+import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
+import { useBranding } from '#frontend/features/layout/use-branding.ts';
+import { useColorScheme } from '#frontend/hooks/use-theme.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import { logoutMutationOptions } from '#frontend/queries/logout.ts';
+import {
+  getSessionQueryOptions,
+  type SessionUser,
+} from '#frontend/queries/session.ts';
 
 type AdminShellProps = {
   user: SessionUser;
@@ -15,6 +40,16 @@ type AdminShellProps = {
   children: ReactNode;
 };
 
+/**
+ * The admin console's chrome.
+ *
+ * Stays on `TRAppShell` — a dashboard with persistent nav is what that
+ * primitive is for, and the split-canvas auth shell would have nowhere to put
+ * the sidebar. What changes is everything inside it: the console had no theme
+ * toggle, no language selector, no way to sign out, and no toast viewport,
+ * which made it the one authenticated surface where the presentation controls
+ * simply vanished.
+ */
 export function AdminShell({
   user,
   current,
@@ -23,123 +58,194 @@ export function AdminShell({
   children,
 }: AdminShellProps) {
   const { t } = useTranslation();
+  const { title: brandTitle, iconUrl } = useBranding();
+  const { colorScheme, toggleColorScheme } = useColorScheme();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    ...logoutMutationOptions,
+    onSuccess: async () => {
+      queryClient.setQueryData(getSessionQueryOptions.queryKey, { user: null });
+      await tick();
+      router.navigate({ to: '/login' });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+    },
+  });
 
   return (
-    <TRAppShell.Root
-      breakpoint="lg"
-      className="min-h-screen bg-tinyrack-canvas"
-    >
-      <TRAppShell.Sidebar className="flex w-80 flex-col border-tinyrack-border border-r bg-tinyrack-surface p-5">
-        <div className="mb-2 flex justify-end lg:hidden">
-          <TRAppShell.Close aria-label={t('admin.nav.close')}>
-            &times;
-          </TRAppShell.Close>
-        </div>
+    <TRAppShell.Root breakpoint="lg" className="bg-tinyrack-canvas">
+      <Toaster />
 
-        <div className="mb-8 rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface-muted p-4">
-          <div className="flex items-center gap-3">
+      {/*
+        No `w-*` here: `app-shell.css` sizes the sidebar track itself, and the
+        20rem this used to declare overflowed the 18rem track it sits in.
+      */}
+      <TRAppShell.Sidebar className="flex flex-col gap-tinyrack-xl border-tinyrack-border border-r bg-tinyrack-surface p-tinyrack-lg">
+        {/* The design system hides this outside the mobile drawer. */}
+        <TRAppShell.Close aria-label={t('admin.nav.close')}>
+          <XIcon aria-hidden className="size-4" />
+        </TRAppShell.Close>
+
+        <div className="flex items-center gap-tinyrack-md">
+          {iconUrl ? (
+            <img alt="" className="size-8 object-contain" src={iconUrl} />
+          ) : (
             <TRAvatar.Root shape="square" uiSize="lg">
               <TRAvatar.Fallback className="bg-tinyrack-primary text-tinyrack-on-primary">
-                TA
+                <ShieldIcon aria-hidden className="size-5" />
               </TRAvatar.Fallback>
             </TRAvatar.Root>
-            <div>
-              <p className="font-semibold text-tinyrack-text">TinyAuth</p>
-              <p className="text-tinyrack-text-muted text-tinyrack-xs">
-                {t('admin.console')}
-              </p>
-            </div>
+          )}
+          <div className="min-w-0">
+            <TRText as="p" truncate weight="medium">
+              {brandTitle ?? t('admin.mobileTitle')}
+            </TRText>
+            <TRText as="p" color="muted" variant="caption">
+              {t('admin.console')}
+            </TRText>
           </div>
         </div>
 
-        <ul className="flex w-full flex-col gap-1 p-0">
+        <ul className="flex w-full flex-col gap-tinyrack-xs p-0">
           <li>
-            <AdminNavLink active={current === 'dashboard'} to="/admin">
+            <AdminNavLink
+              active={current === 'dashboard'}
+              icon={LayoutDashboardIcon}
+              to="/admin"
+            >
               {t('admin.nav.dashboard')}
             </AdminNavLink>
           </li>
           <li>
-            <AdminNavLink active={current === 'users'} to="/admin/users">
+            <AdminNavLink
+              active={current === 'users'}
+              icon={UsersIcon}
+              to="/admin/users"
+            >
               {t('admin.nav.users')}
             </AdminNavLink>
           </li>
         </ul>
 
-        <TRCard.Root className="mt-auto" variant="outlined">
-          <TRCard.Content className="gap-2 p-4">
-            <p className="font-semibold text-tinyrack-text-muted text-tinyrack-xs uppercase tracking-wide">
-              {t('admin.signedInAs')}
-            </p>
-            <p className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
-              {user.email}
-            </p>
-            <div className="mt-2">
-              <TRBadge uiSize="sm" variant="neutral">
-                {t('admin.roleBadge', {
-                  role: formatAdminRole(t, user.role),
-                })}
-              </TRBadge>
-            </div>
-          </TRCard.Content>
-        </TRCard.Root>
+        {/*
+          Sign-out lives beside the identity it signs out of, the same
+          adjacency the profile header uses. The console previously offered no
+          way out at all.
+        */}
+        <div className="mt-auto flex flex-col items-start gap-tinyrack-sm border-tinyrack-border border-t pt-tinyrack-lg">
+          <TRText color="muted" variant="label">
+            {t('admin.signedInAs')}
+          </TRText>
+          <TRText as="p" className="w-full" truncate variant="bodySm">
+            {user.email}
+          </TRText>
+          <TRBadge uiSize="sm" variant="neutral">
+            {t('admin.roleBadge', { role: formatAdminRole(t, user.role) })}
+          </TRBadge>
+          <TRButton
+            appearance="ghost"
+            data-testid="admin-logout"
+            disabled={logoutMutation.isPending}
+            loading={logoutMutation.isPending}
+            onClick={() => logoutMutation.mutate()}
+            type="button"
+            uiSize="sm"
+          >
+            <LogOutIcon aria-hidden className="size-4" />
+            {t('profile.logout')}
+          </TRButton>
+        </div>
       </TRAppShell.Sidebar>
 
-      <TRAppShell.Header className="sticky top-0 z-20 flex items-center gap-3 border-tinyrack-border border-b bg-tinyrack-surface px-4 lg:px-8">
-        <div className="flex-none lg:hidden">
-          <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
-            <span className="text-tinyrack-xl">&#9776;</span>
-          </TRAppShell.Trigger>
-        </div>
-        <div className="min-w-0 flex-1">
+      <TRAppShell.Header className="sticky top-0 z-tinyrack-dropdown flex items-center gap-tinyrack-md border-tinyrack-border border-b bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
+        <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
+          <MenuIcon aria-hidden className="size-5" />
+        </TRAppShell.Trigger>
+
+        <TRAppShell.Brand className="min-w-0">
           <nav
             aria-label={t('admin.breadcrumbLabel')}
-            className="hidden items-center gap-2 rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-4 py-2 text-tinyrack-sm text-tinyrack-text-muted lg:flex"
+            className="hidden items-center gap-tinyrack-sm lg:flex"
           >
-            <span>{t('admin.console')}</span>
-            <span className="text-tinyrack-text-placeholder">/</span>
-            <span className="font-medium text-tinyrack-text">{title}</span>
+            <TRText color="muted" variant="bodySm">
+              {t('admin.console')}
+            </TRText>
+            <ChevronRightIcon
+              aria-hidden
+              className="size-4 text-tinyrack-text-placeholder"
+            />
+            <TRText variant="bodySm" weight="medium">
+              {title}
+            </TRText>
           </nav>
-          <div className="lg:hidden">
-            <p className="font-semibold text-tinyrack-text">
+          <div className="min-w-0 lg:hidden">
+            <TRText as="p" truncate weight="medium">
               {t('admin.mobileTitle')}
-            </p>
-            <p className="truncate text-tinyrack-text-muted text-tinyrack-xs">
+            </TRText>
+            <TRText as="p" color="muted" truncate variant="caption">
               {user.email}
-            </p>
+            </TRText>
           </div>
-        </div>
-        <div className="flex flex-none items-center gap-3">
+        </TRAppShell.Brand>
+
+        {/*
+          Language then theme, matching the auth header bar, so the two shells
+          put the same control in the same place.
+        */}
+        <TRAppShell.Actions>
+          <div className="hidden items-center gap-tinyrack-xs rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-tinyrack-md py-tinyrack-xs sm:flex">
+            <span
+              aria-hidden
+              className="size-tinyrack-sm rounded-tinyrack-full bg-tinyrack-success"
+            />
+            <TRText color="muted" variant="caption">
+              {t('admin.livePolicy')}
+            </TRText>
+          </div>
           <TRBadge uiSize="sm" variant="neutral">
             {t('admin.environment')}
           </TRBadge>
-          <div className="hidden items-center gap-2 rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-3 py-1.5 text-tinyrack-text-muted text-tinyrack-xs sm:flex">
-            <span className="h-2 w-2 rounded-tinyrack-full bg-tinyrack-success" />
-            {t('admin.livePolicy')}
-          </div>
-        </div>
+          <LanguageSelector />
+          <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
+        </TRAppShell.Actions>
       </TRAppShell.Header>
 
-      <TRAppShell.Main className="mx-auto w-full max-w-[1500px] flex-1 px-4 py-8 lg:px-8">
-        <TRCard.Root className="mb-8" variant="outlined">
-          <TRCard.Header className="p-6 lg:p-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <p className="font-semibold text-tinyrack-primary text-tinyrack-xs uppercase tracking-wide">
-                  {t('admin.eyebrow')}
-                </p>
-                <TRCard.Title className="mt-3 font-semibold text-tinyrack-3xl lg:text-tinyrack-4xl">
-                  {title}
-                </TRCard.Title>
-                <TRCard.Description className="mt-3 max-w-2xl text-tinyrack-md leading-7">
-                  {description}
-                </TRCard.Description>
-              </div>
-              <div className="max-w-xl rounded-tinyrack-md border border-tinyrack-warning-border bg-tinyrack-warning-surface px-4 py-3 text-tinyrack-on-warning text-tinyrack-sm">
-                <span>{t('admin.readonlyNotice')}</span>
-              </div>
-            </div>
-          </TRCard.Header>
-        </TRCard.Root>
+      <TRAppShell.Main className="mx-auto flex w-full max-w-tinyrack-page-xl flex-1 flex-col gap-tinyrack-xl px-tinyrack-lg py-tinyrack-2xl lg:px-tinyrack-2xl">
+        {/*
+          Not a card. A card around nothing but a title is a box for its own
+          sake, and it made the page's real content look like a peer of its
+          heading rather than its subject.
+        */}
+        <header className="flex flex-col gap-tinyrack-xl xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex min-w-0 flex-col gap-tinyrack-md">
+            <TRText color="primary" variant="label">
+              {t('admin.eyebrow')}
+            </TRText>
+            <TRText as="h1" variant="display">
+              {title}
+            </TRText>
+            <TRText
+              as="p"
+              className="max-w-tinyrack-reading-sm"
+              color="muted"
+              variant="body"
+            >
+              {description}
+            </TRText>
+          </div>
+          <Alert
+            className="max-w-tinyrack-measure-2xl"
+            icon={TriangleAlertIcon}
+            type="warning"
+          >
+            {t('admin.readonlyNotice')}
+          </Alert>
+        </header>
 
         {children}
       </TRAppShell.Main>
@@ -147,35 +253,25 @@ export function AdminShell({
   );
 }
 
-function formatAdminRole(
-  t: ReturnType<typeof useTranslation>['t'],
-  role: SessionUser['role'],
-) {
-  return role === 'admin'
-    ? t('admin.users.roleAdmin')
-    : t('admin.users.roleUser');
-}
-
 type AdminNavLinkProps = {
   active: boolean;
+  icon: LucideIcon;
   to: '/admin' | '/admin/users';
   children: ReactNode;
 };
 
-function AdminNavLink({ active, to, children }: AdminNavLinkProps) {
+function AdminNavLink({ active, icon: Icon, to, children }: AdminNavLinkProps) {
   return (
     <Link
-      className={
+      className={`flex items-center gap-tinyrack-sm rounded-tinyrack-md px-tinyrack-lg py-tinyrack-sm ${
         active
-          ? 'active flex items-center gap-2 rounded-tinyrack-md bg-tinyrack-surface-selected px-4 py-2.5 font-medium text-tinyrack-text'
-          : 'flex items-center gap-2 rounded-tinyrack-md px-4 py-2.5 text-tinyrack-text-muted hover:bg-tinyrack-surface-hover hover:text-tinyrack-text'
-      }
+          ? 'bg-tinyrack-surface-selected font-tinyrack-medium text-tinyrack-text'
+          : 'text-tinyrack-text-muted hover:bg-tinyrack-surface-hover hover:text-tinyrack-text'
+      }`}
       to={to}
     >
+      <Icon aria-hidden className="size-4" />
       <span>{children}</span>
-      {active ? (
-        <TRBadge className="ml-auto" uiSize="sm" variant="neutral" />
-      ) : null}
     </Link>
   );
 }
