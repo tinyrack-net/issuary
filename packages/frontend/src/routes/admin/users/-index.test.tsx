@@ -115,8 +115,14 @@ describe('/admin/users', () => {
       .element(screen.getByRole('cell', { name: 'Config', exact: true }))
       .toBeVisible();
 
+    // The heading lives inside the directory card. Anchored on a testid rather
+    // than `.tr-card`, which asserted a styling fact and broke whenever the
+    // card's internals moved.
     expect(
-      screen.getByText('User directory').element().closest('.tr-card'),
+      screen
+        .getByText('User directory')
+        .element()
+        .closest('[data-testid="admin-users-directory"]'),
     ).not.toBeNull();
     expect(
       screen
