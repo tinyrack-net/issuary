@@ -61,8 +61,16 @@ export function AdminUsersTable({
                   </TRText>
                 </div>
               </TRTable.Cell>
+              {/*
+                `whitespace-nowrap` on every badge: without it a narrow
+                viewport squeezes these columns until the labels break one
+                letter per line. Keeping them intact makes the table wider
+                than the phone, which is what the horizontal scroller below
+                is for.
+              */}
               <TRTable.Cell>
                 <TRBadge
+                  className="whitespace-nowrap"
                   uiSize="sm"
                   variant={managedUser.role === 'admin' ? 'neutral' : undefined}
                 >
@@ -71,6 +79,7 @@ export function AdminUsersTable({
               </TRTable.Cell>
               <TRTable.Cell>
                 <TRBadge
+                  className="whitespace-nowrap"
                   uiSize="sm"
                   variant={
                     managedUser.managed_by === 'config' ? 'warning' : 'info'
@@ -101,6 +110,7 @@ export function AdminUsersTable({
                   status. Changing these tones breaks it.
                 */}
                 <TRBadge
+                  className="whitespace-nowrap"
                   uiSize="sm"
                   variant={managedUser.deleted_at ? 'danger' : 'success'}
                 >
@@ -112,7 +122,7 @@ export function AdminUsersTable({
               <TRTable.Cell>
                 {managedUser.managed_by === 'database' &&
                 !managedUser.deleted_at ? (
-                  <div className="inline-flex items-center rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted">
+                  <div className="inline-flex items-center whitespace-nowrap rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted">
                     <TRButton
                       appearance="ghost"
                       aria-label={t('admin.users.editUser', {
@@ -138,7 +148,9 @@ export function AdminUsersTable({
                     </TRButton>
                   </div>
                 ) : (
-                  <TRBadge uiSize="sm">{t('admin.users.readonly')}</TRBadge>
+                  <TRBadge className="whitespace-nowrap" uiSize="sm">
+                    {t('admin.users.readonly')}
+                  </TRBadge>
                 )}
               </TRTable.Cell>
             </TRTable.Row>
