@@ -4,7 +4,6 @@ import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import {
   PinInput,
   type PinInputRef,
@@ -79,9 +78,9 @@ export function VerifyStep({
   );
 
   return (
-    <div className={className}>
+    <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(handleFormSubmit)}
       >
         <PinInput
@@ -94,29 +93,30 @@ export function VerifyStep({
           value={codeValue}
         />
 
-        <SubmitButton
-          className="mt-1"
-          isPending={isPending}
-          pendingText={pendingText ?? t('setupTotp.verifying')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={isPending}
+          loadingLabel={pendingText ?? t('setupTotp.verifying')}
+          type="submit"
+          uiSize="lg"
         >
           {submitLabel ?? t('setupTotp.verify')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
       {onBack && (
-        <div className="mt-3 text-center">
-          <TRButton
-            appearance="ghost"
-            data-testid="totp-verify-back"
-            disabled={isPending}
-            intent="neutral"
-            onClick={onBack}
-            type="button"
-            uiSize="sm"
-          >
-            {backLabel ?? t('setupTotp.back')}
-          </TRButton>
-        </div>
+        <TRButton
+          appearance="ghost"
+          className="w-full"
+          data-testid="totp-verify-back"
+          disabled={isPending}
+          intent="neutral"
+          onClick={onBack}
+          type="button"
+        >
+          {backLabel ?? t('setupTotp.back')}
+        </TRButton>
       )}
     </div>
   );

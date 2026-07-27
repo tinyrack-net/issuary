@@ -1,19 +1,22 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -184,20 +187,19 @@ function VerifyRecovery() {
   const { ref: formRef, ...registerRest } = register('code');
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyRecovery.subtitle')}
         title={t('verifyRecovery.title')}
       />
 
       {sessionExpired && (
         <Alert
-          className="mb-4"
           data-testid="recovery-session-expired"
-          icon={WarningCircleIcon}
+          icon={CircleAlertIcon}
           type="warning"
         >
-          <div className="flex flex-col gap-1">
+          <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyRecovery.error.expired')}</span>
             <span className="text-tinyrack-sm opacity-80">
               {t('verifyRecovery.redirecting', {
@@ -206,23 +208,26 @@ function VerifyRecovery() {
             </span>
             <TRButton
               appearance="ghost"
-              className="mt-2 w-fit"
               intent="neutral"
               onClick={redirectToLogin}
               type="button"
+              uiSize="sm"
             >
               {t('verifyRecovery.redirectNow')}
             </TRButton>
-          </div>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <TRField.Root uiSize="md">
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <TRField.Root>
           <TRInput
             {...registerRest}
             autoComplete="off"
-            className="w-full text-center font-mono"
+            className="w-full text-center font-tinyrack-mono"
             data-testid="recovery-code-input"
             disabled={sessionExpired}
             placeholder={t('verifyRecovery.placeholder')}
@@ -241,28 +246,34 @@ function VerifyRecovery() {
 
         {sessionExpired ? (
           <TRButton
-            className="mt-2 w-full"
+            className="w-full"
             disabled
             intent="primary"
             type="button"
+            uiSize="lg"
           >
             {t('verifyRecovery.submit')}
           </TRButton>
         ) : (
-          <SubmitButton
-            className="mt-2"
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyRecovery.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={verifyMutation.isPending}
+            loadingLabel={t('verifyRecovery.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('verifyRecovery.submit')}
-          </SubmitButton>
+          </TRButton>
         )}
       </form>
 
-      <div className="mt-4 text-center">
+      {/* Mirrors /verify/totp: the other second factor sits below the rule. */}
+      <div className="flex flex-col gap-tinyrack-md">
+        <LabeledSeparator label={t('common.or')} />
         <TRButton
           appearance="ghost"
-          className="font-medium"
+          className="w-full"
           data-testid="recovery-back-to-totp"
           intent="neutral"
           onClick={() =>
@@ -277,13 +288,15 @@ function VerifyRecovery() {
         </TRButton>
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('verifyRecovery.backToLogin')}
-        search={extractOAuthParams(search)}
-        text=""
-        to="/login"
-      />
-    </PageLayout>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('verifyRecovery.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
+    </AuthLayout>
   );
 }

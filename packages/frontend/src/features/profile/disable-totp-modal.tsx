@@ -1,13 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -83,32 +82,27 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
       title={t('profile.totp.disableModal.title')}
       variant="destructive"
     >
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+        onSubmit={handleSubmit}
+      >
         <AlertBanner variant="warning">
           {t('profile.totp.disableModal.warning')}
         </AlertBanner>
 
-        <TRField.Root uiSize="sm">
-          <TRField.Label htmlFor="disable-totp-code">
-            {t('profile.totp.disableModal.codeLabel')}
-          </TRField.Label>
-          <TRInput
-            autoComplete="one-time-code"
-            id="disable-totp-code"
-            inputMode="numeric"
-            maxLength={6}
-            pattern="[0-9]*"
-            placeholder="000000"
-            type="text"
-            uiSize="sm"
-            {...form.register('code')}
-          />
-          {form.formState.errors.code && (
-            <div className="tr-field-error" data-testid="disable-totp-error">
-              {form.formState.errors.code.message}
-            </div>
-          )}
-        </TRField.Root>
+        <AuthField
+          autoComplete="one-time-code"
+          error={form.formState.errors.code}
+          errorTestId="disable-totp-error"
+          id="disable-totp-code"
+          inputMode="numeric"
+          label={t('profile.totp.disableModal.codeLabel')}
+          maxLength={6}
+          pattern="[0-9]*"
+          placeholder="000000"
+          {...form.register('code')}
+          type="text"
+        />
 
         <ModalActions>
           <TRButton

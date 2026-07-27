@@ -1,29 +1,32 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
-  FingerprintIcon,
-  ShieldCheckIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { TRText } from '@tinyrack/ui/components/text';
+import {
+  CircleAlertIcon,
+  FingerprintIcon,
+  ShieldCheckIcon,
+  TagIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -151,76 +154,87 @@ function SetupPasskey() {
   // Registering state - waiting for WebAuthn
   if (step === 'registering') {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupPasskey.subtitle')}
           title={t('setupPasskey.title')}
         />
-        <div className="flex flex-col items-center gap-4 py-8">
-          <FingerprintIcon className="size-16 animate-pulse text-tinyrack-primary" />
-          <p className="text-center text-tinyrack-text-muted">
+        <div className="flex flex-col items-center gap-tinyrack-lg py-tinyrack-xl">
+          <FingerprintIcon
+            aria-hidden
+            className="size-16 animate-pulse text-tinyrack-primary"
+          />
+          <TRText align="center" as="p" color="muted" variant="body">
             {t('setupPasskey.waiting')}
-          </p>
+          </TRText>
         </div>
-      </PageLayout>
+      </AuthLayout>
     );
   }
 
   // Error state
   if (step === 'error') {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
+      <AuthLayout>
+        <AuthPageHeader
           subtitle={t('setupPasskey.subtitle')}
           title={t('setupPasskey.title')}
         />
-        <Alert icon={WarningCircleIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {errorMessage}
         </Alert>
-        {canUseTotpSetup && (
-          <TRLinkButton
-            className="mt-4 w-full gap-2"
-            intent="primary"
-            render={
-              <Link search={extractOAuthParams(search)} to="/setup/totp" />
-            }
+
+        <div className="flex flex-col gap-tinyrack-sm">
+          {canUseTotpSetup && (
+            <TRLinkButton
+              className="w-full gap-tinyrack-sm"
+              intent="primary"
+              render={
+                <Link search={extractOAuthParams(search)} to="/setup/totp" />
+              }
+              uiSize="lg"
+            >
+              <ShieldCheckIcon aria-hidden className="size-5" />
+              {t('setupPasskey.useTotp')}
+            </TRLinkButton>
+          )}
+          <TRButton
+            appearance={canUseTotpSetup ? 'outline' : 'solid'}
+            className="w-full"
+            intent={canUseTotpSetup ? 'neutral' : 'primary'}
+            onClick={() => {
+              if (search.passkey_name) {
+                setStep('registering');
+                setErrorMessage('');
+                registerMutation.mutate({ name: search.passkey_name });
+              } else {
+                setStep('form');
+              }
+            }}
+            type="button"
+            uiSize="lg"
           >
-            <ShieldCheckIcon className="size-5" weight="regular" />
-            {t('setupPasskey.useTotp')}
-          </TRLinkButton>
-        )}
-        <TRButton
-          appearance={canUseTotpSetup ? 'outline' : 'solid'}
-          className="mt-4 w-full"
-          intent={canUseTotpSetup ? 'neutral' : 'primary'}
-          onClick={() => {
-            if (search.passkey_name) {
-              setStep('registering');
-              setErrorMessage('');
-              registerMutation.mutate({ name: search.passkey_name });
-            } else {
-              setStep('form');
+            {t('setupPasskey.retry')}
+          </TRButton>
+        </div>
+
+        <AuthFooter>
+          <AuthFooterLink
+            link={
+              <Link search={extractOAuthParams(search)} to="/login">
+                {t('setupPasskey.backToLogin')}
+              </Link>
             }
-          }}
-          type="button"
-        >
-          {t('setupPasskey.retry')}
-        </TRButton>
-        <FooterLink
-          as={Link}
-          linkText={t('setupPasskey.backToLogin')}
-          search={extractOAuthParams(search)}
-          text=""
-          to="/login"
-        />
-      </PageLayout>
+          />
+        </AuthFooter>
+      </AuthLayout>
     );
   }
 
   // Form state
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('setupPasskey.subtitle')}
         title={t('setupPasskey.title')}
       />
@@ -229,54 +243,46 @@ function SetupPasskey() {
         {t('setupPasskey.required')}
       </Alert>
 
-      <p className="mt-4 text-center text-tinyrack-sm text-tinyrack-text-muted">
+      <TRText align="center" as="p" color="muted" variant="bodySm">
         {t('setupPasskey.description')}
-      </p>
+      </TRText>
 
       <form
-        className="mt-4 flex flex-col gap-4"
+        className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
-        <TRField.Root uiSize="md">
-          <TRField.Label htmlFor="passkey-name">
-            {t('setupPasskey.name.label')}
-          </TRField.Label>
-          <TRInput
-            aria-invalid={errors.name ? true : undefined}
-            data-invalid={errors.name ? '' : undefined}
-            id="passkey-name"
-            placeholder={t('setupPasskey.name.placeholder')}
-            type="text"
-            {...register('name')}
-          />
-          {!errors.name && (
-            <TRField.Description>
-              {t('setupPasskey.name.hint')}
-            </TRField.Description>
-          )}
-          {errors.name && (
-            <div className="tr-field-error" data-testid="field-error">
-              {errors.name.message}
-            </div>
-          )}
-        </TRField.Root>
+        <AuthField
+          error={errors.name}
+          hint={t('setupPasskey.name.hint')}
+          icon={TagIcon}
+          id="passkey-name"
+          label={t('setupPasskey.name.label')}
+          placeholder={t('setupPasskey.name.placeholder')}
+          {...register('name')}
+          type="text"
+        />
 
-        <SubmitButton
-          className="mt-2"
-          isPending={registerMutation.isPending}
-          pendingText={t('setupPasskey.registering')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={registerMutation.isPending}
+          loadingLabel={t('setupPasskey.registering')}
+          type="submit"
+          uiSize="lg"
         >
           {t('setupPasskey.continue')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
-      <FooterLink
-        as={Link}
-        linkText={t('setupPasskey.backToLogin')}
-        search={extractOAuthParams(search)}
-        text=""
-        to="/login"
-      />
-    </PageLayout>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('setupPasskey.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
+    </AuthLayout>
   );
 }

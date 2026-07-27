@@ -1,0 +1,225 @@
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { TRField } from '@tinyrack/ui/components/field';
+import { TRInput } from '@tinyrack/ui/components/input';
+import { TRText } from '@tinyrack/ui/components/text';
+import { TriangleAlertIcon } from 'lucide-react';
+import type { FormEvent } from 'react';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import {
+  parseUserRole,
+  type UserModalState,
+} from '#frontend/features/admin/users/admin-users-filters.ts';
+
+type AdminUserFormModalProps = {
+  modal: UserModalState;
+  isMutating: boolean;
+  onClose: () => void;
+  onCreate: (values: {
+    email: string;
+    password: string;
+    role: 'user' | 'admin';
+    email_verified: boolean;
+  }) => void;
+  onUpdate: (values: {
+    sub: string;
+    email: string;
+    role: 'user' | 'admin';
+    email_verified: boolean;
+  }) => void;
+  onDelete: (sub: string) => void;
+};
+
+export function AdminUserFormModal({
+  modal,
+  isMutating,
+  onClose,
+  onCreate,
+  onUpdate,
+  onDelete,
+}: AdminUserFormModalProps) {
+  const { t } = useTranslation();
+  const defaultValues = useMemo(
+    () => (modal?.type === 'edit' ? modal.user : null),
+    [modal],
+  );
+
+  if (!modal) return null;
+
+  if (modal.type === 'delete') {
+    return (
+      <Modal
+        isOpen
+        onClose={onClose}
+        title={t('admin.users.deleteTitle', { email: modal.user.email })}
+        variant="destructive"
+      >
+        <div className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-lg text-tinyrack-danger">
+          <div className="flex items-center gap-tinyrack-sm">
+            <TriangleAlertIcon aria-hidden className="size-4" />
+            <TRText as="p" weight="medium">
+              {t('admin.users.deleteWarning')}
+            </TRText>
+          </div>
+          <TRText as="p" variant="bodySm">
+            {t('admin.users.deleteDescription')}
+          </TRText>
+        </div>
+        <ModalActions>
+          <TRButton
+            disabled={isMutating}
+            onClick={onClose}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.cancel')}
+          </TRButton>
+          <TRButton
+            disabled={isMutating}
+            intent="danger"
+            onClick={() => onDelete(modal.user.sub)}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.deleteConfirm')}
+          </TRButton>
+        </ModalActions>
+      </Modal>
+    );
+  }
+
+  const title =
+    modal.type === 'create'
+      ? t('admin.users.create')
+      : t('admin.users.editTitle');
+  const submit =
+    modal.type === 'create'
+      ? t('admin.users.createSubmit')
+      : t('admin.users.save');
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const values = {
+      email: String(formData.get('email') ?? ''),
+      role: parseUserRole(formData.get('role')),
+      email_verified: formData.get('email_verified') === 'on',
+    };
+    if (modal.type === 'create') {
+      onCreate({
+        ...values,
+        password: String(formData.get('password') ?? ''),
+      });
+    } else {
+      onUpdate({ sub: modal.user.sub, ...values });
+    }
+  };
+
+  return (
+    <Modal
+      description={
+        modal.type === 'create'
+          ? t('admin.users.createHint')
+          : t('admin.users.editHint')
+      }
+      isOpen
+      onClose={onClose}
+      title={title}
+    >
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit}
+      >
+        <TRField.Root>
+          <TRField.Label htmlFor="admin-user-email">
+            {t('profile.email.label')}
+          </TRField.Label>
+          <TRInput
+            defaultValue={defaultValues?.email ?? ''}
+            id="admin-user-email"
+            name="email"
+            required
+            type="email"
+            uiSize="sm"
+          />
+        </TRField.Root>
+
+        {modal.type === 'create' ? (
+          <TRField.Root>
+            <TRField.Label htmlFor="admin-user-password">
+              {t('admin.users.password')}
+            </TRField.Label>
+            <TRInput
+              id="admin-user-password"
+              name="password"
+              required
+              type="password"
+              uiSize="sm"
+            />
+          </TRField.Root>
+        ) : null}
+
+        <TRField.Root>
+          <TRField.Label htmlFor="admin-user-role">
+            {t('admin.users.role')}
+          </TRField.Label>
+          {/*
+            Deliberately a native `<select>`, not `TRSelect`. This is the only
+            raw control left in admin and it stays: the design system's select
+            is a `button[role=combobox]`, and the directory test drives this
+            field with Playwright's `selectOptions`, which requires a real
+            `HTMLSelectElement`. Swapping it would buy design-system parity at
+            the cost of the only coverage this form has.
+          */}
+          <select
+            className="h-tinyrack-control-height-md w-full rounded-tinyrack-sm border border-tinyrack-control-border bg-tinyrack-surface px-tinyrack-md text-tinyrack-control-sm text-tinyrack-text focus:border-tinyrack-focus focus:outline-hidden"
+            defaultValue={defaultValues?.role ?? 'user'}
+            id="admin-user-role"
+            name="role"
+          >
+            <option value="user">{t('admin.users.roleUser')}</option>
+            <option value="admin">{t('admin.users.roleAdmin')}</option>
+          </select>
+        </TRField.Root>
+
+        <TRField.Root>
+          <div className="flex items-center gap-tinyrack-md rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface px-tinyrack-md py-tinyrack-sm">
+            <TRCheckbox.Root
+              aria-label={t('admin.users.emailVerified')}
+              defaultChecked={defaultValues?.email_verified ?? false}
+              name="email_verified"
+              uiSize="sm"
+              value="on"
+            >
+              <TRCheckbox.Indicator />
+            </TRCheckbox.Root>
+            <TRField.Label className="cursor-pointer">
+              {t('admin.users.emailVerified')}
+            </TRField.Label>
+          </div>
+        </TRField.Root>
+
+        <ModalActions>
+          <TRButton
+            disabled={isMutating}
+            onClick={onClose}
+            type="button"
+            uiSize="sm"
+          >
+            {t('admin.users.cancel')}
+          </TRButton>
+          <TRButton
+            disabled={isMutating}
+            intent="primary"
+            type="submit"
+            uiSize="sm"
+          >
+            {submit}
+          </TRButton>
+        </ModalActions>
+      </form>
+    </Modal>
+  );
+}

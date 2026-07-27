@@ -3,10 +3,16 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { TRText } from '@tinyrack/ui/components/text';
+import { NetworkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AdminDisabledPanel } from '#frontend/features/admin/admin-disabled-panel.tsx';
+import { AdminGateScreen } from '#frontend/features/admin/admin-gate-screen.tsx';
 import { AdminShell } from '#frontend/features/admin/admin-shell.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AdminStat } from '#frontend/features/admin/admin-stat.tsx';
+import {
+  formatAdminRole,
+  formatManagedBy,
+} from '#frontend/features/admin/format-admin-user.ts';
 import { adminUsersQueryOptions } from '#frontend/queries/admin-users.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import type { SessionUser } from '#frontend/queries/session.ts';
@@ -22,20 +28,10 @@ export const Route = createFileRoute('/admin/')({
 });
 
 function AdminDashboard() {
-  const { t } = useTranslation();
   const user = Route.useRouteContext({ select: (context) => context.user });
 
   if (user?.role !== 'admin') {
-    return (
-      <PageLayout cardPadding maxWidth="md">
-        <h1 className="mb-2 text-center font-bold text-2xl">
-          {t('admin.accessRequired')}
-        </h1>
-        <p className="text-center text-tinyrack-text-muted">
-          {t('admin.accessRequiredDescription')}
-        </p>
-      </PageLayout>
-    );
+    return <AdminGateScreen reason="access-required" />;
   }
 
   return <AdminDashboardGate user={user} />;
@@ -44,7 +40,7 @@ function AdminDashboard() {
 function AdminDashboardGate({ user }: { user: SessionUser }) {
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
   if (!config.admin.enabled) {
-    return <AdminDisabledPanel />;
+    return <AdminGateScreen reason="console-disabled" />;
   }
   return <AdminDashboardContent user={user} />;
 }
@@ -73,19 +69,19 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
       user={user}
     >
       <div className="flex flex-col divide-y divide-tinyrack-border overflow-hidden rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface shadow-tinyrack-raised lg:flex-row lg:divide-x lg:divide-y-0">
-        <MetricStat
+        <AdminStat
           accent="bg-tinyrack-primary"
           hint={t('admin.metrics.totalUsersHint')}
           label={t('admin.metrics.totalUsers')}
           value={data.pagination.total}
         />
-        <MetricStat
+        <AdminStat
           accent="bg-tinyrack-success"
           hint={t('admin.metrics.adminsHint')}
           label={t('admin.metrics.admins')}
           value={admins}
         />
-        <MetricStat
+        <AdminStat
           accent="bg-tinyrack-info"
           hint={t('admin.metrics.databaseUsersHint')}
           label={t('admin.metrics.databaseUsers')}
@@ -93,22 +89,26 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_0.75fr]">
+      {/* 2:1 rather than the 1.35:0.75 arbitrary value — the same ratio to the eye. */}
+      <div className="grid gap-tinyrack-xl xl:grid-cols-3">
         <TRCard.Root
-          className="overflow-hidden border-tinyrack-border shadow-tinyrack-raised"
+          className="overflow-hidden border-tinyrack-border shadow-tinyrack-raised xl:col-span-2"
           variant="outlined"
         >
           <TRCard.Content className="p-0">
-            <div className="flex flex-col gap-4 border-tinyrack-border border-b p-6 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-tinyrack-full bg-tinyrack-primary" />
-                  <span className="font-medium text-tinyrack-text-muted text-tinyrack-xs uppercase tracking-wide">
+            <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b p-tinyrack-xl sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-tinyrack-sm">
+                <div className="flex items-center gap-tinyrack-sm">
+                  <NetworkIcon
+                    aria-hidden
+                    className="size-4 text-tinyrack-primary"
+                  />
+                  <TRText color="muted" variant="label">
                     {t('admin.identityGraph')}
-                  </span>
+                  </TRText>
                 </div>
                 <TRCard.Title>{t('admin.users.title')}</TRCard.Title>
-                <TRCard.Description className="mt-1 text-tinyrack-sm">
+                <TRCard.Description className="text-tinyrack-sm">
                   {t('admin.users.description')}
                 </TRCard.Description>
               </div>
@@ -123,20 +123,30 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
 
             <div className="grid gap-0 divide-y divide-tinyrack-border md:grid-cols-2 md:divide-x md:divide-y-0">
               {data.users.slice(0, 4).map((managedUser) => (
-                <div
-                  className="group bg-tinyrack-surface p-5 transition hover:bg-tinyrack-surface-hover"
+                <Link
+                  className="group flex flex-col gap-tinyrack-lg bg-tinyrack-surface p-tinyrack-lg transition hover:bg-tinyrack-surface-hover"
                   key={managedUser.sub}
+                  to="/admin/users"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
+                  <div className="flex items-start justify-between gap-tinyrack-lg">
+                    <div className="flex min-w-0 flex-col gap-tinyrack-xs">
+                      <TRText as="p" truncate variant="bodySm" weight="medium">
                         {managedUser.email}
-                      </p>
-                      <p className="mt-1 truncate font-mono text-tinyrack-text-muted text-tinyrack-xs">
-                        {managedUser.sub}
-                      </p>
+                      </TRText>
+                      {/*
+                        Mono on a bare span: a font utility on `TRText` loses to
+                        the component's own per-variant `font-family` rule.
+                      */}
+                      <TRText as="p" color="muted" truncate variant="caption">
+                        <span className="font-tinyrack-mono">
+                          {managedUser.sub}
+                        </span>
+                      </TRText>
                     </div>
+                    {/* `shrink-0`: without it the tile squeezes the badge and
+                        "User" wraps to two lines. */}
                     <TRBadge
+                      className="shrink-0"
                       uiSize="sm"
                       variant={
                         managedUser.role === 'admin' ? 'neutral' : undefined
@@ -145,18 +155,18 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
                       {formatAdminRole(t, managedUser.role)}
                     </TRBadge>
                   </div>
-                  <div className="mt-4 flex items-center justify-between text-xs">
+                  <div className="flex items-center justify-between gap-tinyrack-sm">
                     <TRBadge uiSize="sm">
                       {formatManagedBy(t, managedUser.managed_by)}
                     </TRBadge>
-                    <span className="text-tinyrack-text-muted">
+                    <TRText color="muted" variant="caption">
                       {t('admin.users.verifiedLabel')}{' '}
                       {managedUser.email_verified
                         ? t('common.yes')
                         : t('common.no')}
-                    </span>
+                    </TRText>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </TRCard.Content>
@@ -166,17 +176,17 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
           className="overflow-hidden border-tinyrack-border shadow-tinyrack-raised"
           variant="outlined"
         >
-          <TRCard.Content>
+          <TRCard.Content className="flex flex-col items-start gap-tinyrack-md">
             <TRBadge uiSize="sm" variant="neutral">
               {t('admin.policy.title')}
             </TRBadge>
-            <TRCard.Title className="mt-3 text-tinyrack-xl">
+            <TRCard.Title className="text-tinyrack-xl">
               {t('admin.policy.heading')}
             </TRCard.Title>
-            <TRCard.Description className="mt-1 text-tinyrack-sm">
+            <TRCard.Description className="text-tinyrack-sm">
               {t('admin.policy.description')}
             </TRCard.Description>
-            <div className="mt-6 space-y-3">
+            <div className="flex w-full flex-col gap-tinyrack-md">
               <PolicyRow
                 label={t('admin.metrics.configUsers')}
                 value={configUsers}
@@ -197,49 +207,6 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
   );
 }
 
-function formatAdminRole(
-  t: ReturnType<typeof useTranslation>['t'],
-  role: SessionUser['role'],
-) {
-  return role === 'admin'
-    ? t('admin.users.roleAdmin')
-    : t('admin.users.roleUser');
-}
-
-function formatManagedBy(
-  t: ReturnType<typeof useTranslation>['t'],
-  managedBy: 'database' | 'config',
-) {
-  return managedBy === 'database'
-    ? t('admin.users.sourceDatabase')
-    : t('admin.users.sourceConfig');
-}
-
-function MetricStat({
-  label,
-  value,
-  hint,
-  accent,
-}: {
-  label: string;
-  value: number;
-  hint: string;
-  accent: string;
-}) {
-  return (
-    <div className="flex-1 p-6">
-      <div className={`mb-4 h-1.5 w-16 rounded-tinyrack-full ${accent}`} />
-      <div className="text-tinyrack-sm text-tinyrack-text-muted">{label}</div>
-      <div className="mt-1 font-bold text-tinyrack-3xl text-tinyrack-text">
-        {value}
-      </div>
-      <div className="mt-2 text-tinyrack-text-muted text-tinyrack-xs">
-        {hint}
-      </div>
-    </div>
-  );
-}
-
 function PolicyRow({
   label,
   value,
@@ -248,8 +215,10 @@ function PolicyRow({
   value: number | string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted px-4 py-3">
-      <span className="text-tinyrack-text-muted">{label}</span>
+    <div className="flex items-center justify-between gap-tinyrack-sm rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted px-tinyrack-lg py-tinyrack-md">
+      <TRText color="muted" variant="bodySm">
+        {label}
+      </TRText>
       <TRBadge uiSize="sm" variant="neutral">
         {value}
       </TRBadge>

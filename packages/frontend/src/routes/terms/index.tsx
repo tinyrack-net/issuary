@@ -1,5 +1,4 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
@@ -11,20 +10,21 @@ import {
   redirect,
   useRouter,
 } from '@tanstack/react-router';
-import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TriangleAlertIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import {
   TermsCheckboxList,
   type TermsConsentsField,
 } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { OAuthSearchSchema } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -195,57 +195,59 @@ function Terms() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader title={t('terms.title')} />
+    <AuthLayout width="wide">
+      <AuthPageHeader title={t('terms.title')} />
 
       {implicitNotice && (
-        <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
-          <div
-            className="prose prose-sm text-xs! **:text-xs!"
-            dangerouslySetInnerHTML={{ __html: implicitNotice }}
-          />
-        </div>
+        <div
+          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          dangerouslySetInnerHTML={{ __html: implicitNotice }}
+        />
       )}
 
       {implicitNotice && hasExplicitTerms && (
-        <div className="my-4 flex items-center gap-2 text-tinyrack-xs">
-          <TRSeparator className="flex-1" />
-          <span className="text-tinyrack-text-muted">
-            {t('terms.additionalOptionalConsent')}
-          </span>
-          <TRSeparator className="flex-1" />
-        </div>
+        <LabeledSeparator label={t('terms.additionalOptionalConsent')} />
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         {/* Explicit terms with checkboxes */}
         {hasExplicitTerms && (
-          <div className="mb-6">
-            <TermsCheckboxList
-              control={control}
-              disabled={consentMutation.isPending}
-              errors={errors}
-              setValue={setValue}
-              terms={explicitTerms}
-            />
-          </div>
+          <TermsCheckboxList
+            control={control}
+            disabled={consentMutation.isPending}
+            errors={errors}
+            setValue={setValue}
+            terms={explicitTerms}
+          />
         )}
 
         {/* Error message */}
         {consentMutation.isError && (
-          <Alert className="mb-4" icon={WarningIcon} type="error">
+          <Alert icon={TriangleAlertIcon} type="error">
             {t('terms.error.submitFailed')}
           </Alert>
         )}
 
-        {/* Submit button */}
-        <SubmitButton
-          isPending={consentMutation.isPending}
-          pendingText={t('terms.submit')}
-        >
-          {t('terms.submit')}
-        </SubmitButton>
+        {/*
+          Sticky, like consent: a long list of terms would otherwise push the
+          only action off the bottom of the screen.
+        */}
+        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t bg-tinyrack-canvas/80 py-tinyrack-md backdrop-blur-sm">
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={consentMutation.isPending}
+            loadingLabel={t('terms.submit')}
+            type="submit"
+            uiSize="lg"
+          >
+            {t('terms.submit')}
+          </TRButton>
+        </div>
       </form>
-    </PageLayout>
+    </AuthLayout>
   );
 }

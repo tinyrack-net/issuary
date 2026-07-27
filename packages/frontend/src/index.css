@@ -1,3 +1,29 @@
+/*
+ * IBM Plex Sans is the only typeface the Tinyrack design system allows, but
+ * `@tinyrack/ui` ships no `@font-face` — the consumer has to load it.
+ *
+ * Latin uses the variable build because `--tinyrack-weight-heading` is 650,
+ * which has no static counterpart in fontsource.
+ *
+ * KR/JP have no variable build published, so they use the numbered-subset
+ * entrypoints (`400.css`, not `korean-400.css`): those split each weight into
+ * ~95 `unicode-range` chunks, so a browser only downloads the chunks holding
+ * glyphs it actually paints. The `korean-*.css` / `japanese-*.css`
+ * entrypoints are single unchunked 0.5-0.9 MB files and must not be used.
+ */
+@import "@fontsource-variable/ibm-plex-sans/wght.css";
+@import "@fontsource/ibm-plex-sans-kr/400.css";
+@import "@fontsource/ibm-plex-sans-kr/600.css";
+@import "@fontsource/ibm-plex-sans-kr/700.css";
+@import "@fontsource/ibm-plex-sans-jp/400.css";
+@import "@fontsource/ibm-plex-sans-jp/600.css";
+@import "@fontsource/ibm-plex-sans-jp/700.css";
+/*
+ * Required since `@tinyrack/ui` 0.11.0, which pointed `--tinyrack-font-mono` at
+ * a real monospace face. Recovery codes and error codes are the surfaces that
+ * depend on it, and they only need the regular weight.
+ */
+@import "@fontsource/ibm-plex-mono/400.css";
 @import "tailwindcss";
 @import "@tinyrack/ui/core.css";
 @import "@tinyrack/ui/components/accordion.css";
@@ -32,8 +58,74 @@
 @import "@tinyrack/ui/components/switch.css";
 @import "@tinyrack/ui/components/table.css";
 @import "@tinyrack/ui/components/tabs.css";
-@import "@tinyrack/ui/components/textarea.css";
+@import "@tinyrack/ui/components/text.css";
 @import "@tinyrack/ui/components/toast.css";
 @import "@tinyrack/ui/components/toggle.css";
 @import "@tinyrack/ui/components/toggle-group.css";
 @import "@tinyrack/ui/components/tooltip.css";
+
+/*
+ * Extends the design system's prose font tokens for this app.
+ *
+ * Upstream deliberately names a single family with no fallback so the typeface
+ * is never silently substituted, and documents font loading as the consumer's
+ * job — `@tinyrack/docs` extends the stack for its own surfaces the same way.
+ * Two things have to be added here: the variable build registers under the
+ * family name `IBM Plex Sans Variable`, which the bare upstream value never
+ * matches, and this app ships Korean and Japanese, whose faces the Latin one
+ * does not cover.
+ *
+ * The mono token is left alone — since 0.11.0 upstream resolves it to a real
+ * monospace face, which is why `@fontsource/ibm-plex-mono` is loaded above.
+ */
+:root {
+  --tinyrack-font-body:
+    "IBM Plex Sans Variable", "IBM Plex Sans", "IBM Plex Sans KR",
+    "IBM Plex Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tinyrack-font-heading: var(--tinyrack-font-body);
+}
+
+/*
+ * `core.css` never applies a family to the document, and overlays (dialog,
+ * toast, select popups) portal outside `#root`, so this has to live on `body`
+ * rather than on a React-rendered wrapper.
+ */
+html,
+body {
+  font-family: var(--tinyrack-font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Entry animation for auth screen content.
+ *
+ * The design system ships motion tokens but no keyframes or `animate-*`
+ * utilities, so this is defined locally. It is deliberately the only
+ * hand-written animation: every overlay (dialog, toast, select, tooltip)
+ * already animates from its own component CSS via Base UI's data attributes.
+ *
+ * Applied to the content wrapper only, never to navigation — several auth
+ * flows finish with a hard `window.location` redirect, and animating the
+ * transition itself would race it.
+ */
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.auth-enter {
+  animation: auth-enter var(--tinyrack-duration-normal) var(--tinyrack-ease-out)
+    both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-enter {
+    animation: none;
+  }
+}

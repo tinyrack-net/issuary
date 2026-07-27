@@ -24,6 +24,14 @@ dist-ssr
 *.sw?
 *.tsbuildinfo
 
+# Vitest browser-mode failure screenshots
+.vitest-attachments/
+
+# Ad-hoc visual QA scratch
+.shots/
+shot.mjs
+probe.mjs
+
 # Playwright
 test-results/
 playwright-report/

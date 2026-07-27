@@ -89,7 +89,13 @@ export const emailVerifyPage = {
   tokenInput: 'input[name="token"]',
   submitButton: 'button[type="submit"]',
   resendButton: '[data-testid="email-verify-resend"]',
+  /** The terminal "verified" state. */
   successAlert: '[data-testid="alert-success"]',
+  /**
+   * Resending is confirmed with a toast, not an inline alert — nothing is lost
+   * by dismissing it, so it does not belong on the page.
+   */
+  resendToast: '.tr-toast',
   goToProfileButton: '[data-testid="email-verify-go-profile"]',
   fieldError: '[data-testid="field-error"]',
 } as const;

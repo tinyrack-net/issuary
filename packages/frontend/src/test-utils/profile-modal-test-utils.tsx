@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TRToast } from '@tinyrack/ui/components/toast';
 import type { ReactNode } from 'react';
 import type { RenderResult } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
@@ -87,8 +88,12 @@ export async function renderProfileModal(
   initTestI18n();
   queryClient.setQueryData(appConfigQueryOptions.queryKey, config);
 
+  // Mirrors the provider stack in main.tsx. The recovery-codes step confirms
+  // a copy with a toast, so it needs a manager in context.
   const screen = await render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+    <QueryClientProvider client={queryClient}>
+      <TRToast.Provider>{ui}</TRToast.Provider>
+    </QueryClientProvider>,
   );
 
   return { screen, queryClient };

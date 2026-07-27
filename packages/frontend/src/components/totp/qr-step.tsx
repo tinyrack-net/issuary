@@ -20,17 +20,24 @@ export function QrStep({
   const { t } = useTranslation();
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      <p className="text-center text-tinyrack-text-muted text-tinyrack-xs">
+    <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
+      <p className="text-center text-tinyrack-sm text-tinyrack-text-muted">
         {t('setupTotp.qrDescription')}
       </p>
 
+      {/*
+        The QR sits on its own light surface with padding for the quiet zone.
+        Rendered straight onto the canvas it inherited the dark theme's
+        background, and scanners need the margin and the contrast to lock on.
+      */}
       <div className="flex justify-center">
-        <img
-          alt="TOTP QR Code"
-          className="h-40 w-40 rounded-tinyrack-md border border-tinyrack-border"
-          src={setupData.qr_code}
-        />
+        <div className="rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-tinyrack-lg">
+          <img
+            alt="TOTP QR Code"
+            className="block size-40"
+            src={setupData.qr_code}
+          />
+        </div>
       </div>
 
       <TRCollapsible.Root>
@@ -38,7 +45,7 @@ export function QrStep({
           {t('setupTotp.manualEntry')}
         </TRCollapsible.Trigger>
         <TRCollapsible.Panel>
-          <code className="block break-all rounded-tinyrack-sm bg-tinyrack-surface-muted p-1.5 text-tinyrack-text text-tinyrack-xs">
+          <code className="mt-tinyrack-xs block break-all rounded-tinyrack-sm bg-tinyrack-surface-muted p-tinyrack-sm text-tinyrack-sm text-tinyrack-text">
             {setupData.secret}
           </code>
         </TRCollapsible.Panel>
@@ -50,7 +57,7 @@ export function QrStep({
         intent="primary"
         onClick={onNext}
         type="button"
-        uiSize="sm"
+        uiSize="lg"
       >
         {t('setupTotp.next')}
       </TRButton>

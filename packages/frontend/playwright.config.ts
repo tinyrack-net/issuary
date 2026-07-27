@@ -113,15 +113,39 @@ export default defineConfig({
   globalSetup: './e2e/setup/global-setup.ts',
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 1,
-  workers: process.env['CI'] ? 1 : '100%',
+  /**
+   * A worker here is not just a browser: each scenario fixture also boots its
+   * own Hono server with a MikroORM SQLite database. One per core starves the
+   * machine, and the starvation surfaces as ordinary-looking action timeouts on
+   * whichever tests happened to be running.
+   *
+   * Raising the worker count also buys very little, because the bottleneck is
+   * the single Vite dev server every worker shares rather than the workers
+   * themselves. Measured on a 32-core machine, full suite, `--retries=0`:
+   *
+   *   |  8 (25%) | 10.0-10.6 min | 3/3 runs green |
+   *   | 16 (50%) |  8.3-8.5 min  | 1/2 runs green |
+   *   | 32(100%) |  7.8-8.3 min  | 1/3 runs green |
+   *
+   * So the curve is flat past 8 and the whole cost of determinism is ~2
+   * minutes. Do not raise this without re-measuring both columns.
+   */
+  workers: process.env['CI'] ? 1 : '25%',
   reporter: 'html',
-  timeout: 1000 * 60,
+  /*
+   * Budgets are sized for a loaded machine, not an idle one. Raising them costs
+   * nothing on a green run — a timeout only bounds how long a failure takes to
+   * report — so the headroom is free. Keep them comfortably under `timeout` so
+   * a genuinely stuck action still fails with its own message rather than as a
+   * whole-test timeout.
+   */
+  timeout: 1000 * 90,
   expect: {
-    timeout: 15_000,
+    timeout: 30_000,
   },
   use: {
-    actionTimeout: 15_000,
-    navigationTimeout: 30_000,
+    actionTimeout: 30_000,
+    navigationTimeout: 45_000,
   },
   projects: configs.flatMap((config) =>
     browsers.map((browser) => ({
@@ -129,6 +153,15 @@ export default defineConfig({
       testDir: config.testDir,
       use: {
         trace: 'on-first-retry' as const,
+        /*
+         * Auth screen content animates in, and Playwright waits for an element
+         * to stop moving before acting on it. That is correct, but it puts a
+         * stability window in front of nearly every interaction in this suite
+         * for the sake of decoration. Asking for reduced motion takes the app's
+         * own `prefers-reduced-motion` path, so content is final as soon as it
+         * mounts.
+         */
+        reducedMotion: 'reduce' as const,
         ...browser.device,
       },
     })),

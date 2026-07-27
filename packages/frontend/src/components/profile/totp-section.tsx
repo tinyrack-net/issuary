@@ -1,6 +1,7 @@
-import { ShieldCheckIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { SecurityRow } from '#frontend/components/profile/security-row.tsx';
 
 type TotpModalType = 'setup' | 'disable' | 'regenerate' | null;
 
@@ -18,37 +19,9 @@ export function TotpSection({
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center justify-between p-4">
-      <div className="flex items-center gap-3">
-        <div
-          className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
-            totpEnabled
-              ? 'bg-tinyrack-success-surface'
-              : 'bg-tinyrack-surface-muted'
-          }`}
-        >
-          <ShieldCheckIcon
-            className={`size-4 ${
-              totpEnabled ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
-            }`}
-            weight="regular"
-          />
-        </div>
-        <div>
-          <div className="font-medium text-tinyrack-sm text-tinyrack-text">
-            {t('profile.totp.title')}
-          </div>
-          <div className="text-tinyrack-text-muted text-tinyrack-xs">
-            {totpEnabled
-              ? recoveryCodesMissing
-                ? t('profile.totp.status.recoveryCodesMissing')
-                : t('profile.totp.status.enabled')
-              : t('profile.totp.status.disabled')}
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-wrap justify-end gap-1">
-        {totpEnabled ? (
+    <SecurityRow
+      actions={
+        totpEnabled ? (
           <>
             <TRButton
               appearance="ghost"
@@ -82,8 +55,18 @@ export function TotpSection({
           >
             {t('profile.totp.enable')}
           </TRButton>
-        )}
-      </div>
-    </div>
+        )
+      }
+      active={totpEnabled}
+      icon={ShieldCheckIcon}
+      status={
+        totpEnabled
+          ? recoveryCodesMissing
+            ? t('profile.totp.status.recoveryCodesMissing')
+            : t('profile.totp.status.enabled')
+          : t('profile.totp.status.disabled')
+      }
+      title={t('profile.totp.title')}
+    />
   );
 }

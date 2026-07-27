@@ -1,14 +1,13 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { FingerprintIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { FingerprintIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { queryKeys } from '#frontend/queries/keys.ts';
@@ -107,7 +106,10 @@ export function SetupPasskeyModal({
       title={t('profile.passkey.setupModal.title')}
     >
       {step === 'name' && (
-        <form className="mt-4 space-y-3" onSubmit={handleRegister}>
+        <form
+          className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+          onSubmit={handleRegister}
+        >
           <p className="text-tinyrack-text-muted text-tinyrack-xs">
             {t('profile.passkey.setupModal.description')}
           </p>
@@ -116,26 +118,16 @@ export function SetupPasskeyModal({
             <AlertBanner variant="error">{errorMessage}</AlertBanner>
           )}
 
-          <TRField.Root uiSize="sm">
-            <TRField.Label htmlFor="passkey-name">
-              {t('profile.passkey.setupModal.nameLabel')}
-            </TRField.Label>
-            <TRInput
-              id="passkey-name"
-              placeholder={t('profile.passkey.setupModal.namePlaceholder')}
-              type="text"
-              uiSize="sm"
-              {...form.register('name')}
-            />
-            {form.formState.errors.name && (
-              <div className="tr-field-error" data-testid="setup-passkey-error">
-                {form.formState.errors.name.message}
-              </div>
-            )}
-            <TRField.Description>
-              {t('profile.passkey.setupModal.nameHint')}
-            </TRField.Description>
-          </TRField.Root>
+          <AuthField
+            error={form.formState.errors.name}
+            errorTestId="setup-passkey-error"
+            hint={t('profile.passkey.setupModal.nameHint')}
+            id="passkey-name"
+            label={t('profile.passkey.setupModal.nameLabel')}
+            placeholder={t('profile.passkey.setupModal.namePlaceholder')}
+            {...form.register('name')}
+            type="text"
+          />
 
           <ModalActions>
             <TRButton
@@ -158,7 +150,7 @@ export function SetupPasskeyModal({
             </TRButton>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
-            <p className="mt-2 text-center text-tinyrack-xs">
+            <p className="mt-tinyrack-sm text-center text-tinyrack-xs">
               <TRButton
                 appearance="ghost"
                 intent="primary"
@@ -174,9 +166,9 @@ export function SetupPasskeyModal({
       )}
 
       {step === 'register' && (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           <div
-            className="flex flex-col items-center gap-3 py-6"
+            className="flex flex-col items-center gap-tinyrack-md py-tinyrack-xl"
             data-testid="setup-passkey-loading"
           >
             <TRSpinner uiSize="md" />

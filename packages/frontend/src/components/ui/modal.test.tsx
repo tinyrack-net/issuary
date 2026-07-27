@@ -1,4 +1,4 @@
-import { WarningCircleIcon } from '@phosphor-icons/react';
+import { CircleAlertIcon } from 'lucide-react';
 import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Modal, ModalActions } from './modal';
@@ -32,7 +32,7 @@ test('renders title, description, and children when open', async () => {
 test('renders icon when provided', async () => {
   const screen = await render(
     <Modal
-      icon={WarningCircleIcon}
+      icon={CircleAlertIcon}
       isOpen={true}
       onClose={() => {}}
       title="Warning"
@@ -42,7 +42,9 @@ test('renders icon when provided', async () => {
   );
 
   await expect.element(screen.getByText('Warning')).toBeVisible();
-  expect(screen.baseElement.querySelector('.rounded-full')).not.toBeNull();
+  expect(
+    screen.baseElement.querySelector('.rounded-tinyrack-full'),
+  ).not.toBeNull();
 });
 
 test('close button calls onClose', async () => {

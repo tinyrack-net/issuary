@@ -1,5 +1,5 @@
-import { LinkBreakIcon } from '@phosphor-icons/react';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { Link2OffIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
@@ -44,14 +44,14 @@ export function UnlinkOAuthModal({
       description={t('profile.linkedAccounts.unlinkModal.description', {
         provider: providerName,
       })}
-      icon={LinkBreakIcon}
+      icon={Link2OffIcon}
       isOpen={isOpen}
       onClose={handleClose}
       preventClose={isPending}
       title={t('profile.linkedAccounts.unlinkModal.title')}
       variant="destructive"
     >
-      <div className="mt-4 space-y-3">
+      <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-md">
         <AlertBanner variant="warning">
           {t('profile.linkedAccounts.unlinkModal.warning', {
             provider: providerName,

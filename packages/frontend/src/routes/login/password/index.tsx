@@ -1,23 +1,26 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { EnvelopeSimpleIcon, LockIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLink } from '@tinyrack/ui/components/link';
+import { LockIcon, MailIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -69,12 +72,6 @@ function LoginPassword() {
 
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
 
-  const customTitle =
-    configData.branding.title?.[lang] ??
-    configData.branding.title?.[configData.i18n.fallback_language];
-  const customSubtitle =
-    configData.branding.subtitle?.[lang] ??
-    configData.branding.subtitle?.[configData.i18n.fallback_language];
   const implicitNotice =
     configData.registration.signup_notice?.[lang] ??
     configData.registration.signup_notice?.[configData.i18n.fallback_language];
@@ -246,87 +243,99 @@ function LoginPassword() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
-        iconUrl={configData.branding.icon_url}
-        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
-        title={customTitle ?? t('login.title')}
+    <AuthLayout>
+      {/* Branding lives in the layout's brand panel — see /login. */}
+      <AuthPageHeader
+        subtitle={t('login.selectMethod.subtitle') || undefined}
+        title={t('login.title')}
       />
 
       <AuthorizationContextBanner search={search} />
 
       {isPasswordAuthEnabled && (
-        <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-          <IconInput
+        <form
+          className="flex flex-col gap-tinyrack-lg"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <AuthField
             autoComplete="username webauthn"
             error={errors.email}
-            icon={EnvelopeSimpleIcon}
+            icon={MailIcon}
             label={t('login.email.label')}
             placeholder={t('login.email.placeholder')}
             {...register('email')}
             type="email"
           />
 
-          <IconInput
+          <AuthField
             autoComplete="current-password"
             error={errors.password}
             icon={LockIcon}
             label={t('login.password.label')}
+            /*
+             * On the label row rather than under the field: it belongs to the
+             * password, and putting it between the field and the submit button
+             * separated the two things the user is actually trying to do.
+             */
+            labelAction={
+              configData.email.enabled ? (
+                <TRLink
+                  className="text-tinyrack-xs"
+                  render={<Link to="/password/forgot" />}
+                >
+                  {t('login.link.forgotPassword')}
+                </TRLink>
+              ) : undefined
+            }
             placeholder={t('login.password.placeholder')}
             {...register('password')}
             type="password"
           />
 
-          {configData.email.enabled && (
-            <div className="flex items-center justify-end">
-              <TRLink
-                className="text-tinyrack-sm"
-                render={<Link to="/password/forgot" />}
-              >
-                {t('login.link.forgotPassword')}
-              </TRLink>
-            </div>
-          )}
-
-          <SubmitButton
-            className="mt-2"
-            isPending={loginMutation.isPending}
-            pendingText={t('login.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={loginMutation.isPending}
+            loadingLabel={t('login.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('login.submit')}
-          </SubmitButton>
+          </TRButton>
         </form>
       )}
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
-          <div
-            className="prose prose-sm text-xs! **:text-xs!"
-            dangerouslySetInnerHTML={{ __html: implicitNotice }}
-          />
-        </div>
-      )}
-
-      {configData.registration.public_registration && (
-        <FooterLink
-          as={Link}
-          linkText={t('login.link.register')}
-          search={extractOAuthParams(search)}
-          text={t('login.footer.noAccount')}
-          to="/register"
+        <div
+          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          dangerouslySetInnerHTML={{ __html: implicitNotice }}
         />
       )}
 
-      {hasMultipleLoginMethods && (
-        <div className="mt-3 text-center">
-          <TRLink
-            className="text-tinyrack-sm"
-            render={<Link search={extractOAuthParams(search)} to="/login" />}
-          >
-            {t('login.password.backToMethods')}
-          </TRLink>
-        </div>
+      {(configData.registration.public_registration ||
+        hasMultipleLoginMethods) && (
+        <AuthFooter>
+          {configData.registration.public_registration && (
+            <AuthFooterLink
+              link={
+                <Link search={extractOAuthParams(search)} to="/register">
+                  {t('login.link.register')}
+                </Link>
+              }
+              text={t('login.footer.noAccount')}
+            />
+          )}
+          {hasMultipleLoginMethods && (
+            <AuthFooterLink
+              link={
+                <Link search={extractOAuthParams(search)} to="/login">
+                  {t('login.password.backToMethods')}
+                </Link>
+              }
+            />
+          )}
+        </AuthFooter>
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }

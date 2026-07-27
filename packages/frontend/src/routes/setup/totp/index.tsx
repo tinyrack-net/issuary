@@ -1,23 +1,27 @@
-import {
-  InfoIcon,
-  ShieldCheckIcon,
-  WarningCircleIcon,
-  XCircleIcon,
-} from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRAlert } from '@tinyrack/ui/components/alert';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import {
+  CircleAlertIcon,
+  CircleXIcon,
+  InfoIcon,
+  ShieldCheckIcon,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
+import { AuthSteps } from '#frontend/components/auth/auth-steps.tsx';
 import { QrStep } from '#frontend/components/totp/qr-step.tsx';
 import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
 import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
@@ -182,107 +186,86 @@ function SetupTotp() {
     [verify],
   );
 
-  // Loading state
-  if (step === 'loading') {
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
-          subtitle={t('setupTotp.subtitle')}
-          title={t('setupTotp.title')}
-        />
-        <div
-          className="flex justify-center py-8"
-          data-testid="totp-setup-loading"
-        >
-          <TRSpinner uiSize="lg" variant="primary" />
-        </div>
-      </PageLayout>
-    );
+  const isRecoveryStep = step === 'recovery' && recoveryCodes.length > 0;
+  const isQrStep = step === 'qr' && setupData !== null;
+  // `loading` and `error` are not points on the journey, so the wizard's
+  // progress is hidden there rather than showing a misleading step.
+  const isWizardStep = step !== 'loading' && step !== 'error';
+
+  let wizardIndex = 1;
+  if (isRecoveryStep) {
+    wizardIndex = 2;
+  } else if (isQrStep) {
+    wizardIndex = 0;
   }
 
-  // Error state
-  if (step === 'error') {
-    // Session expired error - show countdown and redirect
-    if (errorType === 'session_expired') {
-      return (
-        <PageLayout cardPadding maxWidth="100">
-          <PageHeader
-            subtitle={t('setupTotp.subtitle')}
-            title={t('setupTotp.title')}
-          />
-          <TRAlert.Root
-            className="mb-4"
-            data-testid="totp-setup-session-expired"
-            variant="warning"
-          >
-            <WarningCircleIcon className="size-5" weight="fill" />
-            <TRAlert.Title>{t('setupTotp.error.expired')}</TRAlert.Title>
-            <TRAlert.Description>
-              {t('setupTotp.redirecting', {
-                seconds: redirectCountdown,
-              })}
-            </TRAlert.Description>
-            <TRAlert.Actions>
-              <TRButton
-                appearance="ghost"
-                intent="neutral"
-                onClick={redirectToLogin}
-                type="button"
-                uiSize="sm"
-              >
-                {t('setupTotp.redirectNow')}
-              </TRButton>
-            </TRAlert.Actions>
-          </TRAlert.Root>
-          <FooterLink
-            as={Link}
-            linkText={t('setupTotp.backToLogin')}
-            search={extractOAuthParams(search)}
-            text=""
-            to="/login"
-          />
-        </PageLayout>
-      );
-    }
+  let title = t('setupTotp.title');
+  let subtitle: string | undefined = t('setupTotp.subtitle');
+  if (isRecoveryStep) {
+    title = t('setupTotp.recoveryCodes.title');
+  } else if (isWizardStep && !isQrStep) {
+    title = t('setupTotp.verifyTitle');
+    subtitle = t('setupTotp.verifySubtitle');
+  }
 
-    // TOTP already enabled error - redirect to profile
-    if (errorType === 'already_enabled') {
-      return (
-        <PageLayout cardPadding maxWidth="100">
-          <PageHeader
-            subtitle={t('setupTotp.subtitle')}
-            title={t('setupTotp.title')}
-          />
-          <Alert className="mb-4" icon={InfoIcon} type="info">
-            {t('setupTotp.error.alreadyEnabled')}
-          </Alert>
+  // Where the original screens offered a way out: the wizard's later steps
+  // deliberately do not, so nobody leaves before saving their codes.
+  const showFooter = step === 'error' || isQrStep;
+
+  let body: React.ReactNode;
+  if (step === 'loading') {
+    body = (
+      <div
+        className="flex justify-center py-tinyrack-xl"
+        data-testid="totp-setup-loading"
+      >
+        <TRSpinner uiSize="lg" variant="primary" />
+      </div>
+    );
+  } else if (step === 'error' && errorType === 'session_expired') {
+    body = (
+      <TRAlert.Root data-testid="totp-setup-session-expired" variant="warning">
+        <CircleAlertIcon aria-hidden className="size-5" />
+        <TRAlert.Title>{t('setupTotp.error.expired')}</TRAlert.Title>
+        <TRAlert.Description>
+          {t('setupTotp.redirecting', {
+            seconds: redirectCountdown,
+          })}
+        </TRAlert.Description>
+        <TRAlert.Actions>
           <TRButton
-            className="w-full"
-            intent="primary"
-            onClick={redirectToProfile}
+            appearance="ghost"
+            intent="neutral"
+            onClick={redirectToLogin}
             type="button"
+            uiSize="sm"
           >
-            {t('setupTotp.goToProfile')}
+            {t('setupTotp.redirectNow')}
           </TRButton>
-          <FooterLink
-            as={Link}
-            linkText={t('setupTotp.backToLogin')}
-            search={extractOAuthParams(search)}
-            text=""
-            to="/login"
-          />
-        </PageLayout>
-      );
-    }
-
-    // Generic error - show retry button
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
-          subtitle={t('setupTotp.subtitle')}
-          title={t('setupTotp.title')}
-        />
-        <Alert className="mb-4" icon={XCircleIcon} type="error">
+        </TRAlert.Actions>
+      </TRAlert.Root>
+    );
+  } else if (step === 'error' && errorType === 'already_enabled') {
+    body = (
+      <>
+        <Alert icon={InfoIcon} type="info">
+          {t('setupTotp.error.alreadyEnabled')}
+        </Alert>
+        <TRButton
+          className="w-full"
+          intent="primary"
+          onClick={redirectToProfile}
+          type="button"
+          uiSize="lg"
+        >
+          {t('setupTotp.goToProfile')}
+        </TRButton>
+      </>
+    );
+  } else if (step === 'error') {
+    body = (
+      <>
+        <Alert icon={CircleXIcon} type="error">
           {t('setupTotp.error.setupFailed')}
         </Alert>
         <TRButton
@@ -292,76 +275,83 @@ function SetupTotp() {
           loading={isSetupPending}
           onClick={startSetup}
           type="button"
+          uiSize="lg"
         >
           {t('setupTotp.retry')}
         </TRButton>
-        <FooterLink
-          as={Link}
-          linkText={t('setupTotp.backToLogin')}
-          search={extractOAuthParams(search)}
-          text=""
-          to="/login"
-        />
-      </PageLayout>
+      </>
     );
-  }
-
-  // Recovery codes step
-  if (step === 'recovery' && recoveryCodes.length > 0) {
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
-          subtitle={t('setupTotp.subtitle')}
-          title={t('setupTotp.recoveryCodes.title')}
-        />
-        <RecoveryCodesStep
-          isLoading={isConfirmPending}
-          onConfirm={confirmRecoveryCodes}
-          recoveryCodes={recoveryCodes}
-        />
-      </PageLayout>
+  } else if (isRecoveryStep) {
+    body = (
+      <RecoveryCodesStep
+        isLoading={isConfirmPending}
+        onConfirm={confirmRecoveryCodes}
+        recoveryCodes={recoveryCodes}
+      />
     );
-  }
-
-  // QR code step
-  if (step === 'qr' && setupData) {
-    return (
-      <PageLayout cardPadding maxWidth="100">
-        <PageHeader
-          subtitle={t('setupTotp.subtitle')}
-          title={t('setupTotp.title')}
-        />
-
-        <Alert className="mb-4" icon={ShieldCheckIcon} type="info">
+  } else if (isQrStep && setupData) {
+    body = (
+      <>
+        <Alert icon={ShieldCheckIcon} type="info">
           {t('setupTotp.required')}
         </Alert>
-
         <QrStep onNext={goToVerify} setupData={setupData} />
-
-        <FooterLink
-          as={Link}
-          linkText={t('setupTotp.backToLogin')}
-          search={extractOAuthParams(search)}
-          text=""
-          to="/login"
-        />
-      </PageLayout>
+      </>
     );
-  }
-
-  // Verify step
-  return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
-        subtitle={t('setupTotp.verifySubtitle')}
-        title={t('setupTotp.verifyTitle')}
-      />
-
+  } else {
+    body = (
       <VerifyStep
         isPending={isVerifyPending}
         onBack={goToQr}
         onSubmit={handleVerify}
       />
-    </PageLayout>
+    );
+  }
+
+  /*
+    One shell, one header. The seven `AuthLayout` blocks this replaced meant
+    the header remounted on every transition, so the title flashed and the
+    progress had nowhere to live.
+  */
+  return (
+    <AuthLayout width={isRecoveryStep ? 'wide' : 'form'}>
+      <AuthPageHeader
+        eyebrow={
+          isWizardStep ? (
+            <AuthSteps
+              current={wizardIndex}
+              progressLabel={t('setupTotp.stepProgress', {
+                current: wizardIndex + 1,
+                total: 3,
+              })}
+              steps={[
+                t('setupTotp.steps.scan'),
+                t('setupTotp.steps.verify'),
+                t('setupTotp.steps.saveCodes'),
+              ]}
+            />
+          ) : undefined
+        }
+        subtitle={subtitle}
+        title={title}
+      />
+
+      {/* Keyed so each step animates in rather than swapping in place. */}
+      <div className="auth-enter flex flex-col gap-tinyrack-lg" key={step}>
+        {body}
+      </div>
+
+      {showFooter && (
+        <AuthFooter>
+          <AuthFooterLink
+            link={
+              <Link search={extractOAuthParams(search)} to="/login">
+                {t('setupTotp.backToLogin')}
+              </Link>
+            }
+          />
+        </AuthFooter>
+      )}
+    </AuthLayout>
   );
 }

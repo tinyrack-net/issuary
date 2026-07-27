@@ -1,13 +1,16 @@
-import { HouseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRLink } from '@tinyrack/ui/components/link';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { TRText } from '@tinyrack/ui/components/text';
+import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { Alert } from '#frontend/components/ui/alert.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
 const errorSearchSchema = z.object({
   code: z.string().optional(),
@@ -27,54 +30,58 @@ function ErrorPage() {
   const errorMessage = search.message || t('error.defaultMessage');
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
-        {t('error.title')}
-      </Alert>
+    <AuthLayout>
+      {/*
+        Nothing to do here but report what happened, so this is the shared
+        terminal-state composition rather than an alert stacked on a header.
+      */}
+      <AuthOutcome
+        description={errorMessage}
+        icon={CircleAlertIcon}
+        title={t('error.subtitle')}
+        tone="danger"
+      >
+        {/*
+          Mono on the code itself, not the label: a font utility on `TRText`
+          loses to the component's own per-variant `font-family` rule, and only
+          the identifier needs fixed-width anyway.
+        */}
+        <TRText color="muted" variant="caption">
+          {t('error.codeLabel')}{' '}
+          <span className="font-tinyrack-mono" data-testid="error-code">
+            {errorCode}
+          </span>
+        </TRText>
 
-      <PageHeader subtitle={errorMessage} title={t('error.subtitle')} />
-
-      {/* Error Code */}
-      <div className="mb-6 rounded-tinyrack-md bg-tinyrack-surface-muted p-4 text-center">
-        <p className="mb-1 text-tinyrack-text-muted text-tinyrack-xs">
-          {t('error.codeLabel')}
-        </p>
-        <code
-          className="font-mono text-tinyrack-danger text-tinyrack-sm"
-          data-testid="error-code"
-        >
-          {errorCode}
-        </code>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-3">
         <TRLinkButton
-          className="w-full font-semibold"
+          className="w-full"
           intent="primary"
           render={<Link to="/login" />}
+          uiSize="lg"
         >
           {t('error.goToLogin')}
         </TRLinkButton>
         <TRButton
-          appearance="outline"
-          className="w-full font-semibold"
+          appearance="ghost"
+          className="w-full"
           intent="neutral"
           onClick={() => window.history.back()}
           type="button"
         >
-          <HouseIcon className="size-4" weight="fill" />
           {t('error.goBack')}
         </TRButton>
-      </div>
+      </AuthOutcome>
 
-      {/* Footer */}
-      <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
-        {t('error.footer.needHelp')}{' '}
-        <TRLink className="font-medium" href="mailto:support@example.com">
-          {t('error.footer.contactSupport')}
-        </TRLink>
-      </div>
-    </PageLayout>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <a href="mailto:support@example.com">
+              {t('error.footer.contactSupport')}
+            </a>
+          }
+          text={t('error.footer.needHelp')}
+        />
+      </AuthFooter>
+    </AuthLayout>
   );
 }

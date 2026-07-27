@@ -1,17 +1,16 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { KeyIcon } from '@phosphor-icons/react';
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
+import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -90,54 +89,35 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
   return (
     <Modal
       description={t('profile.password.setModal.description')}
-      icon={KeyIcon}
+      icon={KeyRoundIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.setModal.title')}
     >
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
-          <TRField.Label htmlFor="new-password">
-            {t('profile.password.setModal.newPassword')}
-          </TRField.Label>
-          <TRInput
-            id="new-password"
-            placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
-            type="password"
-            uiSize="sm"
-            {...form.register('password')}
-          />
-          {form.formState.errors.password && (
-            <div
-              className="tr-field-error"
-              data-testid="set-password-error-password"
-            >
-              {form.formState.errors.password.message}
-            </div>
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+        onSubmit={handleSubmit}
+      >
+        <AuthField
+          error={form.formState.errors.password}
+          errorTestId="set-password-error-password"
+          id="new-password"
+          label={t('profile.password.setModal.newPassword')}
+          placeholder={t('profile.password.setModal.newPasswordPlaceholder')}
+          {...form.register('password')}
+          type="password"
+        />
+        <AuthField
+          error={form.formState.errors.confirmPassword}
+          errorTestId="set-password-error-confirmPassword"
+          id="confirm-password"
+          label={t('profile.password.setModal.confirmPassword')}
+          placeholder={t(
+            'profile.password.setModal.confirmPasswordPlaceholder',
           )}
-        </TRField.Root>
-        <TRField.Root uiSize="sm">
-          <TRField.Label htmlFor="confirm-password">
-            {t('profile.password.setModal.confirmPassword')}
-          </TRField.Label>
-          <TRInput
-            id="confirm-password"
-            placeholder={t(
-              'profile.password.setModal.confirmPasswordPlaceholder',
-            )}
-            type="password"
-            uiSize="sm"
-            {...form.register('confirmPassword')}
-          />
-          {form.formState.errors.confirmPassword && (
-            <div
-              className="tr-field-error"
-              data-testid="set-password-error-confirmPassword"
-            >
-              {form.formState.errors.confirmPassword.message}
-            </div>
-          )}
-        </TRField.Root>
+          {...form.register('confirmPassword')}
+          type="password"
+        />
         {form.formState.errors.root && (
           <AlertBanner variant="error">
             {form.formState.errors.root.message}

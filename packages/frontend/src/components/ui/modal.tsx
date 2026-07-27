@@ -1,6 +1,6 @@
-import type { Icon } from '@phosphor-icons/react';
-import { XIcon } from '@phosphor-icons/react';
 import { TRDialog } from '@tinyrack/ui/components/dialog';
+import type { LucideIcon } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import { type ReactNode, useEffect } from 'react';
 
 type ModalVariant = 'default' | 'destructive';
@@ -13,14 +13,23 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg';
   preventClose?: boolean;
-  icon?: Icon;
+  icon?: LucideIcon;
   variant?: ModalVariant;
 }
 
+/*
+  Set through `--tr-dialog-box-max-width`, the override hook `.tr-dialog-box`
+  exposes, rather than a `max-w-*` utility. The box feeds that same custom
+  property into its own `width: min(…)` calculation, so a utility would move
+  the max-width while leaving the width computation on the old value.
+
+  This is the design system's overlay scale (20/32/48rem), not Tailwind's
+  (24/28/32rem), and `md` is what an unstyled `TRDialog` already defaults to.
+*/
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
+  sm: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-sm)]',
+  md: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-md)]',
+  lg: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-lg)]',
 } as const;
 
 const iconVariantClasses: Record<ModalVariant, string> = {
@@ -68,23 +77,24 @@ export function Modal({
       <TRDialog.Portal>
         <TRDialog.Viewport>
           <TRDialog.Backdrop />
-          <TRDialog.Popup
-            className={`max-h-[90vh] sm:max-h-[85vh] ${sizeClasses[size]}`}
-          >
-            <div className="flex items-start gap-2.5">
+          {/*
+            No max-height here: `.tr-dialog-box` already clamps itself against
+            `100dvh` minus the viewport gap, which is more correct than the
+            `90vh`/`85vh` this used to override it with.
+          */}
+          <TRDialog.Popup className={sizeClasses[size]}>
+            <div className="flex items-start gap-tinyrack-md">
               {IconComponent && (
                 <div
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-full ${iconVariantClasses[variant]}`}
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-tinyrack-full ${iconVariantClasses[variant]}`}
                 >
-                  <IconComponent className="size-4" weight="bold" />
+                  <IconComponent aria-hidden className="size-4" />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <TRDialog.Title className="font-bold text-tinyrack-md">
-                  {title}
-                </TRDialog.Title>
+              <div className="flex min-w-0 flex-1 flex-col gap-tinyrack-3xs">
+                <TRDialog.Title>{title}</TRDialog.Title>
                 {description && (
-                  <TRDialog.Description className="mt-0.5 text-tinyrack-text-muted text-tinyrack-xs">
+                  <TRDialog.Description className="text-tinyrack-text-muted text-tinyrack-xs">
                     {description}
                   </TRDialog.Description>
                 )}
@@ -95,7 +105,7 @@ export function Modal({
                   className="shrink-0"
                   data-testid="modal-close"
                 >
-                  <XIcon className="size-3.5" />
+                  <XIcon aria-hidden className="size-4" />
                 </TRDialog.Close>
               )}
             </div>
@@ -112,5 +122,9 @@ interface ModalActionsProps {
 }
 
 export function ModalActions({ children }: ModalActionsProps) {
-  return <div className="flex justify-end gap-2 pt-4">{children}</div>;
+  return (
+    <div className="flex justify-end gap-tinyrack-sm pt-tinyrack-lg">
+      {children}
+    </div>
+  );
 }

@@ -146,7 +146,8 @@ test.describe('Email verification flow (DB user, email enabled)', () => {
     // Click resend button
     await page.locator(emailVerifyPage.resendButton).click();
 
-    // Should show success alert for resend
-    await expect(page.locator(emailVerifyPage.successAlert)).toBeVisible();
+    // Confirmed with a toast: it is transient feedback, and dismissing it
+    // loses nothing the user still needs.
+    await expect(page.locator(emailVerifyPage.resendToast)).toBeVisible();
   });
 });

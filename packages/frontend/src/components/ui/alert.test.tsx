@@ -1,11 +1,11 @@
-import { InfoIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CircleAlertIcon, InfoIcon } from 'lucide-react';
 import { expect, test } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { Alert } from './alert';
 
 test('renders with error type and children', async () => {
   const screen = await render(
-    <Alert icon={WarningCircleIcon} type="error">
+    <Alert icon={CircleAlertIcon} type="error">
       Error message
     </Alert>,
   );

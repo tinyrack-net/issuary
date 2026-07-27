@@ -1,10 +1,4 @@
 import {
-  ArrowRightIcon,
-  PlusIcon,
-  TrashIcon,
-  UserCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -13,11 +7,19 @@ import { createFileRoute } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRIconButton } from '@tinyrack/ui/components/icon-button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import {
+  ArrowRightIcon,
+  CircleUserRoundIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { AuthChoiceRow } from '#frontend/components/auth/auth-choice-row.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { InitialAvatar } from '#frontend/components/ui/initial-avatar.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthorizeUrl,
   extractOAuthParams,
@@ -94,66 +96,73 @@ function AccountSelect() {
   });
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout width="wide">
+      <AuthPageHeader
         subtitle={t('accountSelect.subtitle')}
         title={t('accountSelect.title')}
       />
 
       {data.accounts.length === 0 ? (
-        <Alert className="mb-4" icon={UserCircleIcon} type="info">
+        <Alert icon={CircleUserRoundIcon} type="info">
           {accountSelectionUnavailable
             ? t('accountSelect.unavailable')
             : t('accountSelect.noRememberedAccounts')}
         </Alert>
       ) : (
-        <div className="flex flex-col gap-2" data-testid="account-list">
+        <div
+          className="flex flex-col gap-tinyrack-xs"
+          data-testid="account-list"
+        >
           {data.accounts.map((account) => (
-            <div
-              className="flex items-center gap-3 rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-3"
-              data-testid="remembered-account"
-              key={account.sub}
-            >
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted text-tinyrack-text-muted">
-                <UserCircleIcon className="size-7" weight="duotone" />
-              </div>
-              <button
-                className="min-w-0 flex-1 text-left"
-                data-testid={`select-account-${account.sub}`}
-                disabled={selectMutation.isPending}
-                onClick={() => selectMutation.mutate({ sub: account.sub })}
-                type="button"
-              >
-                <div className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
-                  {account.email}
-                </div>
-                <div className="text-tinyrack-text-muted text-tinyrack-xs">
-                  {account.current
+            <div data-testid="remembered-account" key={account.sub}>
+              <AuthChoiceRow
+                description={
+                  account.current
                     ? t('accountSelect.currentAccount')
-                    : t('accountSelect.rememberedAccount')}
-                </div>
-              </button>
-              {account.current ? (
-                <TRBadge uiSize="sm" variant="info">
-                  {t('accountSelect.current')}
-                </TRBadge>
-              ) : null}
-              {data.allow_remove_account && !account.current ? (
-                <TRIconButton
-                  appearance="ghost"
-                  aria-label={t('accountSelect.removeAccount', {
-                    email: account.email,
-                  })}
-                  data-testid={`remove-account-${account.sub}`}
-                  disabled={removeMutation.isPending}
-                  intent="neutral"
-                  onClick={() => removeMutation.mutate({ sub: account.sub })}
-                  type="button"
-                  uiSize="sm"
-                >
-                  <TrashIcon className="size-4" />
-                </TRIconButton>
-              ) : null}
+                    : t('accountSelect.rememberedAccount')
+                }
+                label={account.email}
+                leading={<InitialAvatar email={account.email} size="sm" />}
+                /*
+                  Picking an account is a mutation, not navigation, so this
+                  one is a button. No children — the row supplies them.
+                */
+                render={
+                  <button
+                    data-testid={`select-account-${account.sub}`}
+                    disabled={selectMutation.isPending}
+                    onClick={() => selectMutation.mutate({ sub: account.sub })}
+                    type="button"
+                  />
+                }
+                trailing={
+                  <>
+                    {account.current ? (
+                      <TRBadge uiSize="sm" variant="info">
+                        {t('accountSelect.current')}
+                      </TRBadge>
+                    ) : null}
+                    {data.allow_remove_account && !account.current ? (
+                      <TRIconButton
+                        appearance="ghost"
+                        aria-label={t('accountSelect.removeAccount', {
+                          email: account.email,
+                        })}
+                        data-testid={`remove-account-${account.sub}`}
+                        disabled={removeMutation.isPending}
+                        intent="neutral"
+                        onClick={() =>
+                          removeMutation.mutate({ sub: account.sub })
+                        }
+                        type="button"
+                        uiSize="sm"
+                      >
+                        <Trash2Icon aria-hidden className="size-4" />
+                      </TRIconButton>
+                    ) : null}
+                  </>
+                }
+              />
             </div>
           ))}
         </div>
@@ -162,17 +171,17 @@ function AccountSelect() {
       {data.allow_add_account ? (
         <TRLinkButton
           appearance="outline"
-          className="mt-4 w-full justify-between"
+          className="w-full justify-between"
           intent="neutral"
           render={<a href={buildLoginHref(search)} />}
         >
-          <span className="inline-flex items-center gap-2">
-            <PlusIcon className="size-4" />
+          <span className="inline-flex items-center gap-tinyrack-sm">
+            <PlusIcon aria-hidden className="size-4" />
             {t('accountSelect.useAnotherAccount')}
           </span>
-          <ArrowRightIcon className="size-4" />
+          <ArrowRightIcon aria-hidden className="size-4" />
         </TRLinkButton>
       ) : null}
-    </PageLayout>
+    </AuthLayout>
   );
 }

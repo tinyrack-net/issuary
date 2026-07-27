@@ -1,26 +1,26 @@
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
+import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '#frontend/components/ui/alert.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 
 /**
  * Minimal error layout that does NOT depend on any queries.
  *
- * Unlike `PageLayout`, this component never calls
- * `useSuspenseQuery` so it is safe to render even when
- * the network or session is broken.
+ * Unlike `AuthLayout`, this component never calls `useSuspenseQuery` — the
+ * brand panel reads the deployment config, and this renders precisely when
+ * such a query has failed. So it is a single centred column built straight
+ * from tokens, safe to render even when the network or session is broken.
  */
 function MinimalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-tinyrack-canvas p-4">
-      <div className="flex flex-1 items-center justify-center">
-        <div className="w-full max-w-100 rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-12 shadow-tinyrack-raised">
-          {children}
-        </div>
+    <div className="flex min-h-dvh items-center justify-center bg-tinyrack-canvas px-tinyrack-lg py-tinyrack-xl">
+      <div className="flex w-full max-w-tinyrack-measure-xl flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl">
+        {children}
       </div>
     </div>
   );
@@ -80,16 +80,21 @@ export function RouteErrorFallback({
     // Fallback: show a link to login.
     return (
       <MinimalLayout>
-        <Alert className="mb-4" icon={WarningCircleIcon} type="warning">
-          {t('error.sessionExpired')}
-        </Alert>
-        <TRLinkButton
-          className="w-full font-semibold"
-          intent="primary"
-          render={<a href="/login" />}
+        <AuthOutcome
+          description={t('error.sessionExpired')}
+          icon={CircleAlertIcon}
+          title={t('error.subtitle')}
+          tone="danger"
         >
-          {t('error.goToLogin')}
-        </TRLinkButton>
+          <TRLinkButton
+            className="w-full"
+            intent="primary"
+            render={<a href="/login" />}
+            uiSize="lg"
+          >
+            {t('error.goToLogin')}
+          </TRLinkButton>
+        </AuthOutcome>
       </MinimalLayout>
     );
   }
@@ -102,50 +107,43 @@ export function RouteErrorFallback({
 
   return (
     <MinimalLayout>
-      <Alert className="mb-4" icon={WarningCircleIcon} type="error">
-        {t('error.title')}
-      </Alert>
+      <AuthOutcome
+        description={errorMessage}
+        icon={CircleAlertIcon}
+        title={t('error.subtitle')}
+        tone="danger"
+      >
+        {/*
+          Mono on the code itself, not the label: a font utility on `TRText`
+          loses to the component's own per-variant `font-family` rule, and only
+          the identifier needs fixed-width anyway.
+        */}
+        <TRText color="muted" variant="caption">
+          {t('error.codeLabel')}{' '}
+          <span className="font-tinyrack-mono" data-testid="error-code">
+            {errorCode}
+          </span>
+        </TRText>
 
-      <h1 className="mb-0 text-center font-bold text-tinyrack-2xl text-tinyrack-text">
-        {t('error.subtitle')}
-      </h1>
-      <p className="mb-6 text-center text-tinyrack-lg text-tinyrack-text-muted">
-        {errorMessage}
-      </p>
-
-      {/* Error code */}
-      <div className="mb-6 rounded-tinyrack-md bg-tinyrack-surface-muted p-4 text-center">
-        <p className="mb-1 text-tinyrack-text-muted text-tinyrack-xs">
-          {t('error.codeLabel')}
-        </p>
-        <code
-          className="font-mono text-tinyrack-danger text-tinyrack-sm"
-          data-testid="error-code"
-        >
-          {errorCode}
-        </code>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-col gap-3">
         <TRButton
-          className="w-full font-semibold"
+          className="w-full"
           intent="primary"
           onClick={reset}
           type="button"
+          uiSize="lg"
         >
           {t('error.retry')}
         </TRButton>
         <TRButton
           appearance="ghost"
-          className="w-full font-semibold"
+          className="w-full"
           intent="neutral"
           onClick={() => window.history.back()}
           type="button"
         >
           {t('error.goBack')}
         </TRButton>
-      </div>
+      </AuthOutcome>
     </MinimalLayout>
   );
 }

@@ -1,21 +1,20 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import {
-  CloudIcon,
-  DeviceMobileIcon,
-  FingerprintIcon,
-  PencilSimpleIcon,
-  TrashIcon,
-} from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import {
+  CloudIcon,
+  FingerprintIcon,
+  PencilIcon,
+  SmartphoneIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -122,20 +121,20 @@ export function ManagePasskeysModal({
       size="lg"
       title={t('profile.passkey.manageModal.title')}
     >
-      <div className="mt-4 space-y-2">
+      <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-sm">
         {deleteError && (
           <AlertBanner variant="error">{deleteError}</AlertBanner>
         )}
 
         {isLoading && (
-          <div className="flex justify-center py-6">
+          <div className="flex justify-center py-tinyrack-xl">
             <TRSpinner uiSize="md" />
           </div>
         )}
 
         {!isLoading && passkeys.length === 0 && (
           <div
-            className="py-6 text-center text-tinyrack-sm text-tinyrack-text-muted"
+            className="py-tinyrack-xl text-center text-tinyrack-sm text-tinyrack-text-muted"
             data-testid="passkeys-empty"
           >
             <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
@@ -143,7 +142,7 @@ export function ManagePasskeysModal({
         )}
 
         {!isLoading && passkeys.length > 0 && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-tinyrack-sm">
             {passkeys.map((passkey) => (
               <PasskeyItem
                 formatDate={formatDate}
@@ -256,24 +255,20 @@ function PasskeyItem({
   if (isEditing) {
     return (
       <form
-        className="flex flex-col gap-1.5 rounded-tinyrack-md bg-tinyrack-surface-muted p-2"
+        className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-sm"
         onSubmit={handleRename}
       >
-        <TRField.Root uiSize="sm">
-          <TRInput
-            data-testid="passkey-rename-input"
-            placeholder={t('profile.passkey.manageModal.namePlaceholder')}
-            type="text"
-            uiSize="sm"
-            {...form.register('name')}
-          />
-          {form.formState.errors.name && (
-            <div className="tr-field-error" data-testid="passkey-rename-error">
-              {form.formState.errors.name.message}
-            </div>
-          )}
-        </TRField.Root>
-        <div className="flex justify-end gap-1">
+        <AuthField
+          data-testid="passkey-rename-input"
+          error={form.formState.errors.name}
+          errorTestId="passkey-rename-error"
+          hideLabel
+          label={t('profile.passkey.manageModal.nameLabel')}
+          placeholder={t('profile.passkey.manageModal.namePlaceholder')}
+          {...form.register('name')}
+          type="text"
+        />
+        <div className="flex justify-end gap-tinyrack-xs">
           <TRButton
             appearance="ghost"
             disabled={renameMutation.isPending}
@@ -303,14 +298,14 @@ function PasskeyItem({
 
   if (isConfirmingDelete) {
     return (
-      <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-2 text-tinyrack-on-danger">
-        <div className="flex items-center gap-2">
-          <TrashIcon className="size-4" weight="regular" />
+      <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-sm text-tinyrack-on-danger">
+        <div className="flex items-center gap-tinyrack-sm">
+          <Trash2Icon className="size-4" />
           <span className="text-tinyrack-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-tinyrack-xs">
           <TRButton
             appearance="ghost"
             onClick={onCancelDelete}
@@ -334,26 +329,20 @@ function PasskeyItem({
 
   return (
     <div
-      className="flex items-center justify-between rounded-tinyrack-md bg-tinyrack-surface-muted p-2"
+      className="flex items-center justify-between rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-sm"
       data-testid="passkey-item"
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-tinyrack-sm">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon
-            className="size-4 text-tinyrack-primary"
-            weight="regular"
-          />
+          <CloudIcon className="size-4 text-tinyrack-primary" />
         ) : (
-          <DeviceMobileIcon
-            className="size-4 text-tinyrack-primary"
-            weight="regular"
-          />
+          <SmartphoneIcon className="size-4 text-tinyrack-primary" />
         )}
         <div>
           <div className="font-medium text-tinyrack-xs">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </div>
-          <div className="flex items-center gap-1.5 text-tinyrack-text-muted text-tinyrack-xs">
+          <div className="flex items-center gap-tinyrack-xs text-tinyrack-text-muted text-tinyrack-xs">
             <span>
               {t('profile.passkey.manageModal.createdAt', {
                 date: formatDate(passkey.created_at),
@@ -367,7 +356,7 @@ function PasskeyItem({
           </div>
         </div>
       </div>
-      <div className="flex gap-1">
+      <div className="flex gap-tinyrack-xs">
         <TRButton
           appearance="ghost"
           aria-label={t('profile.passkey.manageModal.rename')}
@@ -375,7 +364,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          <PencilSimpleIcon className="size-3.5" weight="regular" />
+          <PencilIcon className="size-3.5" />
         </TRButton>
         <TRButton
           appearance="ghost"
@@ -387,9 +376,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          {isDeleting ? undefined : (
-            <TrashIcon className="size-3.5" weight="regular" />
-          )}
+          {isDeleting ? undefined : <Trash2Icon className="size-3.5" />}
         </TRButton>
       </div>
     </div>

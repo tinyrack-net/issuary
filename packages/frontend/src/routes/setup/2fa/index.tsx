@@ -1,13 +1,16 @@
-import { FingerprintIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { FingerprintIcon, ShieldCheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
+import { AuthChoiceRow } from '#frontend/components/auth/auth-choice-row.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { extractOAuthParams } from '#frontend/libs/oauth-search.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
@@ -26,8 +29,8 @@ function Setup2FA() {
   const oauthParams = extractOAuthParams(search);
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('setup2fa.subtitle')}
         title={t('setup2fa.title')}
       />
@@ -36,31 +39,24 @@ function Setup2FA() {
         {t('setup2fa.required')}
       </Alert>
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-tinyrack-sm">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (
-            <TRLinkButton
-              appearance="outline"
-              className="h-auto w-full cursor-pointer justify-start gap-3 py-3"
-              intent="neutral"
+            <AuthChoiceRow
+              description={t('setup2fa.totp.description')}
+              icon={ShieldCheckIcon}
+              label={t('setup2fa.totp.title')}
+              // No children here — the row supplies them, and an element
+              // passed to `render` with children would override them.
               render={<Link search={oauthParams} to="/setup/totp" />}
-              uiSize="md"
-            >
-              <ShieldCheckIcon className="size-5" weight="regular" />
-              <div className="flex flex-col items-start">
-                <span className="font-medium">{t('setup2fa.totp.title')}</span>
-                <span className="text-tinyrack-text-muted text-tinyrack-xs">
-                  {t('setup2fa.totp.description')}
-                </span>
-              </div>
-            </TRLinkButton>
+            />
           )}
 
         {appConfig.auth.passkey.enabled && (
-          <TRLinkButton
-            appearance="outline"
-            className="h-auto w-full cursor-pointer justify-start gap-3 py-3"
-            intent="neutral"
+          <AuthChoiceRow
+            description={t('setup2fa.passkey.description')}
+            icon={FingerprintIcon}
+            label={t('setup2fa.passkey.title')}
             render={
               <Link
                 search={{
@@ -70,26 +66,19 @@ function Setup2FA() {
                 to="/setup/passkey"
               />
             }
-            uiSize="md"
-          >
-            <FingerprintIcon className="size-5" weight="regular" />
-            <div className="flex flex-col items-start">
-              <span className="font-medium">{t('setup2fa.passkey.title')}</span>
-              <span className="text-tinyrack-text-muted text-tinyrack-xs">
-                {t('setup2fa.passkey.description')}
-              </span>
-            </div>
-          </TRLinkButton>
+          />
         )}
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('setup2fa.backToLogin')}
-        search={oauthParams}
-        text=""
-        to="/login"
-      />
-    </PageLayout>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={oauthParams} to="/login">
+              {t('setup2fa.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
+    </AuthLayout>
   );
 }

@@ -1,24 +1,19 @@
 import {
-  EnvelopeSimpleIcon,
-  FingerprintIcon,
-  WarningCircleIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { CircleAlertIcon, FingerprintIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
+import { AuthMethodTile } from '#frontend/components/auth/auth-method-tile.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
-import { LoginMethodButton } from '#frontend/components/auth/login-method-button.tsx';
-import { LoginMethodList } from '#frontend/components/auth/login-method-list.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -118,14 +113,6 @@ function Login() {
   const isPasskeyEnabled = configData.auth.passkey.enabled;
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
-  // Config-based title/subtitle (overrides i18n defaults)
-  const customTitle =
-    configData.branding.title?.[lang] ??
-    configData.branding.title?.[configData.i18n.fallback_language];
-  const customSubtitle =
-    configData.branding.subtitle?.[lang] ??
-    configData.branding.subtitle?.[configData.i18n.fallback_language];
-
   const handlePasskeySuccess = async (data: AuthResponse) => {
     if (data.user) {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
@@ -194,75 +181,73 @@ function Login() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
-        iconUrl={configData.branding.icon_url}
-        subtitle={customSubtitle ?? t('login.selectMethod.subtitle')}
-        title={customTitle ?? t('login.title')}
+    <AuthLayout>
+      {/*
+        Branding title and subtitle are rendered once, by the brand panel in
+        the layout. Repeating them here would give the page two copies of the
+        product name and two heading nodes with the same text.
+      */}
+      <AuthPageHeader
+        subtitle={t('login.selectMethod.subtitle') || undefined}
+        title={t('login.title')}
       />
 
       <AuthorizationContextBanner search={search} />
 
       {oauthErrorMessage && (
-        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {oauthErrorMessage}
         </Alert>
       )}
 
       {passkeyError && (
-        <Alert className="mb-4" icon={WarningCircleIcon} type="error">
+        <Alert icon={CircleAlertIcon} type="error">
           {passkeyError}
         </Alert>
       )}
 
-      <LoginMethodList>
-        {/* OAuth Providers */}
+      <div className="flex flex-col gap-tinyrack-sm">
         {oauthProviders.map((provider) => (
-          <LoginMethodButton
-            as="a"
-            href={buildOAuthUrl(provider.id)}
+          <AuthMethodTile
             icon={provider.icon_url}
             key={provider.id}
             label={provider.display_name}
             providerType={provider.type}
+            // Leaves the SPA for the provider, so a plain anchor rather than a
+            // router link. No children here — the tile supplies them, and an
+            // element passed to `render` would override them.
+            render={<a href={buildOAuthUrl(provider.id)} />}
           />
         ))}
 
-        {/* Password Login */}
         {isPasswordAuthEnabled && (
-          <LoginMethodButton
-            as="a"
-            href={buildPasswordLoginHref()}
-            icon={<EnvelopeSimpleIcon className="size-6" weight="regular" />}
+          <AuthMethodTile
+            icon={<MailIcon aria-hidden className="size-5" />}
             label={t('login.method.password')}
+            render={<a href={buildPasswordLoginHref()} />}
           />
         )}
 
-        {/* Passkey Login */}
         {isPasskeyEnabled && (
-          <LoginMethodButton
-            as="button"
+          <AuthMethodTile
             disabled={passkeyLoginMutation.isPending}
-            icon={<FingerprintIcon className="size-6" weight="regular" />}
+            icon={<FingerprintIcon aria-hidden className="size-5" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => {
               setPasskeyError(null);
               passkeyLoginMutation.mutate();
             }}
-            type="button"
           />
         )}
-      </LoginMethodList>
+      </div>
 
       {implicitNotice && (
-        <div className="mt-6 text-center text-tinyrack-text-muted text-tinyrack-xs">
-          <div
-            className="prose prose-sm text-xs! **:text-xs!"
-            dangerouslySetInnerHTML={{ __html: implicitNotice }}
-          />
-        </div>
+        <div
+          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          dangerouslySetInnerHTML={{ __html: implicitNotice }}
+        />
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }

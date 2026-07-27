@@ -1,5 +1,5 @@
-import { CheckIcon } from '@phosphor-icons/react';
 import { TRSelect } from '@tinyrack/ui/components/select';
+import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '#frontend/hooks/use-language.ts';
 import { LANGUAGE_LABELS } from '#frontend/i18n/index.ts';
@@ -53,7 +53,16 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
         }}
         value={currentValue}
       >
-        <TRSelect.Trigger data-testid="language-selector" uiSize="sm">
+        {/*
+          The trigger's visible content is the current value, which the
+          combobox role does not expose as its own name, so without this the
+          control announces as an unnamed button.
+        */}
+        <TRSelect.Trigger
+          aria-label={t('common.language.select')}
+          data-testid="language-selector"
+          uiSize="sm"
+        >
           <TRSelect.Value />
         </TRSelect.Trigger>
         <TRSelect.Portal>

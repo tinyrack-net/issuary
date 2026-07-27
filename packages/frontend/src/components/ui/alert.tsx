@@ -1,9 +1,9 @@
-import type { Icon } from '@phosphor-icons/react';
 import { TRAlert } from '@tinyrack/ui/components/alert';
+import type { LucideIcon } from 'lucide-react';
 
 type AlertProps = {
   type: 'success' | 'error' | 'info' | 'warning';
-  icon: Icon;
+  icon: LucideIcon;
   children: React.ReactNode;
   className?: string;
   'data-testid'?: string;
@@ -32,7 +32,7 @@ export function Alert({
       data-testid={dataTestid ?? `alert-${type}`}
       variant={variantMap[type]}
     >
-      <IconComponent className="size-5" weight="fill" />
+      <IconComponent className="size-5" />
       <TRAlert.Title>{children}</TRAlert.Title>
     </TRAlert.Root>
   );

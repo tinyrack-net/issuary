@@ -1,13 +1,12 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { KeyIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
+import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -89,32 +88,27 @@ export function RemovePasswordModal({
   return (
     <Modal
       description={t('profile.password.removeModal.description')}
-      icon={KeyIcon}
+      icon={KeyRoundIcon}
       isOpen={isOpen}
       onClose={handleClose}
       title={t('profile.password.removeModal.title')}
       variant="destructive"
     >
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root uiSize="sm">
-          <TRField.Label htmlFor="current-password-remove">
-            {t('profile.password.removeModal.currentPassword')}
-          </TRField.Label>
-          <TRInput
-            id="current-password-remove"
-            placeholder={t(
-              'profile.password.removeModal.currentPasswordPlaceholder',
-            )}
-            type="password"
-            uiSize="sm"
-            {...form.register('currentPassword')}
-          />
-          {form.formState.errors.currentPassword && (
-            <div className="tr-field-error" data-testid="remove-password-error">
-              {form.formState.errors.currentPassword.message}
-            </div>
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+        onSubmit={handleSubmit}
+      >
+        <AuthField
+          error={form.formState.errors.currentPassword}
+          errorTestId="remove-password-error"
+          id="current-password-remove"
+          label={t('profile.password.removeModal.currentPassword')}
+          placeholder={t(
+            'profile.password.removeModal.currentPasswordPlaceholder',
           )}
-        </TRField.Root>
+          {...form.register('currentPassword')}
+          type="password"
+        />
         {form.formState.errors.root && (
           <AlertBanner variant="error">
             {form.formState.errors.root.message}

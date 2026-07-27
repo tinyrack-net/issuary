@@ -86,7 +86,9 @@ test.describe('Color scheme and language fallback behavior', () => {
     const languageSelector = page.getByTestId('language-selector');
     await languageSelector.click();
 
-    await page.getByRole('option', { name: 'English' }).click();
+    // Exact: the auto option is labelled "Auto (English)", so a substring
+    // match finds two options and fails strict mode.
+    await page.getByRole('option', { exact: true, name: 'English' }).click();
 
     await expect
       .poll(async () => {
@@ -106,10 +108,12 @@ test.describe('Color scheme and language fallback behavior', () => {
     const languageSelector = page.getByTestId('language-selector');
     await languageSelector.click();
 
-    await page.getByRole('option', { name: 'English' }).click();
+    // Exact: the auto option is labelled "Auto (English)", so a substring
+    // match finds two options and fails strict mode.
+    await page.getByRole('option', { exact: true, name: 'English' }).click();
 
     await languageSelector.click();
-    await page.getByRole('option', { name: 'Auto' }).click();
+    await page.getByRole('option', { name: /^Auto \(/ }).click();
 
     await expect
       .poll(async () => {

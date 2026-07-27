@@ -1,10 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import {
-  CheckCircleIcon,
-  EnvelopeSimpleIcon,
-  KeyIcon,
-} from '@phosphor-icons/react';
-import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
@@ -12,17 +7,20 @@ import {
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
+import { TRToast } from '@tinyrack/ui/components/toast';
+import { CircleCheckIcon, KeyRoundIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { IconInput } from '#frontend/components/auth/icon-input.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
+import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { Divider } from '#frontend/components/ui/divider.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -74,7 +72,8 @@ function VerifyEmail() {
   const search = Route.useSearch();
   const { token: queryToken, email } = search;
   const [verified, setVerified] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(false);
+  const toast = TRToast.useToastManager();
   const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
 
   const verifyEmailSchema = useMemo(
@@ -141,8 +140,11 @@ function VerifyEmail() {
   const resendVerificationMutation = useMutation({
     ...resendVerificationMutationOptions,
     onSuccess: () => {
-      setResendSuccess(true);
-      setTimeout(() => setResendSuccess(false), 5000);
+      toast.add({ title: t('verifyEmail.resendSuccess'), type: 'success' });
+      // Separate from the message: a short cooldown so the button cannot be
+      // used to spam the address with mail.
+      setResendCooldown(true);
+      setTimeout(() => setResendCooldown(false), 5000);
     },
   });
 
@@ -180,81 +182,95 @@ function VerifyEmail() {
 
   if (verified) {
     return (
-      <PageLayout cardPadding maxWidth="100">
-        <Alert className="mb-4" icon={CheckCircleIcon} type="success">
-          {t('verifyEmail.success.title')}
-        </Alert>
-
-        <PageHeader
-          subtitle={t('verifyEmail.success.description')}
-          title={t('verifyEmail.success.subtitle')}
-        />
-
-        <TRButton
-          className="w-full font-semibold"
-          data-testid="email-verify-go-profile"
-          intent="primary"
-          onClick={() => navigate({ to: '/profile' })}
-          type="button"
-        >
-          {t('verifyEmail.success.goToProfile')}
-        </TRButton>
-      </PageLayout>
+      <AuthLayout>
+        {/*
+          The testid stays on a wrapper: e2e treats "the success alert" as the
+          whole terminal state, which is now the outcome block rather than a
+          banner stacked above a header.
+        */}
+        <div data-testid="alert-success">
+          <AuthOutcome
+            description={
+              <>
+                {t('verifyEmail.success.subtitle')}
+                <br />
+                {t('verifyEmail.success.description')}
+              </>
+            }
+            icon={CircleCheckIcon}
+            title={t('verifyEmail.success.title')}
+            tone="success"
+          >
+            <TRButton
+              className="w-full"
+              data-testid="email-verify-go-profile"
+              intent="primary"
+              onClick={() => navigate({ to: '/profile' })}
+              type="button"
+              uiSize="lg"
+            >
+              {t('verifyEmail.success.goToProfile')}
+            </TRButton>
+          </AuthOutcome>
+        </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyEmail.subtitle')}
         title={t('verifyEmail.title')}
       />
 
       {email && (
-        <Alert className="mb-4" icon={EnvelopeSimpleIcon} type="info">
-          <div className="text-left">
-            <p className="font-semibold">{t('register.success.subtitle')}</p>
-            <p className="text-xs">
+        <Alert icon={MailIcon} type="info">
+          <span className="flex flex-col gap-tinyrack-3xs text-left">
+            <TRText variant="body" weight="strong">
+              {t('register.success.subtitle')}
+            </TRText>
+            <TRText color="muted" variant="caption">
               {t('register.success.description', { email })}
-            </p>
-          </div>
+            </TRText>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
-        <IconInput
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        <AuthField
           error={errors.token}
-          icon={KeyIcon}
+          icon={KeyRoundIcon}
           label={t('verifyEmail.token.label')}
           placeholder={t('verifyEmail.token.placeholder')}
           {...register('token')}
           type="text"
         />
 
-        <SubmitButton
-          className="mt-2"
-          isPending={verifyEmailMutation.isPending}
-          pendingText={t('verifyEmail.submitting')}
+        <TRButton
+          className="w-full"
+          intent="primary"
+          loading={verifyEmailMutation.isPending}
+          loadingLabel={t('verifyEmail.submitting')}
+          type="submit"
+          uiSize="lg"
         >
           {t('verifyEmail.submit')}
-        </SubmitButton>
+        </TRButton>
       </form>
 
       {email && (
-        <>
-          <Divider />
-
-          {resendSuccess && (
-            <Alert className="mb-2" icon={CheckCircleIcon} type="success">
-              {t('verifyEmail.resendSuccess')}
-            </Alert>
-          )}
+        <div className="flex flex-col gap-tinyrack-md">
+          <LabeledSeparator />
 
           <TRButton
             appearance="ghost"
             className="w-full"
             data-testid="email-verify-resend"
-            disabled={resendVerificationMutation.isPending || resendSuccess}
+            disabled={resendVerificationMutation.isPending || resendCooldown}
             intent="neutral"
             onClick={handleResend}
             type="button"
@@ -268,8 +284,8 @@ function VerifyEmail() {
               t('verifyEmail.resend')
             )}
           </TRButton>
-        </>
+        </div>
       )}
-    </PageLayout>
+    </AuthLayout>
   );
 }

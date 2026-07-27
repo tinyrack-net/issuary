@@ -1,8 +1,4 @@
-import {
-  InfoIcon,
-  WarningCircleIcon,
-  WarningIcon,
-} from '@phosphor-icons/react';
+import { CircleAlertIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 
@@ -13,9 +9,9 @@ interface AlertBannerProps {
   children: ReactNode;
 }
 
-const variantIcons: Record<AlertBannerVariant, typeof WarningIcon> = {
-  error: WarningCircleIcon,
-  warning: WarningIcon,
+const variantIcons: Record<AlertBannerVariant, typeof TriangleAlertIcon> = {
+  error: CircleAlertIcon,
+  warning: TriangleAlertIcon,
   info: InfoIcon,
 };
 

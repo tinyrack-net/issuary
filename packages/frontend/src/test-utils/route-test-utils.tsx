@@ -4,6 +4,7 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router';
+import { TRToast } from '@tinyrack/ui/components/toast';
 import type { RenderResult } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
 import i18n from '#frontend/i18n/index.ts';
@@ -186,9 +187,13 @@ export async function renderRoute({
 
   await router.load();
 
+  // Mirrors the provider stack in main.tsx. AuthLayout renders the toast
+  // viewport, which needs a manager in context.
   const screen = await render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider context={context} router={router} />
+      <TRToast.Provider>
+        <RouterProvider context={context} router={router} />
+      </TRToast.Provider>
     </QueryClientProvider>,
   );
 

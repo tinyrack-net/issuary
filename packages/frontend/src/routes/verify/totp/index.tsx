@@ -1,21 +1,24 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
-import { FooterLink } from '#frontend/components/auth/footer-link.tsx';
-import { PageHeader } from '#frontend/components/auth/page-header.tsx';
-import { SubmitButton } from '#frontend/components/auth/submit-button.tsx';
+import {
+  AuthFooter,
+  AuthFooterLink,
+} from '#frontend/components/auth/auth-footer.tsx';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import {
   PinInput,
   type PinInputRef,
 } from '#frontend/components/ui/pin-input.tsx';
-import { PageLayout } from '#frontend/features/layout/page-layout.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -172,38 +175,40 @@ function VerifyTotp() {
   };
 
   return (
-    <PageLayout cardPadding maxWidth="100">
-      <PageHeader
+    <AuthLayout>
+      <AuthPageHeader
         subtitle={t('verifyTotp.subtitle')}
         title={t('verifyTotp.title')}
       />
 
       {sessionExpired && (
         <Alert
-          className="mb-4"
           data-testid="totp-verify-session-expired"
-          icon={WarningCircleIcon}
+          icon={CircleAlertIcon}
           type="warning"
         >
-          <div className="flex flex-col gap-1">
+          <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyTotp.error.expired')}</span>
             <span className="text-tinyrack-sm opacity-80">
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
             </span>
             <TRButton
               appearance="ghost"
-              className="mt-2 w-fit"
               intent="neutral"
               onClick={redirectToLogin}
               type="button"
+              uiSize="sm"
             >
               {t('verifyTotp.redirectNow')}
             </TRButton>
-          </div>
+          </span>
         </Alert>
       )}
 
-      <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <PinInput
           autoFocus
           disabled={sessionExpired}
@@ -217,28 +222,37 @@ function VerifyTotp() {
 
         {sessionExpired ? (
           <TRButton
-            className="mt-2 w-full"
+            className="w-full"
             disabled
             intent="primary"
             type="button"
+            uiSize="lg"
           >
             {t('verifyTotp.submit')}
           </TRButton>
         ) : (
-          <SubmitButton
-            className="mt-2"
-            isPending={verifyMutation.isPending}
-            pendingText={t('verifyTotp.submitting')}
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={verifyMutation.isPending}
+            loadingLabel={t('verifyTotp.submitting')}
+            type="submit"
+            uiSize="lg"
           >
             {t('verifyTotp.submit')}
-          </SubmitButton>
+          </TRButton>
         )}
       </form>
 
-      <div className="mt-4 text-center">
+      {/*
+        The recovery code is the way out when the authenticator is gone, so it
+        sits below the rule rather than in the footer with the navigation.
+      */}
+      <div className="flex flex-col gap-tinyrack-md">
+        <LabeledSeparator label={t('common.or')} />
         <TRButton
           appearance="ghost"
-          className="font-medium"
+          className="w-full"
           data-testid="totp-verify-recovery-link"
           intent="neutral"
           onClick={() =>
@@ -253,13 +267,15 @@ function VerifyTotp() {
         </TRButton>
       </div>
 
-      <FooterLink
-        as={Link}
-        linkText={t('verifyTotp.backToLogin')}
-        search={extractOAuthParams(search)}
-        text=""
-        to="/login"
-      />
-    </PageLayout>
+      <AuthFooter>
+        <AuthFooterLink
+          link={
+            <Link search={extractOAuthParams(search)} to="/login">
+              {t('verifyTotp.backToLogin')}
+            </Link>
+          }
+        />
+      </AuthFooter>
+    </AuthLayout>
   );
 }

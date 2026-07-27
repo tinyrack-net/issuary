@@ -2,6 +2,7 @@ import { QueryClientProvider, useSuspenseQueries } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRToast } from '@tinyrack/ui/components/toast';
 import type { ErrorInfo, ReactNode } from 'react';
 import { Component, memo, StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -119,7 +120,13 @@ createRoot(RootElement).render(
   <StrictMode>
     <AppErrorBoundary>
       <QueryClientProvider client={GlobalQueryClient}>
-        <Loader />
+        {/*
+          Above the router so a toast queued just before a navigation survives
+          it — several auth flows confirm something and then move the user on.
+        */}
+        <TRToast.Provider>
+          <Loader />
+        </TRToast.Provider>
       </QueryClientProvider>
     </AppErrorBoundary>
   </StrictMode>,
