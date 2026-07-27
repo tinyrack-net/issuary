@@ -53,6 +53,7 @@ jobs:
           path: |
             packages/*/dist
             packages/server/public
+          include-hidden-files: true
 
   test-suite:
     name: Test / ${{ matrix.name }}
@@ -413,6 +414,7 @@ jobs:
           path: |
             packages/*/dist
             packages/server/public
+          include-hidden-files: true
 
   windows-test-suite:
     name: Windows / ${{ matrix.name }}
