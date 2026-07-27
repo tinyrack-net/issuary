@@ -112,25 +112,13 @@ export default defineConfig({
   fullyParallel: true,
   globalSetup: './e2e/setup/global-setup.ts',
   forbidOnly: !!process.env['CI'],
-  retries: process.env['CI'] ? 2 : 1,
-  /**
-   * A worker here is not just a browser: each scenario fixture also boots its
-   * own Hono server with a MikroORM SQLite database. One per core starves the
-   * machine, and the starvation surfaces as ordinary-looking action timeouts on
-   * whichever tests happened to be running.
-   *
-   * Raising the worker count also buys very little, because the bottleneck is
-   * the single Vite dev server every worker shares rather than the workers
-   * themselves. Measured on a 32-core machine, full suite, `--retries=0`:
-   *
-   *   |  8 (25%) | 10.0-10.6 min | 3/3 runs green |
-   *   | 16 (50%) |  8.3-8.5 min  | 1/2 runs green |
-   *   | 32(100%) |  7.8-8.3 min  | 1/3 runs green |
-   *
-   * So the curve is flat past 8 and the whole cost of determinism is ~2
-   * minutes. Do not raise this without re-measuring both columns.
+  retries: 0,
+  /*
+   * Standalone Playwright runs use every available CPU. The root validation
+   * command splits that same global budget across isolated shard processes so
+   * no single shared Vite server becomes the concurrency bottleneck.
    */
-  workers: process.env['CI'] ? 1 : '25%',
+  workers: '100%',
   reporter: 'html',
   /*
    * Budgets are sized for a loaded machine, not an idle one. Raising them costs
@@ -152,7 +140,7 @@ export default defineConfig({
       name: `${config.name}:${browser.name}`,
       testDir: config.testDir,
       use: {
-        trace: 'on-first-retry' as const,
+        trace: 'retain-on-failure' as const,
         /*
          * Auth screen content animates in, and Playwright waits for an element
          * to stop moving before acting on it. That is correct, but it puts a

@@ -150,7 +150,7 @@ describe('/consent', () => {
         ui_locales: 'ko en',
         id_token_hint: 'header.payload.signature',
         acr_values: 'urn:mace:incommon:iap:silver',
-        account_selected: '1',
+        account_selected: 1,
         account_selection_state: 'chooser-state-ui',
         decision: 'allow',
       });

@@ -22,10 +22,23 @@ export function interceptTotpSecret(page: Page): Promise<string> {
   });
 }
 
+const TOTP_PERIOD_MS = 30_000;
+const MINIMUM_TOTP_VALIDITY_MS = 3_000;
+
 /**
- * Generates a valid 6-digit TOTP code from a secret.
+ * Generates a valid 6-digit TOTP code with enough remaining lifetime for a
+ * browser submission. This removes the boundary race where a code generated
+ * at the end of a TOTP period expires while the form request is in flight.
  */
-export function generateTotpCode(secret: string): string {
+export async function generateTotpCode(secret: string): Promise<string> {
+  const elapsedInPeriod = Date.now() % TOTP_PERIOD_MS;
+  const remainingValidity = TOTP_PERIOD_MS - elapsedInPeriod;
+  if (remainingValidity < MINIMUM_TOTP_VALIDITY_MS) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, remainingValidity);
+    });
+  }
+
   return generateSync({ secret });
 }
 
@@ -62,7 +75,7 @@ export async function setupTotpViaApi(
   const { secret } = (await setupRes.json()) as { secret: string };
 
   // Step 2: Verify with valid code
-  const code = generateTotpCode(secret);
+  const code = await generateTotpCode(secret);
   const verifyRes = await request.post(`${baseURL}/api/user/totp/verify`, {
     data: { code },
   });

@@ -6,10 +6,11 @@ import { defineConfig } from 'vitest/config';
 
 const MODE = process.env['VITEST_BROWSER_MODE'];
 const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
+const HOST = MODE === 'preview' ? '0.0.0.0' : '127.0.0.1';
 
 export default defineConfig({
   server: {
-    host: '0.0.0.0',
+    host: HOST,
     allowedHosts: ['desktop.server.lan'],
   },
   test: {
@@ -43,7 +44,7 @@ export default defineConfig({
           browser: {
             enabled: true,
             api: {
-              host: '0.0.0.0',
+              host: HOST,
             },
             provider: MODE === 'preview' ? preview() : playwright(),
             headless: MODE !== 'preview',

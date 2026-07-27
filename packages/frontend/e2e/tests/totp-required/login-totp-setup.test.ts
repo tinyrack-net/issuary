@@ -74,7 +74,7 @@ test.describe('TOTP setup flow (DB user, 2FA required)', () => {
     await page.locator(totpSetupPage.nextButton).click();
 
     // Verify step: enter valid TOTP code
-    const code = generateTotpCode(secret);
+    const code = await generateTotpCode(secret);
     await fillPinInput(page, code);
 
     // Recovery codes step: wait for grid to appear

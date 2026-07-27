@@ -5,11 +5,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import YAML from 'yaml';
 import {
   createTestConfigFile,
-  getFreePort,
   removeDirectoryWithRetry,
+  reserveFreePort,
 } from './helpers/config-factory.ts';
-import { startCli, stopCliProcess } from './helpers/spawn-cli.ts';
-import { waitForReady } from './helpers/wait-for-ready.ts';
+import {
+  startCli,
+  stopCliProcess,
+  waitForCliReady,
+} from './helpers/spawn-cli.ts';
 
 async function createCustomConfigFile(
   config: Record<string, unknown>,
@@ -45,7 +48,7 @@ describe('config combinations', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    await waitForReady(port);
+    await waitForCliReady(cliProcess, port);
 
     const res = await fetch(`http://localhost:${port}/api/config`);
     const body = await res.json();
@@ -64,7 +67,7 @@ describe('config combinations', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    await waitForReady(port);
+    await waitForCliReady(cliProcess, port);
 
     const res = await fetch(`http://localhost:${port}/api/docs`);
     expect(res.status).toBe(404);
@@ -81,7 +84,7 @@ describe('config combinations', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     expect(res.ok).toBe(true);
   });
 
@@ -96,7 +99,7 @@ describe('config combinations', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    await waitForReady(port);
+    await waitForCliReady(cliProcess, port);
 
     const res = await fetch(`http://localhost:${port}/api/config`);
     const body = await res.json();
@@ -116,7 +119,7 @@ describe('config combinations', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    await waitForReady(port);
+    await waitForCliReady(cliProcess, port);
 
     const res = await fetch(`http://localhost:${port}/api/config`);
     const body = await res.json();
@@ -153,25 +156,28 @@ describe('config loading priority', { timeout: 180_000 }, () => {
   }
 
   it('uses default public_origin when YAML omits it', async () => {
-    const port = await getFreePort();
+    const { port, release } = await reserveFreePort();
     const { configPath, cleanup } = await createCustomConfigFile(
       baseConfig(port),
     );
-    configCleanup = cleanup;
+    configCleanup = async () => {
+      await cleanup();
+      await release();
+    };
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
       timeout: 60_000,
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     const body = await res.json();
 
     expect(body.issuer).toBe('http://localhost:8080');
   });
 
   it('YAML public_origin overrides default', async () => {
-    const port = await getFreePort();
+    const { port, release } = await reserveFreePort();
     const { configPath, cleanup } = await createCustomConfigFile(
       baseConfig(port, {
         server: {
@@ -180,25 +186,31 @@ describe('config loading priority', { timeout: 180_000 }, () => {
         },
       }),
     );
-    configCleanup = cleanup;
+    configCleanup = async () => {
+      await cleanup();
+      await release();
+    };
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
       timeout: 60_000,
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     const body = await res.json();
 
     expect(body.issuer).toBe('https://custom-host:9999');
   });
 
   it('env var overrides default when YAML omits field', async () => {
-    const port = await getFreePort();
+    const { port, release } = await reserveFreePort();
     const { configPath, cleanup } = await createCustomConfigFile(
       baseConfig(port),
     );
-    configCleanup = cleanup;
+    configCleanup = async () => {
+      await cleanup();
+      await release();
+    };
 
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
@@ -206,7 +218,7 @@ describe('config loading priority', { timeout: 180_000 }, () => {
       env: { TINYAUTH_PUBLIC_ORIGIN: 'https://env-host:5678' },
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     const body = await res.json();
 
     expect(body.issuer).toBe('https://env-host:5678');

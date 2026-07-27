@@ -65,7 +65,7 @@ test.describe('TOTP verify flow (DB user with TOTP already set up)', () => {
     await page.waitForURL('**/verify/totp');
 
     // Enter valid TOTP code
-    const code = generateTotpCode(totpSecret);
+    const code = await generateTotpCode(totpSecret);
     await fillPinInput(page, code);
 
     // Should navigate to profile

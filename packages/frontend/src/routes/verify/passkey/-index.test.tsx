@@ -1,4 +1,3 @@
-import { startAuthentication } from '@simplewebauthn/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { oauthAccountsQueryOptions } from '#frontend/queries/oauth.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -13,10 +12,12 @@ import {
   routeTestUser,
 } from '#frontend/test-utils/route-test-utils.tsx';
 
-vi.mock('@simplewebauthn/browser', () => ({
+const webauthnMocks = vi.hoisted(() => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),
 }));
+
+vi.mock('@simplewebauthn/browser', () => webauthnMocks);
 
 function profileQueryData() {
   return [
@@ -36,13 +37,13 @@ function profileQueryData() {
 }
 
 afterEach(() => {
-  vi.mocked(startAuthentication).mockReset();
+  webauthnMocks.startAuthentication.mockReset();
   resetFetchMock();
 });
 
 describe('/verify/passkey', () => {
   test('continues to profile after successful passkey verification', async () => {
-    vi.mocked(startAuthentication).mockResolvedValue({
+    webauthnMocks.startAuthentication.mockResolvedValue({
       id: 'credential-1',
       rawId: 'credential-1',
       response: {
@@ -97,7 +98,7 @@ describe('/verify/passkey', () => {
   test('shows TOTP fallback after passkey verification cannot complete', async () => {
     const passkeyError = new Error('not allowed');
     passkeyError.name = 'NotAllowedError';
-    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    webauthnMocks.startAuthentication.mockRejectedValue(passkeyError);
     const fetchMock = mockJsonResponses(
       {
         url: '/api/auth/passkey/options',
@@ -141,7 +142,7 @@ describe('/verify/passkey', () => {
   test('keeps passkey-only failures on the passkey screen', async () => {
     const passkeyError = new Error('not allowed');
     passkeyError.name = 'NotAllowedError';
-    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    webauthnMocks.startAuthentication.mockRejectedValue(passkeyError);
     const fetchMock = mockJsonResponses(
       {
         url: '/api/auth/passkey/options',

@@ -72,7 +72,7 @@ test.describe('TOTP optional configuration', () => {
     await page.waitForURL('**/verify/totp');
     await expect(page).toHaveURL(/\/verify\/totp/);
 
-    const code = generateTotpCode(secret);
+    const code = await generateTotpCode(secret);
     await fillPinInput(page, code);
     await page.waitForURL('**/profile');
     await expect(page).toHaveURL(/\/profile/);

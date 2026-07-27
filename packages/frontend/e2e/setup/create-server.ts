@@ -3,16 +3,20 @@ import { once } from 'node:events';
 import { Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
+import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyrack/tinyauth-server';
 import type { TinyAuthRuntimeConfig } from '@tinyrack/tinyauth-server/config';
-import { createProxyHandler } from '@tinyrack/tinyauth-server/frontend/proxy';
+import { createStaticHandler } from '@tinyrack/tinyauth-server/frontend/static';
 import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.ts';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.ts';
 
 const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 const APPLE_STUB_KEY_ID = 'tinyauth-e2e-apple-stub-key';
 const BACKEND_BIND_ATTEMPTS = 5;
+const FRONTEND_PUBLIC_PATH = fileURLToPath(
+  new URL('../../../server/public', import.meta.url),
+);
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
@@ -366,8 +370,8 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       resolvedEmail = rawEmail;
     }
 
-    const defaultFrontend = createProxyHandler({
-      upstream: `http://localhost:${frontendPort}`,
+    const defaultFrontend = createStaticHandler({
+      publicPath: FRONTEND_PUBLIC_PATH,
     });
 
     const config = {

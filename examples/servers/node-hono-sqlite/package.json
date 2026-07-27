@@ -8,7 +8,8 @@
     "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && cross-env NODE_OPTIONS=--conditions=@tinyauth/source tsx watch src/index.ts",
     "start": "pnpm --filter @tinyrack/tinyauth-frontend build && node --conditions=@tinyauth/source --import tsx src/index.ts",
     "build": "tsc --noEmit",
-    "test": "pnpm --filter @tinyrack/tinyauth-frontend build && node --conditions=@tinyauth/source --import tsx src/smoke-test.ts"
+    "test": "pnpm --filter @tinyrack/tinyauth-server build && pnpm --filter @tinyrack/tinyauth-frontend build && pnpm run test:prepared",
+    "test:prepared": "node --conditions=@tinyauth/source --import tsx src/smoke-test.ts"
   },
   "dependencies": {
     "@hono/node-server": "catalog:",

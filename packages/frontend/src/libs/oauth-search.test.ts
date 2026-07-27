@@ -142,7 +142,7 @@ describe('oauth-search helpers', () => {
       account_selection_state: 'chooser-state-123',
     });
 
-    expect(parsed.account_selected).toBe('1');
+    expect(parsed.account_selected).toBe(1);
     expect(buildAuthorizeUrl(parsed)).toContain('account_selected=1');
   });
 
@@ -156,7 +156,7 @@ describe('oauth-search helpers', () => {
       ui_locales: 'ko en',
       id_token_hint: 'id-token-hint',
       acr_values: 'urn:mace:incommon:iap:silver',
-      account_selected: '1',
+      account_selected: 1,
       account_selection_state: 'chooser-state-123',
     });
 

@@ -58,7 +58,7 @@ function buildLoginHref(search: ReturnType<typeof Route.useSearch>) {
   for (const [key, value] of Object.entries({
     ...oauthParams,
     prompt: appendLoginPrompt(oauthParams.prompt),
-    account_selected: '1',
+    account_selected: 1,
   })) {
     if (value !== undefined) {
       params.set(key, String(value));
@@ -78,7 +78,7 @@ function AccountSelect() {
   const continueWithSelectedAccount = () => {
     window.location.href = buildAuthorizeUrl({
       ...search,
-      account_selected: '1',
+      account_selected: 1,
     });
   };
 

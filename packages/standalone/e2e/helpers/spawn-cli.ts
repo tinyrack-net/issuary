@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execaNode } from 'execa';
+import { waitForReady } from './wait-for-ready.ts';
 
 const CLI_PATH = fileURLToPath(new URL('../../src/cli.ts', import.meta.url));
 
@@ -14,6 +15,7 @@ const require = createRequire(import.meta.url);
 const TSX_IMPORT = pathToFileURL(require.resolve('tsx')).href;
 const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', TSX_IMPORT];
 const LONG_RUNNING_CLI_TIMEOUT_MS = 180_000;
+const USE_BUILT_CLI = process.env['TINYAUTH_E2E_BUILT_CLI'] === '1';
 
 interface SpawnCliOptions {
   args: string[];
@@ -59,11 +61,26 @@ function spawnBuiltCli(options: SpawnCliOptions) {
  * Run a short-lived CLI command and wait for it to exit.
  */
 export async function runCli(options: SpawnCliOptions) {
-  return await spawnCli(options);
+  return await (USE_BUILT_CLI ? spawnBuiltCli(options) : spawnCli(options));
 }
 
 export async function runBuiltCli(options: SpawnCliOptions) {
   return await spawnBuiltCli(options);
+}
+
+export async function waitForCliReady(
+  cliProcess: CliProcess,
+  port: number,
+): Promise<Response> {
+  const processExit = cliProcess.then((result) => {
+    const output = [result.stdout, result.stderr].filter(Boolean).join('\n');
+    const outputSuffix = output ? `\n${output}` : '';
+    throw new Error(
+      `CLI exited before port ${port} became ready (exit ${result.exitCode})${outputSuffix}`,
+    );
+  });
+
+  return await Promise.race([waitForReady(port), processExit]);
 }
 
 /**
@@ -71,7 +88,8 @@ export async function runBuiltCli(options: SpawnCliOptions) {
  * Returns the subprocess handle — caller manages lifecycle.
  */
 export function startCli(options: SpawnCliOptions) {
-  return spawnCli({
+  const start = USE_BUILT_CLI ? spawnBuiltCli : spawnCli;
+  return start({
     ...options,
     timeout: Math.max(options.timeout ?? 0, LONG_RUNNING_CLI_TIMEOUT_MS),
   });
