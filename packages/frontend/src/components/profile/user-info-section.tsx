@@ -1,5 +1,19 @@
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useTranslation } from 'react-i18next';
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-tinyrack-lg px-tinyrack-lg py-tinyrack-md">
+      <TRText className="shrink-0" color="muted" variant="caption">
+        {label}
+      </TRText>
+      <TRText truncate variant="bodySm" weight="medium">
+        {value}
+      </TRText>
+    </div>
+  );
+}
 
 interface UserInfoSectionProps {
   user: {
@@ -13,32 +27,15 @@ export function UserInfoSection({ user }: UserInfoSectionProps) {
 
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Header className="border-tinyrack-border border-b px-4 py-3">
-        <TRCard.Title className="font-semibold text-tinyrack-md text-tinyrack-text">
-          {t('profile.account.title')}
-        </TRCard.Title>
-        <TRCard.Description className="text-tinyrack-text-muted text-tinyrack-xs">
+      <TRCard.Header className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md">
+        <TRCard.Title>{t('profile.account.title')}</TRCard.Title>
+        <TRCard.Description>
           {t('profile.account.description')}
         </TRCard.Description>
       </TRCard.Header>
       <TRCard.Content className="divide-y divide-tinyrack-border p-0">
-        <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <span className="shrink-0 text-tinyrack-text-muted text-tinyrack-xs">
-            {t('profile.id.label')}
-          </span>
-          <span className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
-            {user.sub}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <span className="shrink-0 text-tinyrack-text-muted text-tinyrack-xs">
-            {t('profile.email.label')}
-          </span>
-          <span className="truncate font-medium text-tinyrack-sm text-tinyrack-text">
-            {user.email}
-          </span>
-        </div>
+        <InfoRow label={t('profile.id.label')} value={user.sub} />
+        <InfoRow label={t('profile.email.label')} value={user.email} />
       </TRCard.Content>
     </TRCard.Root>
   );

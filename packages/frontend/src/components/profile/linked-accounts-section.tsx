@@ -1,12 +1,14 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
-import { LinkIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ProviderMark } from '#frontend/components/auth/provider-logos.tsx';
+import { SecurityRow } from '#frontend/components/profile/security-row.tsx';
 
 interface OAuthProvider {
   id: string;
   display_name: string;
+  icon_url?: string;
   linked: boolean;
 }
 
@@ -35,74 +37,67 @@ export function LinkedAccountsSection({
 
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Header className="border-tinyrack-border border-b px-4 py-3">
-        <TRCard.Title className="font-semibold text-tinyrack-md text-tinyrack-text">
-          {t('profile.linkedAccounts.title')}
-        </TRCard.Title>
-        <TRCard.Description className="text-tinyrack-text-muted text-tinyrack-xs">
+      <TRCard.Header className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md">
+        <TRCard.Title>{t('profile.linkedAccounts.title')}</TRCard.Title>
+        <TRCard.Description>
           {t('profile.linkedAccounts.description')}
         </TRCard.Description>
       </TRCard.Header>
       <TRCard.Content className="divide-y divide-tinyrack-border p-0">
         {providers.map((provider) => (
-          <div
-            className="flex items-center justify-between p-4"
+          <SecurityRow
+            actions={
+              provider.linked ? (
+                <TRButton
+                  appearance="ghost"
+                  intent="danger"
+                  loading={unlinkingProvider === provider.id}
+                  loadingLabel={t('profile.linkedAccounts.unlinking')}
+                  onClick={() => onUnlinkRequest(provider)}
+                  type="button"
+                  uiSize="sm"
+                >
+                  {unlinkingProvider !== provider.id
+                    ? t('profile.linkedAccounts.unlink')
+                    : undefined}
+                </TRButton>
+              ) : (
+                <TRLinkButton
+                  appearance="outline"
+                  intent="neutral"
+                  render={
+                    <a
+                      href={getAuthorizeUrl(provider.id, 'link', '/profile')}
+                    />
+                  }
+                  uiSize="sm"
+                >
+                  {t('profile.linkedAccounts.link')}
+                </TRLinkButton>
+              )
+            }
+            active={provider.linked}
+            /*
+              The real brand mark, not a generic link glyph. The sign-in screen
+              shows the Google logo; showing a chain link for the same provider
+              on a screen the user reaches minutes later reads as a different
+              product.
+            */
+            icon={
+              <ProviderMark
+                className="size-4"
+                iconUrl={provider.icon_url}
+                providerId={provider.id}
+              />
+            }
             key={provider.id}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
-                  provider.linked
-                    ? 'bg-tinyrack-success-surface'
-                    : 'bg-tinyrack-surface-muted'
-                }`}
-              >
-                <LinkIcon
-                  className={`size-4 ${
-                    provider.linked
-                      ? 'text-tinyrack-success'
-                      : 'text-tinyrack-text-muted'
-                  }`}
-                />
-              </div>
-              <div>
-                <div className="font-medium text-tinyrack-sm text-tinyrack-text">
-                  {provider.display_name}
-                </div>
-                <div className="text-tinyrack-text-muted text-tinyrack-xs">
-                  {provider.linked
-                    ? t('profile.linkedAccounts.connected')
-                    : t('profile.linkedAccounts.notConnected')}
-                </div>
-              </div>
-            </div>
-            {provider.linked ? (
-              <TRButton
-                appearance="ghost"
-                intent="danger"
-                loading={unlinkingProvider === provider.id}
-                loadingLabel={t('profile.linkedAccounts.unlinking')}
-                onClick={() => onUnlinkRequest(provider)}
-                type="button"
-                uiSize="sm"
-              >
-                {unlinkingProvider !== provider.id
-                  ? t('profile.linkedAccounts.unlink')
-                  : undefined}
-              </TRButton>
-            ) : (
-              <TRLinkButton
-                appearance="outline"
-                intent="neutral"
-                render={
-                  <a href={getAuthorizeUrl(provider.id, 'link', '/profile')} />
-                }
-                uiSize="sm"
-              >
-                {t('profile.linkedAccounts.link')}
-              </TRLinkButton>
-            )}
-          </div>
+            status={
+              provider.linked
+                ? t('profile.linkedAccounts.connected')
+                : t('profile.linkedAccounts.notConnected')
+            }
+            title={provider.display_name}
+          />
         ))}
       </TRCard.Content>
     </TRCard.Root>

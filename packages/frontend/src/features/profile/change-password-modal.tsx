@@ -5,13 +5,12 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
 import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { TinyAuthError } from '#frontend/libs/error.ts';
@@ -115,73 +114,41 @@ export function ChangePasswordModal({
       onClose={handleClose}
       title={t('profile.password.changeModal.title')}
     >
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-        <TRField.Root>
-          <TRField.Label htmlFor="current-password">
-            {t('profile.password.changeModal.currentPassword')}
-          </TRField.Label>
-          <TRInput
-            id="current-password"
-            placeholder={t(
-              'profile.password.changeModal.currentPasswordPlaceholder',
-            )}
-            type="password"
-            uiSize="sm"
-            {...form.register('currentPassword')}
-          />
-          {form.formState.errors.currentPassword && (
-            <div
-              className="tr-field-error"
-              data-testid="change-password-error-currentPassword"
-            >
-              {form.formState.errors.currentPassword.message}
-            </div>
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+        onSubmit={handleSubmit}
+      >
+        <AuthField
+          error={form.formState.errors.currentPassword}
+          errorTestId="change-password-error-currentPassword"
+          id="current-password"
+          label={t('profile.password.changeModal.currentPassword')}
+          placeholder={t(
+            'profile.password.changeModal.currentPasswordPlaceholder',
           )}
-        </TRField.Root>
-        <TRField.Root>
-          <TRField.Label htmlFor="new-password-change">
-            {t('profile.password.changeModal.newPassword')}
-          </TRField.Label>
-          <TRInput
-            id="new-password-change"
-            placeholder={t(
-              'profile.password.changeModal.newPasswordPlaceholder',
-            )}
-            type="password"
-            uiSize="sm"
-            {...form.register('newPassword')}
-          />
-          {form.formState.errors.newPassword && (
-            <div
-              className="tr-field-error"
-              data-testid="change-password-error-newPassword"
-            >
-              {form.formState.errors.newPassword.message}
-            </div>
+          {...form.register('currentPassword')}
+          type="password"
+        />
+        <AuthField
+          error={form.formState.errors.newPassword}
+          errorTestId="change-password-error-newPassword"
+          id="new-password-change"
+          label={t('profile.password.changeModal.newPassword')}
+          placeholder={t('profile.password.changeModal.newPasswordPlaceholder')}
+          {...form.register('newPassword')}
+          type="password"
+        />
+        <AuthField
+          error={form.formState.errors.confirmPassword}
+          errorTestId="change-password-error-confirmPassword"
+          id="confirm-password-change"
+          label={t('profile.password.changeModal.confirmPassword')}
+          placeholder={t(
+            'profile.password.changeModal.confirmPasswordPlaceholder',
           )}
-        </TRField.Root>
-        <TRField.Root>
-          <TRField.Label htmlFor="confirm-password-change">
-            {t('profile.password.changeModal.confirmPassword')}
-          </TRField.Label>
-          <TRInput
-            id="confirm-password-change"
-            placeholder={t(
-              'profile.password.changeModal.confirmPasswordPlaceholder',
-            )}
-            type="password"
-            uiSize="sm"
-            {...form.register('confirmPassword')}
-          />
-          {form.formState.errors.confirmPassword && (
-            <div
-              className="tr-field-error"
-              data-testid="change-password-error-confirmPassword"
-            >
-              {form.formState.errors.confirmPassword.message}
-            </div>
-          )}
-        </TRField.Root>
+          {...form.register('confirmPassword')}
+          type="password"
+        />
         {form.formState.errors.root && (
           <AlertBanner variant="error">
             {form.formState.errors.root.message}

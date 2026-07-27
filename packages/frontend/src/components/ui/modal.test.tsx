@@ -42,7 +42,9 @@ test('renders icon when provided', async () => {
   );
 
   await expect.element(screen.getByText('Warning')).toBeVisible();
-  expect(screen.baseElement.querySelector('.rounded-full')).not.toBeNull();
+  expect(
+    screen.baseElement.querySelector('.rounded-tinyrack-full'),
+  ).not.toBeNull();
 });
 
 test('close button calls onClose', async () => {

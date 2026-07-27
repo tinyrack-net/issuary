@@ -307,6 +307,7 @@
   "profile.passkey.manageModal.deleteConfirmInline": "Delete this passkey?",
   "profile.passkey.manageModal.deleteError": "Cannot delete passkey. You need at least one way to log in.",
   "profile.passkey.manageModal.cannotRemoveLastSecondFactor": "Cannot delete passkey. At least one two-factor authentication method (TOTP or Passkey) is required.",
+  "profile.passkey.manageModal.nameLabel": "Passkey name",
   "profile.passkey.manageModal.namePlaceholder": "Enter passkey name",
   "profile.passkey.manageModal.cancelEdit": "Cancel",
   "profile.passkey.manageModal.save": "Save",

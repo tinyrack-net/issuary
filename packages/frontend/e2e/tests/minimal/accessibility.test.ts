@@ -4,8 +4,10 @@ import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fi
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
+  E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.ts';
 
 const test = createScenarioFixture((backendPort) => ({
   ...E2E_BASE_CONFIG,
@@ -66,5 +68,42 @@ test.describe('Auth screen accessibility', () => {
         ).toEqual([]);
       });
     }
+  }
+});
+
+/**
+ * Guards the accessibility of the signed-in surface.
+ *
+ * A separate block rather than another entry in `ROUTES`: `/profile` redirects
+ * to `/login` without a session, so a bare `goto` would silently audit the
+ * login screen a third time. This is the only screen on `AppLayout`, and its
+ * header — brand mark, language, theme, sign-out — is guarded by nothing else.
+ */
+test.describe('Profile accessibility', () => {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`/profile has no WCAG violations (${colorScheme})`, async ({
+      page,
+    }) => {
+      await page.addInitScript((scheme) => {
+        localStorage.setItem('tinyauth-color-scheme', scheme);
+      }, colorScheme);
+
+      await loginAndGoToProfile(
+        page,
+        E2E_TEST_USER.email,
+        E2E_TEST_USER.password,
+      );
+
+      const results = await new AxeBuilder({ page })
+        .withTags(WCAG_TAGS)
+        .analyze();
+
+      expect(
+        results.violations.map((violation) => ({
+          id: violation.id,
+          nodes: violation.nodes.map((node) => node.target.join(' ')),
+        })),
+      ).toEqual([]);
+    });
   }
 });

@@ -1,3 +1,4 @@
+import { LinkIcon } from 'lucide-react';
 import type { SVGProps } from 'react';
 
 /**
@@ -13,6 +14,46 @@ import type { SVGProps } from 'react';
  */
 
 type ProviderLogoProps = Omit<SVGProps<SVGSVGElement>, 'children' | 'viewBox'>;
+
+const LOGOS_BY_ID: Record<
+  string,
+  (props: ProviderLogoProps) => React.ReactElement
+> = {
+  google: GoogleLogo,
+  github: GithubLogo,
+  apple: AppleLogo,
+};
+
+type ProviderMarkProps = {
+  /** Configured provider id. Built-in providers use their own name. */
+  providerId: string;
+  /** Deployment-supplied icon, used for providers with no built-in mark. */
+  iconUrl?: string;
+  className?: string;
+};
+
+/**
+ * The mark for a configured provider, however it is identified.
+ *
+ * Profile's provider list carries an id and an optional icon URL but no
+ * provider type, so this resolves by id first — which is what the built-in
+ * providers are named — then the deployment's own icon, then a generic link
+ * glyph for an unrecognised custom provider.
+ */
+export function ProviderMark({
+  providerId,
+  iconUrl,
+  className = 'size-5',
+}: ProviderMarkProps) {
+  const Logo = LOGOS_BY_ID[providerId];
+  if (Logo) {
+    return <Logo className={className} />;
+  }
+  if (iconUrl) {
+    return <img alt="" className={className} src={iconUrl} />;
+  }
+  return <LinkIcon aria-hidden className={className} />;
+}
 
 export function GoogleLogo(props: ProviderLogoProps) {
   return (

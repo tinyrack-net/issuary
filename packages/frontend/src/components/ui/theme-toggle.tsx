@@ -6,18 +6,14 @@ import { useTranslation } from 'react-i18next';
 type ThemeToggleProps = {
   colorScheme: 'light' | 'dark';
   onToggle: () => void;
-  className?: string;
 };
 
-export function ThemeToggle({
-  colorScheme,
-  onToggle,
-  /**
-   * Unpositioned by default: the auth header bar lays it out. Profile and
-   * admin still pass their own positioning classes.
-   */
-  className = '',
-}: ThemeToggleProps) {
+/**
+ * Carries no positioning of its own. Every shell now lays this out in a real
+ * header bar; it used to be pinned to the viewport corner with `fixed`, where
+ * it overlapped content on short screens.
+ */
+export function ThemeToggle({ colorScheme, onToggle }: ThemeToggleProps) {
   const { t } = useTranslation();
 
   const label =
@@ -26,7 +22,7 @@ export function ThemeToggle({
   const SchemeIcon = colorScheme === 'dark' ? SunIcon : MoonIcon;
 
   return (
-    <div className={className}>
+    <div>
       <TRTooltip.Root>
         <TRTooltip.Trigger
           data-testid="theme-toggle"

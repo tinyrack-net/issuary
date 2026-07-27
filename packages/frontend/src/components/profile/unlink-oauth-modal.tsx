@@ -51,7 +51,7 @@ export function UnlinkOAuthModal({
       title={t('profile.linkedAccounts.unlinkModal.title')}
       variant="destructive"
     >
-      <div className="mt-4 space-y-3">
+      <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-md">
         <AlertBanner variant="warning">
           {t('profile.linkedAccounts.unlinkModal.warning', {
             provider: providerName,

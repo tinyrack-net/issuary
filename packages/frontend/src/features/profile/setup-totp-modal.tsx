@@ -91,7 +91,7 @@ export function SetupTotpModal({
     >
       {isSetupPending && (
         <div
-          className="flex justify-center py-6"
+          className="flex justify-center py-tinyrack-xl"
           data-testid="setup-totp-loading"
         >
           <TRSpinner uiSize="md" />
@@ -99,7 +99,7 @@ export function SetupTotpModal({
       )}
 
       {step === 'error' && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-md">
           <AlertBanner variant="error">
             {t('profile.totp.setupModal.setupError')}
           </AlertBanner>
@@ -126,7 +126,7 @@ export function SetupTotpModal({
       )}
 
       {setupData && step === 'qr' && (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           <QrStep
             additionalActions={
               <>
@@ -142,7 +142,7 @@ export function SetupTotpModal({
                   </TRButton>
                 </ModalActions>
                 {canSwitchToPasskey && onSwitchToPasskey && (
-                  <p className="mt-2 text-center text-tinyrack-xs">
+                  <p className="mt-tinyrack-sm text-center text-tinyrack-xs">
                     <TRButton
                       appearance="ghost"
                       intent="primary"
@@ -163,7 +163,7 @@ export function SetupTotpModal({
       )}
 
       {setupData && step === 'verify' && (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           <VerifyStep
             isPending={isVerifyPending}
             onBack={goToQr}
@@ -173,7 +173,7 @@ export function SetupTotpModal({
       )}
 
       {step === 'recovery' && recoveryCodes.length > 0 && (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           <RecoveryCodesStep
             isLoading={isConfirmPending}
             onConfirm={confirmRecoveryCodes}

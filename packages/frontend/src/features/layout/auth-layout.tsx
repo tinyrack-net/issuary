@@ -1,6 +1,6 @@
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { AuthBrandPanel } from '#frontend/features/layout/auth-brand-panel.tsx';
-import { AuthHeaderBar } from '#frontend/features/layout/auth-header-bar.tsx';
+import { ShellHeaderBar } from '#frontend/features/layout/shell-header-bar.tsx';
 
 type AuthLayoutProps = {
   children: React.ReactNode;
@@ -32,7 +32,8 @@ export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
       <Toaster />
       <AuthBrandPanel />
       <div className="col-span-full flex min-w-0 flex-col md:col-span-8 lg:col-span-7">
-        <AuthHeaderBar />
+        {/* No `brand`: AuthBrandPanel already owns the deployment's title. */}
+        <ShellHeaderBar />
         <main className="flex flex-1 items-center justify-center px-tinyrack-lg py-tinyrack-xl">
           {/*
             The stack owns vertical rhythm so screens compose as a flat list of

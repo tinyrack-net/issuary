@@ -2,13 +2,12 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRField } from '@tinyrack/ui/components/field';
-import { TRInput } from '@tinyrack/ui/components/input';
 import { Trash2Icon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import z from 'zod';
+import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { tick } from '#frontend/libs/promise.ts';
@@ -86,36 +85,33 @@ export function DeleteAccountModal({
       title={t('profile.deleteAccount.modal.title')}
       variant="destructive"
     >
-      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+      <form
+        className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
+        onSubmit={handleSubmit}
+      >
         <AlertBanner variant="error">
-          <p>
-            {t('profile.deleteAccount.modal.description', {
-              days: retentionDays,
-            })}
-          </p>
-          <p className="mt-0.5 text-tinyrack-xs opacity-80">
-            {t('profile.deleteAccount.modal.warning')}
-          </p>
+          <div className="flex flex-col gap-tinyrack-xs">
+            <p>
+              {t('profile.deleteAccount.modal.description', {
+                days: retentionDays,
+              })}
+            </p>
+            <p className="text-tinyrack-xs opacity-80">
+              {t('profile.deleteAccount.modal.warning')}
+            </p>
+          </div>
         </AlertBanner>
 
-        <TRField.Root>
-          <TRField.Label htmlFor="delete-confirmation">
-            {t('profile.deleteAccount.modal.confirmLabel')}
-          </TRField.Label>
-          <TRInput
-            autoComplete="off"
-            id="delete-confirmation"
-            placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
-            type="text"
-            uiSize="sm"
-            {...form.register('confirmation')}
-          />
-          {form.formState.errors.confirmation && (
-            <div className="tr-field-error" data-testid="delete-account-error">
-              {form.formState.errors.confirmation.message}
-            </div>
-          )}
-        </TRField.Root>
+        <AuthField
+          autoComplete="off"
+          error={form.formState.errors.confirmation}
+          errorTestId="delete-account-error"
+          id="delete-confirmation"
+          label={t('profile.deleteAccount.modal.confirmLabel')}
+          placeholder={t('profile.deleteAccount.modal.confirmPlaceholder')}
+          {...form.register('confirmation')}
+          type="text"
+        />
 
         {form.formState.errors.root && (
           <AlertBanner variant="error">

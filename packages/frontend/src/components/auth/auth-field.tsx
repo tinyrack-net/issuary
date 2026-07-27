@@ -16,6 +16,17 @@ type AuthFieldProps = {
   labelAction?: React.ReactNode;
   autoComplete?: string;
   error?: FieldError;
+  /**
+   * Overrides the error node's test id. The auth screens share the default;
+   * the profile modals each have their own, which e2e selects on.
+   */
+  errorTestId?: string;
+  /**
+   * Renders the label to assistive technology only. For fields whose purpose
+   * is obvious from context — an inline rename inside a list row — where a
+   * visible label would be noise but a missing one leaves a nameless textbox.
+   */
+  hideLabel?: boolean;
   className?: string;
   ref?: React.Ref<HTMLInputElement>;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'className'>;
@@ -39,6 +50,8 @@ export function AuthField({
   labelAction,
   autoComplete,
   error,
+  errorTestId = 'field-error',
+  hideLabel = false,
   className = '',
   ref,
   ...props
@@ -57,10 +70,16 @@ export function AuthField({
 
   return (
     <TRField.Root className={className}>
-      <div className="flex items-baseline justify-between gap-tinyrack-sm">
-        <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
-        {labelAction}
-      </div>
+      {hideLabel ? (
+        <TRField.Label className="sr-only" htmlFor={inputId}>
+          {label}
+        </TRField.Label>
+      ) : (
+        <div className="flex items-baseline justify-between gap-tinyrack-sm">
+          <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
+          {labelAction}
+        </div>
+      )}
       <TRInput.Group
         data-invalid={error ? '' : undefined}
         data-testid={error ? 'input-error-wrapper' : undefined}
@@ -106,7 +125,7 @@ export function AuthField({
         still the system's.
       */}
       {error && (
-        <div className="tr-field-error" data-testid="field-error" id={errorId}>
+        <div className="tr-field-error" data-testid={errorTestId} id={errorId}>
           {error.message}
         </div>
       )}

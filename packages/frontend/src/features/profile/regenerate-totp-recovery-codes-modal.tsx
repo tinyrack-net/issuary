@@ -125,9 +125,9 @@ export function RegenerateTotpRecoveryCodesModal({
       }
     >
       {step === 'verify' ? (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           {errorMessage && (
-            <div className="mb-3">
+            <div className="mb-tinyrack-md">
               <AlertBanner variant="error">{errorMessage}</AlertBanner>
             </div>
           )}
@@ -140,7 +140,7 @@ export function RegenerateTotpRecoveryCodesModal({
           />
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-tinyrack-lg">
           <RecoveryCodesStep
             onConfirm={handleClose}
             recoveryCodes={response?.recovery_codes ?? []}
