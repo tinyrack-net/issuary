@@ -50,12 +50,30 @@ jobs:
         uses: actions/upload-artifact@v7.0.1
         with:
           name: dist
-          path: packages/*/dist
+          path: |
+            packages/*/dist
+            packages/server/public
+          include-hidden-files: true
 
-  test:
-    name: Test
+  test-suite:
+    name: Test / ${{ matrix.name }}
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Server
+            command: pnpm --filter @tinyrack/tinyauth-server test --run
+          - name: Tools
+            command: pnpm --filter @tinyrack/tinyauth-tools test --run
+          - name: Frontend unit
+            command: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+            browsers: true
+          - name: Standalone
+            command: pnpm --filter @tinyrack/tinyauth-standalone test:prepared --run && pnpm --filter @tinyrack/tinyauth-standalone test:dist:prepared
+          - name: Example smoke
+            command: pnpm --filter @tinyauth-server-examples/node-hono-sqlite test:prepared
 
     steps:
       - name: Check out repository
@@ -77,24 +95,120 @@ jobs:
         uses: actions/download-artifact@v8.0.1
         with:
           name: dist
+          path: packages
 
-      - name: Backend tests
-        run: pnpm --filter @tinyrack/tinyauth-server test
-
-      - name: Install Playwright browsers for frontend unit tests
+      - name: Install Playwright browsers
+        if: matrix.browsers == true
         run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium firefox
 
-      - name: Frontend unit tests
-        run: pnpm --filter @tinyrack/tinyauth-frontend test:unit
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
 
-      - name: Standalone tests
-        run: pnpm --filter @tinyrack/tinyauth-standalone test
+  frontend-smoke:
+    name: Test / Frontend smoke (${{ matrix.shard }}/2)
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
 
-      - name: Standalone dist tests
-        run: pnpm --filter @tinyrack/tinyauth-standalone test:dist
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
 
-      - name: Frontend smoke E2E
-        run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: dist
+          path: packages
+
+      - name: Install Chromium
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium
+
+      - name: Run frontend smoke shard
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
+        run: >-
+          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+          --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: frontend-smoke-${{ matrix.shard }}
+          path: packages/frontend/blob-report
+          if-no-files-found: error
+          retention-days: 14
+
+  test:
+    name: Test
+    needs: [test-suite, frontend-smoke]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download frontend smoke reports
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: frontend-smoke-*
+          path: packages/frontend/blob-report
+          merge-multiple: true
+
+      - name: Merge frontend smoke report
+        working-directory: packages/frontend
+        run: pnpm exec playwright merge-reports --reporter=html blob-report
+
+      - name: Upload frontend smoke report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: frontend-smoke-report
+          path: packages/frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Verify test results
+        env:
+          SUITE_RESULT: ${{ needs.test-suite.result }}
+          SMOKE_RESULT: ${{ needs.frontend-smoke.result }}
+        run: |
+          if [ "$SUITE_RESULT" != "success" ]; then
+            echo "Test suites finished with result: $SUITE_RESULT"
+            exit 1
+          fi
+          if [ "$SMOKE_RESULT" != "success" ]; then
+            echo "Frontend smoke shards finished with result: $SMOKE_RESULT"
+            exit 1
+          fi
 
   homepage:
     name: Homepage
@@ -263,8 +377,8 @@ jobs:
             echo "Performance aggregation finished with result: $AGGREGATION_RESULT"
             exit 1
           fi
-  windows-compatibility:
-    name: Windows Compatibility
+  windows-build:
+    name: Windows / Build
     needs: build
     runs-on: windows-latest
 
@@ -293,23 +407,177 @@ jobs:
       - name: Lint
         run: pnpm biome check .
 
-      - name: Backend tests
-        run: pnpm --filter @tinyrack/tinyauth-server test --run
+      - name: Upload Windows dist artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: dist-windows
+          path: |
+            packages/*/dist
+            packages/server/public
+          include-hidden-files: true
 
-      - name: Tools tests
-        run: pnpm --filter @tinyrack/tinyauth-tools test --run
+  windows-test-suite:
+    name: Windows / ${{ matrix.name }}
+    needs: windows-build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Server
+            command: pnpm --filter @tinyrack/tinyauth-server test --run
+          - name: Tools
+            command: pnpm --filter @tinyrack/tinyauth-tools test --run
+          - name: Standalone
+            command: pnpm --filter @tinyrack/tinyauth-standalone test:prepared --run && pnpm --filter @tinyrack/tinyauth-standalone test:dist:prepared
+          - name: Frontend unit
+            command: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+            browsers: true
 
-      - name: Standalone tests
-        run: pnpm --filter @tinyrack/tinyauth-standalone test --run
+    steps:
+      - name: Disable Git CRLF conversion
+        run: git config --global core.autocrlf false
 
-      - name: Install Playwright browsers for frontend tests
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Windows dist artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: dist-windows
+          path: packages
+
+      - name: Install Playwright browsers
+        if: matrix.browsers == true
         run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium firefox
 
-      - name: Frontend unit tests
-        run: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+      - name: Run ${{ matrix.name }}
+        run: ${{ matrix.command }}
 
-      - name: Frontend smoke E2E
-        run: pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+  windows-frontend-smoke:
+    name: Windows / Frontend smoke (${{ matrix.shard }}/2)
+    needs: windows-build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+
+    steps:
+      - name: Disable Git CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Windows dist artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: dist-windows
+          path: packages
+
+      - name: Install Chromium
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium
+
+      - name: Run frontend smoke shard
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
+        run: >-
+          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+          --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
+
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: windows-frontend-smoke-${{ matrix.shard }}
+          path: packages/frontend/blob-report
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-compatibility:
+    name: Windows Compatibility
+    needs: [windows-test-suite, windows-frontend-smoke]
+    if: always()
+    runs-on: windows-latest
+
+    steps:
+      - name: Disable Git CRLF conversion
+        run: git config --global core.autocrlf false
+
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download Windows frontend smoke reports
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: windows-frontend-smoke-*
+          path: packages/frontend/blob-report
+          merge-multiple: true
+
+      - name: Merge Windows frontend smoke report
+        working-directory: packages/frontend
+        run: pnpm exec playwright merge-reports --reporter=html blob-report
+
+      - name: Upload Windows frontend smoke report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: windows-frontend-smoke-report
+          path: packages/frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Verify Windows test results
+        env:
+          SUITE_RESULT: ${{ needs.windows-test-suite.result }}
+          SMOKE_RESULT: ${{ needs.windows-frontend-smoke.result }}
+        shell: bash
+        run: |
+          if [ "$SUITE_RESULT" != "success" ]; then
+            echo "Windows test suites finished with result: $SUITE_RESULT"
+            exit 1
+          fi
+          if [ "$SMOKE_RESULT" != "success" ]; then
+            echo "Windows frontend smoke shards finished with result: $SMOKE_RESULT"
+            exit 1
+          fi
 
   docker-build:
     name: Docker Build

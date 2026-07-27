@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createTestConfigFile } from './helpers/config-factory.ts';
-import { runCli, startCli, stopCliProcess } from './helpers/spawn-cli.ts';
-import { waitForReady } from './helpers/wait-for-ready.ts';
+import {
+  runCli,
+  startCli,
+  stopCliProcess,
+  waitForCliReady,
+} from './helpers/spawn-cli.ts';
 
 function expectGracefulShutdownExitCode(exitCode: number | undefined) {
   if (process.platform === 'win32') {
@@ -30,7 +34,7 @@ describe('serve e2e', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     const body = await res.json();
 
     expect(body).toHaveProperty('issuer');
@@ -51,7 +55,7 @@ describe('serve e2e', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    await waitForReady(port);
+    await waitForCliReady(cliProcess, port);
 
     cliProcess.kill('SIGTERM');
     const result = await cliProcess;

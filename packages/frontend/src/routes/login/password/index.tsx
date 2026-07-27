@@ -26,6 +26,7 @@ import {
   extractOAuthParams,
   hasAuthorizationContext,
   isOAuthFlow,
+  type OAuthSearch,
   OAuthSearchSchema,
   type SecondFactorMethod,
 } from '#frontend/libs/oauth-search.ts';
@@ -63,10 +64,10 @@ function LoginPassword() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const search = Route.useSearch();
-  const authorizeSearch =
+  const authorizeSearch: OAuthSearch =
     search.account_selection_state &&
     search.prompt?.split(' ').includes('login')
-      ? { ...search, account_selected: '1' as const }
+      ? { ...search, account_selected: 1 }
       : search;
   const lang = search.lang ?? i18n.language;
 

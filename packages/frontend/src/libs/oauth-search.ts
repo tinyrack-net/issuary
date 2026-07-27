@@ -48,10 +48,13 @@ export const OAuthSearchSchema = z.object({
     .optional(),
   account_selected: z
     .preprocess((value) => {
-      if (value === 1) return '1';
+      if (value === 1) return 1;
       if (typeof value !== 'string') return value;
-      return decodeURIComponent(value).replaceAll('"', '').replaceAll('\\', '');
-    }, z.literal('1'))
+      const normalized = decodeURIComponent(value)
+        .replaceAll('"', '')
+        .replaceAll('\\', '');
+      return normalized === '1' ? 1 : normalized;
+    }, z.literal(1))
     .optional(),
   account_selection_state: z.string().min(1).max(200).optional(),
   display: z.enum(['page', 'popup', 'touch', 'wap']).optional(),
@@ -159,7 +162,7 @@ export function buildAuthenticatedAuthorizeUrl(search: OAuthSearch): string {
   };
 
   if (!search.prompt?.split(' ').includes('select_account')) {
-    authenticatedSearch.account_selected = '1';
+    authenticatedSearch.account_selected = 1;
   }
 
   return buildAuthorizeUrl(authenticatedSearch);

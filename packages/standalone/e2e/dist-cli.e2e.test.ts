@@ -4,8 +4,8 @@ import {
   runBuiltCli,
   startBuiltCli,
   stopCliProcess,
+  waitForCliReady,
 } from './helpers/spawn-cli.ts';
-import { waitForReady } from './helpers/wait-for-ready.ts';
 
 function expectGracefulShutdownExitCode(exitCode: number | undefined) {
   if (process.platform === 'win32') {
@@ -45,7 +45,7 @@ describe('dist cli e2e', { timeout: 180_000 }, () => {
       timeout: 60_000,
     });
 
-    const res = await waitForReady(port);
+    const res = await waitForCliReady(cliProcess, port);
     const body = await res.json();
 
     expect(body).toHaveProperty('issuer', `http://localhost:${port}`);

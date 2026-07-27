@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
@@ -16,6 +16,27 @@ const test = createScenarioFixture((backendPort) => ({
 }));
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+async function waitForRenderedTheme(
+  page: Page,
+  colorScheme: 'light' | 'dark',
+): Promise<void> {
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme',
+    `tinyrack-${colorScheme}`,
+  );
+  await expect(page.getByRole('main')).toBeVisible();
+  await expect(page.getByRole('heading').first()).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+  });
+}
 
 /**
  * Unauthenticated auth screens. Each is reachable without a session, so they
@@ -55,6 +76,7 @@ test.describe('Auth screen accessibility', () => {
         }, colorScheme);
 
         await page.goto(route);
+        await waitForRenderedTheme(page, colorScheme);
 
         const results = await new AxeBuilder({ page })
           .withTags(WCAG_TAGS)
@@ -93,6 +115,7 @@ test.describe('Profile accessibility', () => {
         E2E_TEST_USER.email,
         E2E_TEST_USER.password,
       );
+      await waitForRenderedTheme(page, colorScheme);
 
       const results = await new AxeBuilder({ page })
         .withTags(WCAG_TAGS)

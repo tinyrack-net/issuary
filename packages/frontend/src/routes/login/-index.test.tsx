@@ -1,4 +1,3 @@
-import { startAuthentication } from '@simplewebauthn/browser';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -11,10 +10,12 @@ import {
   renderRoute,
 } from '#frontend/test-utils/route-test-utils.tsx';
 
-vi.mock('@simplewebauthn/browser', () => ({
+const webauthnMocks = vi.hoisted(() => ({
   startAuthentication: vi.fn(),
   startRegistration: vi.fn(),
 }));
+
+vi.mock('@simplewebauthn/browser', () => webauthnMocks);
 
 const baseConfig = {
   i18n: {
@@ -99,7 +100,7 @@ function seedOAuthRouteData(config: AppConfigs = baseConfig) {
 }
 
 afterEach(() => {
-  vi.mocked(startAuthentication).mockReset();
+  webauthnMocks.startAuthentication.mockReset();
   resetFetchMock();
 });
 
@@ -188,7 +189,7 @@ describe('/login', () => {
   test('shows guidance when passkey sign in fails from the login page', async () => {
     const passkeyError = new Error('not allowed');
     passkeyError.name = 'NotAllowedError';
-    vi.mocked(startAuthentication).mockRejectedValue(passkeyError);
+    webauthnMocks.startAuthentication.mockRejectedValue(passkeyError);
     mockJsonResponses({
       url: '/api/auth/passkey/options',
       method: 'POST',

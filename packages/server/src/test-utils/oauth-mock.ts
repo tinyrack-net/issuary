@@ -21,9 +21,9 @@ export interface OAuthProviderFetchMockOptions {
   /** Set to null for providers without a userinfo endpoint (e.g. Apple). */
   userInfoUrl: string | null;
   tokens?: Partial<OAuthMockTokens>;
-  tokensSequence?: Array<Partial<OAuthMockTokens>>;
+  tokensByCode?: ReadonlyMap<string, Partial<OAuthMockTokens>>;
   userInfo?: Partial<OAuthMockUserInfo>;
-  userInfoSequence?: Array<Partial<OAuthMockUserInfo>>;
+  userInfoByAccessToken?: ReadonlyMap<string, Partial<OAuthMockUserInfo>>;
   /**
    * Raw userinfo response body returned by the mock.
    * Use this to supply provider-specific field names
@@ -73,6 +73,17 @@ function getAuthorizationHeader(
   return null;
 }
 
+async function getRequestFormField(
+  input: string | URL | Request,
+  init: RequestInit | undefined,
+  field: string,
+): Promise<string | null> {
+  const request =
+    input instanceof Request ? input.clone() : new Request(input, init);
+  const value = (await request.formData()).get(field);
+  return typeof value === 'string' ? value : null;
+}
+
 function createOAuthMockUserInfo(
   userInfo?: Partial<OAuthMockUserInfo>,
 ): OAuthMockUserInfo {
@@ -107,17 +118,9 @@ export function mockOAuthProviderFetch(
   options: OAuthProviderFetchMockOptions,
 ): OAuthProviderFetchMock {
   const tokens = createOAuthMockTokens(options.tokens);
-  const tokensSequence = options.tokensSequence?.map((entry) =>
-    createOAuthMockTokens(entry),
-  );
   const issuedAccessTokens = new Set([tokens.access_token]);
-  let nextTokens = 0;
 
   const userInfo = createOAuthMockUserInfo(options.userInfo);
-  const userInfoSequence = options.userInfoSequence?.map((entry) =>
-    createOAuthMockUserInfo(entry),
-  );
-  let nextUserInfo = 0;
   const requestUrls: string[] = [];
 
   const fetchSpy = vi
@@ -127,14 +130,17 @@ export function mockOAuthProviderFetch(
       requestUrls.push(url);
 
       if (url === options.tokenUrl) {
-        if (tokensSequence) {
-          const queuedTokens = tokensSequence[nextTokens];
-          nextTokens += 1;
-          if (!queuedTokens) {
-            throw new Error('OAuth mock token sequence exhausted');
+        if (options.tokensByCode) {
+          const code = await getRequestFormField(input, init, 'code');
+          const configuredTokens = code
+            ? options.tokensByCode.get(code)
+            : undefined;
+          if (!configuredTokens) {
+            throw new Error(`OAuth mock has no tokens for code: ${code}`);
           }
-          issuedAccessTokens.add(queuedTokens.access_token);
-          return jsonResponse(queuedTokens);
+          const responseTokens = createOAuthMockTokens(configuredTokens);
+          issuedAccessTokens.add(responseTokens.access_token);
+          return jsonResponse(responseTokens);
         }
 
         return jsonResponse(tokens);
@@ -152,13 +158,14 @@ export function mockOAuthProviderFetch(
         // Use rawUserInfoResponse if provided, otherwise default to
         // Google-style field names for backward compatibility.
         let responseUserInfo = userInfo;
-        if (userInfoSequence) {
-          const queuedUserInfo = userInfoSequence[nextUserInfo];
-          nextUserInfo += 1;
-          if (!queuedUserInfo) {
-            throw new Error('OAuth mock userinfo sequence exhausted');
+        if (options.userInfoByAccessToken) {
+          const configuredUserInfo = options.userInfoByAccessToken.get(token);
+          if (!configuredUserInfo) {
+            throw new Error(
+              `OAuth mock has no userinfo for access token: ${token}`,
+            );
           }
-          responseUserInfo = queuedUserInfo;
+          responseUserInfo = createOAuthMockUserInfo(configuredUserInfo);
         }
         const body = options.rawUserInfoResponse ?? {
           sub: responseUserInfo.id,

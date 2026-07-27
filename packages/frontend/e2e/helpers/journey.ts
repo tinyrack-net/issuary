@@ -104,7 +104,7 @@ export async function completeTotpVerify(
   page: Page,
   secret: string,
 ): Promise<void> {
-  const code = generateTotpCode(secret);
+  const code = await generateTotpCode(secret);
   await fillPinInput(page, code);
 }
 

@@ -30,9 +30,9 @@ export const changePasswordModal = {
   currentPassword: '#current-password',
   newPassword: '#new-password-change',
   confirmPassword: '#confirm-password-change',
-  cancelButton: '.tr-dialog-box [data-testid="change-password-cancel"]',
-  submitButton: '.tr-dialog-box [data-testid="change-password-submit"]',
-  fieldError: '.tr-dialog-box [data-testid^="change-password-error"]',
+  cancelButton: '[role="dialog"] [data-testid="change-password-cancel"]',
+  submitButton: '[role="dialog"] [data-testid="change-password-submit"]',
+  fieldError: '[role="dialog"] [data-testid^="change-password-error"]',
 } as const;
 
 /**
@@ -41,9 +41,9 @@ export const changePasswordModal = {
 export const setPasswordModal = {
   newPassword: '#new-password',
   confirmPassword: '#confirm-password',
-  cancelButton: '.tr-dialog-box [data-testid="set-password-cancel"]',
-  submitButton: '.tr-dialog-box [data-testid="set-password-submit"]',
-  fieldError: '.tr-dialog-box [data-testid^="set-password-error"]',
+  cancelButton: '[role="dialog"] [data-testid="set-password-cancel"]',
+  submitButton: '[role="dialog"] [data-testid="set-password-submit"]',
+  fieldError: '[role="dialog"] [data-testid^="set-password-error"]',
 } as const;
 
 /**
@@ -51,9 +51,9 @@ export const setPasswordModal = {
  */
 export const removePasswordModal = {
   currentPassword: '#current-password-remove',
-  cancelButton: '.tr-dialog-box [data-testid="remove-password-cancel"]',
-  submitButton: '.tr-dialog-box [data-testid="remove-password-submit"]',
-  fieldError: '.tr-dialog-box [data-testid="remove-password-error"]',
+  cancelButton: '[role="dialog"] [data-testid="remove-password-cancel"]',
+  submitButton: '[role="dialog"] [data-testid="remove-password-submit"]',
+  fieldError: '[role="dialog"] [data-testid="remove-password-error"]',
 } as const;
 
 /**
@@ -61,30 +61,30 @@ export const removePasswordModal = {
  */
 export const disableTotpModal = {
   codeInput: '#disable-totp-code',
-  cancelButton: '.tr-dialog-box [data-testid="disable-totp-cancel"]',
-  submitButton: '.tr-dialog-box [data-testid="disable-totp-submit"]',
-  fieldError: '.tr-dialog-box [data-testid="disable-totp-error"]',
-  warningAlert: '.tr-dialog-box [data-testid="alert-banner-warning"]',
+  cancelButton: '[role="dialog"] [data-testid="disable-totp-cancel"]',
+  submitButton: '[role="dialog"] [data-testid="disable-totp-submit"]',
+  fieldError: '[role="dialog"] [data-testid="disable-totp-error"]',
+  warningAlert: '[role="dialog"] [data-testid="alert-banner-warning"]',
 } as const;
 
 export const regenerateTotpModal = {
-  fieldError: '.tr-dialog-box [data-testid="pin-input-error"]',
-  errorAlert: '.tr-dialog-box [data-testid="alert-banner-error"]',
-  recoveryCodesGrid: '.tr-dialog-box [data-testid="recovery-codes-grid"]',
-  confirmCheckbox: '.tr-dialog-box [data-testid="recovery-codes-confirm"]',
-  confirmButton: '.tr-dialog-box [data-testid="recovery-codes-submit"]',
+  fieldError: '[role="dialog"] [data-testid="pin-input-error"]',
+  errorAlert: '[role="dialog"] [data-testid="alert-banner-error"]',
+  recoveryCodesGrid: '[role="dialog"] [data-testid="recovery-codes-grid"]',
+  confirmCheckbox: '[role="dialog"] [data-testid="recovery-codes-confirm"]',
+  confirmButton: '[role="dialog"] [data-testid="recovery-codes-submit"]',
 } as const;
 
 /**
  * Selectors for the setup TOTP modal (from profile page).
  */
 export const setupTotpModal = {
-  qrCodeImage: '.tr-dialog-box img[alt="TOTP QR Code"]',
-  nextButton: '.tr-dialog-box [data-testid="totp-qr-next"]',
-  pinInput: '.tr-dialog-box input[inputMode="numeric"]',
-  recoveryCodesGrid: '.tr-dialog-box [data-testid="recovery-codes-grid"]',
-  confirmCheckbox: '.tr-dialog-box [data-testid="recovery-codes-confirm"]',
-  confirmButton: '.tr-dialog-box [data-testid="recovery-codes-submit"]',
+  qrCodeImage: '[role="dialog"] img[alt="TOTP QR Code"]',
+  nextButton: '[role="dialog"] [data-testid="totp-qr-next"]',
+  pinInput: '[role="dialog"] input[inputMode="numeric"]',
+  recoveryCodesGrid: '[role="dialog"] [data-testid="recovery-codes-grid"]',
+  confirmCheckbox: '[role="dialog"] [data-testid="recovery-codes-confirm"]',
+  confirmButton: '[role="dialog"] [data-testid="recovery-codes-submit"]',
 } as const;
 
 /**
@@ -92,10 +92,10 @@ export const setupTotpModal = {
  */
 export const deleteAccountModal = {
   confirmInput: '#delete-confirmation',
-  cancelButton: '.tr-dialog-box [data-testid="delete-account-cancel"]',
-  submitButton: '.tr-dialog-box [data-testid="delete-account-submit"]',
-  fieldError: '.tr-dialog-box [data-testid="delete-account-error"]',
-  warningAlert: '.tr-dialog-box [data-testid="alert-banner-error"]',
+  cancelButton: '[role="dialog"] [data-testid="delete-account-cancel"]',
+  submitButton: '[role="dialog"] [data-testid="delete-account-submit"]',
+  fieldError: '[role="dialog"] [data-testid="delete-account-error"]',
+  warningAlert: '[role="dialog"] [data-testid="alert-banner-error"]',
 } as const;
 
 /**
@@ -103,40 +103,40 @@ export const deleteAccountModal = {
  */
 export const setupPasskeyModal = {
   nameInput: '#passkey-name',
-  cancelButton: '.tr-dialog-box [data-testid="setup-passkey-cancel"]',
-  continueButton: '.tr-dialog-box [data-testid="setup-passkey-continue"]',
-  waitingMessage: '.tr-dialog-box [data-testid="setup-passkey-loading"]',
-  fieldError: '.tr-dialog-box [data-testid="setup-passkey-error"]',
+  cancelButton: '[role="dialog"] [data-testid="setup-passkey-cancel"]',
+  continueButton: '[role="dialog"] [data-testid="setup-passkey-continue"]',
+  waitingMessage: '[role="dialog"] [data-testid="setup-passkey-loading"]',
+  fieldError: '[role="dialog"] [data-testid="setup-passkey-error"]',
 } as const;
 
 /**
  * Selectors for the manage passkeys modal.
  */
 export const managePasskeysModal = {
-  closeButton: '.tr-dialog-box [data-testid="manage-passkeys-close"]',
-  addNewButton: '.tr-dialog-box [data-testid="manage-passkeys-add-new"]',
-  passkeyItem: '.tr-dialog-box [data-testid="passkey-item"]',
-  renameInput: '.tr-dialog-box [data-testid="passkey-rename-input"]',
-  deleteError: '.tr-dialog-box [data-testid="alert-banner-error"]',
-  emptyState: '.tr-dialog-box [data-testid="passkeys-empty"]',
+  closeButton: '[role="dialog"] [data-testid="manage-passkeys-close"]',
+  addNewButton: '[role="dialog"] [data-testid="manage-passkeys-add-new"]',
+  passkeyItem: '[role="dialog"] [data-testid="passkey-item"]',
+  renameInput: '[role="dialog"] [data-testid="passkey-rename-input"]',
+  deleteError: '[role="dialog"] [data-testid="alert-banner-error"]',
+  emptyState: '[role="dialog"] [data-testid="passkeys-empty"]',
 } as const;
 
 /**
  * Selectors for the unlink OAuth modal.
  */
 export const unlinkOAuthModal = {
-  cancelButton: '.tr-dialog-box [data-testid="unlink-oauth-cancel"]',
-  unlinkButton: '.tr-dialog-box [data-testid="unlink-oauth-unlink"]',
-  warningAlert: '.tr-dialog-box [data-testid="alert-banner-warning"]',
-  errorAlert: '.tr-dialog-box [data-testid="alert-banner-error"]',
+  cancelButton: '[role="dialog"] [data-testid="unlink-oauth-cancel"]',
+  unlinkButton: '[role="dialog"] [data-testid="unlink-oauth-unlink"]',
+  warningAlert: '[role="dialog"] [data-testid="alert-banner-warning"]',
+  errorAlert: '[role="dialog"] [data-testid="alert-banner-error"]',
 } as const;
 
 /**
  * Generic modal selector.
  */
 export const modal = {
-  openModal: '.tr-dialog-box',
-  closeButton: '.tr-dialog-box [data-testid="modal-close"]',
+  openModal: '[role="dialog"]',
+  closeButton: '[role="dialog"] [data-testid="modal-close"]',
 } as const;
 
 /**

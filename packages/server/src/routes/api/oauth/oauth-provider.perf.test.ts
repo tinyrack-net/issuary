@@ -16,6 +16,7 @@ import {
   getLocationHeader,
   MINIMAL_TEST_CONFIG,
   mockOAuthProviderFetch,
+  type OAuthMockTokens,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../test-utils/index.js';
@@ -124,6 +125,7 @@ async function createOAuthLinkCallbackFixture(index: number) {
   }
 
   return {
+    code: `oauth-link-perf-code-${index}`,
     returnUrl,
     state,
     userSub,
@@ -154,6 +156,8 @@ async function createOAuthLoginCallbackFixture(index: number) {
   }
 
   return {
+    accessToken: `oauth-login-perf-access-${index}`,
+    code: `oauth-login-perf-code-${index}`,
     email,
     returnUrl,
     state,
@@ -179,6 +183,7 @@ async function createAppleFormPostFixture(index: number) {
   }
 
   return {
+    code: `apple-form-post-perf-code-${index}`,
     oauthStateCookie: extractCookie(authorizeResponse, 'oauth_state'),
     state,
   };
@@ -318,6 +323,7 @@ async function requestCallbackGetMissingState() {
 
 async function requestCallbackGetLinkSuccess(
   fixture: {
+    code: string;
     returnUrl: string;
     sessionCookie: string;
     state: string;
@@ -328,7 +334,7 @@ async function requestCallbackGetLinkSuccess(
   const response = await client.api.oauth[':provider'].callback.$get(
     {
       param: { provider: 'google' },
-      query: { code: 'oauth-link-perf-code', state: fixture.state },
+      query: { code: fixture.code, state: fixture.state },
     },
     { headers: { Cookie: `session=${fixture.sessionCookie}` } },
   );
@@ -346,6 +352,7 @@ async function requestCallbackGetLinkSuccess(
 
 async function requestCallbackGetLoginSuccess(
   fixture: {
+    code: string;
     returnUrl: string;
     sessionCookie: string;
     state: string;
@@ -356,7 +363,7 @@ async function requestCallbackGetLoginSuccess(
   const response = await client.api.oauth[':provider'].callback.$get(
     {
       param: { provider: 'google' },
-      query: { code: 'oauth-login-perf-code', state: fixture.state },
+      query: { code: fixture.code, state: fixture.state },
     },
     { headers: { Cookie: `session=${fixture.sessionCookie}` } },
   );
@@ -374,6 +381,7 @@ async function requestCallbackGetLoginSuccess(
 
 async function requestAppleFormPostSuccess(
   fixture: {
+    code: string;
     oauthStateCookie: string;
     state: string;
   },
@@ -384,7 +392,7 @@ async function requestAppleFormPostSuccess(
     {
       param: { provider: 'apple' },
       form: {
-        code: 'apple-form-post-perf-code',
+        code: fixture.code,
         state: fixture.state,
       },
     },
@@ -484,12 +492,23 @@ describe('GET /api/oauth/:provider/callback perf', () => {
     const oauthMock = mockOAuthProviderFetch({
       tokenUrl: GOOGLE_TOKEN_URL,
       userInfoUrl: GOOGLE_USERINFO_URL,
-      userInfoSequence: fixtures.map((fixture, index) => ({
-        id: `google-login-perf-${crypto.randomUUID()}`,
-        email: fixture.email,
-        email_verified: true,
-        name: `OAuth Login Perf User ${index}`,
-      })),
+      tokensByCode: new Map(
+        fixtures.map((fixture) => [
+          fixture.code,
+          { access_token: fixture.accessToken },
+        ]),
+      ),
+      userInfoByAccessToken: new Map(
+        fixtures.map((fixture, index) => [
+          fixture.accessToken,
+          {
+            id: `google-login-perf-${crypto.randomUUID()}`,
+            email: fixture.email,
+            email_verified: true,
+            name: `OAuth Login Perf User ${index}`,
+          },
+        ]),
+      ),
     });
 
     try {
@@ -526,19 +545,35 @@ describe('GET /api/oauth/:provider/callback perf', () => {
         createOAuthLinkCallbackFixture(index),
       ),
     );
-    const callbackSessions: OAuthCallbackSession[] = [];
-
-    const oauthMock = mockOAuthProviderFetch({
-      tokenUrl: GOOGLE_TOKEN_URL,
-      userInfoUrl: GOOGLE_USERINFO_URL,
-      userInfoSequence: fixtures.map((_, index) => ({
+    const providerFixtures = fixtures.map((fixture, index) => ({
+      accessToken: `oauth-link-perf-access-${index}`,
+      code: fixture.code,
+      userInfo: {
         id: `google-link-perf-${crypto.randomUUID()}`,
         email: generateUniqueEmail(
           `oauth-callback-link-perf-provider-${index}`,
         ),
         email_verified: true,
         name: 'OAuth Link Perf User',
-      })),
+      },
+    }));
+    const callbackSessions: OAuthCallbackSession[] = [];
+
+    const oauthMock = mockOAuthProviderFetch({
+      tokenUrl: GOOGLE_TOKEN_URL,
+      userInfoUrl: GOOGLE_USERINFO_URL,
+      tokensByCode: new Map(
+        providerFixtures.map((fixture) => [
+          fixture.code,
+          { access_token: fixture.accessToken },
+        ]),
+      ),
+      userInfoByAccessToken: new Map(
+        providerFixtures.map((fixture) => [
+          fixture.accessToken,
+          fixture.userInfo,
+        ]),
+      ),
     });
 
     try {
@@ -597,13 +632,19 @@ describe('POST /api/oauth/:provider/callback perf', () => {
       ),
     );
     const callbackSessions: AppleCallbackSession[] = [];
+    const tokensByCode = new Map<string, Partial<OAuthMockTokens>>();
+    for (const [index, idTokenFixture] of idTokenFixtures.entries()) {
+      const fixture = fixtures[index];
+      if (!fixture) {
+        throw new Error(`Missing Apple callback fixture at index ${index}`);
+      }
+      tokensByCode.set(fixture.code, { id_token: idTokenFixture.idToken });
+    }
 
     const oauthMock = mockOAuthProviderFetch({
       tokenUrl: APPLE_TOKEN_URL,
       userInfoUrl: null,
-      tokensSequence: idTokenFixtures.map((fixture) => ({
-        id_token: fixture.idToken,
-      })),
+      tokensByCode,
       jwksUrl: APPLE_JWKS_URL,
       jwks: {
         keys: idTokenFixtures.map((fixture) => fixture.jwk),

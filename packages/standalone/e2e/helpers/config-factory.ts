@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import YAML from 'yaml';
 
 const RETRIABLE_REMOVE_ERROR_CODES = new Set(['EBUSY', 'ENOTEMPTY', 'EPERM']);
+const PORT_RESERVATION_MAX_AGE_MS = 15 * 60 * 1000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,6 +42,49 @@ export function getFreePort(): Promise<number> {
   });
 }
 
+async function removeStalePortReservation(lockPath: string): Promise<void> {
+  try {
+    const stats = await fs.stat(lockPath);
+    if (Date.now() - stats.mtimeMs > PORT_RESERVATION_MAX_AGE_MS) {
+      await fs.rm(lockPath, { force: true });
+    }
+  } catch (error) {
+    if (getErrorCode(error) !== 'ENOENT') {
+      throw error;
+    }
+  }
+}
+
+export async function reserveFreePort(): Promise<{
+  port: number;
+  release: () => Promise<void>;
+}> {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const port = await getFreePort();
+    const lockPath = path.join(os.tmpdir(), `tinyauth-e2e-port-${port}.lock`);
+
+    try {
+      await fs.writeFile(lockPath, String(process.pid), {
+        encoding: 'utf-8',
+        flag: 'wx',
+      });
+      return {
+        port,
+        release: async () => {
+          await fs.rm(lockPath, { force: true });
+        },
+      };
+    } catch (error) {
+      if (getErrorCode(error) !== 'EEXIST') {
+        throw error;
+      }
+      await removeStalePortReservation(lockPath);
+    }
+  }
+
+  throw new Error('Unable to reserve a unique test server port');
+}
+
 export async function removeDirectoryWithRetry(dir: string): Promise<void> {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -68,8 +112,14 @@ interface CreateTestConfigFileResult {
 export async function createTestConfigFile(
   overrides?: Record<string, unknown>,
 ): Promise<CreateTestConfigFileResult> {
-  const port = await getFreePort();
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tinyauth-e2e-'));
+  const { port, release } = await reserveFreePort();
+  let tmpDir: string;
+  try {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tinyauth-e2e-'));
+  } catch (error) {
+    await release();
+    throw error;
+  }
 
   const config: Record<string, unknown> = {
     database: {
@@ -109,7 +159,11 @@ export async function createTestConfigFile(
     configPath,
     port,
     cleanup: async () => {
-      await removeDirectoryWithRetry(tmpDir);
+      try {
+        await removeDirectoryWithRetry(tmpDir);
+      } finally {
+        await release();
+      }
     },
   };
 }

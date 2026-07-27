@@ -41,8 +41,10 @@
     "test:coverage": "pnpm run test:unit:coverage",
     "test:unit:ui": "vitest --ui",
     "test:unit:preview": "cross-env VITEST_BROWSER_MODE=preview vitest",
-    "test:e2e": "node --conditions=@tinyauth/source --import tsx node_modules/@playwright/test/cli.js test",
-    "test:e2e:smoke": "node --conditions=@tinyauth/source --import tsx node_modules/@playwright/test/cli.js test --project minimal:chromium",
+    "test:e2e": "node --import tsx node_modules/@playwright/test/cli.js test",
+    "test:e2e:sharded": "node e2e/run-sharded.ts",
+    "test:e2e:smoke": "node --import tsx node_modules/@playwright/test/cli.js test --project minimal:chromium",
+    "test:e2e:smoke:sharded": "node e2e/run-sharded.ts --project minimal:chromium",
     "test:e2e:ui": "node --conditions=@tinyauth/source --import tsx node_modules/@playwright/test/cli.js test --ui"
   },
   "dependencies": {

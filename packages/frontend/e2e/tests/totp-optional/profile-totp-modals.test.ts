@@ -53,7 +53,7 @@ async function loginWithTotpAndGoToProfile(
   await performLogin(page, email, password);
   await page.waitForURL('**/verify/totp');
 
-  const code = generateTotpCode(totpSecret);
+  const code = await generateTotpCode(totpSecret);
   await fillPinInput(page, code);
 
   await page.waitForURL('**/profile');
@@ -146,7 +146,7 @@ test.describe('SetupTotpModal (profile)', () => {
     await expect(page.locator(setupTotpModal.pinInput).first()).toBeVisible();
 
     // Enter valid TOTP code
-    const code = generateTotpCode(secret);
+    const code = await generateTotpCode(secret);
     await fillPinInput(page, code);
 
     // Recovery codes grid should appear
@@ -206,7 +206,7 @@ test.describe('SetupTotpModal (profile)', () => {
     await expect(page.locator(setupTotpModal.pinInput).first()).toBeVisible();
 
     // Step 2: Verify with valid code
-    const code = generateTotpCode(secret);
+    const code = await generateTotpCode(secret);
     await fillPinInput(page, code);
 
     // Step 3: Recovery codes
@@ -294,7 +294,7 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     await expect(page.locator(disableTotpModal.warningAlert)).toBeVisible();
 
     // Enter valid TOTP code
-    const code = generateTotpCode(secret);
+    const code = await generateTotpCode(secret);
     await page.locator(disableTotpModal.codeInput).fill(code);
     await page.locator(disableTotpModal.submitButton).click();
 
