@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "packageManager": "pnpm@11.10.0",
   "scripts": {
-    "dev": "pnpm --filter '@tinyrack/tinyauth-*' --parallel dev",
+    "dev": "pnpm --filter \"@tinyrack/tinyauth-*\" --parallel dev",
     "test": "node packages/tools/src/scripts/run-validation-tests.ts",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
     "biome": "biome",

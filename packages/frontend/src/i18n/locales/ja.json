@@ -91,6 +91,7 @@
   "register.submitting": "アカウント作成中...",
   "register.subtitle": "新しいアカウントを作成して始めましょう",
   "register.title": "アカウント作成",
+  "validation.email.required": "メールアドレスを入力してください",
   "validation.email.invalid": "正しいメールアドレスの形式ではありません",
   "validation.password.max": "パスワードは{{count}}文字以下である必要があります",
   "validation.password.min": "パスワードは{{count}}文字以上である必要があります",
