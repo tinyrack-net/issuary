@@ -116,7 +116,10 @@ function Register() {
   const registerSchema = useMemo(
     () =>
       z.object({
-        email: z.email(t('validation.email.invalid')),
+        email: z
+          .string()
+          .min(1, t('validation.email.required'))
+          .pipe(z.email(t('validation.email.invalid'))),
         password: z
           .string()
           .min(

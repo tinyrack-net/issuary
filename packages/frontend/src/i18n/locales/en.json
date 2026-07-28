@@ -91,6 +91,7 @@
   "register.submitting": "Creating account...",
   "register.subtitle": "Create a new account to get started",
   "register.title": "Create account",
+  "validation.email.required": "Please enter your email address",
   "validation.email.invalid": "Invalid email format",
   "validation.password.max": "Password must be at most {{count}} characters",
   "validation.password.min": "Password must be at least {{count}} characters",

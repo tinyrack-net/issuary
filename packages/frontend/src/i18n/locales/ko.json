@@ -91,6 +91,7 @@
   "register.submitting": "회원가입 중...",
   "register.subtitle": "새 계정을 만들어 시작하세요",
   "register.title": "계정 만들기",
+  "validation.email.required": "이메일 주소를 입력해주세요",
   "validation.email.invalid": "올바른 이메일 형식이 아닙니다",
   "validation.password.max": "비밀번호는 최대 {{count}}자까지 가능합니다",
   "validation.password.min": "비밀번호는 최소 {{count}}자 이상이어야 합니다",
