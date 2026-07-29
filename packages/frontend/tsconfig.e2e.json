@@ -13,6 +13,7 @@
     "e2e/helpers",
     "e2e/fixtures",
     "e2e/setup",
-    "e2e/configs"
+    "e2e/configs",
+    "e2e/screen-lab"
   ]
 }

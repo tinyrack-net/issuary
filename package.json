@@ -8,6 +8,7 @@
     "test": "node packages/tools/src/scripts/run-validation-tests.ts",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
     "biome": "biome",
+    "screen:dev": "pnpm --filter @tinyrack/tinyauth-frontend screen:dev",
     "tools": "tinyauth-tools",
     "test:setup:browsers": "pnpm --filter @tinyrack/tinyauth-frontend exec playwright install"
   },

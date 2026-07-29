@@ -130,28 +130,44 @@ export default defineConfig({
   timeout: 1000 * 90,
   expect: {
     timeout: 30_000,
+    toHaveScreenshot: {
+      maxDiffPixels: 100,
+    },
   },
+  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}{ext}',
   use: {
     actionTimeout: 30_000,
     navigationTimeout: 45_000,
   },
-  projects: configs.flatMap((config) =>
-    browsers.map((browser) => ({
-      name: `${config.name}:${browser.name}`,
-      testDir: config.testDir,
+  projects: [
+    ...configs.flatMap((config) =>
+      browsers.map((browser) => ({
+        name: `${config.name}:${browser.name}`,
+        testDir: config.testDir,
+        use: {
+          trace: 'retain-on-failure' as const,
+          /*
+           * Auth screen content animates in, and Playwright waits for an element
+           * to stop moving before acting on it. That is correct, but it puts a
+           * stability window in front of nearly every interaction in this suite
+           * for the sake of decoration. Asking for reduced motion takes the app's
+           * own `prefers-reduced-motion` path, so content is final as soon as it
+           * mounts.
+           */
+          reducedMotion: 'reduce' as const,
+          ...browser.device,
+        },
+      })),
+    ),
+    {
+      name: 'screen-lab:chromium',
+      testDir: './e2e/tests/screen-lab',
       use: {
-        trace: 'retain-on-failure' as const,
-        /*
-         * Auth screen content animates in, and Playwright waits for an element
-         * to stop moving before acting on it. That is correct, but it puts a
-         * stability window in front of nearly every interaction in this suite
-         * for the sake of decoration. Asking for reduced motion takes the app's
-         * own `prefers-reduced-motion` path, so content is final as soon as it
-         * mounts.
-         */
-        reducedMotion: 'reduce' as const,
-        ...browser.device,
+        colorScheme: 'light',
+        locale: 'en-US',
+        trace: 'retain-on-failure',
+        ...devices['Desktop Chrome'],
       },
-    })),
-  ),
+    },
+  ],
 });

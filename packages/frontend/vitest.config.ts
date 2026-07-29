@@ -7,6 +7,13 @@ import { defineConfig } from 'vitest/config';
 const MODE = process.env['VITEST_BROWSER_MODE'];
 const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
 const HOST = MODE === 'preview' ? '0.0.0.0' : '127.0.0.1';
+const BROWSER_API_PORT = Number(
+  process.env['VITEST_BROWSER_API_PORT'] ?? Number.NaN,
+);
+const browserApiPort =
+  Number.isInteger(BROWSER_API_PORT) && BROWSER_API_PORT > 0
+    ? { port: BROWSER_API_PORT }
+    : {};
 
 export default defineConfig({
   server: {
@@ -45,6 +52,7 @@ export default defineConfig({
             enabled: true,
             api: {
               host: HOST,
+              ...browserApiPort,
             },
             provider: MODE === 'preview' ? preview() : playwright(),
             headless: MODE !== 'preview',
