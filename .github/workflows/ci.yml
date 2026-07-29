@@ -154,9 +154,59 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  frontend-screen-lab:
+    name: Visual / Screen Lab (${{ matrix.shard }}/2)
+    needs: build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6.0.9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: dist
+          path: packages
+
+      - name: Install Chromium
+        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium
+
+      - name: Run Screen Lab visual shard
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
+        run: >-
+          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:screen
+          --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
+
+      - name: Upload Screen Lab blob report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: frontend-screen-lab-${{ matrix.shard }}
+          path: packages/frontend/blob-report
+          if-no-files-found: error
+          retention-days: 14
+
   test:
     name: Test
-    needs: [test-suite, frontend-smoke]
+    needs: [test-suite, frontend-smoke, frontend-screen-lab]
     if: always()
     runs-on: ubuntu-latest
 
@@ -196,10 +246,31 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
+      - name: Download Screen Lab reports
+        uses: actions/download-artifact@v8.0.1
+        with:
+          pattern: frontend-screen-lab-*
+          path: packages/frontend/screen-lab-blob-report
+          merge-multiple: true
+
+      - name: Merge Screen Lab report
+        working-directory: packages/frontend
+        run: pnpm exec playwright merge-reports --reporter=html screen-lab-blob-report
+
+      - name: Upload Screen Lab report
+        if: always()
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: frontend-screen-lab-report
+          path: packages/frontend/playwright-report
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Verify test results
         env:
           SUITE_RESULT: ${{ needs.test-suite.result }}
           SMOKE_RESULT: ${{ needs.frontend-smoke.result }}
+          SCREEN_LAB_RESULT: ${{ needs.frontend-screen-lab.result }}
         run: |
           if [ "$SUITE_RESULT" != "success" ]; then
             echo "Test suites finished with result: $SUITE_RESULT"
@@ -207,6 +278,10 @@ jobs:
           fi
           if [ "$SMOKE_RESULT" != "success" ]; then
             echo "Frontend smoke shards finished with result: $SMOKE_RESULT"
+            exit 1
+          fi
+          if [ "$SCREEN_LAB_RESULT" != "success" ]; then
+            echo "Screen Lab shards finished with result: $SCREEN_LAB_RESULT"
             exit 1
           fi
 
