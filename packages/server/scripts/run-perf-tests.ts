@@ -66,7 +66,7 @@ async function runVitest(
   const child = spawn(
     process.execPath,
     [
-      '--conditions=@tinyauth/source',
+      '--conditions=@issuary/source',
       VITEST_PATH,
       'run',
       '--config',
@@ -123,7 +123,7 @@ function errorMessage(error: unknown): string {
 }
 
 const args = process.argv.slice(2).filter((arg) => arg !== '--');
-const reportPath = process.env['TINYAUTH_PERF_REPORT_PATH'];
+const reportPath = process.env['ISSUARY_PERF_REPORT_PATH'];
 const eventsPath = reportPath
   ? `${reportPath}.${String(process.pid)}.events.jsonl`
   : undefined;

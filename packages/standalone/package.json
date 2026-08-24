@@ -1,12 +1,12 @@
 {
-  "name": "@tinyrack/tinyauth-standalone",
-  "version": "0.19.0",
+  "name": "@tinyrack/issuary-standalone",
+  "version": "0.20.0",
   "type": "module",
-  "description": "TinyAuth standalone CLI server",
+  "description": "Issuary standalone CLI server",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://git.winetree94.com/tinyrack/tinyauth.git",
+    "url": "git+https://github.com/tinyrack-net/issuary.git",
     "directory": "packages/standalone"
   },
   "files": [
@@ -24,33 +24,33 @@
   },
   "imports": {
     "#standalone/*.ts": {
-      "@tinyauth/source": "./src/*.ts",
+      "@issuary/source": "./src/*.ts",
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     },
     "#standalone/*": {
-      "@tinyauth/source": "./src/*",
+      "@issuary/source": "./src/*",
       "types": "./dist/*",
       "default": "./dist/*"
     }
   },
   "bin": {
-    "tinyauth": "./bin/index.js"
+    "issuary": "./bin/index.js"
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--conditions=@tinyauth/source tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
-    "dev:cli": "cross-env CONFIG_PATH=./config.dev.yaml NODE_OPTIONS=--conditions=@tinyauth/source tsx src/cli.ts",
-    "docker:build": "docker build -f ./Dockerfile ../.. -t tinyauth:local",
-    "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs --exclude e2e/dist-cli.e2e.test.ts",
-    "test:prepared": "cross-env TINYAUTH_E2E_BUILT_CLI=1 node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs --exclude e2e/dist-cli.e2e.test.ts",
-    "test:coverage": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage --exclude e2e/dist-cli.e2e.test.ts",
-    "test:dist": "pnpm --filter @tinyrack/tinyauth-server run build && pnpm run build && pnpm run test:dist:prepared",
+    "dev": "cross-env NODE_OPTIONS=--conditions=@issuary/source tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
+    "dev:cli": "cross-env CONFIG_PATH=./config.dev.yaml NODE_OPTIONS=--conditions=@issuary/source tsx src/cli.ts",
+    "docker:build": "docker build -f ./Dockerfile ../.. -t issuary:local",
+    "test": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs --exclude e2e/dist-cli.e2e.test.ts",
+    "test:prepared": "cross-env ISSUARY_E2E_BUILT_CLI=1 node --conditions=@issuary/source node_modules/vitest/vitest.mjs --exclude e2e/dist-cli.e2e.test.ts",
+    "test:coverage": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs run --coverage --exclude e2e/dist-cli.e2e.test.ts",
+    "test:dist": "pnpm --filter @tinyrack/issuary-server run build && pnpm run build && pnpm run test:dist:prepared",
     "test:dist:prepared": "vitest run e2e/dist-cli.e2e.test.ts",
     "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.src.build.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo node_modules/.cache/tsconfig.e2e.tsbuildinfo",
     "build": "pnpm run clean && tsc -b tsconfig.build.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",
-    "export:openapi": "node --conditions=@tinyauth/source --import tsx src/cli.ts export openapi"
+    "export:openapi": "node --conditions=@issuary/source --import tsx src/cli.ts export openapi"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -67,7 +67,7 @@
     "@hono/node-server": "catalog:",
     "@mikro-orm/cli": "catalog:",
     "@stricli/core": "catalog:",
-    "@tinyrack/tinyauth-server": "workspace:*",
+    "@tinyrack/issuary-server": "workspace:*",
     "croner": "catalog:",
     "dotenv": "catalog:",
     "hono": "catalog:",

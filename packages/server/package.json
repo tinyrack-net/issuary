@@ -1,12 +1,12 @@
 {
-  "name": "@tinyrack/tinyauth-server",
-  "version": "0.19.0",
+  "name": "@tinyrack/issuary-server",
+  "version": "0.20.0",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinyrack-net/tinyauth.git",
+    "url": "git+https://github.com/tinyrack-net/issuary.git",
     "directory": "packages/server"
   },
   "files": [
@@ -87,101 +87,101 @@
   },
   "exports": {
     ".": {
-      "@tinyauth/source": "./src/entrypoints/index.ts",
+      "@issuary/source": "./src/entrypoints/index.ts",
       "types": "./dist/entrypoints/index.d.ts",
       "default": "./dist/entrypoints/index.js"
     },
     "./config": {
-      "@tinyauth/source": "./src/entrypoints/config/index.ts",
+      "@issuary/source": "./src/entrypoints/config/index.ts",
       "types": "./dist/entrypoints/config/index.d.ts",
       "default": "./dist/entrypoints/config/index.js"
     },
     "./services": {
-      "@tinyauth/source": "./src/entrypoints/services.ts",
+      "@issuary/source": "./src/entrypoints/services.ts",
       "types": "./dist/entrypoints/services.d.ts",
       "default": "./dist/entrypoints/services.js"
     },
     "./database/postgres": {
-      "@tinyauth/source": "./src/entrypoints/database/postgres/postgres.ts",
+      "@issuary/source": "./src/entrypoints/database/postgres/postgres.ts",
       "types": "./dist/entrypoints/database/postgres/postgres.d.ts",
       "default": "./dist/entrypoints/database/postgres/postgres.js"
     },
     "./database/sqlite": {
-      "@tinyauth/source": "./src/entrypoints/database/sqlite/sqlite.ts",
+      "@issuary/source": "./src/entrypoints/database/sqlite/sqlite.ts",
       "types": "./dist/entrypoints/database/sqlite/sqlite.d.ts",
       "default": "./dist/entrypoints/database/sqlite/sqlite.js"
     },
     "./mail/nodemailer": {
-      "@tinyauth/source": "./src/entrypoints/mail/nodemailer.ts",
+      "@issuary/source": "./src/entrypoints/mail/nodemailer.ts",
       "types": "./dist/entrypoints/mail/nodemailer.d.ts",
       "default": "./dist/entrypoints/mail/nodemailer.js"
     },
     "./scheduler/croner": {
-      "@tinyauth/source": "./src/entrypoints/scheduler/croner.ts",
+      "@issuary/source": "./src/entrypoints/scheduler/croner.ts",
       "types": "./dist/entrypoints/scheduler/croner.d.ts",
       "default": "./dist/entrypoints/scheduler/croner.js"
     },
     "./scheduler/database": {
-      "@tinyauth/source": "./src/entrypoints/scheduler/database.ts",
+      "@issuary/source": "./src/entrypoints/scheduler/database.ts",
       "types": "./dist/entrypoints/scheduler/database.d.ts",
       "default": "./dist/entrypoints/scheduler/database.js"
     },
     "./identity-providers/github": {
-      "@tinyauth/source": "./src/entrypoints/identity-providers/github.ts",
+      "@issuary/source": "./src/entrypoints/identity-providers/github.ts",
       "types": "./dist/entrypoints/identity-providers/github.d.ts",
       "default": "./dist/entrypoints/identity-providers/github.js"
     },
     "./identity-providers/google": {
-      "@tinyauth/source": "./src/entrypoints/identity-providers/google.ts",
+      "@issuary/source": "./src/entrypoints/identity-providers/google.ts",
       "types": "./dist/entrypoints/identity-providers/google.d.ts",
       "default": "./dist/entrypoints/identity-providers/google.js"
     },
     "./identity-providers/apple": {
-      "@tinyauth/source": "./src/entrypoints/identity-providers/apple.ts",
+      "@issuary/source": "./src/entrypoints/identity-providers/apple.ts",
       "types": "./dist/entrypoints/identity-providers/apple.d.ts",
       "default": "./dist/entrypoints/identity-providers/apple.js"
     },
     "./identity-providers/generic-oauth": {
-      "@tinyauth/source": "./src/entrypoints/identity-providers/generic-oauth.ts",
+      "@issuary/source": "./src/entrypoints/identity-providers/generic-oauth.ts",
       "types": "./dist/entrypoints/identity-providers/generic-oauth.d.ts",
       "default": "./dist/entrypoints/identity-providers/generic-oauth.js"
     },
     "./frontend": {
-      "@tinyauth/source": "./src/entrypoints/frontend/index.ts",
+      "@issuary/source": "./src/entrypoints/frontend/index.ts",
       "types": "./dist/entrypoints/frontend/index.d.ts",
       "default": "./dist/entrypoints/frontend/index.js"
     },
     "./frontend/static": {
-      "@tinyauth/source": "./src/entrypoints/frontend/static.ts",
+      "@issuary/source": "./src/entrypoints/frontend/static.ts",
       "types": "./dist/entrypoints/frontend/static.d.ts",
       "default": "./dist/entrypoints/frontend/static.js"
     },
     "./frontend/proxy": {
-      "@tinyauth/source": "./src/entrypoints/frontend/proxy.ts",
+      "@issuary/source": "./src/entrypoints/frontend/proxy.ts",
       "types": "./dist/entrypoints/frontend/proxy.d.ts",
       "default": "./dist/entrypoints/frontend/proxy.js"
     }
   },
   "imports": {
     "#server/*.ts": {
-      "@tinyauth/source": "./src/*.ts",
+      "@issuary/source": "./src/*.ts",
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     },
     "#server/*.tsx": {
-      "@tinyauth/source": "./src/*.tsx",
+      "@issuary/source": "./src/*.tsx",
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
     },
     "#server/*": {
-      "@tinyauth/source": "./src/*",
+      "@issuary/source": "./src/*",
       "types": "./dist/*",
       "default": "./dist/*"
     }
   },
   "scripts": {
-    "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs",
-    "test:coverage": "node ../../packages/tools/src/scripts/rm.ts coverage && node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage --maxWorkers=1",
+    "test": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs",
+    "test:coverage": "node ../../packages/tools/src/scripts/rm.ts coverage && node --conditions=@issuary/source node_modules/vitest/vitest.mjs run --coverage --maxWorkers=1",
     "test:perf": "tsx ./scripts/run-perf-tests.ts",
     "test:perf:smoke": "tsx ./scripts/run-perf-tests.ts src/routes/api/health/health.perf.test.ts src/routes/api/user/session/session.perf.test.ts src/routes/api/auth/login/login.perf.test.ts src/routes/oauth/token/token.perf.test.ts",
     "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",

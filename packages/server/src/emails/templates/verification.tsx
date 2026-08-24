@@ -14,7 +14,7 @@ export const VerificationEmail = ({
   verificationUrl,
   token,
   locale = 'en',
-  appName = 'TinyAuth',
+  appName = 'Issuary',
 }: VerificationEmailProps) => {
   const t = getTranslations(locale).verification;
 

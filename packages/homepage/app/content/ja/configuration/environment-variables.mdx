@@ -1,11 +1,11 @@
 ---
 title: 環境変数
-description: Tinyauth 環境変数リファレンス
+description: Issuary 環境変数リファレンス
 section: configuration
 order: 6
 ---
 
-`tinyauth` の `config.yaml`を構成するとき、特定の設定は環境変数を参照することができます。これは機密情報を扱うのに役立ち、コンテナ化された展開やクラウド環境で機密設定を管理するのに役立ちます。簡単な使用例は次のとおりです。
+`issuary` の `config.yaml`を構成するとき、特定の設定は環境変数を参照することができます。これは機密情報を扱うのに役立ち、コンテナ化された展開やクラウド環境で機密設定を管理するのに役立ちます。簡単な使用例は次のとおりです。
 
 ```yaml
 server:
@@ -26,7 +26,7 @@ docker run \
   -e PUBLIC_ORIGIN=https://example.com \
   -e SESSION_SECRET=your-session-secret \
   -e HASH_SECRET=your-base64url-hash-secret \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---
@@ -37,12 +37,12 @@ docker run \
 
 ```yaml
 server:
-  public_origin: "${PUBLIC_ORIGIN:-https://default-tinyauth-domain.com}"
+  public_origin: "${PUBLIC_ORIGIN:-https://default-issuary-domain.com}"
 ```
 
-この場合 `PUBLIC_ORIGIN` 環境変数が設定されている場合はその値を使用し、設定されていない場合 `https://default-tinyauth-domain.com` をデフォルトとして使用します。
+この場合 `PUBLIC_ORIGIN` 環境変数が設定されている場合はその値を使用し、設定されていない場合 `https://default-issuary-domain.com` をデフォルトとして使用します。
 
-`tinyauth`既に設定の多くの部分で環境変数を最初に参照するようにデフォルト値が設定されています。たとえば、standaloneのデフォルト設定では、次の環境変数とデフォルト値が頻繁に使用されます。
+`issuary`既に設定の多くの部分で環境変数を最初に参照するようにデフォルト値が設定されています。たとえば、standaloneのデフォルト設定では、次の環境変数とデフォルト値が頻繁に使用されます。
 
 ```yaml
 server:

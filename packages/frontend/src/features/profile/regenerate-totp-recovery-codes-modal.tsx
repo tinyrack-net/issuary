@@ -11,7 +11,7 @@ import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step
 import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal } from '#frontend/components/ui/modal.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -70,7 +70,7 @@ export function RegenerateTotpRecoveryCodesModal({
       try {
         await mutation.mutateAsync({ code });
       } catch (error) {
-        if (error instanceof TinyAuthError) {
+        if (error instanceof IssuaryError) {
           if (error.code === 'INVALID_TOTP_CODE') {
             throw error;
           }

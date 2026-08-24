@@ -4,9 +4,9 @@ export const BRANDING_CONFIG_DEFAULT = {
   background_url:
     'https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071',
   title: {
-    ko: 'Tinyauth',
-    en: 'Tinyauth',
-    ja: 'Tinyauth',
+    ko: 'Issuary',
+    en: 'Issuary',
+    ja: 'Issuary',
   } as Record<string, string>,
   subtitle: {
     ko: '가볍고 빠른 인증 솔루션',

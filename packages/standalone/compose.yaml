@@ -1,6 +1,6 @@
 services:
-  tinyauth:
-    image: tinyrack-net/tinyauth
+  issuary:
+    image: tinyrack-net/issuary
     build:
       context: ../..
       dockerfile: packages/standalone/Dockerfile
@@ -9,7 +9,7 @@ services:
       - "8080:8080"
     volumes:
       - ./config.dev.yaml:/config/config.dev.yaml:ro
-      - tinyauth-data:/opt/tinyauth/data
+      - issuary-data:/opt/issuary/data
 
 volumes:
-  tinyauth-data:
+  issuary-data:

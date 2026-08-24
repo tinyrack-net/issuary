@@ -28,7 +28,7 @@ import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-lis
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -212,7 +212,7 @@ function Register() {
       }
     },
     onError: (error) => {
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         if (error.code === 'REGISTRATION_EMAIL_NOT_ALLOWED') {
           setError('email', {
             type: 'manual',

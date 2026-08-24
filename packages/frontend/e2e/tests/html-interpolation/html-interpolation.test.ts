@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { createProxyHandler } from '@tinyrack/tinyauth-server/frontend/proxy';
+import { createProxyHandler } from '@tinyrack/issuary-server/frontend/proxy';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,

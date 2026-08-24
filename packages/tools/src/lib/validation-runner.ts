@@ -25,7 +25,7 @@ const serverTask: ValidationTask = {
   weight: 5,
   args: (workers) => [
     '--filter',
-    '@tinyrack/tinyauth-server',
+    '@tinyrack/issuary-server',
     'test',
     '--run',
     `--maxWorkers=${workers}`,
@@ -37,7 +37,7 @@ const toolsTask: ValidationTask = {
   weight: 1,
   args: (workers) => [
     '--filter',
-    '@tinyrack/tinyauth-tools',
+    '@tinyrack/issuary-tools',
     'test',
     '--run',
     `--maxWorkers=${workers}`,
@@ -49,7 +49,7 @@ const homepageTask: ValidationTask = {
   weight: 1,
   args: (workers) => [
     '--filter',
-    '@tinyrack/tinyauth-homepage',
+    '@tinyrack/issuary-homepage',
     'test',
     `--maxWorkers=${workers}`,
   ],
@@ -61,7 +61,7 @@ function frontendUnitTask(script: 'test:unit' | 'test:unit:chromium') {
     weight: 4,
     args: (workers: number) => [
       '--filter',
-      '@tinyrack/tinyauth-frontend',
+      '@tinyrack/issuary-frontend',
       script,
       '--run',
       `--maxWorkers=${workers}`,
@@ -75,7 +75,7 @@ function standaloneTask(script: 'test' | 'test:prepared') {
     weight: 2,
     args: (workers: number) => [
       '--filter',
-      '@tinyrack/tinyauth-standalone',
+      '@tinyrack/issuary-standalone',
       script,
       '--run',
       `--maxWorkers=${workers}`,
@@ -90,7 +90,7 @@ export function parseWorkerBudget(value: string | undefined): number {
 
   const workerBudget = Number(value);
   if (!Number.isInteger(workerBudget) || workerBudget <= 0) {
-    throw new Error('TINYAUTH_TEST_WORKERS must be a positive integer');
+    throw new Error('ISSUARY_TEST_WORKERS must be a positive integer');
   }
 
   return workerBudget;
@@ -125,14 +125,14 @@ export function createValidationPlan(
         {
           name: 'frontend assets',
           weight: 1,
-          args: () => ['--filter', '@tinyrack/tinyauth-frontend', 'build:e2e'],
+          args: () => ['--filter', '@tinyrack/issuary-frontend', 'build:e2e'],
         },
         {
           name: 'frontend smoke',
           weight: 1,
           args: (workers) => [
             '--filter',
-            '@tinyrack/tinyauth-frontend',
+            '@tinyrack/issuary-frontend',
             'test:e2e:smoke:source',
             `--workers=${workers}`,
           ],
@@ -140,7 +140,7 @@ export function createValidationPlan(
         {
           name: 'homepage build',
           weight: 1,
-          args: () => ['--filter', '@tinyrack/tinyauth-homepage', 'build'],
+          args: () => ['--filter', '@tinyrack/issuary-homepage', 'build'],
         },
         homepageTask,
       ],
@@ -160,7 +160,7 @@ export function createValidationPlan(
         weight: 0,
         args: () => [
           '--filter',
-          '@tinyauth-server-examples/node-hono-sqlite',
+          '@issuary-server-examples/node-hono-sqlite',
           'test:prepared',
         ],
       },
@@ -171,7 +171,7 @@ export function createValidationPlan(
         weight: 1,
         args: (workers) => [
           '--filter',
-          '@tinyrack/tinyauth-standalone',
+          '@tinyrack/issuary-standalone',
           'test:dist:prepared',
           `--maxWorkers=${workers}`,
         ],
@@ -181,7 +181,7 @@ export function createValidationPlan(
         weight: 1,
         args: () => [
           '--filter',
-          '@tinyrack/tinyauth-frontend',
+          '@tinyrack/issuary-frontend',
           'test:e2e:sharded',
         ],
       },

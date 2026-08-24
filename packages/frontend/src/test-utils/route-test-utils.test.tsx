@@ -16,7 +16,7 @@ const loginConfig = {
     background_url: '',
     icon_url: '',
     title: {
-      en: 'TinyAuth',
+      en: 'Issuary',
     },
     subtitle: {},
   },
@@ -83,7 +83,7 @@ test('renders a route with seeded query data and preserves the initial search', 
     ],
   });
 
-  await expect.element(screen.getByText('TinyAuth')).toBeVisible();
+  await expect.element(screen.getByText('Issuary')).toBeVisible();
 
   const passwordLink = screen.getByRole('link', { name: 'Email' });
   await expect.element(passwordLink).toBeVisible();

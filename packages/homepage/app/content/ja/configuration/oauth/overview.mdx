@@ -1,11 +1,11 @@
 ---
 title: OAuth 概要
-description: Tinyauthから第三者 OAuth ログインプロバイダの設定
+description: Issuaryから第三者 OAuth ログインプロバイダの設定
 section: configuration
 order: 20
 ---
 
-`tinyauth`はサードパーティ OAuth プロバイダーによるソーシャルログインをサポートします。ユーザーは既存のアカウント（Google, GitHub, Apple など）で簡単にログインでき、最初の登録は `registration.enabled`が点灯しているときだけ許可されます。サードパーティのログインは `identity_providers` セクションで構成し、複数のプロバイダを同時にアクティブにできます。
+`issuary`はサードパーティ OAuth プロバイダーによるソーシャルログインをサポートします。ユーザーは既存のアカウント（Google, GitHub, Apple など）で簡単にログインでき、最初の登録は `registration.enabled`が点灯しているときだけ許可されます。サードパーティのログインは `identity_providers` セクションで構成し、複数のプロバイダを同時にアクティブにできます。
 
 ```yaml
 # config.yaml
@@ -69,7 +69,7 @@ OAuth プロバイダを有効にしても新しいアカウントの作成は�
 
 ## コールバック URL
 
-OAuth プロバイダにアプリケーションを登録するときのコールバック（リダイレクト） URLを指定する必要があります。 `tinyauth`のコールバック URLは次の形式です。
+OAuth プロバイダにアプリケーションを登録するときのコールバック（リダイレクト） URLを指定する必要があります。 `issuary`のコールバック URLは次の形式です。
 
 ```
 {server.public_origin}/api/oauth/{id}/callback

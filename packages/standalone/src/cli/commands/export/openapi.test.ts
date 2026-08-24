@@ -14,17 +14,17 @@ const exportState = vi.hoisted(() => ({
   resolveConfigMock: vi.fn(),
 }));
 
-vi.mock('@tinyrack/tinyauth-server', () => ({
+vi.mock('@tinyrack/issuary-server', () => ({
   createApp: exportState.createAppMock,
   createOpenApiDocumentation: exportState.createOpenApiDocumentationMock,
 }));
 
-vi.mock('@tinyrack/tinyauth-server/config', () => ({
+vi.mock('@tinyrack/issuary-server/config', () => ({
   OPENAPI_CONFIG_DEFAULT: {
     enabled: true,
-    title: 'TinyAuth API',
+    title: 'Issuary API',
     description: 'OpenID Connect Provider API',
-    ui_title: 'TinyAuth API Reference',
+    ui_title: 'Issuary API Reference',
   },
 }));
 
@@ -55,12 +55,12 @@ describe('ExportOpenapiCommand', () => {
     });
     exportState.createOpenApiDocumentationMock.mockReturnValue({
       info: {
-        title: 'TinyAuth API',
+        title: 'Issuary API',
       },
     });
     exportState.generateSpecsMock.mockResolvedValue({
       openapi: '3.1.0',
-      info: { title: 'TinyAuth API' },
+      info: { title: 'Issuary API' },
     });
   });
 
@@ -82,16 +82,16 @@ describe('ExportOpenapiCommand', () => {
     expect(exportState.createAppMock).toHaveBeenCalled();
     expect(exportState.createOpenApiDocumentationMock).toHaveBeenCalledWith({
       enabled: true,
-      title: 'TinyAuth API',
+      title: 'Issuary API',
       description: 'OpenID Connect Provider API',
-      ui_title: 'TinyAuth API Reference',
+      ui_title: 'Issuary API Reference',
     });
     expect(exportState.generateSpecsMock).toHaveBeenCalledWith(
       { openapi: true },
       expect.objectContaining({
         documentation: expect.objectContaining({
           info: expect.objectContaining({
-            title: 'TinyAuth API',
+            title: 'Issuary API',
           }),
         }),
       }),
@@ -100,7 +100,7 @@ describe('ExportOpenapiCommand', () => {
       JSON.stringify(
         {
           openapi: '3.1.0',
-          info: { title: 'TinyAuth API' },
+          info: { title: 'Issuary API' },
         },
         null,
         2,
@@ -111,7 +111,7 @@ describe('ExportOpenapiCommand', () => {
 
   test('writes the generated spec to a file when output path is provided', async () => {
     const tempDir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), 'tinyauth-openapi-'),
+      path.join(os.tmpdir(), 'issuary-openapi-'),
     );
     const outputPath = path.join(tempDir, 'openapi.json');
 
@@ -123,7 +123,7 @@ describe('ExportOpenapiCommand', () => {
     const written = await fs.promises.readFile(outputPath, 'utf-8');
     expect(JSON.parse(written)).toEqual({
       openapi: '3.1.0',
-      info: { title: 'TinyAuth API' },
+      info: { title: 'Issuary API' },
     });
     expect(exportState.logger.info).toHaveBeenCalledWith(
       { outputPath },

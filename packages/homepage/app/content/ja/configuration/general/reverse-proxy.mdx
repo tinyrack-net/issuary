@@ -1,11 +1,11 @@
 ---
 title: リバースプロキシ
-description: tinyauthをリバースプロキシの背後で操作する方法
+description: issuaryをリバースプロキシの背後で操作する方法
 section: configuration
 order: 9
 ---
 
-`tinyauth`は基本的にリバースプロキシの背後で動作するように設計されています。クライアントの実際のIPアドレスとプロトコルを正しく識別するため `server.trust_proxy`を設定する必要があります。
+`issuary`は基本的にリバースプロキシの背後で動作するように設計されています。クライアントの実際のIPアドレスとプロトコルを正しく識別するため `server.trust_proxy`を設定する必要があります。
 
 ```yaml
 # config.yaml
@@ -41,7 +41,7 @@ server:
 ```
 
 ```nginx
-# /etc/nginx/conf.d/tinyauth.conf
+# /etc/nginx/conf.d/issuary.conf
 server {
     listen 443 ssl;
     server_name auth.example.com;

@@ -2,11 +2,11 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
 import type {
   IdentityProviderConfig,
-  TinyAuthRuntimeConfig,
+  IssuaryRuntimeConfig,
 } from '../lib/config/index.ts';
 import { isEmailAllowed } from '../lib/email-pattern.ts';
 import { generatePKCE } from '../lib/pkce.ts';
-import { e, TinyAuthError } from '../schemas/error.ts';
+import { e, IssuaryError } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import type { r } from '../schemas/response.ts';
 import type { MikroService } from './mikro.service.ts';
@@ -148,12 +148,12 @@ export type OAuthCallbackResult =
 // but user-related config lookups have been removed since users are now synced to DB.
 
 export class OAuthConnectService {
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly userService: UserService;
   private readonly mikro: MikroService;
   private readonly termsService: TermsService;
   public constructor(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     userService: UserService,
     mikro: MikroService,
     termsService: TermsService,
@@ -310,7 +310,7 @@ export class OAuthConnectService {
       };
     } catch (err) {
       if (
-        err instanceof TinyAuthError &&
+        err instanceof IssuaryError &&
         err.code === 'REGISTRATION_EMAIL_NOT_ALLOWED'
       ) {
         const errorUrl = new URL('/login', this.config.server.public_origin);

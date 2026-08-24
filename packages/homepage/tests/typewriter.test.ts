@@ -4,7 +4,7 @@ import { startTypewriter } from '../app/components/hero-typewriter.tsx';
 
 afterEach(() => vi.useRealTimers());
 
-describe('Tinyauth typewriter', () => {
+describe('Issuary typewriter', () => {
   it('renders the first phrase without scheduling motion when reduced', () => {
     vi.useFakeTimers();
     const values: string[] = [];

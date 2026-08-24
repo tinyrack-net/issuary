@@ -42,8 +42,8 @@ function runPnpm(args: string[], label: string): Promise<void> {
 const profile = parseValidationProfile(
   readProfileArgument(process.argv.slice(2)),
 );
-const workerBudget = parseWorkerBudget(process.env['TINYAUTH_TEST_WORKERS']);
-process.env['TINYAUTH_TEST_WORKERS'] = String(workerBudget);
+const workerBudget = parseWorkerBudget(process.env['ISSUARY_TEST_WORKERS']);
+process.env['ISSUARY_TEST_WORKERS'] = String(workerBudget);
 
 process.stdout.write(
   `[validation] profile: ${profile}; global worker budget: ${workerBudget}\n`,

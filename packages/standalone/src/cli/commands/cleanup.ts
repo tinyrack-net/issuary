@@ -2,7 +2,7 @@ import { buildCommand } from '@stricli/core';
 import {
   initializeServices,
   type ServiceContainer,
-} from '@tinyrack/tinyauth-server/services';
+} from '@tinyrack/issuary-server/services';
 import z from 'zod';
 import { parseWithZod } from '../../lib/cli/parse-with-zod.ts';
 import { loadConfig, resolveConfig } from '../../lib/load-config.ts';
@@ -15,10 +15,10 @@ import { createLogger } from '../../lib/logger.ts';
  * Designed for use with Kubernetes CronJobs.
  *
  * Usage:
- *   tinyauth cleanup              # Run all tasks
- *   tinyauth cleanup --dry-run    # Show what would
+ *   issuary cleanup              # Run all tasks
+ *   issuary cleanup --dry-run    # Show what would
  *                                   be cleaned
- *   tinyauth cleanup --verbose    # Show detailed
+ *   issuary cleanup --verbose    # Show detailed
  *                                   progress
  */
 type CleanupFlags = {
@@ -45,7 +45,7 @@ export async function runCleanupCommand(flags: CleanupFlags): Promise<void> {
       },
     });
 
-    logger.info('TinyAuth Cleanup');
+    logger.info('Issuary Cleanup');
     if (dryRun) {
       logger.warn('[DRY RUN] No changes will be made');
     }

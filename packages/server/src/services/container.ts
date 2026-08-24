@@ -1,6 +1,6 @@
 import {
+  type IssuaryRuntimeConfig,
   isSchedulerConfigResolver,
-  type TinyAuthRuntimeConfig,
 } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
 import {
@@ -30,7 +30,7 @@ export interface InitializeServicesOptions {
 }
 
 export async function initializeServices(
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   logger: Logger,
   options: InitializeServicesOptions = {},
 ) {

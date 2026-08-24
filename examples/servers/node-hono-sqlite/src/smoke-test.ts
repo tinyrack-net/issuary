@@ -38,8 +38,8 @@ try {
   );
 
   const frontendHtml = await frontendResponse.text();
-  assert.match(frontendHtml, /TinyAuth Hono Example/);
-  assert.match(frontendHtml, /TinyAuth running in library mode/);
+  assert.match(frontendHtml, /Issuary Hono Example/);
+  assert.match(frontendHtml, /Issuary running in library mode/);
   assert.ok(!frontendHtml.includes('{{TITLE}}'));
 
   const discoveryResponse = await fetch(

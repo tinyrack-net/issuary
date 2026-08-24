@@ -1,7 +1,7 @@
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { z } from 'zod';
 
-export class TinyAuthError<
+export class IssuaryError<
   STATUS extends ContentfulStatusCode = ContentfulStatusCode,
   CODE extends string = string,
   MESSAGE extends string = string,
@@ -36,7 +36,7 @@ const createError = <
 ) => {
   return {
     Status: status,
-    Error: class extends TinyAuthError<STATUS, CODE, MESSAGE> {
+    Error: class extends IssuaryError<STATUS, CODE, MESSAGE> {
       public constructor() {
         super(status, code, message);
       }
@@ -61,7 +61,7 @@ const createErrorWithData = <
 ) => {
   return {
     Status: status,
-    Error: class extends TinyAuthError<STATUS, CODE, MESSAGE> {
+    Error: class extends IssuaryError<STATUS, CODE, MESSAGE> {
       public data: z.infer<DATA_SCHEMA>;
 
       public constructor(data: z.infer<DATA_SCHEMA>) {

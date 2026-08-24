@@ -130,7 +130,7 @@ describe('runHttpPerf', () => {
   });
 
   it('records a failing warmup before throwing', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    const directory = await mkdtemp(join(tmpdir(), 'issuary-perf-'));
     temporaryDirectories.push(directory);
     const eventsPath = join(directory, 'events.jsonl');
     process.env[PERF_EVENTS_PATH_ENV] = eventsPath;
@@ -169,7 +169,7 @@ describe('runHttpPerf', () => {
   });
 
   it('records request, status, and validation failures with at most five details', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    const directory = await mkdtemp(join(tmpdir(), 'issuary-perf-'));
     temporaryDirectories.push(directory);
     const eventsPath = join(directory, 'events.jsonl');
     process.env[PERF_EVENTS_PATH_ENV] = eventsPath;
@@ -205,7 +205,7 @@ describe('runHttpPerf', () => {
   });
 
   it('records a budget violation before propagating the failure', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'tinyauth-perf-'));
+    const directory = await mkdtemp(join(tmpdir(), 'issuary-perf-'));
     temporaryDirectories.push(directory);
     const eventsPath = join(directory, 'events.jsonl');
     process.env[PERF_EVENTS_PATH_ENV] = eventsPath;

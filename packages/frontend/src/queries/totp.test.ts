@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -26,7 +26,7 @@ import {
 const setupResponse = {
   secret: 'JBSWY3DPEHPK3PXP',
   qr_code_url: 'data:image/png;base64,totp-qr-code',
-  otpauth_url: 'otpauth://totp/TinyAuth:user@example.com',
+  otpauth_url: 'otpauth://totp/Issuary:user@example.com',
 };
 
 async function runStartTotpSetupMutation() {
@@ -183,7 +183,7 @@ describe('TOTP profile mutations', () => {
     expect(jsonRequestBody(request)).toEqual(values);
   });
 
-  test('preserves profile TOTP API errors as TinyAuthError', async () => {
+  test('preserves profile TOTP API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'INVALID_TOTP_CODE',
@@ -196,9 +196,9 @@ describe('TOTP profile mutations', () => {
       await runDisableTotpMutation({ code: '000000' });
       throw new Error('Expected disable TOTP mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('INVALID_TOTP_CODE');
         expect(error.status).toBe(400);
         expect(error.message).toBe('Invalid authentication code.');

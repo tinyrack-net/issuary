@@ -133,10 +133,10 @@ export const CLEANUP_CONFIG_DEFAULT = {
  * Cleanup configuration
  *
  * Controls the cleanup behavior for various entities.
- * Run `tinyauth cleanup` to execute all enabled cleanup tasks.
+ * Run `issuary cleanup` to execute all enabled cleanup tasks.
  *
  * For Kubernetes deployments, create a CronJob that runs:
- * `tinyauth cleanup` on a regular schedule (e.g., daily at 2 AM).
+ * `issuary cleanup` on a regular schedule (e.g., daily at 2 AM).
  */
 export const CleanupConfigSchema = z
   .object({

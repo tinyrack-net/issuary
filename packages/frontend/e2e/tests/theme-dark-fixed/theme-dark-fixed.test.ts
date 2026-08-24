@@ -19,7 +19,7 @@ test.describe('Color scheme behavior', () => {
 
   test('stored dark preference applies data-theme', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('tinyauth-color-scheme', 'dark');
+      localStorage.setItem('issuary-color-scheme', 'dark');
     });
     await page.goto('/login');
 
@@ -34,7 +34,7 @@ test.describe('Color scheme behavior', () => {
 
   test('stored light preference applies data-theme', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('tinyauth-color-scheme', 'light');
+      localStorage.setItem('issuary-color-scheme', 'light');
     });
     await page.goto('/login');
 

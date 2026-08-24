@@ -9,7 +9,7 @@ import {
   vi,
 } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
-import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.ts';
+import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -29,7 +29,7 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 type TestClientConfig = NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
+  IssuaryRuntimeConfigInput['clients']
 >[number];
 
 beforeAll(async () => {

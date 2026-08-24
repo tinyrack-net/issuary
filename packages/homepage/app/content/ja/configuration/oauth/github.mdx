@@ -1,11 +1,11 @@
 ---
 title: GitHub
-description: Tinyauthから GitHub OAuth ログインの設定
+description: Issuaryから GitHub OAuth ログインの設定
 section: configuration
 order: 23
 ---
 
-GitHub OAuthを使用すると、ユーザー GitHub アカウントで `tinyauth`にログインできます。このガイドは GitHubから OAuth アプリを作成して `tinyauth`に連動する方法を説明します。
+GitHub OAuthを使用すると、ユーザー GitHub アカウントで `issuary`にログインできます。このガイドは GitHubから OAuth アプリを作成して `issuary`に連動する方法を説明します。
 
 ---
 
@@ -29,7 +29,7 @@ Client Secretは作成直後にのみ表示されます。ページを離れる�
 
 ---
 
-## 2. Tinyauth 設定
+## 2. Issuary 設定
 
 GitHubから発行された資格証明 `config.yaml`に設定します。
 
@@ -56,7 +56,7 @@ GitHub OAuthは基本的に `user:email` スコープをリクエストしてユ
 
 ## 例
 
-`tinyauth`を `https://auth.example.com`で運営する場合の全体設定例です。
+`issuary`を `https://auth.example.com`で運営する場合の全体設定例です。
 
 ```yaml
 # config.yaml

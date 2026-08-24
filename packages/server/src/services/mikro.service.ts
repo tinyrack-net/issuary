@@ -18,7 +18,7 @@ import { UserPasskeyEntitySchema } from '../entities/user-passkey.entity.ts';
 import { UserTermsConsentEntity } from '../entities/user-terms-consent.entity.ts';
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { Logger } from '../lib/logger.ts';
 import type { BackgroundJobRepository } from '../repositories/background-job.repository.ts';
 import type { EmailVerificationRepository } from '../repositories/email-verification.repository.ts';
@@ -94,7 +94,7 @@ export class MikroService {
   }
 
   public static async initialize(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     logger: Logger,
   ): Promise<MikroService> {
     logger.info('Initializing MikroORM...');

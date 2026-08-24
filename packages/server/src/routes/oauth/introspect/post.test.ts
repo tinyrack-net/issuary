@@ -433,7 +433,7 @@ describe('POST /oauth/introspect', () => {
 
       expect(response.status).toBe(401);
       expect(response.headers.get('www-authenticate')).toBe(
-        'Basic realm="tinyauth"',
+        'Basic realm="issuary"',
       );
       const json = await assertJsonBody(response, 401);
       expect(json.error).toBe('invalid_client');
@@ -508,9 +508,7 @@ describe('POST /oauth/introspect', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
-      expect(res.headers.get('WWW-Authenticate')).toBe(
-        'Basic realm="tinyauth"',
-      );
+      expect(res.headers.get('WWW-Authenticate')).toBe('Basic realm="issuary"');
     });
 
     test('should reject unsupported Authorization schemes instead of using body credentials', async () => {
@@ -537,9 +535,7 @@ describe('POST /oauth/introspect', () => {
 
       const json = await assertJsonBody(res, 401);
       expect(json.code).toBe('INVALID_CLIENT_CREDENTIALS');
-      expect(res.headers.get('WWW-Authenticate')).toBe(
-        'Basic realm="tinyauth"',
-      );
+      expect(res.headers.get('WWW-Authenticate')).toBe('Basic realm="issuary"');
     });
 
     test('should reject disabled client', async () => {

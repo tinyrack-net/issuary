@@ -115,7 +115,7 @@ beforeAll(async () => {
         },
         totp: {
           enabled: true,
-          issuer: 'TinyAuthStatefulTest',
+          issuer: 'IssuaryStatefulTest',
         },
       },
       passkey: {
@@ -465,7 +465,7 @@ describe('Stateful auth flows', () => {
           },
           totp: {
             enabled: true,
-            issuer: 'TinyAuthPendingSetupPrecedenceTest',
+            issuer: 'IssuaryPendingSetupPrecedenceTest',
           },
         },
         account_selection: {
@@ -678,7 +678,7 @@ describe('Stateful auth flows', () => {
           enabled: true,
           totp: {
             enabled: true,
-            issuer: 'TinyAuthPendingTotpSwitchTest',
+            issuer: 'IssuaryPendingTotpSwitchTest',
           },
         },
         account_selection: {
@@ -772,7 +772,7 @@ describe('Stateful auth flows', () => {
           enabled: true,
           totp: {
             enabled: true,
-            issuer: 'TinyAuthPendingTotpOAuthChooserTest',
+            issuer: 'IssuaryPendingTotpOAuthChooserTest',
           },
         },
         account_selection: {
@@ -950,7 +950,7 @@ describe('Stateful auth flows', () => {
           },
           totp: {
             enabled: true,
-            issuer: 'TinyAuthPendingSetupOAuthChooserTest',
+            issuer: 'IssuaryPendingSetupOAuthChooserTest',
           },
         },
         account_selection: {
@@ -1233,7 +1233,7 @@ describe('Stateful auth flows', () => {
           },
           totp: {
             enabled: true,
-            issuer: 'TinyAuthStalePendingSetupTest',
+            issuer: 'IssuaryStalePendingSetupTest',
           },
         },
         account_selection: {

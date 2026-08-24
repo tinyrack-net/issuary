@@ -1,24 +1,24 @@
 {
-  "name": "@tinyrack/tinyauth-base",
+  "name": "@tinyrack/issuary-base",
   "private": true,
   "version": "1.0.0",
   "packageManager": "pnpm@11.10.0",
   "scripts": {
-    "dev": "pnpm --filter \"@tinyrack/tinyauth-*\" --parallel dev",
+    "dev": "pnpm --filter \"@tinyrack/issuary-*\" --parallel dev",
     "test": "node packages/tools/src/scripts/run-validation-tests.ts --profile=local",
     "test:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
-    "check:ui": "pnpm --filter @tinyrack/tinyauth-frontend check:ui && pnpm --filter @tinyrack/tinyauth-homepage check:ui && pnpm --filter @tinyauth-client-examples/react-spa check:ui",
+    "check:ui": "pnpm --filter @tinyrack/issuary-frontend check:ui && pnpm --filter @tinyrack/issuary-homepage check:ui && pnpm --filter @issuary-client-examples/react-spa check:ui",
     "biome": "biome",
-    "screen:dev": "pnpm --filter @tinyrack/tinyauth-frontend screen:dev",
-    "tools": "tinyauth-tools",
-    "test:setup:browsers": "pnpm --filter @tinyrack/tinyauth-frontend exec playwright install"
+    "screen:dev": "pnpm --filter @tinyrack/issuary-frontend screen:dev",
+    "tools": "issuary-tools",
+    "test:setup:browsers": "pnpm --filter @tinyrack/issuary-frontend exec playwright install"
   },
   "author": "",
   "license": "MIT",
   "description": "",
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@tinyrack/tinyauth-tools": "workspace:*"
+    "@tinyrack/issuary-tools": "workspace:*"
   }
 }

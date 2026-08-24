@@ -1,6 +1,6 @@
 # Homepage
 
-This package contains the Astro-based Tinyauth homepage and documentation site.
+This package contains the Astro-based Issuary homepage and documentation site.
 
 ## Scope
 
@@ -36,26 +36,26 @@ Set these repository secrets before enabling automatic deploys from `main`:
 Use Astro for content and layout work:
 
 ```bash
-pnpm --filter @tinyrack/tinyauth-homepage dev
+pnpm --filter @tinyrack/issuary-homepage dev
 ```
 
 Use Wrangler to preview the built static bundle exactly as Cloudflare Workers will serve it:
 
 ```bash
-pnpm --filter @tinyrack/tinyauth-homepage preview:worker
+pnpm --filter @tinyrack/issuary-homepage preview:worker
 ```
 
 ## Build And Deploy
 
 ```bash
-pnpm --filter @tinyrack/tinyauth-homepage build
-pnpm --filter @tinyrack/tinyauth-homepage deploy
+pnpm --filter @tinyrack/issuary-homepage build
+pnpm --filter @tinyrack/issuary-homepage deploy
 ```
 
 To validate the Worker packaging without publishing:
 
 ```bash
-pnpm --filter @tinyrack/tinyauth-homepage deploy:dry-run
+pnpm --filter @tinyrack/issuary-homepage deploy:dry-run
 ```
 
 ## Notes

@@ -6,7 +6,7 @@ import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 
 /**
  * Minimal error layout that does NOT depend on any queries.
@@ -31,7 +31,7 @@ function MinimalLayout({ children }: { children: React.ReactNode }) {
  * response from the backend.
  */
 function isUnauthorizedError(error: Error): boolean {
-  return error instanceof TinyAuthError && error.status === 401;
+  return error instanceof IssuaryError && error.status === 401;
 }
 
 type RouteErrorFallbackProps = ErrorComponentProps & {
@@ -101,9 +101,9 @@ export function RouteErrorFallback({
 
   // --- Generic error ---
   const errorCode =
-    error instanceof TinyAuthError ? error.code : 'UNKNOWN_ERROR';
+    error instanceof IssuaryError ? error.code : 'UNKNOWN_ERROR';
   const errorMessage =
-    error instanceof TinyAuthError ? error.message : t('error.defaultMessage');
+    error instanceof IssuaryError ? error.message : t('error.defaultMessage');
 
   return (
     <MinimalLayout>

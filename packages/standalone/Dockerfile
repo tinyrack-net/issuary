@@ -21,27 +21,27 @@ COPY packages/server/ packages/server/
 COPY packages/standalone/ packages/standalone/
 COPY packages/tools/ packages/tools/
 
-RUN pnpm --filter @tinyrack/tinyauth-server build
-RUN pnpm --filter @tinyrack/tinyauth-frontend build
-RUN pnpm --filter @tinyrack/tinyauth-standalone build
-RUN pnpm --filter @tinyrack/tinyauth-standalone deploy --prod --legacy /app/deploy
+RUN pnpm --filter @tinyrack/issuary-server build
+RUN pnpm --filter @tinyrack/issuary-frontend build
+RUN pnpm --filter @tinyrack/issuary-standalone build
+RUN pnpm --filter @tinyrack/issuary-standalone deploy --prod --legacy /app/deploy
 
 # Stage 3: Minimal runtime image
 FROM node:24-slim AS runner
 
-RUN groupadd --gid 1001 tinyauth && \
-    useradd --uid 1001 --gid 1001 --create-home tinyauth && \
-    mkdir -p /opt/tinyauth/frontend && \
-    chown -R tinyauth:tinyauth /opt/tinyauth
+RUN groupadd --gid 1001 issuary && \
+    useradd --uid 1001 --gid 1001 --create-home issuary && \
+    mkdir -p /opt/issuary/frontend && \
+    chown -R issuary:issuary /opt/issuary
 
 WORKDIR /app
 
-COPY --from=build --chown=tinyauth:tinyauth /app/packages/standalone/dist/ ./dist/
-COPY --from=build --chown=tinyauth:tinyauth /app/deploy/node_modules/ ./node_modules/
-COPY --from=build --chown=tinyauth:tinyauth /app/deploy/package.json ./package.json
-COPY --from=build --chown=tinyauth:tinyauth /app/packages/server/public/ /opt/tinyauth/frontend/
+COPY --from=build --chown=issuary:issuary /app/packages/standalone/dist/ ./dist/
+COPY --from=build --chown=issuary:issuary /app/deploy/node_modules/ ./node_modules/
+COPY --from=build --chown=issuary:issuary /app/deploy/package.json ./package.json
+COPY --from=build --chown=issuary:issuary /app/packages/server/public/ /opt/issuary/frontend/
 
-USER tinyauth
+USER issuary
 
 EXPOSE 8080
 

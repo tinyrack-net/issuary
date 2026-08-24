@@ -1,15 +1,15 @@
 import * as fs from 'node:fs';
-import type { TinyAuthRuntimeConfig } from '@tinyrack/tinyauth-server/config';
-import { postgres } from '@tinyrack/tinyauth-server/database/postgres';
-import { sqlite } from '@tinyrack/tinyauth-server/database/sqlite';
-import { createProxyHandler } from '@tinyrack/tinyauth-server/frontend/proxy';
-import { createStaticHandler } from '@tinyrack/tinyauth-server/frontend/static';
-import { apple } from '@tinyrack/tinyauth-server/identity-providers/apple';
-import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
-import { github } from '@tinyrack/tinyauth-server/identity-providers/github';
-import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
-import { croner } from '@tinyrack/tinyauth-server/scheduler/croner';
-import { database as databaseScheduler } from '@tinyrack/tinyauth-server/scheduler/database';
+import type { IssuaryRuntimeConfig } from '@tinyrack/issuary-server/config';
+import { postgres } from '@tinyrack/issuary-server/database/postgres';
+import { sqlite } from '@tinyrack/issuary-server/database/sqlite';
+import { createProxyHandler } from '@tinyrack/issuary-server/frontend/proxy';
+import { createStaticHandler } from '@tinyrack/issuary-server/frontend/static';
+import { apple } from '@tinyrack/issuary-server/identity-providers/apple';
+import { genericOAuth } from '@tinyrack/issuary-server/identity-providers/generic-oauth';
+import { github } from '@tinyrack/issuary-server/identity-providers/github';
+import { google } from '@tinyrack/issuary-server/identity-providers/google';
+import { croner } from '@tinyrack/issuary-server/scheduler/croner';
+import { database as databaseScheduler } from '@tinyrack/issuary-server/scheduler/database';
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from './config/database.ts';
 import { STANDALONE_CONFIG_DEFAULTS } from './config/defaults.ts';
@@ -27,7 +27,7 @@ import { resolveAbsolutePath } from './resolve-path.ts';
 
 async function composeEmailConfig(
   emailInput: StandaloneConfig['email'],
-): Promise<TinyAuthRuntimeConfig['email']> {
+): Promise<IssuaryRuntimeConfig['email']> {
   if (!emailInput) {
     return undefined;
   }
@@ -70,7 +70,7 @@ async function composeEmailConfig(
 
 function composeDatabaseConfig(
   database: StandaloneDatabaseConfig,
-): TinyAuthRuntimeConfig['database'] {
+): IssuaryRuntimeConfig['database'] {
   switch (database.type) {
     case 'postgres': {
       const { type: _, driver_options: driverOptions, ...rest } = database;
@@ -88,7 +88,7 @@ function composeDatabaseConfig(
 
 function composeIdentityProvider(
   config: StandaloneIdentityProviderConfig,
-): TinyAuthRuntimeConfig['identity_providers'][number] {
+): IssuaryRuntimeConfig['identity_providers'][number] {
   switch (config.type) {
     case 'github': {
       const { type: _, ...rest } = config;
@@ -111,7 +111,7 @@ function composeIdentityProvider(
 
 function composeSchedulerConfig(
   scheduler: StandaloneSchedulerConfig,
-): TinyAuthRuntimeConfig['scheduler'] {
+): IssuaryRuntimeConfig['scheduler'] {
   if (!scheduler.enabled) {
     return undefined;
   }
@@ -136,7 +136,7 @@ function composeSchedulerConfig(
 
 function composeFrontendConfig(
   frontend: StandaloneFrontendConfig,
-): TinyAuthRuntimeConfig['frontend'] {
+): IssuaryRuntimeConfig['frontend'] {
   if (!frontend.enabled) {
     return undefined;
   }
@@ -156,7 +156,7 @@ function composeFrontendConfig(
 
 export async function resolveConfig(
   input: unknown,
-): Promise<TinyAuthRuntimeConfig> {
+): Promise<IssuaryRuntimeConfig> {
   const parsed = StandaloneConfigSchema.parse(input);
 
   const {

@@ -15,8 +15,8 @@ import {
 } from '../entities/revoked-token.entity.ts';
 import { UserEntity } from '../entities/user.entity.ts';
 import {
-  type TinyAuthRuntimeConfig,
-  TinyAuthRuntimeConfigSchema,
+  type IssuaryRuntimeConfig,
+  IssuaryRuntimeConfigSchema,
 } from '../lib/config/index.ts';
 import type { ServiceContainer } from '../services/container.ts';
 import { withMikroContext } from './helpers.ts';
@@ -27,7 +27,7 @@ import { MINIMAL_TEST_CONFIG } from './setup.ts';
  * Uses immediate retention (0) for faster test execution.
  */
 export const CLI_TEST_CONFIG = {
-  ...TinyAuthRuntimeConfigSchema.parse({
+  ...IssuaryRuntimeConfigSchema.parse({
     ...MINIMAL_TEST_CONFIG,
     account_deletion: {
       enabled: true,
@@ -61,7 +61,7 @@ export const CLI_TEST_CONFIG = {
       },
     },
   }),
-} satisfies TinyAuthRuntimeConfig;
+} satisfies IssuaryRuntimeConfig;
 
 /**
  * Create a test user in the database.

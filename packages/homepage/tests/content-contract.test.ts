@@ -54,7 +54,7 @@ function inlineCode(source: string) {
     .sort();
 }
 
-describe('Tinyauth documentation contract', () => {
+describe('Issuary documentation contract', () => {
   it('builds 105 localized routes and all three layouts', () => {
     const manifest = loadDocsManifest(config, { root });
 

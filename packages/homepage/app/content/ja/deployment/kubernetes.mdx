@@ -1,11 +1,11 @@
 ---
 title: Kubernetes
-description: Kubernetesに Tinyauthを配布する方法
+description: Kubernetesに Issuaryを配布する方法
 section: deployment
 order: 4
 ---
 
-このガイドは Kubernetesに `tinyauth`を展開する方法を説明します。 ConfigMap、Secret、Deployment、Service、Ingress、およびデータのクリーンアップのためのCronJob構成について説明します。
+このガイドは Kubernetesに `issuary`を展開する方法を説明します。 ConfigMap、Secret、Deployment、Service、Ingress、およびデータのクリーンアップのためのCronJob構成について説明します。
 
 ---
 
@@ -24,7 +24,7 @@ order: 4
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: tinyauth
+  name: issuary
 ```
 
 ---
@@ -37,8 +37,8 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tinyauth-config
-  namespace: tinyauth
+  name: issuary-config
+  namespace: issuary
 data:
   config.yaml: |
     server:
@@ -68,7 +68,7 @@ data:
       secure: true
       user: ${SMTP_USER}
       password: ${SMTP_PASSWORD}
-      from: "TinyAuth <noreply@example.com>"
+      from: "Issuary <noreply@example.com>"
 
     scheduler:
       enabled: false
@@ -90,16 +90,16 @@ Kubernetes 環境では、組み込みスケジューラを無効にする（`sc
 apiVersion: v1
 kind: Secret
 metadata:
-  name: tinyauth-secrets
-  namespace: tinyauth
+  name: issuary-secrets
+  namespace: issuary
 type: Opaque
 stringData:
   SESSION_SECRET: "your-32-byte-random-session-secret"
   HASH_SECRET: "your-base64url-hash-secret"
   DATABASE_HOST: "postgres-host"
   DATABASE_PORT: "5432"
-  DATABASE_NAME: "tinyauth"
-  DATABASE_USER: "tinyauth"
+  DATABASE_NAME: "issuary"
+  DATABASE_USER: "issuary"
   DATABASE_PASSWORD: "your-database-password"
   SMTP_USER: "smtp-user@example.com"
   SMTP_PASSWORD: "your-smtp-password"
@@ -117,19 +117,19 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tinyauth
-  namespace: tinyauth
+  name: issuary
+  namespace: issuary
   labels:
-    app: tinyauth
+    app: issuary
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tinyauth
+      app: issuary
   template:
     metadata:
       labels:
-        app: tinyauth
+        app: issuary
     spec:
       securityContext:
         runAsNonRoot: true
@@ -137,14 +137,14 @@ spec:
         runAsGroup: 1000
         fsGroup: 1000
       containers:
-        - name: tinyauth
-          image: ghcr.io/tinyrack-net/tinyauth:latest
+        - name: issuary
+          image: ghcr.io/tinyrack-net/issuary:latest
           ports:
             - containerPort: 8080
               protocol: TCP
           envFrom:
             - secretRef:
-                name: tinyauth-secrets
+                name: issuary-secrets
           volumeMounts:
             - name: config
               mountPath: /opt/config.yaml
@@ -180,7 +180,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: tinyauth-config
+            name: issuary-config
         - name: tmp
           emptyDir: {}
 ```
@@ -193,11 +193,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tinyauth
-  namespace: tinyauth
+  name: issuary
+  namespace: issuary
 spec:
   selector:
-    app: tinyauth
+    app: issuary
   ports:
     - port: 80
       targetPort: 8080
@@ -214,8 +214,8 @@ nginx-ingressを使用した例です。 cert-managerによる TLS 証明書を�
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tinyauth
-  namespace: tinyauth
+  name: issuary
+  namespace: issuary
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
@@ -223,7 +223,7 @@ spec:
   tls:
     - hosts:
         - auth.example.com
-      secretName: tinyauth-tls
+      secretName: issuary-tls
   rules:
     - host: auth.example.com
       http:
@@ -232,7 +232,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: tinyauth
+                name: issuary
                 port:
                   number: 80
 ```
@@ -247,8 +247,8 @@ spec:
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: tinyauth-cleanup
-  namespace: tinyauth
+  name: issuary-cleanup
+  namespace: issuary
 spec:
   schedule: "0 2 * * *"
   jobTemplate:
@@ -260,11 +260,11 @@ spec:
             runAsUser: 1000
           containers:
             - name: cleanup
-              image: ghcr.io/tinyrack-net/tinyauth:latest
-              command: ["tinyauth", "cleanup"]
+              image: ghcr.io/tinyrack-net/issuary:latest
+              command: ["issuary", "cleanup"]
               envFrom:
                 - secretRef:
-                    name: tinyauth-secrets
+                    name: issuary-secrets
               volumeMounts:
                 - name: config
                   mountPath: /opt/config.yaml
@@ -281,7 +281,7 @@ spec:
           volumes:
             - name: config
               configMap:
-                name: tinyauth-config
+                name: issuary-config
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
 ```
@@ -290,7 +290,7 @@ spec:
 
 ## PostgreSQL メモ
 
-Kubernetesから `tinyauth`を運営するとき PostgreSQL 使用をお勧めします。
+Kubernetesから `issuary`を運営するとき PostgreSQL 使用をお勧めします。
 
 - SQLiteは単一のパードでのみ利用可能です（ファイルベースなので、複数のパードで共有できません）。
 - PostgreSQLを使用すると水平方向に拡張（`replicas > 1`）が可能です。

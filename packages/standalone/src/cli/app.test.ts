@@ -20,7 +20,7 @@ const appState = vi.hoisted(() => ({
   runAllMock: vi.fn(),
 }));
 
-vi.mock('@tinyrack/tinyauth-server/services', () => ({
+vi.mock('@tinyrack/issuary-server/services', () => ({
   initializeServices: appState.initializeServicesMock,
 }));
 
@@ -33,17 +33,17 @@ vi.mock('../lib/logger.ts', () => ({
   createLogger: appState.createLoggerMock,
 }));
 
-vi.mock('@tinyrack/tinyauth-server', () => ({
+vi.mock('@tinyrack/issuary-server', () => ({
   createApp: appState.createAppMock,
   createOpenApiDocumentation: appState.createOpenApiDocumentationMock,
 }));
 
-vi.mock('@tinyrack/tinyauth-server/config', () => ({
+vi.mock('@tinyrack/issuary-server/config', () => ({
   OPENAPI_CONFIG_DEFAULT: {
     enabled: true,
-    title: 'TinyAuth API',
+    title: 'Issuary API',
     description: 'OpenID Connect Provider API',
-    ui_title: 'TinyAuth API Reference',
+    ui_title: 'Issuary API Reference',
   },
 }));
 
@@ -102,12 +102,12 @@ describe('standalone Stricli app', () => {
     });
     appState.createOpenApiDocumentationMock.mockReturnValue({
       info: {
-        title: 'TinyAuth API',
+        title: 'Issuary API',
       },
     });
     appState.generateSpecsMock.mockResolvedValue({
       openapi: '3.1.0',
-      info: { title: 'TinyAuth API' },
+      info: { title: 'Issuary API' },
     });
   });
 
@@ -129,11 +129,11 @@ describe('standalone Stricli app', () => {
     const { runCli } = await import('./app.ts');
     const mockProcess = createMockProcess();
 
-    await runCli(['cleanup', '-c', '/tmp/tinyauth.yaml', '--verbose'], {
+    await runCli(['cleanup', '-c', '/tmp/issuary.yaml', '--verbose'], {
       process: mockProcess,
     });
 
-    expect(appState.loadConfigMock).toHaveBeenCalledWith('/tmp/tinyauth.yaml');
+    expect(appState.loadConfigMock).toHaveBeenCalledWith('/tmp/issuary.yaml');
     expect(appState.runAllMock).toHaveBeenCalledWith({
       dryRun: false,
       verbose: true,
@@ -156,7 +156,7 @@ describe('standalone Stricli app', () => {
       JSON.stringify(
         {
           openapi: '3.1.0',
-          info: { title: 'TinyAuth API' },
+          info: { title: 'Issuary API' },
         },
         null,
         2,

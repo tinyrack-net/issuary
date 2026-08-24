@@ -72,7 +72,7 @@ test.describe('Auth screen accessibility', () => {
         page,
       }) => {
         await page.addInitScript((scheme) => {
-          localStorage.setItem('tinyauth-color-scheme', scheme);
+          localStorage.setItem('issuary-color-scheme', scheme);
         }, colorScheme);
 
         await page.goto(route);
@@ -107,7 +107,7 @@ test.describe('Profile accessibility', () => {
       page,
     }) => {
       await page.addInitScript((scheme) => {
-        localStorage.setItem('tinyauth-color-scheme', scheme);
+        localStorage.setItem('issuary-color-scheme', scheme);
       }, colorScheme);
 
       await loginAndGoToProfile(

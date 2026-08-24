@@ -1,11 +1,11 @@
 {
-  "name": "@tinyrack/tinyauth-homepage",
+  "name": "@tinyrack/issuary-homepage",
   "version": "1.0.0",
   "type": "module",
   "private": true,
   "license": "MIT",
   "scripts": {
-    "generate:openapi": "node --conditions=@tinyauth/source --import tsx node_modules/@tinyrack/tinyauth-standalone/src/cli.ts export openapi public/openapi.json",
+    "generate:openapi": "node --conditions=@issuary/source --import tsx node_modules/@tinyrack/issuary-standalone/src/cli.ts export openapi public/openapi.json",
     "dev": "pnpm generate:openapi && react-router dev",
     "build": "pnpm generate:openapi && react-router build",
     "check:ui": "tinyrack-ui-check",
@@ -32,7 +32,7 @@
     "@biomejs/biome": "catalog:",
     "@react-router/dev": "8.3.0",
     "@tailwindcss/vite": "catalog:",
-    "@tinyrack/tinyauth-standalone": "workspace:*",
+    "@tinyrack/issuary-standalone": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",

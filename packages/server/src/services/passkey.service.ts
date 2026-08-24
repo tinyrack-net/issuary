@@ -17,7 +17,7 @@ import {
   type IUserPasskeyEntity,
   UserPasskeyEntitySchema,
 } from '../entities/user-passkey.entity.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
 
@@ -44,8 +44,8 @@ export class PasskeyService {
   private readonly rpName: string = 'TinyRack Auth';
 
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthRuntimeConfig;
-  public constructor(mikro: MikroService, config: TinyAuthRuntimeConfig) {
+  private readonly config: IssuaryRuntimeConfig;
+  public constructor(mikro: MikroService, config: IssuaryRuntimeConfig) {
     this.mikro = mikro;
     this.config = config;
   }

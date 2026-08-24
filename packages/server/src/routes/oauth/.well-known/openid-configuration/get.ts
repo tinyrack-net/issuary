@@ -2,17 +2,17 @@ import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '#server/lib/app-env.js';
-import type { TinyAuthRuntimeConfig } from '#server/lib/config/index.js';
+import type { IssuaryRuntimeConfig } from '#server/lib/config/index.js';
 import { TAGS } from '#server/lib/swagger-tags.js';
 
 type OpenidConfiguration = ReturnType<typeof buildOpenidConfiguration>;
 
 const openidConfigurationCache = new WeakMap<
-  TinyAuthRuntimeConfig,
+  IssuaryRuntimeConfig,
   OpenidConfiguration
 >();
 
-export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
+export function buildOpenidConfiguration(config: IssuaryRuntimeConfig) {
   const baseUrl = config.server.public_origin;
   const scopesSupported = new Set([
     'openid',
@@ -86,7 +86,7 @@ export function buildOpenidConfiguration(config: TinyAuthRuntimeConfig) {
   };
 }
 
-function getOpenidConfiguration(config: TinyAuthRuntimeConfig) {
+function getOpenidConfiguration(config: IssuaryRuntimeConfig) {
   const cached = openidConfigurationCache.get(config);
   if (cached) {
     return cached;

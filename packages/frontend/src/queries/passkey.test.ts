@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -46,7 +46,7 @@ const passkeysResponse = {
 
 const registrationOptions = {
   challenge: 'registration-challenge',
-  rp: { name: 'TinyAuth', id: 'auth.example.com' },
+  rp: { name: 'Issuary', id: 'auth.example.com' },
   user: { id: 'user-1', name: 'user@example.com', displayName: 'User' },
   pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
 };
@@ -188,7 +188,7 @@ describe('registerPasskeyMutationOptions', () => {
     });
   });
 
-  test('preserves registration option errors as TinyAuthError', async () => {
+  test('preserves registration option errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'PASSKEY_DISABLED',
@@ -201,9 +201,9 @@ describe('registerPasskeyMutationOptions', () => {
       await runRegisterPasskeyMutation({ name: 'Security Key' });
       throw new Error('Expected register passkey mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('PASSKEY_DISABLED');
         expect(error.status).toBe(403);
         expect(error.message).toBe('Passkey registration is disabled.');

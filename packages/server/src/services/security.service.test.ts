@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import {
-  type TinyAuthRuntimeConfig,
-  TinyAuthRuntimeConfigSchema,
+  type IssuaryRuntimeConfig,
+  IssuaryRuntimeConfigSchema,
 } from '../lib/config/index.ts';
 import { MINIMAL_TEST_CONFIG } from '../test-utils/setup.ts';
 import { SecurityService } from './security.service.ts';
 
 function createService(
-  securityOverride?: TinyAuthRuntimeConfig['security'],
+  securityOverride?: IssuaryRuntimeConfig['security'],
 ): SecurityService {
-  const config = TinyAuthRuntimeConfigSchema.parse({
+  const config = IssuaryRuntimeConfigSchema.parse({
     ...MINIMAL_TEST_CONFIG,
     ...(securityOverride ? { security: securityOverride } : {}),
   });

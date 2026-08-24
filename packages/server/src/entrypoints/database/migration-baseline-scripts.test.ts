@@ -27,7 +27,7 @@ describe('migration creation scripts', () => {
     expect(wrapper).toContain('applyExistingMigrations');
     expect(wrapper).toContain('runMikroOrmMigrationCreate');
     expect(wrapper).toContain('removeKnownSqliteNoopMigration');
-    expect(wrapper).toContain('TINYAUTH_MIGRATION_SQLITE_DB_PATH');
-    expect(wrapper).toContain('TINYAUTH_MIGRATION_POSTGRES_PORT');
+    expect(wrapper).toContain('ISSUARY_MIGRATION_SQLITE_DB_PATH');
+    expect(wrapper).toContain('ISSUARY_MIGRATION_POSTGRES_PORT');
   });
 });

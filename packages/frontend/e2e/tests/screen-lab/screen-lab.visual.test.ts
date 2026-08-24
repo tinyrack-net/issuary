@@ -31,8 +31,8 @@ async function configurePage(
   });
   await page.addInitScript(
     ({ colorScheme, locale }) => {
-      localStorage.setItem('tinyauth-color-scheme', colorScheme);
-      localStorage.setItem('tinyauth-language', locale);
+      localStorage.setItem('issuary-color-scheme', colorScheme);
+      localStorage.setItem('issuary-language', locale);
     },
     {
       colorScheme: variant.colorScheme,

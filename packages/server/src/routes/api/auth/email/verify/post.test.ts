@@ -230,7 +230,7 @@ describe('POST /api/auth/email/verify - pending 2FA setup', () => {
           },
           totp: {
             enabled: true,
-            issuer: 'TinyAuthEmailVerifyTest',
+            issuer: 'IssuaryEmailVerifyTest',
           },
         },
       },

@@ -2,7 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '#server/entrypoints/app.js';
-import type { TinyAuthRuntimeConfigInput } from '#server/lib/config/index.js';
+import type { IssuaryRuntimeConfigInput } from '#server/lib/config/index.js';
 import {
   assertJsonBody,
   createTestApp,
@@ -82,7 +82,7 @@ async function requestOauthOpenidConfiguration() {
 }
 
 function createScaleClients(): NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
+  IssuaryRuntimeConfigInput['clients']
 > {
   return Array.from({ length: SCALE_CLIENT_COUNT }, (_, index) => ({
     id: `discovery-scale-client-${index}`,

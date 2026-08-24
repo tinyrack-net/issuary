@@ -1,11 +1,11 @@
 ---
 title: GitHub
-description: Tinyauth에서 GitHub OAuth 로그인 구성하기
+description: Issuary에서 GitHub OAuth 로그인 구성하기
 section: configuration
 order: 23
 ---
 
-GitHub OAuth를 사용하면 사용자가 GitHub 계정으로 `tinyauth`에 로그인할 수 있어요. 이 가이드는 GitHub에서 OAuth App을 만들고 `tinyauth`에 연동하는 방법을 설명해요.
+GitHub OAuth를 사용하면 사용자가 GitHub 계정으로 `issuary`에 로그인할 수 있어요. 이 가이드는 GitHub에서 OAuth App을 만들고 `issuary`에 연동하는 방법을 설명해요.
 
 ---
 
@@ -29,7 +29,7 @@ Client Secret은 생성 직후에만 표시돼요. 페이지를 벗어나면 다
 
 ---
 
-## 2. Tinyauth 설정
+## 2. Issuary 설정
 
 GitHub에서 발급받은 자격증명을 `config.yaml`에 설정해요.
 
@@ -56,7 +56,7 @@ GitHub OAuth는 기본적으로 `user:email` 스코프를 요청하여 사용자
 
 ## 예시
 
-`tinyauth`를 `https://auth.example.com`에서 운영하는 경우의 전체 설정 예시예요.
+`issuary`를 `https://auth.example.com`에서 운영하는 경우의 전체 설정 예시예요.
 
 ```yaml
 # config.yaml

@@ -10,8 +10,8 @@ export const commands = buildRouteMap({
     serve: serveCommand,
   },
   docs: {
-    brief: 'TinyAuth standalone CLI server',
-    fullDescription: 'TinyAuth standalone CLI server',
+    brief: 'Issuary standalone CLI server',
+    fullDescription: 'Issuary standalone CLI server',
   },
 });
 

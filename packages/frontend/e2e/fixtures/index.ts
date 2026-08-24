@@ -1,8 +1,8 @@
 import type {
-  TinyAuthRuntimeConfig,
-  TinyAuthRuntimeConfigInput,
-} from '@tinyrack/tinyauth-server/config';
-import { sqlite } from '@tinyrack/tinyauth-server/database/sqlite';
+  IssuaryRuntimeConfig,
+  IssuaryRuntimeConfigInput,
+} from '@tinyrack/issuary-server/config';
+import { sqlite } from '@tinyrack/issuary-server/database/sqlite';
 
 /**
  * Test user credentials for e2e tests.
@@ -44,13 +44,13 @@ export const E2E_TEST_CLIENT_CONFIG = {
   response_types: ['code'],
   grant_types: ['authorization_code', 'refresh_token'],
   scope: 'openid profile email offline_access',
-} satisfies NonNullable<TinyAuthRuntimeConfigInput['clients']>[number];
+} satisfies NonNullable<IssuaryRuntimeConfigInput['clients']>[number];
 
 export type TestEmailConfig =
   | { test: true }
-  | NonNullable<TinyAuthRuntimeConfig['email']>;
+  | NonNullable<IssuaryRuntimeConfig['email']>;
 
-export type E2EConfigInput = Omit<TinyAuthRuntimeConfigInput, 'email'> & {
+export type E2EConfigInput = Omit<IssuaryRuntimeConfigInput, 'email'> & {
   email?: TestEmailConfig;
 };
 

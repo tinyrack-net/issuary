@@ -8,7 +8,7 @@ export const StandaloneDatabaseSqliteConfigSchema = z
     type: z.literal('sqlite').describe('Database type: SQLite.'),
     path: z
       .string()
-      .default('/opt/tinyauth/database.db')
+      .default('/opt/issuary/database.db')
       .describe('File path for the SQLite database.'),
     test: StandaloneBooleanSchema.default(false).describe(
       'Whether to use an in-memory database for testing.',
@@ -43,7 +43,7 @@ export const StandaloneDatabasePostgresConfigSchema = z
     name: z
       .string()
       .min(1)
-      .default('tinyauth')
+      .default('issuary')
       .describe('PostgreSQL database name.'),
     driver_options: StandaloneDatabaseDriverOptionsSchema.optional().describe(
       'Driver-specific MikroORM options passed to the PostgreSQL driver.',
@@ -62,7 +62,7 @@ export const StandaloneDatabaseConfigSchema = z
   ])
   .default({
     type: 'sqlite',
-    path: '/opt/tinyauth/database.db',
+    path: '/opt/issuary/database.db',
     test: false,
     debug: false,
   });

@@ -1,19 +1,19 @@
 ---
 title: React SPA 連動
-description: React シングルページアプリケーションと Tinyauth 連動する
+description: React シングルページアプリケーションと Issuary 連動する
 section: configuration
 order: 30
 ---
 
-このガイドは React SPA(シングルページアプリケーション)から `tinyauth`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 SPAはクライアント側のコードでシークレットを安全に保持できないため、 **パブリッククライアント** パターンと PKCEを使用します。
+このガイドは React SPA(シングルページアプリケーション)から `issuary`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 SPAはクライアント側のコードでシークレットを安全に保持できないため、 **パブリッククライアント** パターンと PKCEを使用します。
 
 ---
 
 ## 事前準備
 
-### 1. Tinyauth クライアント登録
+### 1. Issuary クライアント登録
 
-`tinyauth`の `config.yaml`に React SPAを公​​開クライアントとして登録します。 `client_secret`は省略します。
+`issuary`の `config.yaml`に React SPAを公​​開クライアントとして登録します。 `client_secret`は省略します。
 
 ```yaml
 # config.yaml
@@ -50,7 +50,7 @@ React SPA パブリッククライアントの認証フローは次のとおり�
 
 1. ユーザーがログインボタンをクリック
 2. ブラウザで PKCE ペア、state、nonceを作成してsessionStorageに保存する
-3. ユーザー `tinyauth` 認証ページにリダイレクト
+3. ユーザー `issuary` 認証ページにリダイレクト
 4. 認証完了後 `/callback` ルートロコールバック
 5. **ブラウザから直接** 認証コードをトークンに交換する（client_secretなしで、 PKCEとしてセキュリティ）
 6. トークンを localStorage に保存
@@ -109,7 +109,7 @@ async function handleLogin() {
     code_challenge_method: 'S256',
   });
 
-  // tinyauth 인증 페이지로 리다이렉트
+  // issuary 인증 페이지로 리다이렉트
   window.location.href =
     `${oidcConfig.authorizationEndpoint}?${params}`;
 }

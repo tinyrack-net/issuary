@@ -2,9 +2,9 @@ import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 type ColorScheme = 'light' | 'dark';
 
-const STORAGE_KEY = 'tinyauth-color-scheme';
+const STORAGE_KEY = 'issuary-color-scheme';
 
-const COLOR_SCHEME_CHANGE_EVENT = 'tinyauth-color-scheme-change';
+const COLOR_SCHEME_CHANGE_EVENT = 'issuary-color-scheme-change';
 
 function getOsPreference(): ColorScheme {
   if (typeof window === 'undefined') return 'light';

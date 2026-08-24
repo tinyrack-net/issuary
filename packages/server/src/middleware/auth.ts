@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import type { UserEntity } from '../entities/user.entity.ts';
-import { e, TinyAuthError } from '../schemas/error.ts';
+import { e, IssuaryError } from '../schemas/error.ts';
 import type { ServicesEnv } from './services.ts';
 import type { SessionData, SessionEnv } from './session.ts';
 
@@ -52,7 +52,7 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
         authenticatedAt: session.authenticated_at,
       });
     } catch (err) {
-      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.set('user', undefined);
         if (options?.optional) {
           c.set('verifiedUser', undefined as never);
@@ -89,7 +89,7 @@ export const requireAdmin = () =>
         authenticatedAt: session.authenticated_at,
       });
     } catch (err) {
-      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.set('user', undefined);
         throw new e.Unauthorized.Error();
       }
@@ -135,7 +135,7 @@ export const verifyPending2FAUser = <
         authenticatedAt: session.authenticated_at,
       });
     } catch (err) {
-      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.set('pending2FAUser', undefined);
         if (options?.optional) {
           c.set('verifiedPending2FAUser', undefined as never);
@@ -182,7 +182,7 @@ export const verifyPending2FASetupUser = <
       const userEntity = await services.mikro.user.findBySub(session.sub);
       c.set('verifiedPending2FASetupUser', { user: userEntity });
     } catch (err) {
-      if (err instanceof TinyAuthError && err.code === 'USER_NOT_FOUND') {
+      if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
         sessionHelper.set('pending2FASetup', undefined);
         if (options?.optional) {
           c.set('verifiedPending2FASetupUser', undefined as never);

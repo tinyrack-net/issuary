@@ -1,5 +1,5 @@
 import { stringToBytes, toArrayBuffer, toBase64Url } from '../lib/base64url.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { validatePKCE } from '../lib/pkce.ts';
 import { e } from '../schemas/error.ts';
 import type {
@@ -95,7 +95,7 @@ export interface TokenResponse {
  * Supports both config-based and database-based users/clients.
  */
 export class OAuthTokenService {
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly userService: UserService;
   private readonly oauthClientService: OAuthClientService;
@@ -103,7 +103,7 @@ export class OAuthTokenService {
   private readonly securityService: SecurityService;
   private readonly refreshRotationLocks = new Map<string, Promise<void>>();
   constructor(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     mikro: MikroService,
     userService: UserService,
     oauthClientService: OAuthClientService,

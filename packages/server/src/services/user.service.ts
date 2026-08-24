@@ -1,7 +1,7 @@
 import type { Loaded } from '@mikro-orm/core';
 import type z from 'zod';
 import type { UserEntity } from '../entities/user.entity.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { Locale } from '../lib/locale.ts';
 import { e } from '../schemas/error.ts';
 import type { r } from '../schemas/response.ts';
@@ -12,13 +12,13 @@ import type { TermsService } from './terms.service.ts';
 
 export class UserService {
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly emailService: EmailService;
   private readonly passwordAuthService: PasswordAuthService;
   private readonly termsService?: TermsService | undefined;
   public constructor(
     mikro: MikroService,
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     emailService: EmailService,
     passwordAuthService: PasswordAuthService,
     termsService?: TermsService,

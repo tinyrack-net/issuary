@@ -1,19 +1,19 @@
 ---
 title: Next.js 연동
-description: Next.js 애플리케이션과 Tinyauth 연동하기
+description: Next.js 애플리케이션과 Issuary 연동하기
 section: configuration
 order: 29
 ---
 
-이 가이드는 Next.js App Router 애플리케이션에서 `tinyauth`를 OIDC 제공자로 사용하여 인증을 구현하는 방법을 설명해요. Next.js는 서버 사이드에서 시크릿을 안전하게 보관할 수 있으므로 **기밀 클라이언트(Confidential Client)** 패턴을 사용해요.
+이 가이드는 Next.js App Router 애플리케이션에서 `issuary`를 OIDC 제공자로 사용하여 인증을 구현하는 방법을 설명해요. Next.js는 서버 사이드에서 시크릿을 안전하게 보관할 수 있으므로 **기밀 클라이언트(Confidential Client)** 패턴을 사용해요.
 
 ---
 
 ## 사전 준비
 
-### 1. Tinyauth 클라이언트 등록
+### 1. Issuary 클라이언트 등록
 
-`tinyauth`의 `config.yaml`에 Next.js 앱을 기밀 클라이언트로 등록해요.
+`issuary`의 `config.yaml`에 Next.js 앱을 기밀 클라이언트로 등록해요.
 
 ```yaml
 # config.yaml
@@ -52,7 +52,7 @@ Next.js 기밀 클라이언트의 인증 흐름은 다음과 같아요.
 
 1. 사용자가 로그인 버튼을 클릭하면 `/api/auth/login` API 라우트로 이동
 2. 서버에서 PKCE 쌍, state, nonce를 생성하고 쿠키에 저장
-3. 사용자를 `tinyauth` 인증 페이지로 리다이렉트
+3. 사용자를 `issuary` 인증 페이지로 리다이렉트
 4. 인증 완료 후 `/api/callback`으로 콜백
 5. 서버에서 인증 코드를 토큰으로 교환 (client_secret 포함)
 6. 토큰을 httpOnly 쿠키에 안전하게 저장
@@ -64,7 +64,7 @@ Next.js 기밀 클라이언트의 인증 흐름은 다음과 같아요.
 
 ### OIDC Discovery
 
-서버 시작 시 `tinyauth`의 OIDC Discovery 엔드포인트에서 설정을 자동으로 가져와요.
+서버 시작 시 `issuary`의 OIDC Discovery 엔드포인트에서 설정을 자동으로 가져와요.
 
 ```typescript
 // lib/oidc-config.ts

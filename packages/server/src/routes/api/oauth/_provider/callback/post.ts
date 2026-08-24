@@ -6,7 +6,7 @@ import type { AppEnv } from '../../../../../lib/app-env.ts';
 import { decrypt } from '../../../../../lib/crypto.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
-import { e, TinyAuthError } from '../../../../../schemas/error.ts';
+import { e, IssuaryError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
 import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
@@ -183,7 +183,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
     } catch (err) {
       session.set('oauth', undefined);
       deleteCookie(c, 'oauth_state', { path: oauthStateCookiePath });
-      if (err instanceof TinyAuthError) {
+      if (err instanceof IssuaryError) {
         return c.json(err.toJson(), err.status);
       }
       throw err;

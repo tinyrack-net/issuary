@@ -1,11 +1,11 @@
 ---
 title: 1분 시작
-description: 1분 안에 Tinyauth를 실행해 보세요
+description: 1분 안에 Issuary를 실행해 보세요
 section: getting-started
 order: 1
 ---
 
-`Tinyauth`를 3분 만에 실행해 보세요! Docker만 있으면 아래 명령어 하나로 바로 시작할 수 있어요.
+`Issuary`를 3분 만에 실행해 보세요! Docker만 있으면 아래 명령어 하나로 바로 시작할 수 있어요.
 
 ```bash
 docker run \
@@ -13,14 +13,14 @@ docker run \
   -p 8080:8080 \
   -e SESSION_SECRET="$(openssl rand -hex 32)" \
   -e HASH_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---
 
 ## 실행 확인
 
-서버가 시작되면 브라우저에서 [http://localhost:8080](http://localhost:8080)에 접속해 보세요. `tinyauth`의 로그인 페이지가 표시돼요.
+서버가 시작되면 브라우저에서 [http://localhost:8080](http://localhost:8080)에 접속해 보세요. `issuary`의 로그인 페이지가 표시돼요.
 
 ---
 
@@ -51,7 +51,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ### 방법 2: 사전 정의 사용자
@@ -76,7 +76,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---

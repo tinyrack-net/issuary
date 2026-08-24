@@ -35,7 +35,7 @@ describe('OpenAPI docs when enabled', () => {
       const body = await assertJsonBody(res);
       expect(body).toHaveProperty('openapi', '3.1.0');
       expect(body).toHaveProperty('info');
-      expect(body.info).toHaveProperty('title', 'TinyAuth API');
+      expect(body.info).toHaveProperty('title', 'Issuary API');
       expect(body.info).toHaveProperty('version', '1.0.0');
       expect(body.info).toHaveProperty(
         'description',

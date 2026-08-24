@@ -1,5 +1,5 @@
 import { fromBase64Url } from '../lib/base64url.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import {
   derivePbkdf2Bytes,
   derivePurposeKeyBytes,
@@ -14,7 +14,7 @@ import {
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';
 const HASH_FORMAT_VERSION = 1;
-const HKDF_CONTEXT = 'tinyauth-hash-master-v1';
+const HKDF_CONTEXT = 'issuary-hash-master-v1';
 const PBKDF2_SALT_BYTES = 16;
 const PBKDF2_DERIVED_KEY_BYTES = 32;
 
@@ -40,7 +40,7 @@ export class SecurityService {
   private readonly pbkdf2Iterations: number;
   private readonly purposeKeyCache = new Map<Purpose, Promise<Uint8Array>>();
 
-  public constructor(config: TinyAuthRuntimeConfig) {
+  public constructor(config: IssuaryRuntimeConfig) {
     const decodedSecret = fromBase64Url(config.security.hash_secret);
     if (decodedSecret.length !== 32) {
       throw new Error('security.hash_secret must decode to 32 bytes.');

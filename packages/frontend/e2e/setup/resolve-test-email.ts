@@ -1,7 +1,7 @@
-import type { TinyAuthRuntimeConfig } from '@tinyrack/tinyauth-server/config';
+import type { IssuaryRuntimeConfig } from '@tinyrack/issuary-server/config';
 
 export async function resolveTestEmailConfig(): Promise<
-  NonNullable<TinyAuthRuntimeConfig['email']>
+  NonNullable<IssuaryRuntimeConfig['email']>
 > {
   return {
     from: 'no-reply@test.local',

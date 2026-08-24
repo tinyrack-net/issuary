@@ -43,7 +43,7 @@ export const routeTestAppConfig = {
       },
       totp: {
         enabled: true,
-        issuer: 'TinyAuth',
+        issuer: 'Issuary',
       },
       policy: {
         min_length: 8,

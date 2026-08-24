@@ -1,4 +1,4 @@
-import { TinyAuthError } from './error.ts';
+import { IssuaryError } from './error.ts';
 
 export type PasskeyErrorReason =
   | 'unsupported'
@@ -45,7 +45,7 @@ function errorName(error: unknown): string | null {
 }
 
 export function classifyPasskeyError(error: unknown): PasskeyErrorReason {
-  if (error instanceof TinyAuthError) {
+  if (error instanceof IssuaryError) {
     if (error.code === 'SECOND_FACTOR_SESSION_EXPIRED') {
       return 'expired';
     }

@@ -61,7 +61,7 @@ export async function reserveFreePort(): Promise<{
 }> {
   for (let attempt = 0; attempt < 100; attempt++) {
     const port = await getFreePort();
-    const lockPath = path.join(os.tmpdir(), `tinyauth-e2e-port-${port}.lock`);
+    const lockPath = path.join(os.tmpdir(), `issuary-e2e-port-${port}.lock`);
 
     try {
       await fs.writeFile(lockPath, String(process.pid), {
@@ -115,7 +115,7 @@ export async function createTestConfigFile(
   const { port, release } = await reserveFreePort();
   let tmpDir: string;
   try {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tinyauth-e2e-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'issuary-e2e-'));
   } catch (error) {
     await release();
     throw error;

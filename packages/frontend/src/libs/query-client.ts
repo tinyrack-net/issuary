@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { TinyAuthError } from './error';
+import { IssuaryError } from './error';
 
 export const GlobalQueryClient = new QueryClient({
   defaultOptions: {
@@ -9,7 +9,7 @@ export const GlobalQueryClient = new QueryClient({
         // succeed on subsequent attempts (e.g. 401 Unauthorized,
         // 403 Forbidden, 404 Not Found).
         if (
-          error instanceof TinyAuthError &&
+          error instanceof IssuaryError &&
           error.status >= 400 &&
           error.status < 500
         ) {

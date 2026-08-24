@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { TinyAuthError } from './error.ts';
+import { IssuaryError } from './error.ts';
 
-describe('TinyAuthError.fromResponse', () => {
+describe('IssuaryError.fromResponse', () => {
   test('uses the server code and message when the response body is JSON', async () => {
     const response = new Response(
       JSON.stringify({
@@ -17,9 +17,9 @@ describe('TinyAuthError.fromResponse', () => {
       },
     );
 
-    const error = await TinyAuthError.fromResponse(response);
+    const error = await IssuaryError.fromResponse(response);
 
-    expect(error).toBeInstanceOf(TinyAuthError);
+    expect(error).toBeInstanceOf(IssuaryError);
     expect(error.code).toBe('INVALID_TOKEN');
     expect(error.status).toBe(400);
     expect(error.message).toBe('The token is invalid.');
@@ -34,7 +34,7 @@ describe('TinyAuthError.fromResponse', () => {
       },
     });
 
-    const error = await TinyAuthError.fromResponse(response);
+    const error = await IssuaryError.fromResponse(response);
 
     expect(error.code).toBe('UNKNOWN_ERROR');
     expect(error.status).toBe(504);

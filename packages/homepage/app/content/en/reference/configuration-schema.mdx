@@ -27,7 +27,7 @@ The current config model is organized by top-level groups:
 - `openapi`
 - `frontend` (standalone only)
 
-`frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyrack/tinyauth-standalone` and are not part of the server's declarative config contract.
+`frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyrack/issuary-standalone` and are not part of the server's declarative config contract.
 
 ## `registration`
 
@@ -75,9 +75,9 @@ Within each localized `content` item, `type` must be `link` or `text`.
 | Field | Type | Default | Description |
 |------|------|--------|------|
 | `enabled` | `boolean` | `true` | Enables the live OpenAPI routes `GET /api/docs` and `GET /api/docs/json`. |
-| `title` | `string` | `'TinyAuth API'` | OpenAPI document title. |
+| `title` | `string` | `'Issuary API'` | OpenAPI document title. |
 | `description` | `string` | `'OpenID Connect Provider API'` | OpenAPI document description. |
-| `ui_title` | `string` | `'TinyAuth API Reference'` | Browser page title for the live Scalar API reference UI. |
+| `ui_title` | `string` | `'Issuary API Reference'` | Browser page title for the live Scalar API reference UI. |
 
 ## `scheduler`
 

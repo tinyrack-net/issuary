@@ -1,11 +1,11 @@
 ---
 title: Apple
-description: Tinyauthから Apple ログインの設定
+description: Issuaryから Apple ログインの設定
 section: configuration
 order: 22
 ---
 
-Apple ログイン（Sign in with Apple）を使用すると、ユーザーは Apple IDで `tinyauth`にログインできます。このガイドは Apple Developerでサービスを登録し、 `tinyauth`に連動する方法を説明します。
+Apple ログイン（Sign in with Apple）を使用すると、ユーザーは Apple IDで `issuary`にログインできます。このガイドは Apple Developerでサービスを登録し、 `issuary`に連動する方法を説明します。
 
 ---
 
@@ -30,7 +30,7 @@ Apple ログイン `client_secret`銀 JWT 形式で生成する必要があり�
 
 ---
 
-## 2. Tinyauth 設定
+## 2. Issuary 設定
 
 Apple Developerで準備した資格証明 `config.yaml`に設定します。
 
@@ -50,14 +50,14 @@ identity_providers:
 - `client_secret`：作成した JWT client secretです。
 
 :::caution
-Appleは基本的に `form_post` 応答モードを使用します。 `tinyauth`はこれを自動的に処理するので、別途設定は不要です。 Appleは、ユーザーの名前を最初のログイン時にのみ提供し、IDトークンを介してユーザー情報を渡します。
+Appleは基本的に `form_post` 応答モードを使用します。 `issuary`はこれを自動的に処理するので、別途設定は不要です。 Appleは、ユーザーの名前を最初のログイン時にのみ提供し、IDトークンを介してユーザー情報を渡します。
 :::
 
 ---
 
 ## 例
 
-`tinyauth`を `https://auth.example.com`で運営する場合の全体設定例です。
+`issuary`を `https://auth.example.com`で運営する場合の全体設定例です。
 
 ```yaml
 # config.yaml

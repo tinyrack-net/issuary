@@ -1,4 +1,4 @@
-import { SecurityConfigSchema } from '@tinyrack/tinyauth-server/config';
+import { SecurityConfigSchema } from '@tinyrack/issuary-server/config';
 import type z from 'zod';
 
 export const StandaloneSecurityConfigSchema = SecurityConfigSchema.extend({});

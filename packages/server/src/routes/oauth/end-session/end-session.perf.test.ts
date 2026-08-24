@@ -2,7 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
-import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
+import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.js';
 import {
   createTestApp,
   MINIMAL_TEST_CONFIG,
@@ -17,7 +17,7 @@ const MEASURED_REQUESTS = 50;
 const END_SESSION_CLIENT_ID = 'end-session-perf-client';
 const POST_LOGOUT_REDIRECT_URI = 'http://localhost:8080/logout/complete';
 const END_SESSION_CLIENT: NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
+  IssuaryRuntimeConfigInput['clients']
 >[number] = {
   id: 'end-session-perf',
   name: 'End Session Perf',

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { initializeServices } from '@tinyrack/tinyauth-server/services';
+import { initializeServices } from '@tinyrack/issuary-server/services';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, resolveConfig } from '../src/lib/load-config.ts';
 import { createLogger } from '../src/lib/logger.ts';
@@ -64,9 +64,7 @@ async function withServices<T>(
 }
 
 async function createCleanupDbFixture(): Promise<CleanupDbFixture> {
-  const dbDir = await fs.mkdtemp(
-    path.join(os.tmpdir(), 'tinyauth-cleanup-db-'),
-  );
+  const dbDir = await fs.mkdtemp(path.join(os.tmpdir(), 'issuary-cleanup-db-'));
   const { configPath, cleanup } = await createTestConfigFile({
     database: {
       type: 'sqlite',
@@ -382,7 +380,7 @@ describe('cleanup e2e', { timeout: 90_000 }, () => {
 
   it('restores cwd when service initialization fails after chdir', async () => {
     const cwd = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'tinyauth-cleanup-cwd-'),
+      path.join(os.tmpdir(), 'issuary-cleanup-cwd-'),
     );
     cleanups.push(async () => {
       await removeDirectoryWithRetry(cwd);
@@ -399,7 +397,7 @@ describe('cleanup e2e', { timeout: 90_000 }, () => {
 
   it('restores cwd when service cleanup rejects after chdir', async () => {
     const cwd = await fs.mkdtemp(
-      path.join(os.tmpdir(), 'tinyauth-cleanup-reject-cwd-'),
+      path.join(os.tmpdir(), 'issuary-cleanup-reject-cwd-'),
     );
     cleanups.push(async () => {
       await removeDirectoryWithRetry(cwd);

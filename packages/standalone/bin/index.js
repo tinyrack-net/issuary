@@ -7,7 +7,7 @@ const cliUrl = new URL('../dist/cli.js', import.meta.url);
 
 if (!existsSync(fileURLToPath(cliUrl))) {
   console.error(
-    'TinyAuth standalone CLI has not been built yet. Run `pnpm --filter @tinyrack/tinyauth-standalone build` first.',
+    'Issuary standalone CLI has not been built yet. Run `pnpm --filter @tinyrack/issuary-standalone build` first.',
   );
   process.exitCode = 1;
 } else {

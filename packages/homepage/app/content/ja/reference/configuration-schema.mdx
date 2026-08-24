@@ -5,10 +5,10 @@ section: reference
 order: 32
 ---
 
-この文書は現在 `tinyauth`の `config.yaml` 構造をtop-levelグループ基準でまとめたリファレンスです。
+この文書は現在 `issuary`の `config.yaml` 構造をtop-levelグループ基準でまとめたリファレンスです。
 
 :::note
-`frontend`と `frontend.html_variables`はstandalone専用の設定です。 `@tinyrack/tinyauth-standalone`のみこの値を解釈し、 `@tinyrack/tinyauth-server`の直接構成では使用しません。
+`frontend`と `frontend.html_variables`はstandalone専用の設定です。 `@tinyrack/issuary-standalone`のみこの値を解釈し、 `@tinyrack/issuary-server`の直接構成では使用しません。
 :::
 
 ## `server`
@@ -86,7 +86,7 @@ order: 32
 | アイテム | タイプ | デフォルト | 環境変数 | 説明 |
 |------|------|--------|-----------|------|
 | `type` | `'sqlite'` | - | `DATABASE_TYPE` | データベースタイプ |
-| `path` | `string` | `/opt/tinyauth/database.db` | `DATABASE_PATH` | データベースファイルパス |
+| `path` | `string` | `/opt/issuary/database.db` | `DATABASE_PATH` | データベースファイルパス |
 | `test` | `boolean` | `false` | `DATABASE_TEST` | テストモードかどうか |
 
 ### PostgreSQL (`type: 'postgres'`)
@@ -98,7 +98,7 @@ order: 32
 | `port` | `number` | `5432` | `DATABASE_PORT` | ポート |
 | `user` | `string` | `'postgres'` | `DATABASE_USER` | ユーザー |
 | `password` | `string` | `'postgres'` | `DATABASE_PASSWORD` | パスワード |
-| `name` | `string` | `'tinyauth'` | `DATABASE_NAME` | データベース名 |
+| `name` | `string` | `'issuary'` | `DATABASE_NAME` | データベース名 |
 
 ## `auth`
 
@@ -231,9 +231,9 @@ order: 32
 | アイテム | タイプ | デフォルト | 環境変数 | 説明 |
 |------|------|--------|-----------|------|
 | `enabled` | `boolean` | `true` | - | ライブOpenAPIルート `GET /api/docs`, `GET /api/docs/json` 露出かどうか |
-| `title` | `string` | `'TinyAuth API'` | - | OpenAPIドキュメントのタイトル |
+| `title` | `string` | `'Issuary API'` | - | OpenAPIドキュメントのタイトル |
 | `description` | `string` | `'OpenID Connect Provider API'` | - | OpenAPI ドキュメントの説明 |
-| `ui_title` | `string` | `'TinyAuth API Reference'` | - | ライブスカラー API リファレンスUIのブラウザページタイトル |
+| `ui_title` | `string` | `'Issuary API Reference'` | - | ライブスカラー API リファレンスUIのブラウザページタイトル |
 
 ## `frontend` (standalone only)
 

@@ -17,7 +17,7 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { queryKeys } from '#frontend/queries/keys.ts';
 import {
   deletePasskeyMutationOptions,
@@ -91,7 +91,7 @@ export function ManagePasskeysModal({
     try {
       await deleteMutation.mutateAsync({ id: passkey.id });
     } catch (error) {
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
           setDeleteError(
             t('profile.passkey.manageModal.cannotRemoveLastSecondFactor'),

@@ -35,7 +35,7 @@ describe('resolveConfig', () => {
       frontend: {
         enabled: true,
         html_variables: {
-          TITLE: 'TinyAuth',
+          TITLE: 'Issuary',
         },
       },
     });
@@ -89,7 +89,7 @@ describe('resolveConfig', () => {
         port: 5432,
         user: 'postgres',
         password: 'postgres',
-        name: 'tinyauth',
+        name: 'issuary',
         debug: 'true',
         driver_options: {
           ssl: false,

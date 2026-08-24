@@ -6,8 +6,8 @@ export const exportCommand = buildRouteMap({
     openapi: exportOpenapiCommand,
   },
   docs: {
-    brief: 'Export TinyAuth artifacts',
-    fullDescription: 'Export TinyAuth artifacts',
+    brief: 'Export Issuary artifacts',
+    fullDescription: 'Export Issuary artifacts',
   },
 });
 

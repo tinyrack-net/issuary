@@ -1,11 +1,11 @@
 ---
 title: 始める
-description: Tinyauth セットアップシステムを理解する
+description: Issuary セットアップシステムを理解する
 section: configuration
 order: 5
 ---
 
-`tinyauth`銀 `config.yaml` という単一 `yaml` ファイルに設定されています。これにより、ログイン方式、セキュリティ、データベース、ブランディング、会員登録ポリシーなど `tinyauth` 操作に必要なほとんどの設定が行われます。設定ファイルは次の主要セクションで構成されています。
+`issuary`銀 `config.yaml` という単一 `yaml` ファイルに設定されています。これにより、ログイン方式、セキュリティ、データベース、ブランディング、会員登録ポリシーなど `issuary` 操作に必要なほとんどの設定が行われます。設定ファイルは次の主要セクションで構成されています。
 
 ```yaml
 # config.yaml
@@ -34,14 +34,14 @@ frontend:             # standalone 전용 프론트엔드 서빙 설정
 docker run \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---
 
 ## 最小要求設定
 
-`tinyauth`を使用するには、少なくとも次の設定を構成する必要があります。
+`issuary`を使用するには、少なくとも次の設定を構成する必要があります。
 
 ```yaml
 # config.yaml
@@ -53,7 +53,7 @@ security:
   hash_secret: "base64url_32바이트_해시_시크릿"
 ```
 
-- `server.public_origin`: `tinyauth`に接続するときに使用する公開 URLこれです。リダイレクト URL、メールリンク、 OIDC issuer metadataの基準になります。公開されたサービスの場合 `https` 使用を強くお勧めします。
+- `server.public_origin`: `issuary`に接続するときに使用する公開 URLこれです。リダイレクト URL、メールリンク、 OIDC issuer metadataの基準になります。公開されたサービスの場合 `https` 使用を強くお勧めします。
 - `security.session_secret`：ログインユーザーのセッションCookieに署名するために使用される秘密鍵です。最小 **16文字以上**でなければなりません。 `openssl rand -hex 32` 命令で生成できます。
 - `security.hash_secret`：パスワードと各種トークンハッシュに使用するbase64url 32バイトのルートシークレットです。
 

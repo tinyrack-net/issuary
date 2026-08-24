@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 import { RegenerateTotpRecoveryCodesModal } from './regenerate-totp-recovery-codes-modal.tsx';
@@ -121,7 +121,7 @@ test('shows a field error for invalid TOTP codes', async () => {
   mocks.mutation.mutateAsync = vi
     .fn()
     .mockRejectedValue(
-      new TinyAuthError('INVALID_TOTP_CODE', 400, 'Invalid code'),
+      new IssuaryError('INVALID_TOTP_CODE', 400, 'Invalid code'),
     );
 
   const screen = await render(
@@ -141,7 +141,7 @@ test('shows a field error for invalid TOTP codes', async () => {
 test('redirects to login when the session is unauthorized', async () => {
   mocks.mutation.mutateAsync = vi
     .fn()
-    .mockRejectedValue(new TinyAuthError('UNAUTHORIZED', 401, 'Unauthorized'));
+    .mockRejectedValue(new IssuaryError('UNAUTHORIZED', 401, 'Unauthorized'));
 
   const screen = await render(
     <RegenerateTotpRecoveryCodesModal isOpen onClose={() => {}} />,
@@ -181,7 +181,7 @@ test('TOTP_NOT_ENABLED error closes modal and invalidates session', async () => 
   mocks.mutation.mutateAsync = vi
     .fn()
     .mockRejectedValue(
-      new TinyAuthError('TOTP_NOT_ENABLED', 400, 'TOTP not enabled'),
+      new IssuaryError('TOTP_NOT_ENABLED', 400, 'TOTP not enabled'),
     );
 
   const onClose = vi.fn();

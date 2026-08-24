@@ -1,13 +1,13 @@
-import type { AppType } from '@tinyrack/tinyauth-server';
+import type { AppType } from '@tinyrack/issuary-server';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
 import i18n from '#frontend/i18n/index.ts';
-import { TinyAuthError } from './error';
+import { IssuaryError } from './error';
 
 /**
  * Custom fetch that adds Accept-Language header
- * and converts error responses to TinyAuthError.
+ * and converts error responses to IssuaryError.
  *
  * This replaces the old `etch()` wrapper, preserving
  * the same behavior within the Hono RPC client.
@@ -22,7 +22,7 @@ const customFetch: typeof fetch = async (input, init) => {
   const res = await fetch(input, { ...init, headers });
 
   if (!res.ok) {
-    throw await TinyAuthError.fromResponse(res);
+    throw await IssuaryError.fromResponse(res);
   }
 
   return res;
@@ -59,7 +59,7 @@ type ExtractSuccessBody<T> =
 /**
  * Narrow a Hono ClientResponse to its success body type.
  *
- * Because our custom fetch already throws `TinyAuthError` for
+ * Because our custom fetch already throws `IssuaryError` for
  * non-2xx responses, this is a safe cast that eliminates
  * error response types from the union.
  */

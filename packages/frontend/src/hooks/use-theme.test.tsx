@@ -49,7 +49,7 @@ describe('useColorScheme', () => {
     expect(document.documentElement.getAttribute('data-theme')).toBe(
       'tinyrack-light',
     );
-    expect(localStorage.getItem('tinyauth-color-scheme')).toBeNull();
+    expect(localStorage.getItem('issuary-color-scheme')).toBeNull();
   });
 
   test('defaults to dark when OS prefers dark and no stored value', async () => {
@@ -67,7 +67,7 @@ describe('useColorScheme', () => {
 
   test('uses stored preference over OS preference', async () => {
     colorSchemeMocks.prefersDark = false;
-    localStorage.setItem('tinyauth-color-scheme', 'dark');
+    localStorage.setItem('issuary-color-scheme', 'dark');
 
     const screen = await render(<ColorSchemeProbe />);
 
@@ -93,14 +93,14 @@ describe('useColorScheme', () => {
     await expect
       .element(screen.getByTestId('color-scheme'))
       .toHaveTextContent('dark');
-    expect(localStorage.getItem('tinyauth-color-scheme')).toBe('dark');
+    expect(localStorage.getItem('issuary-color-scheme')).toBe('dark');
     expect(document.documentElement.getAttribute('data-theme')).toBe(
       'tinyrack-dark',
     );
   });
 
   test('toggles from dark to light and saves to localStorage', async () => {
-    localStorage.setItem('tinyauth-color-scheme', 'dark');
+    localStorage.setItem('issuary-color-scheme', 'dark');
 
     const screen = await render(<ColorSchemeProbe />);
 
@@ -113,14 +113,14 @@ describe('useColorScheme', () => {
     await expect
       .element(screen.getByTestId('color-scheme'))
       .toHaveTextContent('light');
-    expect(localStorage.getItem('tinyauth-color-scheme')).toBe('light');
+    expect(localStorage.getItem('issuary-color-scheme')).toBe('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe(
       'tinyrack-light',
     );
   });
 
   test('applies correct data-theme value', async () => {
-    localStorage.setItem('tinyauth-color-scheme', 'dark');
+    localStorage.setItem('issuary-color-scheme', 'dark');
     await render(<ColorSchemeProbe />);
 
     expect(document.documentElement.getAttribute('data-theme')).toBe(

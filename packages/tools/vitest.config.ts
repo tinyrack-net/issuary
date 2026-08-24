@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
-    conditions: ['@tinyauth/source'],
+    conditions: ['@issuary/source'],
   },
   test: {
     maxWorkers: '100%',

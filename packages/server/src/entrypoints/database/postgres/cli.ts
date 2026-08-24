@@ -2,11 +2,11 @@ import type { Options } from '@mikro-orm/core';
 import { postgres } from './postgres.ts';
 
 const options = await postgres({
-  host: process.env['TINYAUTH_MIGRATION_POSTGRES_HOST'] ?? 'localhost',
-  name: process.env['TINYAUTH_MIGRATION_POSTGRES_DB'] ?? 'tinyauth',
-  password: process.env['TINYAUTH_MIGRATION_POSTGRES_PASSWORD'] ?? 'tinyauth',
-  port: Number(process.env['TINYAUTH_MIGRATION_POSTGRES_PORT'] ?? '5432'),
-  user: process.env['TINYAUTH_MIGRATION_POSTGRES_USER'] ?? 'tinyauth',
+  host: process.env['ISSUARY_MIGRATION_POSTGRES_HOST'] ?? 'localhost',
+  name: process.env['ISSUARY_MIGRATION_POSTGRES_DB'] ?? 'issuary',
+  password: process.env['ISSUARY_MIGRATION_POSTGRES_PASSWORD'] ?? 'issuary',
+  port: Number(process.env['ISSUARY_MIGRATION_POSTGRES_PORT'] ?? '5432'),
+  user: process.env['ISSUARY_MIGRATION_POSTGRES_USER'] ?? 'issuary',
 }).getMikroOrmOptions();
 
 const config: Partial<Options> = {

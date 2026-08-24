@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { UserEntity } from '../entities/user.entity.ts';
-import { TinyAuthRuntimeConfigSchema } from '../lib/config/index.ts';
+import { IssuaryRuntimeConfigSchema } from '../lib/config/index.ts';
 import type { ServiceContainer } from '../services/container.ts';
 import {
   createTestApp,
@@ -36,7 +36,7 @@ describe('seedConfigIfNeeded', () => {
 
     try {
       const firstPasswordHash = await readConfigUserPasswordHash(services);
-      const resolvedConfig = TinyAuthRuntimeConfigSchema.parse(inputConfig);
+      const resolvedConfig = IssuaryRuntimeConfigSchema.parse(inputConfig);
 
       const seeded = await seedConfigIfNeeded(
         services.mikro.orm.em.fork(),
@@ -62,7 +62,7 @@ describe('seedConfigIfNeeded', () => {
 
     try {
       const firstPasswordHash = await readConfigUserPasswordHash(services);
-      const changedConfig = TinyAuthRuntimeConfigSchema.parse({
+      const changedConfig = IssuaryRuntimeConfigSchema.parse({
         ...inputConfig,
         users: [
           {

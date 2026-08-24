@@ -13,7 +13,7 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { changePasswordMutationOptions } from '#frontend/queries/password.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -92,7 +92,7 @@ export function ChangePasswordModal({
       });
     } catch (err) {
       if (
-        err instanceof TinyAuthError &&
+        err instanceof IssuaryError &&
         err.code === 'INVALID_CURRENT_PASSWORD'
       ) {
         form.setError('currentPassword', {

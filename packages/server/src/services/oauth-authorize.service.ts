@@ -1,6 +1,6 @@
 import type z from 'zod';
 import { getRandomBytes, toBase64Url } from '../lib/base64url.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type {
   AccountSelectionSession,
   ReauthenticationSession,
@@ -74,14 +74,14 @@ export interface AuthorizeResult {
 }
 
 export class OAuthAuthorizeService {
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly oauthClientService: OAuthClientService;
   private readonly userConsentService: UserConsentService;
   private readonly securityService: SecurityService;
   private readonly jwtService: JwtService;
   public constructor(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     mikro: MikroService,
     oauthClientService: OAuthClientService,
     userConsentService: UserConsentService,

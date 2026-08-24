@@ -49,10 +49,10 @@ export { OPENAPI_CONFIG_DEFAULT, OpenApiConfigSchema } from './openapi.ts';
 export type { RegistrationConfig } from './registration.ts';
 export { RegistrationConfigSchema } from './registration.ts';
 export type {
-  TinyAuthRuntimeConfig,
-  TinyAuthRuntimeConfigInput,
+  IssuaryRuntimeConfig,
+  IssuaryRuntimeConfigInput,
 } from './resolved.ts';
-export { TinyAuthRuntimeConfigSchema } from './resolved.ts';
+export { IssuaryRuntimeConfigSchema } from './resolved.ts';
 export type {
   BackgroundJobConfig,
   EnqueueBackgroundJobOptions,

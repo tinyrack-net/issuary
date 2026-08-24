@@ -2,7 +2,7 @@
 @import "@tinyrack/ui/components/badge.css";
 @import "@tinyrack/ui/components/button.css";
 
-.tinyauth-home {
+.issuary-home {
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -15,7 +15,7 @@
   text-align: center;
 }
 
-.tinyauth-home::before {
+.issuary-home::before {
   background: var(--tinyrack-info-surface-subtle);
   border-radius: var(--tinyrack-radius-full);
   block-size: var(--tinyrack-overlay-width-md);
@@ -27,13 +27,13 @@
   position: absolute;
 }
 
-.tinyauth-home-mark {
+.issuary-home-mark {
   block-size: calc(var(--tinyrack-space-3xl) * 2);
   color: var(--tinyrack-primary);
   inline-size: calc(var(--tinyrack-space-3xl) * 2);
 }
 
-.tinyauth-home h1 {
+.issuary-home h1 {
   font-size: var(--tinyrack-text-3xl);
   letter-spacing: var(--tinyrack-tracking-none);
   line-height: var(--tinyrack-leading-sm);
@@ -41,28 +41,28 @@
   min-block-size: calc(var(--tinyrack-text-3xl) * var(--tinyrack-leading-sm));
 }
 
-.tinyauth-typewriter,
-.tinyauth-typewriter-cursor {
+.issuary-typewriter,
+.issuary-typewriter-cursor {
   color: var(--tinyrack-primary);
 }
 
-.tinyauth-typewriter-cursor {
-  animation: tinyauth-cursor var(--tinyrack-duration-number) step-end infinite;
+.issuary-typewriter-cursor {
+  animation: issuary-cursor var(--tinyrack-duration-number) step-end infinite;
 }
 
-.tinyauth-scalar,
-.tinyauth-scalar-loading {
+.issuary-scalar,
+.issuary-scalar-loading {
   min-block-size: 100dvh;
 }
 
-.tinyauth-scalar-loading {
+.issuary-scalar-loading {
   align-items: center;
   display: flex;
   justify-content: center;
   padding: var(--tinyrack-space-2xl);
 }
 
-@keyframes tinyauth-cursor {
+@keyframes issuary-cursor {
   0%,
   100% {
     opacity: 1;
@@ -74,7 +74,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tinyauth-typewriter-cursor {
+  .issuary-typewriter-cursor {
     animation: none;
   }
 }

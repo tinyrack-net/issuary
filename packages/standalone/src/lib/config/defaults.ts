@@ -3,9 +3,9 @@ import { envDefault } from './env-default.ts';
 /**
  * Defaults template for standalone configuration.
  *
- * Every scalar field gets a `${TINYAUTH_*:-fallback}` pattern that is resolved
+ * Every scalar field gets a `${ISSUARY_*:-fallback}` pattern that is resolved
  * by `resolveEnvVariables()` before Zod parsing.  Required fields (secrets)
- * use `${TINYAUTH_*}` without a fallback so they resolve to an empty string
+ * use `${ISSUARY_*}` without a fallback so they resolve to an empty string
  * and fail validation unless the user sets the env var.
  *
  * Complex/structured fields (arrays, localized records) are excluded — they
@@ -17,144 +17,141 @@ import { envDefault } from './env-default.ts';
  */
 export const STANDALONE_CONFIG_DEFAULTS = {
   FRONTEND_PROXY_UPSTREAM: 'http://localhost:8081',
-  FRONTEND_STATIC_PATH: '/opt/tinyauth/frontend',
+  FRONTEND_STATIC_PATH: '/opt/issuary/frontend',
   server: {
-    public_origin: envDefault(
-      'TINYAUTH_PUBLIC_ORIGIN',
-      'http://localhost:8080',
-    ),
-    listen_port: envDefault('TINYAUTH_LISTEN_PORT', '8080'),
-    trust_proxy: envDefault('TINYAUTH_TRUST_PROXY', 'false'),
+    public_origin: envDefault('ISSUARY_PUBLIC_ORIGIN', 'http://localhost:8080'),
+    listen_port: envDefault('ISSUARY_LISTEN_PORT', '8080'),
+    trust_proxy: envDefault('ISSUARY_TRUST_PROXY', 'false'),
   },
 
   tokens: {
-    access_token_ttl: envDefault('TINYAUTH_ACCESS_TOKEN_TTL', '3600'),
-    refresh_token_ttl: envDefault('TINYAUTH_REFRESH_TOKEN_TTL', '2592000'),
+    access_token_ttl: envDefault('ISSUARY_ACCESS_TOKEN_TTL', '3600'),
+    refresh_token_ttl: envDefault('ISSUARY_REFRESH_TOKEN_TTL', '2592000'),
     key_rotation: {
-      enabled: envDefault('TINYAUTH_JWT_KEY_ROTATION_ENABLED', 'true'),
-      interval_days: envDefault('TINYAUTH_JWT_KEY_ROTATION_DAYS', '30'),
-      overlap_days: envDefault('TINYAUTH_JWT_KEY_OVERLAP_DAYS', '7'),
+      enabled: envDefault('ISSUARY_JWT_KEY_ROTATION_ENABLED', 'true'),
+      interval_days: envDefault('ISSUARY_JWT_KEY_ROTATION_DAYS', '30'),
+      overlap_days: envDefault('ISSUARY_JWT_KEY_OVERLAP_DAYS', '7'),
     },
   },
 
   security: {
-    session_secret: envDefault('TINYAUTH_SESSION_SECRET'),
-    hash_secret: envDefault('TINYAUTH_HASH_SECRET'),
-    pbkdf2_iterations: envDefault('TINYAUTH_PBKDF2_ITERATIONS', '600000'),
+    session_secret: envDefault('ISSUARY_SESSION_SECRET'),
+    hash_secret: envDefault('ISSUARY_HASH_SECRET'),
+    pbkdf2_iterations: envDefault('ISSUARY_PBKDF2_ITERATIONS', '600000'),
   },
 
   database: {
-    type: envDefault('TINYAUTH_DATABASE_TYPE', 'sqlite'),
-    path: envDefault('TINYAUTH_DATABASE_PATH', '/opt/tinyauth/database.db'),
-    test: envDefault('TINYAUTH_DATABASE_TEST', 'false'),
-    debug: envDefault('TINYAUTH_DATABASE_DEBUG', 'false'),
+    type: envDefault('ISSUARY_DATABASE_TYPE', 'sqlite'),
+    path: envDefault('ISSUARY_DATABASE_PATH', '/opt/issuary/database.db'),
+    test: envDefault('ISSUARY_DATABASE_TEST', 'false'),
+    debug: envDefault('ISSUARY_DATABASE_DEBUG', 'false'),
   },
 
   logging: {
-    level: envDefault('TINYAUTH_LOG_LEVEL', 'info'),
-    format: envDefault('TINYAUTH_LOG_FORMAT', 'pretty'),
+    level: envDefault('ISSUARY_LOG_LEVEL', 'info'),
+    format: envDefault('ISSUARY_LOG_FORMAT', 'pretty'),
   },
 
   auth: {
     password: {
-      enabled: envDefault('TINYAUTH_PASSWORD_ENABLED', 'true'),
+      enabled: envDefault('ISSUARY_PASSWORD_ENABLED', 'true'),
       two_factor: {
         enrollment_required: envDefault(
-          'TINYAUTH_PASSWORD_2FA_ENROLLMENT_REQUIRED',
+          'ISSUARY_PASSWORD_2FA_ENROLLMENT_REQUIRED',
           'false',
         ),
       },
       totp: {
-        enabled: envDefault('TINYAUTH_PASSWORD_TOTP_ENABLED', 'false'),
-        issuer: envDefault('TINYAUTH_PASSWORD_TOTP_ISSUER', 'TinyAuth'),
+        enabled: envDefault('ISSUARY_PASSWORD_TOTP_ENABLED', 'false'),
+        issuer: envDefault('ISSUARY_PASSWORD_TOTP_ISSUER', 'Issuary'),
       },
       policy: {
-        min_length: envDefault('TINYAUTH_PASSWORD_MIN_LENGTH', '8'),
-        max_length: envDefault('TINYAUTH_PASSWORD_MAX_LENGTH', '128'),
+        min_length: envDefault('ISSUARY_PASSWORD_MIN_LENGTH', '8'),
+        max_length: envDefault('ISSUARY_PASSWORD_MAX_LENGTH', '128'),
       },
     },
     passkey: {
-      enabled: envDefault('TINYAUTH_PASSKEY_ENABLED', 'false'),
+      enabled: envDefault('ISSUARY_PASSKEY_ENABLED', 'false'),
     },
   },
 
   frontend: {
-    enabled: envDefault('TINYAUTH_FRONTEND_ENABLED', 'true'),
-    mode: envDefault('TINYAUTH_FRONTEND_MODE', 'static'),
+    enabled: envDefault('ISSUARY_FRONTEND_ENABLED', 'true'),
+    mode: envDefault('ISSUARY_FRONTEND_MODE', 'static'),
     html_variables: {},
   },
 
   admin: {
-    enabled: envDefault('TINYAUTH_ADMIN_ENABLED', 'false'),
+    enabled: envDefault('ISSUARY_ADMIN_ENABLED', 'false'),
   },
 
   registration: {
-    enabled: envDefault('TINYAUTH_REGISTRATION_ENABLED', 'false'),
+    enabled: envDefault('ISSUARY_REGISTRATION_ENABLED', 'false'),
   },
 
   account_deletion: {
-    enabled: envDefault('TINYAUTH_ACCOUNT_DELETION_ENABLED', 'false'),
-    retention: envDefault('TINYAUTH_ACCOUNT_DELETION_RETENTION', '30d'),
+    enabled: envDefault('ISSUARY_ACCOUNT_DELETION_ENABLED', 'false'),
+    retention: envDefault('ISSUARY_ACCOUNT_DELETION_RETENTION', '30d'),
   },
 
   openapi: {
-    enabled: envDefault('TINYAUTH_OPENAPI_ENABLED', 'true'),
+    enabled: envDefault('ISSUARY_OPENAPI_ENABLED', 'true'),
   },
 
   scheduler: {
-    enabled: envDefault('TINYAUTH_SCHEDULER_ENABLED', 'true'),
-    mode: envDefault('TINYAUTH_SCHEDULER_MODE', 'croner'),
-    cleanup_cron: envDefault('TINYAUTH_SCHEDULER_CLEANUP_CRON', '0 2 * * *'),
-    poll_interval_ms: envDefault('TINYAUTH_SCHEDULER_POLL_INTERVAL_MS', '5000'),
-    lock_ttl_ms: envDefault('TINYAUTH_SCHEDULER_LOCK_TTL_MS', '60000'),
+    enabled: envDefault('ISSUARY_SCHEDULER_ENABLED', 'true'),
+    mode: envDefault('ISSUARY_SCHEDULER_MODE', 'croner'),
+    cleanup_cron: envDefault('ISSUARY_SCHEDULER_CLEANUP_CRON', '0 2 * * *'),
+    poll_interval_ms: envDefault('ISSUARY_SCHEDULER_POLL_INTERVAL_MS', '5000'),
+    lock_ttl_ms: envDefault('ISSUARY_SCHEDULER_LOCK_TTL_MS', '60000'),
     background_retry_delay_ms: envDefault(
-      'TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS',
+      'ISSUARY_SCHEDULER_BACKGROUND_RETRY_DELAY_MS',
       '1000',
     ),
     background_max_attempts: envDefault(
-      'TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS',
+      'ISSUARY_SCHEDULER_BACKGROUND_MAX_ATTEMPTS',
       '3',
     ),
     background_retention_ms: envDefault(
-      'TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS',
+      'ISSUARY_SCHEDULER_BACKGROUND_RETENTION_MS',
       String(7 * 24 * 60 * 60 * 1000),
     ),
-    instance_id: envDefault('TINYAUTH_SCHEDULER_INSTANCE_ID', ''),
+    instance_id: envDefault('ISSUARY_SCHEDULER_INSTANCE_ID', ''),
   },
 
   cleanup: {
     revoked_tokens: {
-      enabled: envDefault('TINYAUTH_CLEANUP_REVOKED_TOKENS_ENABLED', 'true'),
-      retention: envDefault('TINYAUTH_CLEANUP_REVOKED_TOKENS_RETENTION', '0'),
+      enabled: envDefault('ISSUARY_CLEANUP_REVOKED_TOKENS_ENABLED', 'true'),
+      retention: envDefault('ISSUARY_CLEANUP_REVOKED_TOKENS_RETENTION', '0'),
     },
     oauth_codes: {
-      enabled: envDefault('TINYAUTH_CLEANUP_OAUTH_CODES_ENABLED', 'true'),
+      enabled: envDefault('ISSUARY_CLEANUP_OAUTH_CODES_ENABLED', 'true'),
       consumed_retention: envDefault(
-        'TINYAUTH_CLEANUP_OAUTH_CODES_RETENTION',
+        'ISSUARY_CLEANUP_OAUTH_CODES_RETENTION',
         '24h',
       ),
     },
     email_verifications: {
       enabled: envDefault(
-        'TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_ENABLED',
+        'ISSUARY_CLEANUP_EMAIL_VERIFICATIONS_ENABLED',
         'true',
       ),
       retention: envDefault(
-        'TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_RETENTION',
+        'ISSUARY_CLEANUP_EMAIL_VERIFICATIONS_RETENTION',
         '0',
       ),
     },
     password_resets: {
-      enabled: envDefault('TINYAUTH_CLEANUP_PASSWORD_RESETS_ENABLED', 'true'),
-      retention: envDefault('TINYAUTH_CLEANUP_PASSWORD_RESETS_RETENTION', '0'),
+      enabled: envDefault('ISSUARY_CLEANUP_PASSWORD_RESETS_ENABLED', 'true'),
+      retention: envDefault('ISSUARY_CLEANUP_PASSWORD_RESETS_RETENTION', '0'),
     },
     pending_oauth_registrations: {
       enabled: envDefault(
-        'TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED',
+        'ISSUARY_CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED',
         'true',
       ),
       retention: envDefault(
-        'TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION',
+        'ISSUARY_CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION',
         '0',
       ),
     },

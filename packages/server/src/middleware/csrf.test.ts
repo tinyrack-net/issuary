@@ -1,12 +1,12 @@
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
-import { e, TinyAuthError } from '../schemas/error.ts';
+import { e, IssuaryError } from '../schemas/error.ts';
 import { csrfProtection } from './csrf.ts';
 
 function createCsrfTestApp() {
   const app = new Hono();
   app.onError((err, c) => {
-    if (err instanceof TinyAuthError) {
+    if (err instanceof IssuaryError) {
       return c.json(err.toJson(), err.status);
     }
     return c.json({ code: 'UNEXPECTED_ERROR' }, 500);

@@ -23,7 +23,7 @@ import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -81,7 +81,7 @@ function SetupTotp() {
   }, [router]);
 
   const handleSetupError = useCallback((error: Error) => {
-    if (error instanceof TinyAuthError) {
+    if (error instanceof IssuaryError) {
       switch (error.code) {
         case ERROR_CODES.TOTP_ALREADY_ENABLED:
           setErrorType('already_enabled');
@@ -143,7 +143,7 @@ function SetupTotp() {
     onVerifySuccess: handleVerifySuccess,
     onConfirmSuccess: handleConfirmSuccess,
     onVerifyError: (error) => {
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         switch (error.code) {
           case ERROR_CODES.TOTP_ALREADY_ENABLED:
             redirectToProfile();

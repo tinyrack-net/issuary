@@ -1,11 +1,11 @@
 ---
 title: その他
-description: Tinyauthからその他 OAuth/OIDC プロバイダの設定
+description: Issuaryからその他 OAuth/OIDC プロバイダの設定
 section: configuration
 order: 24
 ---
 
-`tinyauth`で基本サポートされていません OAuth/OIDC プロバイダも `generic_oauth` タイプを通じて連動できます。カスタムエンドポイントとフィールドマッピングを直接指定する方法です。
+`issuary`で基本サポートされていません OAuth/OIDC プロバイダも `generic_oauth` タイプを通じて連動できます。カスタムエンドポイントとフィールドマッピングを直接指定する方法です。
 
 ```yaml
 # config.yaml
@@ -52,7 +52,7 @@ identity_providers:
 
 ## ユーザー情報マッピング(`userinfo_mapping`)
 
-OAuth プロバイダごとにユーザー情報応答のフィールド名が異なります。 `userinfo_mapping`を通じて `tinyauth`どのフィールドからどの情報を取得するかを指定します。
+OAuth プロバイダごとにユーザー情報応答のフィールド名が異なります。 `userinfo_mapping`を通じて `issuary`どのフィールドからどの情報を取得するかを指定します。
 
 | アイテム | 必須 | 説明 |
 |------|------|------|

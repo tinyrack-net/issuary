@@ -17,7 +17,7 @@ import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -143,7 +143,7 @@ function VerifyRecovery() {
     try {
       await verifyMutation.mutateAsync(values);
     } catch (error) {
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         switch (error.code) {
           case ERROR_CODES.SECOND_FACTOR_SESSION_EXPIRED:
             setSessionExpired(true);

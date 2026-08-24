@@ -14,7 +14,7 @@ import {
   findScreenScenarioVariant,
 } from '#frontend/test-utils/screen-scenario-catalog.ts';
 
-const COLOR_SCHEME_STORAGE_KEY = 'tinyauth-color-scheme';
+const COLOR_SCHEME_STORAGE_KEY = 'issuary-color-scheme';
 const RootElement = document.getElementById('root');
 const search = new URLSearchParams(window.location.search);
 const scenario = findScreenScenarioDefinition(search.get('scenario') ?? '');

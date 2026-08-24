@@ -11,7 +11,7 @@ import { UserPasskeyEntitySchema } from '../entities/user-passkey.entity.ts';
 import { UserTermsConsentEntity } from '../entities/user-terms-consent.entity.ts';
 import { UserTotpEntitySchema } from '../entities/user-totp.entity.ts';
 import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import {
   calculateCutoffDate,
   formatDuration,
@@ -88,15 +88,15 @@ export interface CleanupSummary {
  * - JWT signing keys (rotation)
  *
  * Can be invoked via:
- * - CLI command: `tinyauth cleanup`
+ * - CLI command: `issuary cleanup`
  * - In-process scheduler adapter
  */
 export class CleanupService {
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly jwtService: JwtService;
   constructor(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     mikro: MikroService,
     jwtService: JwtService,
   ) {

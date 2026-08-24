@@ -6,7 +6,7 @@ import type { IEmailVerificationEntity } from '../entities/email-verification.en
 import type { UserEntity } from '../entities/user.entity.ts';
 import type {
   EmailTransport,
-  TinyAuthRuntimeConfig,
+  IssuaryRuntimeConfig,
 } from '../lib/config/index.ts';
 import { DEFAULT_LOCALE, type Locale } from '../lib/locale.ts';
 import type { Logger } from '../lib/logger.ts';
@@ -16,11 +16,11 @@ import type { MikroService } from './mikro.service.ts';
 export class EmailService {
   private readonly transporter: Promise<EmailTransport> | null;
 
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly mikro: MikroService;
   private readonly logger: Logger;
   public constructor(
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     mikro: MikroService,
     logger: Logger,
   ) {
@@ -38,12 +38,12 @@ export class EmailService {
 
   /**
    * Get the localized application name from branding.title config.
-   * Falls back through: specified locale -> fallback_language -> DEFAULT_LOCALE -> 'TinyAuth'
+   * Falls back through: specified locale -> fallback_language -> DEFAULT_LOCALE -> 'Issuary'
    */
   private getAppName(locale?: Locale): string {
     const title = this.config.branding.title;
     if (!title) {
-      return 'TinyAuth';
+      return 'Issuary';
     }
 
     const localeKey = locale ?? DEFAULT_LOCALE;
@@ -51,7 +51,7 @@ export class EmailService {
       title[localeKey] ??
       title[this.config.i18n.fallback_language] ??
       title[DEFAULT_LOCALE] ??
-      'TinyAuth'
+      'Issuary'
     );
   }
 

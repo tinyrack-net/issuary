@@ -61,7 +61,7 @@ afterAll(async () => {
   );
 }, 30_000);
 
-describe('Tinyauth built documentation', () => {
+describe('Issuary built documentation', () => {
   it('renders the reduced-motion English landing in desktop light mode', async () => {
     const page = await browser.newPage({
       colorScheme: 'light',

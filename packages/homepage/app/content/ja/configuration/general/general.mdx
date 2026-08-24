@@ -1,11 +1,11 @@
 ---
 title: 基本
-description: Tinyauthドラゴン PostgreSQL データベースの構成
+description: Issuaryドラゴン PostgreSQL データベースの構成
 section: configuration
 order: 7
 ---
 
-`tinyauth`は、できるだけ管理者の手動設定なしでスムーズに動作するように設計されていますが、本番で使用するには、一部の項目は明示的な設定が必要な場合があります。設定例は次のとおりです。
+`issuary`は、できるだけ管理者の手動設定なしでスムーズに動作するように設計されていますが、本番で使用するには、一部の項目は明示的な設定が必要な場合があります。設定例は次のとおりです。
 
 ```yaml
 # config.yaml
@@ -18,9 +18,9 @@ security:
   hash_secret: ${HASH_SECRET}
 ```
 
-- `server.public_origin`: `tinyauth`への接続に使用する公開 URLを指定します。これは使用中のリバースプロキシ設定と一致する必要があり、公開サービスの場合 `https` プロトコルを使用することが重要です。 `http` プロトコルは一部の機能（パスキー）に制限があるかもしれません。
-- `server.listen_port`: `tinyauth` サーバーがリッスンするポートを指定します。
-- `security.session_secret`：セッションクッキーの署名に使用する秘密鍵です。 `tinyauth`は `HTTP Only` クッキー方式で無状態セッションを実装します。この値を途中で変更すると、既存のすべてのセッションが無効になります。
+- `server.public_origin`: `issuary`への接続に使用する公開 URLを指定します。これは使用中のリバースプロキシ設定と一致する必要があり、公開サービスの場合 `https` プロトコルを使用することが重要です。 `http` プロトコルは一部の機能（パスキー）に制限があるかもしれません。
+- `server.listen_port`: `issuary` サーバーがリッスンするポートを指定します。
+- `security.session_secret`：セッションクッキーの署名に使用する秘密鍵です。 `issuary`は `HTTP Only` クッキー方式で無状態セッションを実装します。この値を途中で変更すると、既存のすべてのセッションが無効になります。
 - `security.hash_secret`：パスワードと各種パスワードハッシュに使用するbase64url 32バイトのルートシークレットです。
 
 :::note
@@ -32,7 +32,7 @@ security:
 
 ## 例
 
-`tinyauth`を `https://auth.tinyrack.net` ドメインで運営している場合は、次のように設定できます。
+`issuary`を `https://auth.tinyrack.net` ドメインで運営している場合は、次のように設定できます。
 
 ```yaml
 # config.yaml

@@ -1,15 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createApp } from '@tinyrack/tinyauth-server';
-import { sqlite } from '@tinyrack/tinyauth-server/database/sqlite';
-import { createStaticHandler } from '@tinyrack/tinyauth-server/frontend/static';
+import { createApp } from '@tinyrack/issuary-server';
+import { sqlite } from '@tinyrack/issuary-server/database/sqlite';
+import { createStaticHandler } from '@tinyrack/issuary-server/frontend/static';
 
 const exampleRoot = process.cwd();
 const repoRoot = path.resolve(exampleRoot, '../../..');
 const frontendPublicPath = path.resolve(repoRoot, 'packages/server/public');
 const frontendIndexPath = path.join(frontendPublicPath, 'index.html');
 const dataDir = path.join(exampleRoot, 'data');
-const sqlitePath = path.join(dataDir, 'tinyauth.db');
+const sqlitePath = path.join(dataDir, 'issuary.db');
 
 export async function createNodeHonoSqliteExampleApp(
   options: { test?: boolean; publicOrigin?: string } = {},
@@ -18,8 +18,8 @@ export async function createNodeHonoSqliteExampleApp(
 
   await fs.promises.access(frontendIndexPath, fs.constants.R_OK).catch(() => {
     throw new Error(
-      `TinyAuth frontend assets were not found at ${frontendIndexPath}. ` +
-        'Run `pnpm --filter @tinyrack/tinyauth-frontend build` first.',
+      `Issuary frontend assets were not found at ${frontendIndexPath}. ` +
+        'Run `pnpm --filter @tinyrack/issuary-frontend build` first.',
     );
   });
 
@@ -52,9 +52,9 @@ export async function createNodeHonoSqliteExampleApp(
     frontend: createStaticHandler({
       publicPath: frontendPublicPath,
       htmlVariables: {
-        TITLE: 'TinyAuth Hono Example',
+        TITLE: 'Issuary Hono Example',
         DESCRIPTION:
-          'TinyAuth running in library mode with Hono, Node.js, and SQLite',
+          'Issuary running in library mode with Hono, Node.js, and SQLite',
         FAVICON_URL: '/vite.svg',
       },
     }),

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   mockJsonError,
@@ -63,7 +63,7 @@ describe('getSessionQueryOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
   });
 
-  test('preserves unauthenticated session errors as TinyAuthError', async () => {
+  test('preserves unauthenticated session errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'UNAUTHORIZED',
@@ -76,9 +76,9 @@ describe('getSessionQueryOptions', () => {
       await runSessionQuery();
       throw new Error('Expected session query to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('UNAUTHORIZED');
         expect(error.status).toBe(401);
         expect(error.message).toBe('Authentication is required.');
@@ -104,7 +104,7 @@ describe('deleteAccountMutationOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
   });
 
-  test('preserves account deletion API errors as TinyAuthError', async () => {
+  test('preserves account deletion API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'ACCOUNT_DELETE_FORBIDDEN',
@@ -117,9 +117,9 @@ describe('deleteAccountMutationOptions', () => {
       await runDeleteAccountMutation();
       throw new Error('Expected delete account mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('ACCOUNT_DELETE_FORBIDDEN');
         expect(error.status).toBe(403);
         expect(error.message).toBe('Account deletion is not allowed.');

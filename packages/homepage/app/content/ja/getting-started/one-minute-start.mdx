@@ -1,11 +1,11 @@
 ---
 title: 1分スタート
-description: 1分で Tinyauthを実行してみてください
+description: 1分で Issuaryを実行してみてください
 section: getting-started
 order: 1
 ---
 
-`Tinyauth`3分で実行してみてください！ Dockerあれば、以下の命令一つですぐに始めることができます。
+`Issuary`3分で実行してみてください！ Dockerあれば、以下の命令一つですぐに始めることができます。
 
 ```bash
 docker run \
@@ -13,14 +13,14 @@ docker run \
   -p 8080:8080 \
   -e SESSION_SECRET="$(openssl rand -hex 32)" \
   -e HASH_SECRET="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')" \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---
 
 ## 実行確認
 
-サーバーが起動すると、ブラウザで [http://localhost:8080](http://localhost:8080）に接続してみてください。 `tinyauth`のログインページが表示されます。
+サーバーが起動すると、ブラウザで [http://localhost:8080](http://localhost:8080）に接続してみてください。 `issuary`のログインページが表示されます。
 
 ---
 
@@ -51,7 +51,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ### 方法2：事前定義ユーザー
@@ -76,7 +76,7 @@ docker run \
   --rm \
   -p 8080:8080 \
   -v ./config.yaml:/opt/config.yaml \
-  ghcr.io/tinyrack-net/tinyauth
+  ghcr.io/tinyrack-net/issuary
 ```
 
 ---
