@@ -6,7 +6,7 @@ import { removePaths } from './remove-paths.ts';
 
 describe('removePaths', () => {
   it('removes files and directories recursively and ignores missing paths', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'tinyauth-remove-paths-'));
+    const root = await mkdtemp(join(tmpdir(), 'issuary-remove-paths-'));
     const nestedDir = join(root, 'nested');
     const nestedFile = join(nestedDir, 'file.txt');
     const missingPath = join(root, 'missing');

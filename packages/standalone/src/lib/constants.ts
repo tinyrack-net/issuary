@@ -1,1 +1,1 @@
-export const DEFAULT_CONFIG_PATH = '/opt/tinyauth/data/config.yaml';
+export const DEFAULT_CONFIG_PATH = '/opt/issuary/data/config.yaml';

@@ -13,10 +13,10 @@ describe('validation runner', () => {
     expect(parseWorkerBudget(undefined)).toBe(4);
     expect(parseWorkerBudget('2')).toBe(2);
     expect(() => parseWorkerBudget('0')).toThrow(
-      'TINYAUTH_TEST_WORKERS must be a positive integer',
+      'ISSUARY_TEST_WORKERS must be a positive integer',
     );
     expect(() => parseWorkerBudget('1.5')).toThrow(
-      'TINYAUTH_TEST_WORKERS must be a positive integer',
+      'ISSUARY_TEST_WORKERS must be a positive integer',
     );
   });
 

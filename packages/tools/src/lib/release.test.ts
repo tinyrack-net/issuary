@@ -17,7 +17,7 @@ describe('performRelease', () => {
   let repoRoot = '';
 
   beforeEach(async () => {
-    repoRoot = await mkdtemp(path.join(os.tmpdir(), 'tinyauth-tools-release-'));
+    repoRoot = await mkdtemp(path.join(os.tmpdir(), 'issuary-tools-release-'));
     await setupRepository(repoRoot);
   });
 
@@ -181,12 +181,12 @@ describe('performRelease', () => {
 
   test('does not require an existing release tag', async () => {
     const emptyRepo = await mkdtemp(
-      path.join(os.tmpdir(), 'tinyauth-tools-empty-'),
+      path.join(os.tmpdir(), 'issuary-tools-empty-'),
     );
 
     try {
       await git(emptyRepo, ['init']);
-      await git(emptyRepo, ['config', 'user.name', 'TinyAuth Tests']);
+      await git(emptyRepo, ['config', 'user.name', 'Issuary Tests']);
       await git(emptyRepo, ['config', 'user.email', 'tests@example.com']);
       await git(emptyRepo, ['config', 'commit.gpgSign', 'false']);
       await git(emptyRepo, ['config', 'tag.gpgSign', 'false']);
@@ -233,7 +233,7 @@ describe('performRelease', () => {
 
 async function setupRepository(repoRoot: string): Promise<void> {
   await git(repoRoot, ['init']);
-  await git(repoRoot, ['config', 'user.name', 'TinyAuth Tests']);
+  await git(repoRoot, ['config', 'user.name', 'Issuary Tests']);
   await git(repoRoot, ['config', 'user.email', 'tests@example.com']);
   await git(repoRoot, ['config', 'commit.gpgSign', 'false']);
   await git(repoRoot, ['config', 'tag.gpgSign', 'false']);

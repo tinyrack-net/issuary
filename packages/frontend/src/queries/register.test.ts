@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   type CapturedFetchRequest,
   mockJsonError,
@@ -86,7 +86,7 @@ describe('registerMutationOptions', () => {
     expect(jsonBody(request)).toEqual(registerValues);
   });
 
-  test('preserves duplicate registration API errors as TinyAuthError', async () => {
+  test('preserves duplicate registration API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'EMAIL_ALREADY_REGISTERED',
@@ -99,9 +99,9 @@ describe('registerMutationOptions', () => {
       await runRegisterMutation(registerValues);
       throw new Error('Expected register mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('EMAIL_ALREADY_REGISTERED');
         expect(error.status).toBe(409);
         expect(error.message).toBe('The provided email is already registered.');

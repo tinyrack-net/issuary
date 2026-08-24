@@ -2,18 +2,15 @@ import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import type { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
-import type { TinyAuthRuntimeConfig } from '../../../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../../../lib/config/index.ts';
 import { r } from '../../../schemas/response.ts';
 
 type OAuthAuthenticationMethod = z.infer<typeof r.OAuthAuthenticationMethod>;
 type ConfigResponse = z.infer<typeof r.ConfigResponse>;
 
-const configResponseCache = new WeakMap<
-  TinyAuthRuntimeConfig,
-  ConfigResponse
->();
+const configResponseCache = new WeakMap<IssuaryRuntimeConfig, ConfigResponse>();
 
-function buildConfigResponse(config: TinyAuthRuntimeConfig): ConfigResponse {
+function buildConfigResponse(config: IssuaryRuntimeConfig): ConfigResponse {
   const identityProviders: OAuthAuthenticationMethod[] = [];
 
   for (const providerConfig of config.identity_providers) {
@@ -70,7 +67,7 @@ function buildConfigResponse(config: TinyAuthRuntimeConfig): ConfigResponse {
   };
 }
 
-function getConfigResponse(config: TinyAuthRuntimeConfig): ConfigResponse {
+function getConfigResponse(config: IssuaryRuntimeConfig): ConfigResponse {
   const cached = configResponseCache.get(config);
   if (cached) {
     return cached;

@@ -3,8 +3,8 @@ import { buildCommand } from '@stricli/core';
 import {
   createApp,
   createOpenApiDocumentation,
-} from '@tinyrack/tinyauth-server';
-import { OPENAPI_CONFIG_DEFAULT } from '@tinyrack/tinyauth-server/config';
+} from '@tinyrack/issuary-server';
+import { OPENAPI_CONFIG_DEFAULT } from '@tinyrack/issuary-server/config';
 import { generateSpecs } from 'hono-openapi';
 import z from 'zod';
 import { parseWithZod } from '../../../lib/cli/parse-with-zod.ts';

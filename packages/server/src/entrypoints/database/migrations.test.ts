@@ -55,10 +55,10 @@ describe('database migrations', () => {
   test('postgres uses explicit migration imports', async () => {
     const options = await postgres({
       host: 'localhost',
-      name: 'tinyauth',
-      password: 'tinyauth',
+      name: 'issuary',
+      password: 'issuary',
       port: 5432,
-      user: 'tinyauth',
+      user: 'issuary',
     }).getMikroOrmOptions();
 
     expect(POSTGRES_MIGRATIONS).toEqual([
@@ -81,10 +81,10 @@ describe('database migrations', () => {
   test('postgres accepts custom driver options', async () => {
     const options = await postgres({
       host: 'localhost',
-      name: 'tinyauth',
-      password: 'tinyauth',
+      name: 'issuary',
+      password: 'issuary',
       port: 5432,
-      user: 'tinyauth',
+      user: 'issuary',
       driverOptions: {
         ssl: false,
       },

@@ -1,19 +1,19 @@
 ---
 title: Next.js 連動
-description: Next.js アプリケーションと Tinyauth 連動する
+description: Next.js アプリケーションと Issuary 連動する
 section: configuration
 order: 29
 ---
 
-このガイドは Next.js App Routerアプリケーションで `tinyauth`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 Next.jsはサーバーサイドでシークレットを安全に保管できるため、 **機密クライアント (Confidential Client)** パターンを使ってください。
+このガイドは Next.js App Routerアプリケーションで `issuary`を OIDC プロバイダとして使用して認証を実装する方法について説明します。 Next.jsはサーバーサイドでシークレットを安全に保管できるため、 **機密クライアント (Confidential Client)** パターンを使ってください。
 
 ---
 
 ## 事前準備
 
-### 1. Tinyauth クライアント登録
+### 1. Issuary クライアント登録
 
-`tinyauth`の `config.yaml`に Next.js アプリを機密クライアントとして登録します。
+`issuary`の `config.yaml`に Next.js アプリを機密クライアントとして登録します。
 
 ```yaml
 # config.yaml
@@ -52,7 +52,7 @@ Next.js 機密クライアントの認証フローは次のとおりです。
 
 1. ユーザーがログインボタンをクリックすると `/api/auth/login` API ルートに移動
 2. サーバー上 PKCE ペア、state、nonceを作成してCookieに保存
-3. ユーザー `tinyauth` 認証ページにリダイレクト
+3. ユーザー `issuary` 認証ページにリダイレクト
 4. 認証完了後 `/api/callback`によってコールバック
 5. サーバー上の認証コードをトークンに交換する（client_secretを含む）
 6. トークンをhttpOnly Cookieに安全に保存する
@@ -64,7 +64,7 @@ Next.js 機密クライアントの認証フローは次のとおりです。
 
 ### OIDC Discovery
 
-サーバー起動時 `tinyauth`の OIDC Discoveryエンドポイントから設定を自動的にインポートします。
+サーバー起動時 `issuary`の OIDC Discoveryエンドポイントから設定を自動的にインポートします。
 
 ```typescript
 // lib/oidc-config.ts

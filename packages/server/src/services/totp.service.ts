@@ -1,7 +1,7 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '../entities/user.entity.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { getRandomBytes } from '../lib/crypto.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
@@ -28,11 +28,11 @@ const RECOVERY_CODE_GROUP_LENGTH = 4;
 
 export class TotpService {
   private readonly mikro: MikroService;
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly securityService: SecurityService;
   public constructor(
     mikro: MikroService,
-    config: TinyAuthRuntimeConfig,
+    config: IssuaryRuntimeConfig,
     securityService: SecurityService,
   ) {
     this.mikro = mikro;

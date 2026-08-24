@@ -1,11 +1,11 @@
 ---
 title: Apple
-description: Tinyauth에서 Apple 로그인 구성하기
+description: Issuary에서 Apple 로그인 구성하기
 section: configuration
 order: 22
 ---
 
-Apple 로그인(Sign in with Apple)을 사용하면 사용자가 Apple ID로 `tinyauth`에 로그인할 수 있어요. 이 가이드는 Apple Developer에서 서비스를 등록하고 `tinyauth`에 연동하는 방법을 설명해요.
+Apple 로그인(Sign in with Apple)을 사용하면 사용자가 Apple ID로 `issuary`에 로그인할 수 있어요. 이 가이드는 Apple Developer에서 서비스를 등록하고 `issuary`에 연동하는 방법을 설명해요.
 
 ---
 
@@ -30,7 +30,7 @@ Apple 로그인의 `client_secret`은 JWT 형태로 생성해야 해요. Team ID
 
 ---
 
-## 2. Tinyauth 설정
+## 2. Issuary 설정
 
 Apple Developer에서 준비한 자격증명을 `config.yaml`에 설정해요.
 
@@ -50,14 +50,14 @@ identity_providers:
 - `client_secret`: 생성한 JWT client secret이에요.
 
 :::caution
-Apple은 기본적으로 `form_post` 응답 모드를 사용해요. `tinyauth`는 이를 자동으로 처리하므로 별도 설정이 필요 없어요. Apple은 사용자의 이름을 최초 로그인 시에만 제공하며, ID 토큰을 통해 사용자 정보를 전달해요.
+Apple은 기본적으로 `form_post` 응답 모드를 사용해요. `issuary`는 이를 자동으로 처리하므로 별도 설정이 필요 없어요. Apple은 사용자의 이름을 최초 로그인 시에만 제공하며, ID 토큰을 통해 사용자 정보를 전달해요.
 :::
 
 ---
 
 ## 예시
 
-`tinyauth`를 `https://auth.example.com`에서 운영하는 경우의 전체 설정 예시예요.
+`issuary`를 `https://auth.example.com`에서 운영하는 경우의 전체 설정 예시예요.
 
 ```yaml
 # config.yaml

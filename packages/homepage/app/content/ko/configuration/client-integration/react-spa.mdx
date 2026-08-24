@@ -1,19 +1,19 @@
 ---
 title: React SPA 연동
-description: React 단일 페이지 애플리케이션과 Tinyauth 연동하기
+description: React 단일 페이지 애플리케이션과 Issuary 연동하기
 section: configuration
 order: 30
 ---
 
-이 가이드는 React SPA(Single Page Application)에서 `tinyauth`를 OIDC 제공자로 사용하여 인증을 구현하는 방법을 설명해요. SPA는 클라이언트 측 코드에서 시크릿을 안전하게 보관할 수 없으므로 **공개 클라이언트(Public Client)** 패턴과 PKCE를 사용해요.
+이 가이드는 React SPA(Single Page Application)에서 `issuary`를 OIDC 제공자로 사용하여 인증을 구현하는 방법을 설명해요. SPA는 클라이언트 측 코드에서 시크릿을 안전하게 보관할 수 없으므로 **공개 클라이언트(Public Client)** 패턴과 PKCE를 사용해요.
 
 ---
 
 ## 사전 준비
 
-### 1. Tinyauth 클라이언트 등록
+### 1. Issuary 클라이언트 등록
 
-`tinyauth`의 `config.yaml`에 React SPA를 공개 클라이언트로 등록해요. `client_secret`은 생략해요.
+`issuary`의 `config.yaml`에 React SPA를 공개 클라이언트로 등록해요. `client_secret`은 생략해요.
 
 ```yaml
 # config.yaml
@@ -50,7 +50,7 @@ React SPA 공개 클라이언트의 인증 흐름은 다음과 같아요.
 
 1. 사용자가 로그인 버튼을 클릭
 2. 브라우저에서 PKCE 쌍, state, nonce를 생성하고 sessionStorage에 저장
-3. 사용자를 `tinyauth` 인증 페이지로 리다이렉트
+3. 사용자를 `issuary` 인증 페이지로 리다이렉트
 4. 인증 완료 후 `/callback` 라우트로 콜백
 5. **브라우저에서 직접** 인증 코드를 토큰으로 교환 (client_secret 없이, PKCE로 보안)
 6. 토큰을 localStorage에 저장
@@ -109,7 +109,7 @@ async function handleLogin() {
     code_challenge_method: 'S256',
   });
 
-  // tinyauth 인증 페이지로 리다이렉트
+  // issuary 인증 페이지로 리다이렉트
   window.location.href =
     `${oidcConfig.authorizationEndpoint}?${params}`;
 }

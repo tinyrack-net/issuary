@@ -20,7 +20,7 @@ import { TermsConfigSchema } from './terms.ts';
 import { TokensConfigSchema } from './tokens.ts';
 import { UserConfigsSchema } from './user.ts';
 
-export const TinyAuthRuntimeConfigSchema = z
+export const IssuaryRuntimeConfigSchema = z
   .object({
     server: ServerConfigSchema.describe('HTTP server settings.'),
     tokens: TokensConfigSchema.describe(
@@ -62,11 +62,9 @@ export const TinyAuthRuntimeConfigSchema = z
     ),
   })
   .strict()
-  .describe('TinyAuth runtime configuration.');
+  .describe('Issuary runtime configuration.');
 
-export type TinyAuthRuntimeConfigInput = z.input<
-  typeof TinyAuthRuntimeConfigSchema
+export type IssuaryRuntimeConfigInput = z.input<
+  typeof IssuaryRuntimeConfigSchema
 >;
-export type TinyAuthRuntimeConfig = z.output<
-  typeof TinyAuthRuntimeConfigSchema
->;
+export type IssuaryRuntimeConfig = z.output<typeof IssuaryRuntimeConfigSchema>;

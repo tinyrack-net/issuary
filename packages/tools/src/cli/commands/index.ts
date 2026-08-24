@@ -6,8 +6,8 @@ export const commands = buildRouteMap({
     release: releaseCommand,
   },
   docs: {
-    brief: 'TinyAuth repository tools',
-    fullDescription: 'TinyAuth repository tools',
+    brief: 'Issuary repository tools',
+    fullDescription: 'Issuary repository tools',
   },
 });
 

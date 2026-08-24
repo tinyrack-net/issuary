@@ -23,7 +23,7 @@ import {
 
 const WARMUP_REQUESTS = 4;
 const MEASURED_REQUESTS = 30;
-const TOKEN_BACKLOG_SIZE = getPerfInteger('TINYAUTH_PERF_TOKEN_BACKLOG', 100);
+const TOKEN_BACKLOG_SIZE = getPerfInteger('ISSUARY_PERF_TOKEN_BACKLOG', 100);
 const VALID_PASSWORD = 'Password12345!';
 const REQUIRED_CONSENTS = [
   { termsId: 'tos', agreed: true },

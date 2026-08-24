@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
+import { google } from '@tinyrack/issuary-server/identity-providers/google';
 import {
   createScenarioFixture,
   gotoWithFirefoxRetry,

@@ -4,7 +4,7 @@ import en from './locales/en.json';
 import ja from './locales/ja.json';
 import ko from './locales/ko.json';
 
-export const LANGUAGE_STORAGE_KEY = 'tinyauth-language';
+export const LANGUAGE_STORAGE_KEY = 'issuary-language';
 
 // All available translations with labels (static)
 const ALL_TRANSLATIONS = {

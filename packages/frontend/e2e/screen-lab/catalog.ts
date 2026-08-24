@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { createProxyHandler } from '@tinyrack/tinyauth-server/frontend/proxy';
+import { createProxyHandler } from '@tinyrack/issuary-server/frontend/proxy';
 import {
   type ServerScreenScenarioId,
   screenScenarioDefinitions,

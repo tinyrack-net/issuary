@@ -15,7 +15,7 @@ const cleanupState = vi.hoisted(() => ({
   runAllMock: vi.fn(),
 }));
 
-vi.mock('@tinyrack/tinyauth-server/services', () => ({
+vi.mock('@tinyrack/issuary-server/services', () => ({
   initializeServices: cleanupState.initializeServicesMock,
 }));
 
@@ -86,13 +86,13 @@ describe('CleanupCommand', () => {
     const { runCleanupCommand } = await import('./cleanup.ts');
 
     await runCleanupCommand({
-      configPath: '/tmp/tinyauth.yaml',
+      configPath: '/tmp/issuary.yaml',
       dryRun: false,
       verbose: true,
     });
 
     expect(cleanupState.loadConfigMock).toHaveBeenCalledWith(
-      '/tmp/tinyauth.yaml',
+      '/tmp/issuary.yaml',
     );
     expect(cleanupState.resolveConfigMock).toHaveBeenCalled();
     expect(cleanupState.initializeServicesMock).toHaveBeenCalled();
@@ -100,7 +100,7 @@ describe('CleanupCommand', () => {
       dryRun: false,
       verbose: true,
     });
-    expect(cleanupState.logger.info).toHaveBeenCalledWith('TinyAuth Cleanup');
+    expect(cleanupState.logger.info).toHaveBeenCalledWith('Issuary Cleanup');
     expect(cleanupState.logger.info).toHaveBeenCalledWith(
       '[1/1] Expired tokens: Deleted 2 (Cleaned expired entries)',
     );
@@ -131,7 +131,7 @@ describe('CleanupCommand', () => {
     const { runCleanupCommand } = await import('./cleanup.ts');
 
     await runCleanupCommand({
-      configPath: '/tmp/tinyauth.yaml',
+      configPath: '/tmp/issuary.yaml',
       dryRun: false,
       verbose: false,
     });

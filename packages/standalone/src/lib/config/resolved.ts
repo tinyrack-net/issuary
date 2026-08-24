@@ -13,7 +13,7 @@ import {
   ServerConfigSchema,
   TermsConfigSchema,
   TokensConfigSchema,
-} from '@tinyrack/tinyauth-server/config';
+} from '@tinyrack/issuary-server/config';
 import z from 'zod';
 import { StandaloneAdminConfigSchema } from './admin.ts';
 import { StandaloneDatabaseConfigSchema } from './database.ts';
@@ -77,7 +77,7 @@ export const StandaloneConfigSchema = z
     }),
   })
   .strict()
-  .describe('TinyAuth standalone declarative configuration.');
+  .describe('Issuary standalone declarative configuration.');
 
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;
 export type StandaloneConfig = z.infer<typeof StandaloneConfigSchema>;

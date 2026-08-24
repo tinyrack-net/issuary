@@ -1,11 +1,11 @@
 ---
 title: 회원가입
-description: Tinyauth의 자체 회원가입 정책 구성하기
+description: Issuary의 자체 회원가입 정책 구성하기
 section: configuration
 order: 8
 ---
 
-`tinyauth`의 자체 회원가입은 기본적으로 비활성화돼요. 비밀번호 가입과 최초 OAuth 가입 모두 `registration.enabled`를 기준으로 열리며, `allowed_email_patterns`는 가입을 허용한 뒤에 적용하는 선택적 이메일 필터예요. 계정 삭제 기능은 `account_deletion`에서 별도로 제어해요.
+`issuary`의 자체 회원가입은 기본적으로 비활성화돼요. 비밀번호 가입과 최초 OAuth 가입 모두 `registration.enabled`를 기준으로 열리며, `allowed_email_patterns`는 가입을 허용한 뒤에 적용하는 선택적 이메일 필터예요. 계정 삭제 기능은 `account_deletion`에서 별도로 제어해요.
 
 ```yaml
 # config.yaml
@@ -26,14 +26,14 @@ account_deletion:
 
 ## 예시
 
-`tinyauth.net`, `tinyrack.net` 이메일을 가진 사용자의 가입을 허용하고, 사용자가 자신의 계정을 삭제할 수 있도록 설정하려면 다음과 같이 구성할 수 있어요.
+`issuary.net`, `tinyrack.net` 이메일을 가진 사용자의 가입을 허용하고, 사용자가 자신의 계정을 삭제할 수 있도록 설정하려면 다음과 같이 구성할 수 있어요.
 
 ```yaml
 # config.yaml
 registration:
   enabled: true
   allowed_email_patterns:
-    - '*@tinyauth.net'
+    - '*@issuary.net'
     - '*@tinyrack.net'
 
 account_deletion:

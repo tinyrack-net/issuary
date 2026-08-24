@@ -299,7 +299,7 @@ export function createPerfJobSummary(input: {
   baselineNote?: string | undefined;
 }): string {
   const lines = [
-    '# TinyAuth performance smoke',
+    '# Issuary performance smoke',
     '',
     `- Scenarios: ${String(input.aggregation.report.scenarios.length)}/${String(PERF_SCENARIO_CATALOG.length)}`,
     `- Current commit: ${input.aggregation.report.commitSha ?? 'unknown'}`,

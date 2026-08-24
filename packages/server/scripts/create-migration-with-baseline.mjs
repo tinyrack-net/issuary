@@ -48,7 +48,7 @@ function run(command, args, options = {}) {
 async function applyExistingMigrations(targetDialect, env) {
   const runnerRoot = join(packageRoot, '.tmp');
   await mkdir(runnerRoot, { recursive: true });
-  const directory = await mkdtemp(join(runnerRoot, 'tinyauth-migration-runner-'));
+  const directory = await mkdtemp(join(runnerRoot, 'issuary-migration-runner-'));
   const runnerPath = join(directory, 'apply-existing-migrations.mjs');
   const driverPackage =
     targetDialect === 'postgres' ? '@mikro-orm/postgresql' : '@mikro-orm/sql';
@@ -60,8 +60,8 @@ async function applyExistingMigrations(targetDialect, env) {
   const factoryName = targetDialect === 'postgres' ? 'postgres' : 'sqlite';
   const configExpression =
     targetDialect === 'postgres'
-      ? `postgres({\n          host: process.env.TINYAUTH_MIGRATION_POSTGRES_HOST ?? '127.0.0.1',\n          port: Number(process.env.TINYAUTH_MIGRATION_POSTGRES_PORT ?? '5432'),\n          user: process.env.TINYAUTH_MIGRATION_POSTGRES_USER ?? 'tinyauth',\n          password: process.env.TINYAUTH_MIGRATION_POSTGRES_PASSWORD ?? 'tinyauth',\n          name: process.env.TINYAUTH_MIGRATION_POSTGRES_DB ?? 'tinyauth',\n          driverOptions: {},\n        })`
-      : `sqlite({\n          path: process.env.TINYAUTH_MIGRATION_SQLITE_DB_PATH,\n          test: false,\n        })`;
+      ? `postgres({\n          host: process.env.ISSUARY_MIGRATION_POSTGRES_HOST ?? '127.0.0.1',\n          port: Number(process.env.ISSUARY_MIGRATION_POSTGRES_PORT ?? '5432'),\n          user: process.env.ISSUARY_MIGRATION_POSTGRES_USER ?? 'issuary',\n          password: process.env.ISSUARY_MIGRATION_POSTGRES_PASSWORD ?? 'issuary',\n          name: process.env.ISSUARY_MIGRATION_POSTGRES_DB ?? 'issuary',\n          driverOptions: {},\n        })`
+      : `sqlite({\n          path: process.env.ISSUARY_MIGRATION_SQLITE_DB_PATH,\n          test: false,\n        })`;
 
   await writeFile(
     runnerPath,
@@ -76,7 +76,7 @@ async function applyExistingMigrations(targetDialect, env) {
   try {
     run(
       'node',
-      ['--conditions=@tinyauth/source', '--import', 'tsx', runnerPath],
+      ['--conditions=@issuary/source', '--import', 'tsx', runnerPath],
       { env },
     );
   } finally {
@@ -145,10 +145,10 @@ function dockerOutput(args) {
 }
 
 async function withSqliteBaseline(callback) {
-  const directory = await mkdtemp(join(tmpdir(), 'tinyauth-migration-sqlite-'));
+  const directory = await mkdtemp(join(tmpdir(), 'issuary-migration-sqlite-'));
   const databasePath = join(directory, 'baseline.sqlite');
   const env = {
-    TINYAUTH_MIGRATION_SQLITE_DB_PATH: databasePath,
+    ISSUARY_MIGRATION_SQLITE_DB_PATH: databasePath,
   };
 
   try {
@@ -161,42 +161,42 @@ async function withSqliteBaseline(callback) {
 
 async function withPostgresBaseline(callback) {
   const externallyConfigured = Boolean(
-    process.env.TINYAUTH_MIGRATION_POSTGRES_HOST ||
-      process.env.TINYAUTH_MIGRATION_POSTGRES_PORT ||
-      process.env.TINYAUTH_MIGRATION_POSTGRES_DB,
+    process.env.ISSUARY_MIGRATION_POSTGRES_HOST ||
+      process.env.ISSUARY_MIGRATION_POSTGRES_PORT ||
+      process.env.ISSUARY_MIGRATION_POSTGRES_DB,
   );
 
   if (externallyConfigured) {
     const env = {
-      TINYAUTH_MIGRATION_POSTGRES_HOST:
-        process.env.TINYAUTH_MIGRATION_POSTGRES_HOST ?? '127.0.0.1',
-      TINYAUTH_MIGRATION_POSTGRES_PORT:
-        process.env.TINYAUTH_MIGRATION_POSTGRES_PORT ?? '5432',
-      TINYAUTH_MIGRATION_POSTGRES_USER:
-        process.env.TINYAUTH_MIGRATION_POSTGRES_USER ?? 'tinyauth',
-      TINYAUTH_MIGRATION_POSTGRES_PASSWORD:
-        process.env.TINYAUTH_MIGRATION_POSTGRES_PASSWORD ?? 'tinyauth',
-      TINYAUTH_MIGRATION_POSTGRES_DB:
-        process.env.TINYAUTH_MIGRATION_POSTGRES_DB ?? 'tinyauth',
+      ISSUARY_MIGRATION_POSTGRES_HOST:
+        process.env.ISSUARY_MIGRATION_POSTGRES_HOST ?? '127.0.0.1',
+      ISSUARY_MIGRATION_POSTGRES_PORT:
+        process.env.ISSUARY_MIGRATION_POSTGRES_PORT ?? '5432',
+      ISSUARY_MIGRATION_POSTGRES_USER:
+        process.env.ISSUARY_MIGRATION_POSTGRES_USER ?? 'issuary',
+      ISSUARY_MIGRATION_POSTGRES_PASSWORD:
+        process.env.ISSUARY_MIGRATION_POSTGRES_PASSWORD ?? 'issuary',
+      ISSUARY_MIGRATION_POSTGRES_DB:
+        process.env.ISSUARY_MIGRATION_POSTGRES_DB ?? 'issuary',
     };
     await applyExistingMigrations('postgres', env);
     await callback(env);
     return;
   }
 
-  const containerName = `tinyauth-migration-baseline-${Date.now()}-${process.pid}`;
-  const password = `tinyauth-migration-${process.pid}`;
+  const containerName = `issuary-migration-baseline-${Date.now()}-${process.pid}`;
+  const password = `issuary-migration-${process.pid}`;
 
   dockerOutput([
     'run',
     '--name',
     containerName,
     '-e',
-    'POSTGRES_USER=tinyauth',
+    'POSTGRES_USER=issuary',
     '-e',
     `POSTGRES_PASSWORD=${password}`,
     '-e',
-    'POSTGRES_DB=tinyauth',
+    'POSTGRES_DB=issuary',
     '-p',
     '127.0.0.1::5432',
     '-d',
@@ -207,7 +207,7 @@ async function withPostgresBaseline(callback) {
     for (let attempt = 0; attempt < 60; attempt += 1) {
       const ready = spawnSync(
         'docker',
-        ['exec', containerName, 'pg_isready', '-U', 'tinyauth', '-d', 'tinyauth'],
+        ['exec', containerName, 'pg_isready', '-U', 'issuary', '-d', 'issuary'],
         {
           stdio: 'ignore',
         },
@@ -229,11 +229,11 @@ async function withPostgresBaseline(callback) {
     }
 
     const env = {
-      TINYAUTH_MIGRATION_POSTGRES_HOST: '127.0.0.1',
-      TINYAUTH_MIGRATION_POSTGRES_PORT: mappedPort,
-      TINYAUTH_MIGRATION_POSTGRES_USER: 'tinyauth',
-      TINYAUTH_MIGRATION_POSTGRES_PASSWORD: password,
-      TINYAUTH_MIGRATION_POSTGRES_DB: 'tinyauth',
+      ISSUARY_MIGRATION_POSTGRES_HOST: '127.0.0.1',
+      ISSUARY_MIGRATION_POSTGRES_PORT: mappedPort,
+      ISSUARY_MIGRATION_POSTGRES_USER: 'issuary',
+      ISSUARY_MIGRATION_POSTGRES_PASSWORD: password,
+      ISSUARY_MIGRATION_POSTGRES_DB: 'issuary',
     };
 
     await applyExistingMigrations('postgres', env);

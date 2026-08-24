@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -79,7 +79,7 @@ describe('verifyEmailMutationOptions', () => {
     expect(jsonRequestBody(request)).toEqual(verifyEmailValues);
   });
 
-  test('preserves invalid verification token API errors as TinyAuthError', async () => {
+  test('preserves invalid verification token API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'INVALID_VERIFICATION_TOKEN',
@@ -92,9 +92,9 @@ describe('verifyEmailMutationOptions', () => {
       await runVerifyEmailMutation(verifyEmailValues);
       throw new Error('Expected verify email mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('INVALID_VERIFICATION_TOKEN');
         expect(error.status).toBe(400);
         expect(error.message).toBe(
@@ -129,7 +129,7 @@ describe('resendVerificationMutationOptions', () => {
     expect(jsonRequestBody(request)).toEqual(resendVerificationValues);
   });
 
-  test('preserves resend verification API errors as TinyAuthError', async () => {
+  test('preserves resend verification API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'EMAIL_ALREADY_VERIFIED',
@@ -142,9 +142,9 @@ describe('resendVerificationMutationOptions', () => {
       await runResendVerificationMutation(resendVerificationValues);
       throw new Error('Expected resend verification mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('EMAIL_ALREADY_VERIFIED');
         expect(error.status).toBe(400);
         expect(error.message).toBe('Email is already verified.');

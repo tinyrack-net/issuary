@@ -1,11 +1,11 @@
 ---
 title: 始める
-description: Tinyauthに OAuth/OIDC クライアントを登録する方法
+description: Issuaryに OAuth/OIDC クライアントを登録する方法
 section: configuration
 order: 28
 ---
 
-`tinyauth`を通じてユーザーを認証したいアプリケーションは、まず OAuth/OIDC クライアントとして登録する必要があります。クライアント登録は `config.yaml`の `clients` セクションでできます。
+`issuary`を通じてユーザーを認証したいアプリケーションは、まず OAuth/OIDC クライアントとして登録する必要があります。クライアント登録は `config.yaml`の `clients` セクションでできます。
 
 ```yaml
 # config.yaml
@@ -95,7 +95,7 @@ clients:
 
 ## OIDC Discovery
 
-登録されたクライアントアプリケーションは `tinyauth`の OIDC Discoveryエンドポイントを使用して、認証に必要な情報を自動的にインポートできます。
+登録されたクライアントアプリケーションは `issuary`の OIDC Discoveryエンドポイントを使用して、認証に必要な情報を自動的にインポートできます。
 
 ```
 {server.public_origin}/.well-known/openid-configuration

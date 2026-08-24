@@ -45,7 +45,7 @@ async function requestDocs() {
     const body = await response.text();
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');
-    expect(body).toContain('TinyAuth API');
+    expect(body).toContain('Issuary API');
   });
 }
 

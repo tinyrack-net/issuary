@@ -2,9 +2,9 @@ import { createApp } from '../entrypoints/app.ts';
 import { sqlite } from '../entrypoints/database/sqlite/sqlite.ts';
 import type {
   EmailConfig,
-  TinyAuthRuntimeConfigInput,
+  IssuaryRuntimeConfigInput,
 } from '../lib/config/index.ts';
-import { TinyAuthRuntimeConfigSchema } from '../lib/config/index.ts';
+import { IssuaryRuntimeConfigSchema } from '../lib/config/index.ts';
 
 /**
  * Minimal test configuration as a fully resolved config.
@@ -49,7 +49,7 @@ export const MINIMAL_TEST_CONFIG = {
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
   },
-} as const satisfies TinyAuthRuntimeConfigInput;
+} as const satisfies IssuaryRuntimeConfigInput;
 
 export interface TestEmailMessage {
   from?: string | undefined;
@@ -88,8 +88,8 @@ export async function createTestEmailConfig(options?: {
   };
 }
 
-export async function createTestApp(config?: TinyAuthRuntimeConfigInput) {
-  const resolvedConfig = TinyAuthRuntimeConfigSchema.parse(
+export async function createTestApp(config?: IssuaryRuntimeConfigInput) {
+  const resolvedConfig = IssuaryRuntimeConfigSchema.parse(
     config ?? MINIMAL_TEST_CONFIG,
   );
   return createApp(resolvedConfig);

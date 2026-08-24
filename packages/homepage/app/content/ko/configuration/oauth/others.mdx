@@ -1,11 +1,11 @@
 ---
 title: 기타
-description: Tinyauth에서 기타 OAuth/OIDC 제공자 구성하기
+description: Issuary에서 기타 OAuth/OIDC 제공자 구성하기
 section: configuration
 order: 24
 ---
 
-`tinyauth`에서 기본 지원하지 않는 OAuth/OIDC 제공자도 `generic_oauth` 유형을 통해 연동할 수 있어요. 커스텀 엔드포인트와 필드 매핑을 직접 지정하는 방식이에요.
+`issuary`에서 기본 지원하지 않는 OAuth/OIDC 제공자도 `generic_oauth` 유형을 통해 연동할 수 있어요. 커스텀 엔드포인트와 필드 매핑을 직접 지정하는 방식이에요.
 
 ```yaml
 # config.yaml
@@ -52,7 +52,7 @@ identity_providers:
 
 ## 사용자 정보 매핑 (`userinfo_mapping`)
 
-OAuth 제공자마다 사용자 정보 응답의 필드 이름이 달라요. `userinfo_mapping`을 통해 `tinyauth`가 어떤 필드에서 어떤 정보를 가져올지 지정해요.
+OAuth 제공자마다 사용자 정보 응답의 필드 이름이 달라요. `userinfo_mapping`을 통해 `issuary`가 어떤 필드에서 어떤 정보를 가져올지 지정해요.
 
 | 항목 | 필수 | 설명 |
 |------|------|------|

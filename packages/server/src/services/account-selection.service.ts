@@ -1,4 +1,4 @@
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { SessionAccount } from '../middleware/session.ts';
 
 type PromptValue = 'none' | 'login' | 'consent' | 'select_account';
@@ -8,7 +8,7 @@ type EffectiveAccountSelectionMode =
   | 'smart'
   | 'always';
 type ClientAccountSelectionMode = NonNullable<
-  TinyAuthRuntimeConfig['clients'][number]['account_selection']
+  IssuaryRuntimeConfig['clients'][number]['account_selection']
 >['mode'];
 
 type RememberedAccount = SessionAccount & { email?: string | undefined };
@@ -43,7 +43,7 @@ export interface NormalizedAccountSelectionPolicy {
 }
 
 export function normalizeAccountSelectionPolicy(
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   clientId?: string | undefined,
 ): NormalizedAccountSelectionPolicy {
   const globalConfig = config.auth.account_selection;
@@ -88,9 +88,9 @@ function resolveAccountSelectionMode(
 }
 
 export class AccountSelectionService {
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
 
-  public constructor(config: TinyAuthRuntimeConfig) {
+  public constructor(config: IssuaryRuntimeConfig) {
     this.config = config;
   }
 

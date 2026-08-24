@@ -9,7 +9,7 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { disableTotpMutationOptions } from '#frontend/queries/totp.ts';
 
@@ -57,7 +57,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
     try {
       await mutation.mutateAsync({ code: data.code });
     } catch (error) {
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         if (error.code === 'CANNOT_REMOVE_LAST_SECOND_FACTOR') {
           form.setError('code', {
             message: t(

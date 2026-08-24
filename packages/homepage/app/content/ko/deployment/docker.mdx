@@ -1,11 +1,11 @@
 ---
 title: Docker
-description: Docker를 사용하여 Tinyauth를 배포하는 방법
+description: Docker를 사용하여 Issuary를 배포하는 방법
 section: deployment
 order: 3
 ---
 
-`Tinyauth`를 Docker로 빠르게 배포할 수 있어요. 이 문서에서는 단독 실행, Nginx Proxy Manager 연동, Traefik 연동 예시를 다뤄요.
+`Issuary`를 Docker로 빠르게 배포할 수 있어요. 이 문서에서는 단독 실행, Nginx Proxy Manager 연동, Traefik 연동 예시를 다뤄요.
 
 ## 사전 준비
 
@@ -32,7 +32,7 @@ security:
 
 database:
   type: sqlite
-  path: /opt/tinyauth/database.db
+  path: /opt/issuary/database.db
 
 clients:
   - id: my-app
@@ -55,19 +55,19 @@ clients:
 
 ## 단독 실행
 
-가장 간단한 형태로 `Tinyauth`를 실행하는 예시에요.
+가장 간단한 형태로 `Issuary`를 실행하는 예시에요.
 
 ### Docker Run
 
 ```bash
 docker run -d \
-  --name tinyauth \
+  --name issuary \
   -p 8080:8080 \
   -v $(pwd)/config.yaml:/opt/config.yaml:ro \
-  -v tinyauth-data:/opt/tinyauth \
+  -v issuary-data:/opt/issuary \
   -e NODE_ENV=production \
   --restart unless-stopped \
-  ghcr.io/tinyrack-net/tinyauth:latest
+  ghcr.io/tinyrack-net/issuary:latest
 ```
 
 ### Docker Compose
@@ -75,9 +75,9 @@ docker run -d \
 ```yaml
 # docker-compose.yml
 services:
-  tinyauth:
-    image: ghcr.io/tinyrack-net/tinyauth:latest
-    container_name: tinyauth
+  issuary:
+    image: ghcr.io/tinyrack-net/issuary:latest
+    container_name: issuary
     restart: unless-stopped
     ports:
       - '8080:8080'
@@ -85,7 +85,7 @@ services:
       - NODE_ENV=production
     volumes:
       - ./config.yaml:/opt/config.yaml:ro
-      - tinyauth-data:/opt/tinyauth
+      - issuary-data:/opt/issuary
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -99,10 +99,10 @@ services:
       retries: 3
 
 volumes:
-  tinyauth-data:
+  issuary-data:
 ```
 
-실행 후 `http://localhost:8080`으로 접속하면 `Tinyauth`를 확인할 수 있어요.
+실행 후 `http://localhost:8080`으로 접속하면 `Issuary`를 확인할 수 있어요.
 
 ---
 
@@ -128,9 +128,9 @@ database:
   type: postgres
   host: postgres
   port: 5432
-  user: ${DB_USER:-tinyauth}
-  password: ${DB_PASSWORD:-tinyauth}
-  name: ${DB_NAME:-tinyauth}
+  user: ${DB_USER:-issuary}
+  password: ${DB_PASSWORD:-issuary}
+  name: ${DB_NAME:-issuary}
 ```
 
 ### Docker Compose
@@ -138,17 +138,17 @@ database:
 ```yaml
 # docker-compose.yml
 services:
-  tinyauth:
-    image: ghcr.io/tinyrack-net/tinyauth:latest
-    container_name: tinyauth
+  issuary:
+    image: ghcr.io/tinyrack-net/issuary:latest
+    container_name: issuary
     restart: unless-stopped
     ports:
       - '8080:8080'
     environment:
       - NODE_ENV=production
-      - DB_USER=tinyauth
-      - DB_PASSWORD=tinyauth
-      - DB_NAME=tinyauth
+      - DB_USER=issuary
+      - DB_PASSWORD=issuary
+      - DB_NAME=issuary
     volumes:
       - ./config.yaml:/opt/config.yaml:ro
     depends_on:
@@ -168,16 +168,16 @@ services:
 
   postgres:
     image: postgres:17-alpine
-    container_name: tinyauth-postgres
+    container_name: issuary-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tinyauth
-      POSTGRES_PASSWORD: tinyauth
-      POSTGRES_DB: tinyauth
+      POSTGRES_USER: issuary
+      POSTGRES_PASSWORD: issuary
+      POSTGRES_DB: issuary
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U tinyauth']
+      test: ['CMD-SHELL', 'pg_isready -U issuary']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -211,7 +211,7 @@ security:
 
 database:
   type: sqlite
-  path: /opt/tinyauth/database.db
+  path: /opt/issuary/database.db
 ```
 
 ### Docker Compose
@@ -231,9 +231,9 @@ services:
       - npm-data:/data
       - npm-letsencrypt:/etc/letsencrypt
 
-  tinyauth:
-    image: ghcr.io/tinyrack-net/tinyauth:latest
-    container_name: tinyauth
+  issuary:
+    image: ghcr.io/tinyrack-net/issuary:latest
+    container_name: issuary
     restart: unless-stopped
     expose:
       - '8080'
@@ -241,7 +241,7 @@ services:
       - NODE_ENV=production
     volumes:
       - ./config.yaml:/opt/config.yaml:ro
-      - tinyauth-data:/opt/tinyauth
+      - issuary-data:/opt/issuary
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -257,7 +257,7 @@ services:
 volumes:
   npm-data:
   npm-letsencrypt:
-  tinyauth-data:
+  issuary-data:
 ```
 
 ### Nginx Proxy Manager 설정
@@ -268,7 +268,7 @@ volumes:
 4. 아래와 같이 설정하세요:
    - **Domain Names**: `auth.example.com`
    - **Scheme**: `http`
-   - **Forward Hostname / IP**: `tinyauth`
+   - **Forward Hostname / IP**: `issuary`
    - **Forward Port**: `8080`
    - **Websockets Support**: 활성화
 5. **SSL** 탭에서 Let's Encrypt 인증서를 발급받으세요
@@ -298,7 +298,7 @@ security:
 
 database:
   type: sqlite
-  path: /opt/tinyauth/database.db
+  path: /opt/issuary/database.db
 ```
 
 ### Docker Compose
@@ -328,9 +328,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-letsencrypt:/letsencrypt
 
-  tinyauth:
-    image: ghcr.io/tinyrack-net/tinyauth:latest
-    container_name: tinyauth
+  issuary:
+    image: ghcr.io/tinyrack-net/issuary:latest
+    container_name: issuary
     restart: unless-stopped
     expose:
       - '8080'
@@ -338,13 +338,13 @@ services:
       - NODE_ENV=production
     volumes:
       - ./config.yaml:/opt/config.yaml:ro
-      - tinyauth-data:/opt/tinyauth
+      - issuary-data:/opt/issuary
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.tinyauth.rule=Host(`auth.example.com`)'
-      - 'traefik.http.routers.tinyauth.entrypoints=websecure'
-      - 'traefik.http.routers.tinyauth.tls.certresolver=letsencrypt'
-      - 'traefik.http.services.tinyauth.loadbalancer.server.port=8080'
+      - 'traefik.http.routers.issuary.rule=Host(`auth.example.com`)'
+      - 'traefik.http.routers.issuary.entrypoints=websecure'
+      - 'traefik.http.routers.issuary.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.issuary.loadbalancer.server.port=8080'
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -359,7 +359,7 @@ services:
 
 volumes:
   traefik-letsencrypt:
-  tinyauth-data:
+  issuary-data:
 ```
 
 ### HTTP에서 HTTPS 리다이렉트

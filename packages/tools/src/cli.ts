@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --conditions=@tinyauth/source
+#!/usr/bin/env -S node --conditions=@issuary/source
 import { run } from '@stricli/core';
 import { app } from './cli/app.ts';
 

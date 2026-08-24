@@ -4,14 +4,14 @@ import { availableParallelism } from 'node:os';
 import path from 'node:path';
 
 function resolveWorkerBudget(): number {
-  const configuredBudget = process.env['TINYAUTH_TEST_WORKERS'];
+  const configuredBudget = process.env['ISSUARY_TEST_WORKERS'];
   if (configuredBudget === undefined) {
     return availableParallelism();
   }
 
   const workerBudget = Number(configuredBudget);
   if (!Number.isInteger(workerBudget) || workerBudget <= 0) {
-    throw new Error('TINYAUTH_TEST_WORKERS must be a positive integer');
+    throw new Error('ISSUARY_TEST_WORKERS must be a positive integer');
   }
   return workerBudget;
 }

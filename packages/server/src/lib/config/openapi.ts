@@ -3,9 +3,9 @@ import { zz } from '../../schemas/provider.ts';
 
 export const OPENAPI_CONFIG_DEFAULT = {
   enabled: true,
-  title: 'TinyAuth API',
+  title: 'Issuary API',
   description: 'OpenID Connect Provider API',
-  ui_title: 'TinyAuth API Reference',
+  ui_title: 'Issuary API Reference',
 } as const;
 
 export const OpenApiConfigSchema = z

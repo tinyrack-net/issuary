@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -101,7 +101,7 @@ describe('password profile mutations', () => {
     expect(jsonRequestBody(request)).toEqual(values);
   });
 
-  test('preserves password mutation API errors as TinyAuthError', async () => {
+  test('preserves password mutation API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'INVALID_CURRENT_PASSWORD',
@@ -117,9 +117,9 @@ describe('password profile mutations', () => {
       });
       throw new Error('Expected change password mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('INVALID_CURRENT_PASSWORD');
         expect(error.status).toBe(401);
         expect(error.message).toBe('Current password is incorrect.');

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { HttpPerfResult, StatusCounts } from './metrics.js';
 
 export const PERF_REPORT_SCHEMA_VERSION = 2;
-export const PERF_EVENTS_PATH_ENV = 'TINYAUTH_PERF_EVENTS_PATH';
+export const PERF_EVENTS_PATH_ENV = 'ISSUARY_PERF_EVENTS_PATH';
 
 export type PerfReportShard = {
   index: number;
@@ -167,7 +167,7 @@ export async function writePerfReportIfEnabled(input: {
   writeFile: (path: string, content: string) => Promise<void>;
   context?: PerfReportContext;
 }): Promise<string | undefined> {
-  const path = input.env['TINYAUTH_PERF_REPORT_PATH'];
+  const path = input.env['ISSUARY_PERF_REPORT_PATH'];
 
   if (!path) {
     return undefined;

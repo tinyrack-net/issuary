@@ -29,7 +29,7 @@ const test = createScenarioFixture((backendPort) => ({
   }),
 }));
 
-const LANGUAGE_STORAGE_KEY = 'tinyauth-language';
+const LANGUAGE_STORAGE_KEY = 'issuary-language';
 
 test.describe('Color scheme and language fallback behavior', () => {
   test('lang fallback uses English branding and implicit notice', async ({
@@ -61,7 +61,7 @@ test.describe('Color scheme and language fallback behavior', () => {
     await expect
       .poll(async () => {
         return page.evaluate(() => ({
-          scheme: localStorage.getItem('tinyauth-color-scheme'),
+          scheme: localStorage.getItem('issuary-color-scheme'),
           theme: document.documentElement.getAttribute('data-theme'),
         }));
       })
@@ -71,7 +71,7 @@ test.describe('Color scheme and language fallback behavior', () => {
     await expect
       .poll(async () => {
         return page.evaluate(() => ({
-          scheme: localStorage.getItem('tinyauth-color-scheme'),
+          scheme: localStorage.getItem('issuary-color-scheme'),
           theme: document.documentElement.getAttribute('data-theme'),
         }));
       })

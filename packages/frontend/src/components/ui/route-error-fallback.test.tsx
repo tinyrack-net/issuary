@@ -1,6 +1,6 @@
 import { beforeAll, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 import { RouteErrorFallback } from './route-error-fallback';
 
@@ -9,7 +9,7 @@ beforeAll(() => {
 });
 
 test('shows generic error with error code and message', async () => {
-  const error = new TinyAuthError('CUSTOM_ERROR', 500, 'Server exploded');
+  const error = new IssuaryError('CUSTOM_ERROR', 500, 'Server exploded');
   const screen = await render(
     <RouteErrorFallback error={error} reset={() => {}} />,
   );
@@ -22,7 +22,7 @@ test('shows generic error with error code and message', async () => {
 
 test('retry button calls reset', async () => {
   const reset = vi.fn();
-  const error = new TinyAuthError('ERR', 500, 'fail');
+  const error = new IssuaryError('ERR', 500, 'fail');
   const screen = await render(
     <RouteErrorFallback error={error} reset={reset} />,
   );
@@ -33,7 +33,7 @@ test('retry button calls reset', async () => {
 
 test('401 error with onUnauthorized calls callback', async () => {
   const onUnauthorized = vi.fn();
-  const error = new TinyAuthError('UNAUTHORIZED', 401, 'Unauthorized');
+  const error = new IssuaryError('UNAUTHORIZED', 401, 'Unauthorized');
   const { container } = await render(
     <RouteErrorFallback
       error={error}
@@ -49,7 +49,7 @@ test('401 error with onUnauthorized calls callback', async () => {
 });
 
 test('401 error without onUnauthorized shows login link', async () => {
-  const error = new TinyAuthError('UNAUTHORIZED', 401, 'Unauthorized');
+  const error = new IssuaryError('UNAUTHORIZED', 401, 'Unauthorized');
   const screen = await render(
     <RouteErrorFallback error={error} reset={() => {}} />,
   );
@@ -60,7 +60,7 @@ test('401 error without onUnauthorized shows login link', async () => {
   await expect.element(screen.getByText('Go to login')).toBeVisible();
 });
 
-test('non-TinyAuthError shows default error message', async () => {
+test('non-IssuaryError shows default error message', async () => {
   const error = new Error('something');
   const screen = await render(
     <RouteErrorFallback error={error} reset={() => {}} />,

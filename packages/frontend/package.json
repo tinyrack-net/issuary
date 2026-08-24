@@ -1,7 +1,7 @@
 {
-  "name": "@tinyrack/tinyauth-frontend",
+  "name": "@tinyrack/issuary-frontend",
   "private": true,
-  "version": "0.19.0",
+  "version": "0.20.0",
   "license": "MIT",
   "type": "module",
   "imports": {
@@ -47,11 +47,11 @@
     "test:e2e": "node --import tsx node_modules/@playwright/test/cli.js test",
     "test:e2e:sharded": "node e2e/run-sharded.ts",
     "test:e2e:smoke": "node --import tsx node_modules/@playwright/test/cli.js test --project minimal:chromium",
-    "test:e2e:smoke:source": "node --conditions=@tinyauth/source --import tsx node_modules/@playwright/test/cli.js test --project minimal:chromium",
+    "test:e2e:smoke:source": "node --conditions=@issuary/source --import tsx node_modules/@playwright/test/cli.js test --project minimal:chromium",
     "test:e2e:smoke:sharded": "node e2e/run-sharded.ts --project minimal:chromium",
     "test:e2e:screen": "node --import tsx node_modules/@playwright/test/cli.js test --project screen-lab:chromium",
-    "test:e2e:ui": "node --conditions=@tinyauth/source --import tsx node_modules/@playwright/test/cli.js test --ui",
-    "screen:dev": "node --conditions=@tinyauth/source --import tsx e2e/screen-lab/screen-dev.ts"
+    "test:e2e:ui": "node --conditions=@issuary/source --import tsx node_modules/@playwright/test/cli.js test --ui",
+    "screen:dev": "node --conditions=@issuary/source --import tsx e2e/screen-lab/screen-dev.ts"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "5.3.0",
@@ -80,7 +80,7 @@
     "@rolldown/plugin-babel": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/router-plugin": "catalog:",
-    "@tinyrack/tinyauth-server": "workspace:*",
+    "@tinyrack/issuary-server": "workspace:*",
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "@types/react": "catalog:",

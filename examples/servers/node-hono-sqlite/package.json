@@ -1,19 +1,19 @@
 {
-  "name": "@tinyauth-server-examples/node-hono-sqlite",
+  "name": "@issuary-server-examples/node-hono-sqlite",
   "private": true,
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @tinyrack/tinyauth-frontend build && cross-env NODE_OPTIONS=--conditions=@tinyauth/source tsx watch src/index.ts",
-    "start": "pnpm --filter @tinyrack/tinyauth-frontend build && node --conditions=@tinyauth/source --import tsx src/index.ts",
+    "dev": "pnpm --filter @tinyrack/issuary-frontend build && cross-env NODE_OPTIONS=--conditions=@issuary/source tsx watch src/index.ts",
+    "start": "pnpm --filter @tinyrack/issuary-frontend build && node --conditions=@issuary/source --import tsx src/index.ts",
     "build": "tsc --noEmit",
-    "test": "pnpm --filter @tinyrack/tinyauth-server build && pnpm --filter @tinyrack/tinyauth-frontend build && pnpm run test:prepared",
-    "test:prepared": "node --conditions=@tinyauth/source --import tsx src/smoke-test.ts"
+    "test": "pnpm --filter @tinyrack/issuary-server build && pnpm --filter @tinyrack/issuary-frontend build && pnpm run test:prepared",
+    "test:prepared": "node --conditions=@issuary/source --import tsx src/smoke-test.ts"
   },
   "dependencies": {
     "@hono/node-server": "catalog:",
-    "@tinyrack/tinyauth-server": "workspace:*",
+    "@tinyrack/issuary-server": "workspace:*",
     "hono": "catalog:"
   },
   "devDependencies": {

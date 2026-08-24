@@ -12,7 +12,7 @@ import {
 } from 'jose';
 import { type JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
 import { bytesToString, fromBase64Url } from '../lib/base64url.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
 
@@ -168,9 +168,9 @@ export class JwtService {
   /** Deduplication lock for concurrent ensureActiveKey calls */
   private ensureActiveKeyPromise: Promise<JwtKeyEntity> | null = null;
 
-  private readonly config: TinyAuthRuntimeConfig;
+  private readonly config: IssuaryRuntimeConfig;
   private readonly mikro: MikroService;
-  constructor(config: TinyAuthRuntimeConfig, mikro: MikroService) {
+  constructor(config: IssuaryRuntimeConfig, mikro: MikroService) {
     this.config = config;
     this.mikro = mikro;
   }

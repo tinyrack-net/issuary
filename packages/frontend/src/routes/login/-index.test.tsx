@@ -52,7 +52,7 @@ const baseConfig = {
       },
       totp: {
         enabled: false,
-        issuer: 'TinyAuth',
+        issuer: 'Issuary',
       },
       policy: {
         min_length: 8,

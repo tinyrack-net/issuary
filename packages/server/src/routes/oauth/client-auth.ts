@@ -1,12 +1,12 @@
 import type { Context } from 'hono';
-import { e, TinyAuthError } from '../../schemas/error.js';
+import { e, IssuaryError } from '../../schemas/error.js';
 
 export interface BasicClientCredentials {
   clientId: string;
   clientSecret: string;
 }
 
-export const BASIC_CLIENT_AUTH_CHALLENGE = 'Basic realm="tinyauth"';
+export const BASIC_CLIENT_AUTH_CHALLENGE = 'Basic realm="issuary"';
 
 const BASIC_BASE64_PATTERN =
   /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
@@ -67,7 +67,7 @@ export function setBasicClientAuthChallengeIfInvalidClientCredentials(
   err: unknown,
 ): void {
   if (
-    err instanceof TinyAuthError &&
+    err instanceof IssuaryError &&
     err.code === 'INVALID_CLIENT_CREDENTIALS'
   ) {
     c.header('WWW-Authenticate', BASIC_CLIENT_AUTH_CHALLENGE);

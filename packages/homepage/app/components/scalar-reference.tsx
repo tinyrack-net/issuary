@@ -21,14 +21,14 @@ export function ScalarReference() {
 
   if (Reference === undefined) {
     return (
-      <main aria-busy="true" className="tinyauth-scalar-loading">
-        Loading Tinyauth API Reference…
+      <main aria-busy="true" className="issuary-scalar-loading">
+        Loading Issuary API Reference…
       </main>
     );
   }
 
   return (
-    <main className="tinyauth-scalar" data-scalar-ready="true">
+    <main className="issuary-scalar" data-scalar-ready="true">
       <Reference
         configuration={{
           darkMode: true,

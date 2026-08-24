@@ -1,11 +1,11 @@
 ---
 title: 작업 스케줄러
-description: Tinyauth의 데이터 정리 스케줄러 및 정리 정책 구성하기
+description: Issuary의 데이터 정리 스케줄러 및 정리 정책 구성하기
 section: configuration
 order: 31
 ---
 
-`tinyauth`는 만료된 토큰, 사용된 인증 코드, 이메일 인증 토큰 같은 임시 데이터를 주기적으로 정리하는 내장 스케줄러를 제공해요. 이 설정은 `scheduler`와 `cleanup` 최상위 섹션으로 구성돼요.
+`issuary`는 만료된 토큰, 사용된 인증 코드, 이메일 인증 토큰 같은 임시 데이터를 주기적으로 정리하는 내장 스케줄러를 제공해요. 이 설정은 `scheduler`와 `cleanup` 최상위 섹션으로 구성돼요.
 
 ---
 
@@ -37,7 +37,7 @@ scheduler:
 - `scheduler.instance_id`: `database` 모드에서 lease 소유자를 식별하는 값이에요. 비워두면 프로세스마다 고유한 값이 자동 생성돼요. 직접 지정할 경우 replica/process마다 반드시 고유해야 해요.
 
 :::note
-Kubernetes 환경에서는 단일 실행 보장이 필요하면 `scheduler.mode: database`를 사용하거나, 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. CronJob을 사용할 경우 `scheduler.enabled: false`로 설정하고 외부에서 `tinyauth cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
+Kubernetes 환경에서는 단일 실행 보장이 필요하면 `scheduler.mode: database`를 사용하거나, 내장 스케줄러 대신 CronJob을 사용하는 것이 좋아요. CronJob을 사용할 경우 `scheduler.enabled: false`로 설정하고 외부에서 `issuary cleanup` CLI 명령을 실행하세요. 자세한 내용은 [Kubernetes 배포 가이드](/ko/deployment/kubernetes)를 참고해 주세요.
 :::
 
 :::caution
@@ -128,7 +128,7 @@ cleanup:
 ## 관련 설정
 
 - `account_deletion.enabled`: 사용자가 스스로 계정 삭제를 요청할 수 있는지 결정해요.
-- `account_deletion.retention`: 삭제 요청 후 실제 영구 삭제까지의 유예 기간이에요. `tinyauth cleanup`이 실행될 때 이 정책이 적용돼요.
+- `account_deletion.retention`: 삭제 요청 후 실제 영구 삭제까지의 유예 기간이에요. `issuary cleanup`이 실행될 때 이 정책이 적용돼요.
 - `tokens.key_rotation.*`: JWT 키 순환 정책이에요. 정리 작업과 같은 유지보수 시점에 함께 반영돼요.
 
 ---
@@ -178,14 +178,14 @@ cleanup:
 
 ```bash
 # 정리 작업 실행
-tinyauth cleanup
+issuary cleanup
 
 # 실제 삭제 없이 대상만 확인 (드라이 런)
-tinyauth cleanup --dry-run
+issuary cleanup --dry-run
 
 # 상세 진행 상황 출력
-tinyauth cleanup --verbose
+issuary cleanup --verbose
 
 # 커스텀 설정 파일 사용
-tinyauth cleanup -c /path/to/config.yaml
+issuary cleanup -c /path/to/config.yaml
 ```

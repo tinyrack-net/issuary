@@ -2,7 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
-import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
+import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -18,21 +18,20 @@ import {
 
 const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
-const DEVICE_CLIENT: NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
->[number] = {
-  id: 'device-perf-client',
-  name: 'Device Perf Client',
-  client_id: 'device-perf-client-id',
-  client_secret: 'device-perf-client-secret',
-  redirect_uris: ['http://localhost:8080/callback'],
-  response_types: ['code'],
-  grant_types: [
-    'authorization_code',
-    'urn:ietf:params:oauth:grant-type:device_code',
-  ],
-  scope: 'openid profile email',
-};
+const DEVICE_CLIENT: NonNullable<IssuaryRuntimeConfigInput['clients']>[number] =
+  {
+    id: 'device-perf-client',
+    name: 'Device Perf Client',
+    client_id: 'device-perf-client-id',
+    client_secret: 'device-perf-client-secret',
+    redirect_uris: ['http://localhost:8080/callback'],
+    response_types: ['code'],
+    grant_types: [
+      'authorization_code',
+      'urn:ietf:params:oauth:grant-type:device_code',
+    ],
+    scope: 'openid profile email',
+  };
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;

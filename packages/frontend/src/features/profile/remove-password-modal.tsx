@@ -9,7 +9,7 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import { removePasswordMutationOptions } from '#frontend/queries/password.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
@@ -59,7 +59,7 @@ export function RemovePasswordModal({
         current_password: data.currentPassword,
       });
     } catch (err) {
-      if (err instanceof TinyAuthError) {
+      if (err instanceof IssuaryError) {
         if (err.code === 'INVALID_CURRENT_PASSWORD') {
           form.setError('currentPassword', {
             message: t('profile.password.removeModal.invalidCurrent'),

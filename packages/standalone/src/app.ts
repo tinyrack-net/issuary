@@ -1,4 +1,4 @@
-import { createApp } from '@tinyrack/tinyauth-server';
+import { createApp } from '@tinyrack/issuary-server';
 import type { StandaloneConfigInput } from './lib/config/index.ts';
 import { resolveConfig } from './lib/load-config.ts';
 

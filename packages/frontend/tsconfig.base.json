@@ -7,7 +7,7 @@
     "strictNullChecks": true,
     "moduleResolution": "bundler",
     "resolvePackageJsonImports": true,
-    "customConditions": ["@tinyauth/source"],
+    "customConditions": ["@issuary/source"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",

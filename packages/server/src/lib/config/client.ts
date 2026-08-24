@@ -79,7 +79,7 @@ const ScopeSchema = z
 
 /**
  * OAuth/OIDC client configuration.
- * Defines applications that can authenticate through TinyAuth.
+ * Defines applications that can authenticate through Issuary.
  */
 export const ClientConfigSchema = z
   .object({

@@ -29,7 +29,7 @@ describe('export openapi e2e', { timeout: 90_000 }, () => {
   });
 
   it('writes to file', async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tinyauth-openapi-'));
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'issuary-openapi-'));
     const outputPath = path.join(tmpDir, 'openapi.json');
 
     const result = await runCli({

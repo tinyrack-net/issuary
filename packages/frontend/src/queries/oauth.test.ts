@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   mockJsonError,
@@ -79,7 +79,7 @@ describe('oauthAccountsQueryOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
   });
 
-  test('preserves OAuth account load errors as TinyAuthError', async () => {
+  test('preserves OAuth account load errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'UNAUTHORIZED',
@@ -92,9 +92,9 @@ describe('oauthAccountsQueryOptions', () => {
       await runOAuthAccountsQuery();
       throw new Error('Expected OAuth accounts query to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('UNAUTHORIZED');
         expect(error.status).toBe(401);
         expect(error.message).toBe('Authentication is required.');
@@ -123,7 +123,7 @@ describe('unlinkOAuthMutationOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
   });
 
-  test('preserves unlink provider API errors as TinyAuthError', async () => {
+  test('preserves unlink provider API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'OAUTH_ACCOUNT_NOT_LINKED',
@@ -136,9 +136,9 @@ describe('unlinkOAuthMutationOptions', () => {
       await runUnlinkOAuthMutation('github');
       throw new Error('Expected unlink OAuth mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('OAUTH_ACCOUNT_NOT_LINKED');
         expect(error.status).toBe(404);
         expect(error.message).toBe('OAuth account is not linked.');

@@ -91,7 +91,7 @@ describe('performance report schema v2', () => {
     await expect(
       writePerfReportIfEnabled({
         results: [result()],
-        env: { TINYAUTH_PERF_REPORT_PATH: 'perf/report.json' },
+        env: { ISSUARY_PERF_REPORT_PATH: 'perf/report.json' },
         writeFile,
         context: { shard: { index: 1, total: 4 } },
       }),
@@ -134,7 +134,7 @@ describe('performance report schema v2', () => {
     await expect(
       writePerfReportIfEnabled({
         results: [result()],
-        env: { TINYAUTH_PERF_REPORT_PATH: 'perf/report.json' },
+        env: { ISSUARY_PERF_REPORT_PATH: 'perf/report.json' },
         writeFile: async () => {
           throw new Error('disk full');
         },

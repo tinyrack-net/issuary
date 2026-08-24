@@ -2,7 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
-import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
+import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.js';
 import type { ServiceContainer } from '../../../services/container.js';
 import {
   assertJsonBody,
@@ -110,7 +110,7 @@ async function requestTermsConsent(sessionCookie: string) {
 }
 
 function createLargeTermsConfig(): NonNullable<
-  TinyAuthRuntimeConfigInput['terms']
+  IssuaryRuntimeConfigInput['terms']
 > {
   return Array.from({ length: LARGE_TERMS_COUNT }, (_, index) => ({
     id: `large-terms-${index}`,

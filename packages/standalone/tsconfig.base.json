@@ -8,7 +8,7 @@
     "module": "NodeNext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonImports": true,
-    "customConditions": ["@tinyauth/source"],
+    "customConditions": ["@issuary/source"],
     "target": "esnext",
     "types": ["node"],
     "jsx": "react-jsx",

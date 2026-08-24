@@ -42,7 +42,7 @@ export default defineConfig({
     projects: [
       {
         resolve: {
-          conditions: ['@tinyauth/source'],
+          conditions: ['@issuary/source'],
         },
         plugins: [react(), tailwindcss()],
         test: {

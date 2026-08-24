@@ -1,11 +1,11 @@
 {
-  "name": "@tinyrack/tinyauth-tools",
+  "name": "@tinyrack/issuary-tools",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "tinyauth-tools": "./src/cli.ts"
+    "issuary-tools": "./src/cli.ts"
   },
   "imports": {
     "#tools/*.ts": {
@@ -18,9 +18,9 @@
     }
   },
   "scripts": {
-    "dev": "node --conditions=@tinyauth/source src/cli.ts",
-    "test": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs",
-    "test:coverage": "node --conditions=@tinyauth/source node_modules/vitest/vitest.mjs run --coverage",
+    "dev": "node --conditions=@issuary/source src/cli.ts",
+    "test": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs",
+    "test:coverage": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs run --coverage",
     "build": "tsc -p tsconfig.build.json",
     "build:watch": "tsc -p tsconfig.build.json --watch"
   },

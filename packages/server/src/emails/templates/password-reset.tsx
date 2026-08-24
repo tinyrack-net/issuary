@@ -14,7 +14,7 @@ export const PasswordResetEmail = ({
   resetUrl,
   token,
   locale = 'en',
-  appName = 'TinyAuth',
+  appName = 'Issuary',
 }: PasswordResetEmailProps) => {
   const t = getTranslations(locale).passwordReset;
 

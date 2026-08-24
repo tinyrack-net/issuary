@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -90,7 +90,7 @@ describe('resetPasswordMutationOptions', () => {
     expect(jsonRequestBody(request)).toEqual(resetPasswordValues);
   });
 
-  test('preserves invalid reset token API errors as TinyAuthError', async () => {
+  test('preserves invalid reset token API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'INVALID_PASSWORD_RESET_TOKEN',
@@ -103,9 +103,9 @@ describe('resetPasswordMutationOptions', () => {
       await runResetPasswordMutation(resetPasswordValues);
       throw new Error('Expected reset password mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('INVALID_PASSWORD_RESET_TOKEN');
         expect(error.status).toBe(400);
         expect(error.message).toBe(

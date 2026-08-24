@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
   jsonRequestBody,
@@ -111,7 +111,7 @@ describe('getConsentInfoQueryOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
   });
 
-  test('preserves invalid OAuth session errors as TinyAuthError', async () => {
+  test('preserves invalid OAuth session errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'UNAUTHORIZED',
@@ -124,9 +124,9 @@ describe('getConsentInfoQueryOptions', () => {
       await runConsentInfoQuery(consentInfoParams);
       throw new Error('Expected consent info query to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('UNAUTHORIZED');
         expect(error.status).toBe(401);
         expect(error.message).toBe('Authentication is required.');
@@ -179,7 +179,7 @@ describe('consentDecisionMutationOptions', () => {
     expect(jsonRequestBody(request)).toEqual(denyDecisionParams);
   });
 
-  test('preserves invalid consent API errors as TinyAuthError', async () => {
+  test('preserves invalid consent API errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'OAUTH_CLIENT_NOT_FOUND',
@@ -192,9 +192,9 @@ describe('consentDecisionMutationOptions', () => {
       await runConsentDecisionMutation(approveDecisionParams);
       throw new Error('Expected consent decision mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('OAUTH_CLIENT_NOT_FOUND');
         expect(error.status).toBe(400);
         expect(error.message).toBe('OAuth client was not found.');

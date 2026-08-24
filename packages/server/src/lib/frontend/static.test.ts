@@ -38,7 +38,7 @@ describe('createStaticHandler', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-handler-'),
+        path.join(os.tmpdir(), 'issuary-static-handler-'),
       );
       await fs.promises.mkdir(path.join(publicPath, 'test-subdir'), {
         recursive: true,
@@ -145,7 +145,7 @@ describe('createStaticHandler', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-defaults-'),
+        path.join(os.tmpdir(), 'issuary-static-defaults-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
@@ -177,7 +177,7 @@ describe('createStaticHandler', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-plain-'),
+        path.join(os.tmpdir(), 'issuary-static-plain-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
@@ -229,7 +229,7 @@ describe('createStaticHandler', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-methods-'),
+        path.join(os.tmpdir(), 'issuary-static-methods-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
@@ -271,7 +271,7 @@ describe('createStaticHandler', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-onresponse-'),
+        path.join(os.tmpdir(), 'issuary-static-onresponse-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),

@@ -1,7 +1,7 @@
 import {
   type LoggingConfig,
   LoggingConfigSchema,
-} from '@tinyrack/tinyauth-server/config';
+} from '@tinyrack/issuary-server/config';
 import pino from 'pino';
 
 export type { Logger } from 'pino';

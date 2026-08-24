@@ -1,16 +1,16 @@
 ---
 title: SQLite
-description: Tinyauth용 SQLite 데이터베이스 구성하기
+description: Issuary용 SQLite 데이터베이스 구성하기
 section: configuration
 order: 14
 ---
 
-SQLite 데이터베이스는 가볍고 빠르며, 비교적 설정이 간단한 데이터베이스에요. `tinyauth`는 SQLite를 기본 데이터베이스로 지원하며, 홈랩과 같은 소규모 배포나 제한된 컴퓨터 성능의 환경, 또는 테스트 환경에 사용하기 적합해요. 다음은 SQLite 데이터베이스 설정 예시예요.
+SQLite 데이터베이스는 가볍고 빠르며, 비교적 설정이 간단한 데이터베이스에요. `issuary`는 SQLite를 기본 데이터베이스로 지원하며, 홈랩과 같은 소규모 배포나 제한된 컴퓨터 성능의 환경, 또는 테스트 환경에 사용하기 적합해요. 다음은 SQLite 데이터베이스 설정 예시예요.
 
 ```yaml
 database:
   type: ${DB_TYPE:-sqlite}
-  path: ${DB_PATH:-/opt/tinyauth/database.db}
+  path: ${DB_PATH:-/opt/issuary/database.db}
 ```
 
 - `database`

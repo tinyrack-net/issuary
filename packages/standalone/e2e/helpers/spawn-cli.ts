@@ -13,9 +13,9 @@ const CWD = fileURLToPath(new URL('../../', import.meta.url));
 
 const require = createRequire(import.meta.url);
 const TSX_IMPORT = pathToFileURL(require.resolve('tsx')).href;
-const NODE_OPTIONS = ['--conditions=@tinyauth/source', '--import', TSX_IMPORT];
+const NODE_OPTIONS = ['--conditions=@issuary/source', '--import', TSX_IMPORT];
 const LONG_RUNNING_CLI_TIMEOUT_MS = 180_000;
-const USE_BUILT_CLI = process.env['TINYAUTH_E2E_BUILT_CLI'] === '1';
+const USE_BUILT_CLI = process.env['ISSUARY_E2E_BUILT_CLI'] === '1';
 
 interface SpawnCliOptions {
   args: string[];

@@ -9,7 +9,7 @@ export default defineDocsConfig({
     links: [
       {
         label: 'GitHub',
-        path: 'https://github.com/tinyrack-net/tinyauth',
+        path: 'https://github.com/tinyrack-net/issuary',
       },
     ],
   },
@@ -147,9 +147,9 @@ export default defineDocsConfig({
       'A lightweight OpenID Connect (OIDC) Provider for modern applications.',
     favicon: '/favicon.svg',
     locale: { language: 'en', openGraph: 'en_US' },
-    logo: { alt: 'Tinyauth', dark: '/favicon.svg', light: '/favicon.svg' },
-    title: 'Tinyauth',
-    url: 'https://tinyauth.tinyrack.net',
+    logo: { alt: 'Issuary', dark: '/favicon.svg', light: '/favicon.svg' },
+    title: 'Issuary',
+    url: 'https://issuary.tinyrack.net',
   },
   theme: { default: 'dark' },
 });

@@ -2,7 +2,7 @@ import {
   type UserConfig,
   UserConfigSchema,
   UserConfigsSchema,
-} from '@tinyrack/tinyauth-server/config';
+} from '@tinyrack/issuary-server/config';
 
 export const StandaloneUserConfigSchema = UserConfigSchema;
 

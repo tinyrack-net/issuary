@@ -10,7 +10,7 @@ import {
   toArrayBuffer,
   toBase64Url,
 } from '../lib/base64url.ts';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { SecurityService } from '../services/security.service.ts';
 
 const CONFIG_SEED_STATE_ID = 'config-seed';
@@ -52,7 +52,7 @@ function canonicalJson(value: unknown): string {
 }
 
 async function createConfigSeedFingerprint(
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
 ): Promise<string> {
   const payload = canonicalJson({
     version: CONFIG_SEED_FINGERPRINT_VERSION,
@@ -97,7 +97,7 @@ function isMissingBootstrapStateTableError(err: unknown): boolean {
 
 export async function seedConfigIfNeeded(
   em: EntityManager,
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   securityService: SecurityService,
   mode: ConfigSeedMode = 'if-changed',
 ): Promise<boolean> {
@@ -166,7 +166,7 @@ export async function seedConfigIfNeeded(
  */
 export async function seedConfig(
   em: EntityManager,
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   await syncTerms(em, config);
@@ -180,7 +180,7 @@ export async function seedConfig(
  */
 async function syncTerms(
   em: EntityManager,
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
 ): Promise<void> {
   const now = new Date();
   const configTerms = config.terms;
@@ -248,7 +248,7 @@ async function syncTerms(
  */
 async function syncUsers(
   em: EntityManager,
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
@@ -300,7 +300,7 @@ async function syncUsers(
  */
 async function syncOAuthClients(
   em: EntityManager,
-  config: TinyAuthRuntimeConfig,
+  config: IssuaryRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();

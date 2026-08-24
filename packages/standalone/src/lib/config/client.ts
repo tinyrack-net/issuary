@@ -2,7 +2,7 @@ import {
   type ClientConfig,
   ClientConfigSchema,
   ClientConfigsSchema,
-} from '@tinyrack/tinyauth-server/config';
+} from '@tinyrack/issuary-server/config';
 
 export const StandaloneClientConfigSchema = ClientConfigSchema;
 

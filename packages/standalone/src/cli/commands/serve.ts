@@ -8,11 +8,11 @@ import { loadConfig } from '../../lib/load-config.ts';
 /**
  * Serve command
  *
- * Starts the TinyAuth server with all middleware,
+ * Starts the Issuary server with all middleware,
  * services, and routes.
  *
  * For maintenance tasks like cleanup and key rotation,
- * run: `tinyauth cleanup` as a separate process or
+ * run: `issuary cleanup` as a separate process or
  * Kubernetes CronJob.
  */
 type ServeFlags = {
@@ -68,8 +68,8 @@ export const serveCommand = buildCommand<ServeFlags>({
     },
   },
   docs: {
-    brief: 'Start the TinyAuth server',
-    fullDescription: 'Start the TinyAuth server',
+    brief: 'Start the Issuary server',
+    fullDescription: 'Start the Issuary server',
   },
   func: runServeCommand,
 });

@@ -7,10 +7,10 @@ import {
 import packageJson from '../../package.json' with { type: 'json' };
 import { commands } from './commands/index.ts';
 
-export type TinyAuthCliContext = CommandContext;
+export type IssuaryCliContext = CommandContext;
 
 export const app = buildApplication(commands, {
-  name: 'tinyauth',
+  name: 'issuary',
   versionInfo: {
     currentVersion: packageJson.version,
   },
@@ -24,7 +24,7 @@ export const app = buildApplication(commands, {
 
 export async function runCli(
   args: readonly string[],
-  context: StricliDynamicCommandContext<TinyAuthCliContext>,
+  context: StricliDynamicCommandContext<IssuaryCliContext>,
 ): Promise<void> {
   await run(app, args, context);
 }

@@ -1,7 +1,7 @@
-import { apple } from '@tinyrack/tinyauth-server/identity-providers/apple';
-import { genericOAuth } from '@tinyrack/tinyauth-server/identity-providers/generic-oauth';
-import { github } from '@tinyrack/tinyauth-server/identity-providers/github';
-import { google } from '@tinyrack/tinyauth-server/identity-providers/google';
+import { apple } from '@tinyrack/issuary-server/identity-providers/apple';
+import { genericOAuth } from '@tinyrack/issuary-server/identity-providers/generic-oauth';
+import { github } from '@tinyrack/issuary-server/identity-providers/github';
+import { google } from '@tinyrack/issuary-server/identity-providers/google';
 
 export function createOauthProviders() {
   return [

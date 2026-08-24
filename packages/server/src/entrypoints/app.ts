@@ -3,8 +3,8 @@ import type { Context, Next } from 'hono';
 import { Hono } from 'hono';
 import { generateSpecs } from 'hono-openapi';
 import {
-  type TinyAuthRuntimeConfigInput,
-  TinyAuthRuntimeConfigSchema,
+  type IssuaryRuntimeConfigInput,
+  IssuaryRuntimeConfigSchema,
 } from '../lib/config/index.ts';
 import { parseDurationToMs } from '../lib/duration.ts';
 import { createLogger } from '../lib/logger.ts';
@@ -16,7 +16,7 @@ import { servicesMiddleware } from '../middleware/services.ts';
 import { sessionMiddleware } from '../middleware/session.ts';
 import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
 import { routes } from '../routes/index.ts';
-import { e, TinyAuthError } from '../schemas/error.ts';
+import { e, IssuaryError } from '../schemas/error.ts';
 import { normalizeAccountSelectionPolicy } from '../services/account-selection.service.ts';
 import {
   type InitializeServicesOptions,
@@ -26,14 +26,14 @@ import {
 /**
  * Application configuration for the backend runtime.
  */
-export type CreateAppOptions = TinyAuthRuntimeConfigInput;
+export type CreateAppOptions = IssuaryRuntimeConfigInput;
 export type CreateAppRuntimeOptions = InitializeServicesOptions;
 
 export async function createApp(
   options: CreateAppOptions,
   runtimeOptions: CreateAppRuntimeOptions = {},
 ) {
-  const config = TinyAuthRuntimeConfigSchema.parse(options);
+  const config = IssuaryRuntimeConfigSchema.parse(options);
   const openApiDocumentation = createOpenApiDocumentation(config.openapi);
 
   // Create root logger (use config.logging.level: 'silent' to suppress)
@@ -57,7 +57,7 @@ export async function createApp(
   let cachedOpenApiSpec: Awaited<ReturnType<typeof generateSpecs>> | undefined;
 
   const handleError = (err: Error, c: Context) => {
-    if (err instanceof TinyAuthError) {
+    if (err instanceof IssuaryError) {
       setBearerAuthChallenge(c, err);
 
       if (c.req.path.startsWith('/oauth/')) {
@@ -156,7 +156,7 @@ function firstPartyCors(publicOrigin: string) {
   };
 }
 
-function setBearerAuthChallenge(c: Context, err: TinyAuthError) {
+function setBearerAuthChallenge(c: Context, err: IssuaryError) {
   switch (err.code) {
     case 'MISSING_AUTHORIZATION_HEADER':
       c.header('WWW-Authenticate', 'Bearer');
@@ -177,7 +177,7 @@ function setBearerAuthChallenge(c: Context, err: TinyAuthError) {
   }
 }
 
-function toOAuthErrorJson(err: TinyAuthError) {
+function toOAuthErrorJson(err: IssuaryError) {
   return {
     ...err.toJson(),
     error: toOAuthErrorCode(err),
@@ -185,7 +185,7 @@ function toOAuthErrorJson(err: TinyAuthError) {
   };
 }
 
-function toOAuthErrorCode(err: TinyAuthError): string {
+function toOAuthErrorCode(err: IssuaryError): string {
   switch (err.code) {
     case 'INVALID_CLIENT_CREDENTIALS':
     case 'OAUTH_CLIENT_NOT_FOUND':

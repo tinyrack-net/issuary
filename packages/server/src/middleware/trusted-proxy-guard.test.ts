@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
-import { TinyAuthError } from '../schemas/error.ts';
+import { IssuaryError } from '../schemas/error.ts';
 import { trustedProxyGuard } from './trusted-proxy-guard.ts';
 
 /**
@@ -82,7 +82,7 @@ describe('trusted-proxy-guard middleware', () => {
     it('should reject requests from an untrusted remote address even with spoofed forwarding headers', async () => {
       const app = new Hono();
       app.onError((err, c) => {
-        if (err instanceof TinyAuthError) {
+        if (err instanceof IssuaryError) {
           return c.json(err.toJson(), err.status);
         }
         return c.json({ code: 'UNEXPECTED_ERROR' }, 500);

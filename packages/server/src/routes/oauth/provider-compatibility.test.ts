@@ -716,7 +716,7 @@ describe('OAuth/OIDC provider compatibility', () => {
 
     expect(response.status).toBe(401);
     expect(response.headers.get('www-authenticate')).toBe(
-      'Basic realm="tinyauth"',
+      'Basic realm="issuary"',
     );
     await expect(jsonBody(response)).resolves.toMatchObject({
       error: 'invalid_client',
@@ -735,7 +735,7 @@ describe('OAuth/OIDC provider compatibility', () => {
 
     expect(response.status).toBe(401);
     expect(response.headers.get('www-authenticate')).toBe(
-      'Basic realm="tinyauth"',
+      'Basic realm="issuary"',
     );
     await expect(jsonBody(response)).resolves.toMatchObject({
       error: 'invalid_client',

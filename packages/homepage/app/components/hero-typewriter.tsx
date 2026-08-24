@@ -80,11 +80,11 @@ export function HeroTypewriter({
   }, [words]);
 
   return (
-    <section className="tinyauth-home">
+    <section className="issuary-home">
       <TRBadge variant="info">OpenID Connect Provider</TRBadge>
       <svg
         aria-hidden="true"
-        className="tinyauth-home-mark"
+        className="issuary-home-mark"
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"
@@ -99,8 +99,8 @@ export function HeroTypewriter({
       </svg>
       <h1>
         {prefix}
-        <span className="tinyauth-typewriter">{word}</span>
-        <span aria-hidden="true" className="tinyauth-typewriter-cursor">
+        <span className="issuary-typewriter">{word}</span>
+        <span aria-hidden="true" className="issuary-typewriter-cursor">
           |
         </span>
         {suffix}

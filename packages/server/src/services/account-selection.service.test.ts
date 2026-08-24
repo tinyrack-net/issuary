@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { TinyAuthRuntimeConfig } from '../lib/config/index.ts';
+import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { SessionAccount } from '../middleware/session.ts';
 import {
   type AccountSelectionDecision,
@@ -8,7 +8,7 @@ import {
 
 type DecideParams = Parameters<AccountSelectionService['decide']>[0];
 type PromptList = DecideParams['prompts'];
-type ConfigMode = TinyAuthRuntimeConfig['auth']['account_selection']['mode'];
+type ConfigMode = IssuaryRuntimeConfig['auth']['account_selection']['mode'];
 type MatrixMode = ConfigMode | 'client-never';
 
 const BASE_CONFIG = {
@@ -31,11 +31,11 @@ const BASE_CONFIG = {
     },
   },
   clients: [],
-} as unknown as TinyAuthRuntimeConfig;
+} as unknown as IssuaryRuntimeConfig;
 
 function createService(
-  overrides: Partial<TinyAuthRuntimeConfig['auth']['account_selection']> = {},
-  clients: TinyAuthRuntimeConfig['clients'] = [],
+  overrides: Partial<IssuaryRuntimeConfig['auth']['account_selection']> = {},
+  clients: IssuaryRuntimeConfig['clients'] = [],
 ) {
   return new AccountSelectionService({
     ...BASE_CONFIG,
@@ -55,7 +55,7 @@ function createService(
       },
     },
     clients,
-  } as TinyAuthRuntimeConfig);
+  } as IssuaryRuntimeConfig);
 }
 
 const ACCOUNT_A: SessionAccount = {
@@ -86,7 +86,7 @@ function rememberedAccounts(count: 0 | 1 | 2): SessionAccount[] {
 
 function createMatrixService(mode: MatrixMode) {
   if (mode === 'client-never') {
-    const clients: TinyAuthRuntimeConfig['clients'] = [
+    const clients: IssuaryRuntimeConfig['clients'] = [
       {
         id: 'client-config-id',
         name: 'Client',
@@ -528,7 +528,7 @@ describe('AccountSelectionService', () => {
         skip_consent: false,
         account_selection: { mode: 'never' },
       },
-    ] as TinyAuthRuntimeConfig['clients']);
+    ] as IssuaryRuntimeConfig['clients']);
 
     expect(
       service.decide({

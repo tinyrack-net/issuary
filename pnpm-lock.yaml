@@ -227,7 +227,7 @@ importers:
       '@biomejs/biome':
         specifier: 'catalog:'
         version: 2.5.2
-      '@tinyrack/tinyauth-tools':
+      '@tinyrack/issuary-tools':
         specifier: workspace:*
         version: link:packages/tools
 
@@ -322,7 +322,7 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.0.8(hono@4.12.28)
-      '@tinyrack/tinyauth-server':
+      '@tinyrack/issuary-server':
         specifier: workspace:*
         version: link:../../../packages/server
       hono:
@@ -420,7 +420,7 @@ importers:
       '@tanstack/router-plugin':
         specifier: 'catalog:'
         version: 1.168.19(@tanstack/react-router@1.170.17(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(rolldown@1.1.4)(rollup@4.62.0)(vite@8.1.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0))
-      '@tinyrack/tinyauth-server':
+      '@tinyrack/issuary-server':
         specifier: workspace:*
         version: link:../server
       '@types/node':
@@ -520,7 +520,7 @@ importers:
       '@tailwindcss/vite':
         specifier: 'catalog:'
         version: 4.3.2(vite@8.1.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.0)(yaml@2.9.0))
-      '@tinyrack/tinyauth-standalone':
+      '@tinyrack/issuary-standalone':
         specifier: workspace:*
         version: link:../standalone
       '@types/node':
@@ -683,7 +683,7 @@ importers:
       '@stricli/core':
         specifier: 'catalog:'
         version: 1.2.9
-      '@tinyrack/tinyauth-server':
+      '@tinyrack/issuary-server':
         specifier: workspace:*
         version: link:../server
       croner:

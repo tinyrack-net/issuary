@@ -31,7 +31,7 @@ export function createOpenApiDocumentation(
           in: 'cookie' as const,
           name: 'session',
           description:
-            'Encrypted session cookie issued by TinyAuth after authentication.',
+            'Encrypted session cookie issued by Issuary after authentication.',
         },
         bearerAuth: {
           type: 'http' as const,

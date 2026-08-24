@@ -14,10 +14,10 @@ permissions:
 
 env:
   GHCR_REGISTRY: ghcr.io
-  GHCR_IMAGE_NAME: tinyrack-net/tinyauth
+  GHCR_IMAGE_NAME: tinyrack-net/issuary
   DOCKERHUB_REGISTRY: docker.io
   DOCKERHUB_USERNAME: tinyrack
-  DOCKERHUB_IMAGE_NAME: tinyrack/tinyauth
+  DOCKERHUB_IMAGE_NAME: tinyrack/issuary
 
 jobs:
   build:
@@ -67,16 +67,16 @@ jobs:
       matrix:
         include:
           - name: Server
-            command: pnpm --filter @tinyrack/tinyauth-server test --run
+            command: pnpm --filter @tinyrack/issuary-server test --run
           - name: Tools
-            command: pnpm --filter @tinyrack/tinyauth-tools test --run
+            command: pnpm --filter @tinyrack/issuary-tools test --run
           - name: Frontend unit
-            command: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+            command: pnpm --filter @tinyrack/issuary-frontend test:unit --run
             browsers: true
           - name: Standalone
-            command: pnpm --filter @tinyrack/tinyauth-standalone test:prepared --run && pnpm --filter @tinyrack/tinyauth-standalone test:dist:prepared
+            command: pnpm --filter @tinyrack/issuary-standalone test:prepared --run && pnpm --filter @tinyrack/issuary-standalone test:dist:prepared
           - name: Example smoke
-            command: pnpm --filter @tinyauth-server-examples/node-hono-sqlite test:prepared
+            command: pnpm --filter @issuary-server-examples/node-hono-sqlite test:prepared
 
     steps:
       - name: Check out repository
@@ -102,7 +102,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: matrix.browsers == true
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium firefox
+        run: pnpm --filter @tinyrack/issuary-frontend exec playwright install --with-deps chromium firefox
 
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}
@@ -139,13 +139,13 @@ jobs:
           path: packages
 
       - name: Install Chromium
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install --with-deps chromium
+        run: pnpm --filter @tinyrack/issuary-frontend exec playwright install --with-deps chromium
 
       - name: Run frontend smoke shard
         env:
           PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
         run: >-
-          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+          pnpm --filter @tinyrack/issuary-frontend run test:e2e:smoke
           --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
 
       - name: Upload blob report
@@ -189,13 +189,13 @@ jobs:
           path: packages
 
       - name: Install Chromium
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium
+        run: pnpm --filter @tinyrack/issuary-frontend exec playwright install chromium
 
       - name: Run Screen Lab visual shard
         env:
           PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
         run: >-
-          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:screen
+          pnpm --filter @tinyrack/issuary-frontend run test:e2e:screen
           --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
 
       - name: Upload Screen Lab blob report
@@ -309,16 +309,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Chromium
-        run: pnpm --filter @tinyrack/tinyauth-homepage exec playwright install --with-deps chromium
+        run: pnpm --filter @tinyrack/issuary-homepage exec playwright install --with-deps chromium
 
       - name: Build homepage
-        run: pnpm --filter @tinyrack/tinyauth-homepage run build
+        run: pnpm --filter @tinyrack/issuary-homepage run build
 
       - name: Audit homepage
-        run: pnpm --filter @tinyrack/tinyauth-homepage run test:audit
+        run: pnpm --filter @tinyrack/issuary-homepage run test:audit
 
       - name: Verify Cloudflare deployment bundle
-        run: pnpm --filter @tinyrack/tinyauth-homepage run deploy:dry-run
+        run: pnpm --filter @tinyrack/issuary-homepage run deploy:dry-run
   performance-shard:
     name: Performance (${{ matrix.shard }}/4)
     needs: build
@@ -348,8 +348,8 @@ jobs:
 
       - name: Run performance tests
         env:
-          TINYAUTH_PERF_REPORT_PATH: performance-results/shard-${{ matrix.shard }}-of-4.json
-        run: pnpm --filter @tinyrack/tinyauth-server test:perf --shard=${{ matrix.shard }}/4
+          ISSUARY_PERF_REPORT_PATH: performance-results/shard-${{ matrix.shard }}-of-4.json
+        run: pnpm --filter @tinyrack/issuary-server test:perf --shard=${{ matrix.shard }}/4
 
       - name: Upload performance report
         if: always()
@@ -503,13 +503,13 @@ jobs:
       matrix:
         include:
           - name: Server
-            command: pnpm --filter @tinyrack/tinyauth-server test --run
+            command: pnpm --filter @tinyrack/issuary-server test --run
           - name: Tools
-            command: pnpm --filter @tinyrack/tinyauth-tools test --run
+            command: pnpm --filter @tinyrack/issuary-tools test --run
           - name: Standalone
-            command: pnpm --filter @tinyrack/tinyauth-standalone test:prepared --run && pnpm --filter @tinyrack/tinyauth-standalone test:dist:prepared
+            command: pnpm --filter @tinyrack/issuary-standalone test:prepared --run && pnpm --filter @tinyrack/issuary-standalone test:dist:prepared
           - name: Frontend unit
-            command: pnpm --filter @tinyrack/tinyauth-frontend test:unit --run
+            command: pnpm --filter @tinyrack/issuary-frontend test:unit --run
             browsers: true
 
     steps:
@@ -539,7 +539,7 @@ jobs:
 
       - name: Install Playwright browsers
         if: matrix.browsers == true
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium firefox
+        run: pnpm --filter @tinyrack/issuary-frontend exec playwright install chromium firefox
 
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}
@@ -579,13 +579,13 @@ jobs:
           path: packages
 
       - name: Install Chromium
-        run: pnpm --filter @tinyrack/tinyauth-frontend exec playwright install chromium
+        run: pnpm --filter @tinyrack/issuary-frontend exec playwright install chromium
 
       - name: Run frontend smoke shard
         env:
           PLAYWRIGHT_BLOB_OUTPUT_FILE: blob-report/report-${{ matrix.shard }}.zip
         run: >-
-          pnpm --filter @tinyrack/tinyauth-frontend run test:e2e:smoke
+          pnpm --filter @tinyrack/issuary-frontend run test:e2e:smoke
           --shard=${{ matrix.shard }}/2 --workers=100% --reporter=blob
 
       - name: Upload blob report
@@ -782,4 +782,4 @@ jobs:
         run: cp readme.md packages/server/readme.md
 
       - name: Publish
-        run: pnpm publish --filter @tinyrack/tinyauth-server --access public --no-git-checks
+        run: pnpm publish --filter @tinyrack/issuary-server --access public --no-git-checks

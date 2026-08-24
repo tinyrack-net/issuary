@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
-import { TinyAuthError } from '#frontend/libs/error.ts';
+import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   type CapturedFetchRequest,
   mockJsonError,
@@ -77,7 +77,7 @@ describe('loginMutationOptions', () => {
     expect(jsonBody(request)).toEqual(loginValues);
   });
 
-  test('preserves API validation errors as TinyAuthError', async () => {
+  test('preserves API validation errors as IssuaryError', async () => {
     mockJsonError(
       {
         code: 'INVALID_CREDENTIALS',
@@ -90,9 +90,9 @@ describe('loginMutationOptions', () => {
       await runLoginMutation(loginValues);
       throw new Error('Expected login mutation to reject');
     } catch (error) {
-      expect(error).toBeInstanceOf(TinyAuthError);
+      expect(error).toBeInstanceOf(IssuaryError);
 
-      if (error instanceof TinyAuthError) {
+      if (error instanceof IssuaryError) {
         expect(error.code).toBe('INVALID_CREDENTIALS');
         expect(error.status).toBe(401);
         expect(error.message).toBe('Invalid email or password.');

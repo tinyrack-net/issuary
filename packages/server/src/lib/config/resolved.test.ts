@@ -12,8 +12,8 @@ import { LOGGING_CONFIG_DEFAULT } from './logging.ts';
 import { OPENAPI_CONFIG_DEFAULT } from './openapi.ts';
 import { REGISTRATION_CONFIG_DEFAULT } from './registration.ts';
 import {
-  type TinyAuthRuntimeConfigInput,
-  TinyAuthRuntimeConfigSchema,
+  type IssuaryRuntimeConfigInput,
+  IssuaryRuntimeConfigSchema,
 } from './resolved.ts';
 import { SECURITY_CONFIG_DEFAULT } from './security.ts';
 import { SERVER_CONFIG_DEFAULT } from './server.ts';
@@ -28,7 +28,7 @@ const MINIMAL_INPUT_CONFIG = {
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
     hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
   },
-} satisfies TinyAuthRuntimeConfigInput;
+} satisfies IssuaryRuntimeConfigInput;
 
 function createSchedulerConfig(): SchedulerConfig {
   return {
@@ -80,7 +80,7 @@ function createIdentityProviderConfig(
 }
 
 function expectConfigIssue(input: unknown, expectedPath: string) {
-  const result = TinyAuthRuntimeConfigSchema.safeParse(input);
+  const result = IssuaryRuntimeConfigSchema.safeParse(input);
 
   expect(result.success).toBe(false);
   if (result.success) {
@@ -92,9 +92,9 @@ function expectConfigIssue(input: unknown, expectedPath: string) {
   );
 }
 
-describe('TinyAuthRuntimeConfigSchema', () => {
+describe('IssuaryRuntimeConfigSchema', () => {
   test('parses the minimal unresolved config and applies omitted defaults', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
+    const parsed = IssuaryRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
 
     expect(parsed.database).toBe(MINIMAL_INPUT_CONFIG.database);
     expect(parsed.server).toEqual(SERVER_CONFIG_DEFAULT);
@@ -132,7 +132,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
       'http://127.0.0.1:8080',
       'http://[::1]:8080',
     ]) {
-      const parsed = TinyAuthRuntimeConfigSchema.parse({
+      const parsed = IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         server: { public_origin: publicOrigin },
       });
@@ -187,9 +187,9 @@ describe('TinyAuthRuntimeConfigSchema', () => {
         enabled: false,
         title: 'Custom API',
       },
-    } satisfies TinyAuthRuntimeConfigInput;
+    } satisfies IssuaryRuntimeConfigInput;
 
-    const parsed = TinyAuthRuntimeConfigSchema.parse(partialInput);
+    const parsed = IssuaryRuntimeConfigSchema.parse(partialInput);
 
     expect(parsed.auth.password).toEqual({
       ...AUTH_CONFIG_DEFAULT.password,
@@ -225,7 +225,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('applies account selection defaults for backward compatibility', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
+    const parsed = IssuaryRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);
 
     expect(parsed.auth.account_selection).toEqual({
       enabled: false,
@@ -245,7 +245,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('parses explicit account selection config and client override', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       auth: {
         account_selection: {
@@ -354,7 +354,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   test('keeps a configured scheduler adapter by reference', () => {
     const scheduler = createSchedulerConfig();
 
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       scheduler,
     });
@@ -363,7 +363,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('parses explicit admin config', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       admin: {
         enabled: true,
@@ -377,7 +377,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('rejects removed admin listener and session config', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         admin: {
           enabled: true,
@@ -387,7 +387,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).toThrow(/listen_port/);
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         admin: {
           enabled: true,
@@ -404,7 +404,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     const tooLongId = 'x'.repeat(256);
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         users: [
           {
@@ -429,7 +429,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).not.toThrow();
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         users: [
           {
@@ -443,7 +443,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).toThrow();
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -462,7 +462,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('does not apply the config id cap to OAuth client_id', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -480,7 +480,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('defaults OAuth client skip_consent to false', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       clients: [createClientConfig(['http://localhost/callback'])],
     });
@@ -490,7 +490,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('accepts OAuth clients that explicitly skip the consent screen', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       clients: [
         {
@@ -511,7 +511,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ['grant_types', { grant_types: [] }],
   ])('rejects unsupported or empty OAuth client %s', (_field, overrides) => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -525,7 +525,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('accepts device authorization grant for confidential OAuth clients', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -543,7 +543,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('rejects client_credentials for public OAuth clients', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -557,7 +557,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('rejects inconsistent OAuth client response and grant type combinations', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -570,7 +570,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).toThrow();
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -584,7 +584,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('normalizes OAuth client scopes using OAuth scope-token whitespace rules', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       clients: [
         {
@@ -629,7 +629,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ['empty client_id', { client_id: '' }],
   ])('rejects OAuth client config with %s', (_label, overrides) => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -653,7 +653,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('allows HTTPS and local HTTP OAuth client redirect URIs', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           createClientConfig([
@@ -669,7 +669,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('allows HTTPS and local HTTP OAuth client web origins only as origins', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         clients: [
           {
@@ -743,7 +743,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
   });
 
   test('allows HTTPS and local HTTP JWKS URLs for OIDC providers', () => {
-    const parsed = TinyAuthRuntimeConfigSchema.parse({
+    const parsed = IssuaryRuntimeConfigSchema.parse({
       ...MINIMAL_INPUT_CONFIG,
       identity_providers: [
         {
@@ -802,7 +802,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('requires issuer for generic ID-token-only JWKS providers', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         identity_providers: [
           {
@@ -881,7 +881,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('allows local HTTP identity provider endpoint URLs', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         identity_providers: [
           createIdentityProviderConfig({
@@ -916,7 +916,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     };
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         identity_providers: [
           {
@@ -928,7 +928,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
     ).toThrow();
 
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         identity_providers: [
           {
@@ -942,7 +942,7 @@ describe('TinyAuthRuntimeConfigSchema', () => {
 
   test('rejects legacy scheduler objects that are not adapters', () => {
     expect(() =>
-      TinyAuthRuntimeConfigSchema.parse({
+      IssuaryRuntimeConfigSchema.parse({
         ...MINIMAL_INPUT_CONFIG,
         scheduler: {
           enabled: true,

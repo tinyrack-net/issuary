@@ -1,39 +1,39 @@
-# TinyAuth standalone configuration
+# Issuary standalone configuration
 
 server:
   # Public origin used for redirects, cookies, emails, and OIDC issuer metadata.
-  public_origin: ${TINYAUTH_PUBLIC_ORIGIN:-http://localhost:8080}
+  public_origin: ${ISSUARY_PUBLIC_ORIGIN:-http://localhost:8080}
 
   # Local listen port for the standalone server.
-  listen_port: ${TINYAUTH_LISTEN_PORT:-8080}
+  listen_port: ${ISSUARY_LISTEN_PORT:-8080}
 
   # Reverse proxy trust configuration.
   # Examples: false, true, 1, "127.0.0.1", ["10.0.0.0/8", "192.168.0.0/16"]
-  trust_proxy: ${TINYAUTH_TRUST_PROXY:-false}
+  trust_proxy: ${ISSUARY_TRUST_PROXY:-false}
 
 tokens:
-  access_token_ttl: ${TINYAUTH_ACCESS_TOKEN_TTL:-3600}
-  refresh_token_ttl: ${TINYAUTH_REFRESH_TOKEN_TTL:-2592000}
+  access_token_ttl: ${ISSUARY_ACCESS_TOKEN_TTL:-3600}
+  refresh_token_ttl: ${ISSUARY_REFRESH_TOKEN_TTL:-2592000}
   key_rotation:
-    enabled: ${TINYAUTH_JWT_KEY_ROTATION_ENABLED:-true}
-    interval_days: ${TINYAUTH_JWT_KEY_ROTATION_DAYS:-30}
-    overlap_days: ${TINYAUTH_JWT_KEY_OVERLAP_DAYS:-7}
+    enabled: ${ISSUARY_JWT_KEY_ROTATION_ENABLED:-true}
+    interval_days: ${ISSUARY_JWT_KEY_ROTATION_DAYS:-30}
+    overlap_days: ${ISSUARY_JWT_KEY_OVERLAP_DAYS:-7}
 
 i18n:
   supported_languages:
     - ko
     - en
     - ja
-  default_language: ${TINYAUTH_DEFAULT_LANGUAGE:-auto}
-  fallback_language: ${TINYAUTH_FALLBACK_LANGUAGE:-en}
+  default_language: ${ISSUARY_DEFAULT_LANGUAGE:-auto}
+  fallback_language: ${ISSUARY_FALLBACK_LANGUAGE:-en}
 
 branding:
-  background_url: ${TINYAUTH_BACKGROUND_URL:-https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071}
-  # icon_url: ${TINYAUTH_ICON_URL:-https://example.com/icon.png}
+  background_url: ${ISSUARY_BACKGROUND_URL:-https://images.unsplash.com/photo-1508163223045-1880bc36e222?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=2071}
+  # icon_url: ${ISSUARY_ICON_URL:-https://example.com/icon.png}
   title:
-    ko: Tinyauth
-    en: Tinyauth
-    ja: Tinyauth
+    ko: Issuary
+    en: Issuary
+    ja: Issuary
   subtitle:
     ko: 가볍고 빠른 인증 솔루션
     en: Lightweight identity provider for your apps
@@ -41,75 +41,75 @@ branding:
 
 registration:
   # Self-registration is disabled by default.
-  enabled: ${TINYAUTH_REGISTRATION_ENABLED:-false}
+  enabled: ${ISSUARY_REGISTRATION_ENABLED:-false}
   # Optional email filters used only when registration.enabled is true.
   # Leave this empty for unrestricted signup, or add patterns such as:
   # allowed_email_patterns:
   #   - '*@example.com'
   allowed_email_patterns: []
-  email_verification_required: ${TINYAUTH_EMAIL_VERIFICATION_REQUIRED:-true}
+  email_verification_required: ${ISSUARY_EMAIL_VERIFICATION_REQUIRED:-true}
   signup_notice:
     ko: 계속하면 <a href="https://example.com/terms/ko" target="_blank">이용약관</a> 및 <a href="https://example.com/privacy/ko" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
     en: By continuing, you agree to our <a href="https://example.com/terms/en" target="_blank">Terms of Service</a> and <a href="https://example.com/privacy/en" target="_blank">Privacy Policy</a>.
     ja: 続行することで、<a href="https://example.com/terms/ja" target="_blank">利用規約</a>および<a href="https://example.com/privacy/ja" target="_blank">プライバシーポリシー</a>に同意したものとみなされます。
 
 account_deletion:
-  enabled: ${TINYAUTH_ACCOUNT_DELETION_ENABLED:-false}
-  retention: ${TINYAUTH_ACCOUNT_DELETION_RETENTION:-30d}
+  enabled: ${ISSUARY_ACCOUNT_DELETION_ENABLED:-false}
+  retention: ${ISSUARY_ACCOUNT_DELETION_RETENTION:-30d}
 
 # Standalone-only frontend serving.
 frontend:
-  enabled: ${TINYAUTH_FRONTEND_ENABLED:-true}
-  mode: ${TINYAUTH_FRONTEND_MODE:-static}
-  path: ${TINYAUTH_FRONTEND_PATH:-/opt/tinyauth/frontend}
+  enabled: ${ISSUARY_FRONTEND_ENABLED:-true}
+  mode: ${ISSUARY_FRONTEND_MODE:-static}
+  path: ${ISSUARY_FRONTEND_PATH:-/opt/issuary/frontend}
   html_variables:
-    APP_NAME: TinyAuth
+    APP_NAME: Issuary
 
 # Admin console is disabled by default. It uses the normal app session and requires an admin role.
 admin:
-  enabled: ${TINYAUTH_ADMIN_ENABLED:-false}
+  enabled: ${ISSUARY_ADMIN_ENABLED:-false}
 
 logging:
-  level: ${TINYAUTH_LOG_LEVEL:-info}
-  format: ${TINYAUTH_LOG_FORMAT:-pretty}
+  level: ${ISSUARY_LOG_LEVEL:-info}
+  format: ${ISSUARY_LOG_FORMAT:-pretty}
 
 database:
   # sqlite | postgres
-  type: ${TINYAUTH_DATABASE_TYPE:-sqlite}
+  type: ${ISSUARY_DATABASE_TYPE:-sqlite}
 
   # sqlite settings
-  path: ${TINYAUTH_DATABASE_PATH:-/opt/tinyauth/database.db}
-  test: ${TINYAUTH_DATABASE_TEST:-false}
-  debug: ${TINYAUTH_DATABASE_DEBUG:-false}
+  path: ${ISSUARY_DATABASE_PATH:-/opt/issuary/database.db}
+  test: ${ISSUARY_DATABASE_TEST:-false}
+  debug: ${ISSUARY_DATABASE_DEBUG:-false}
 
   # postgres settings
-  # host: ${TINYAUTH_DATABASE_HOST:-localhost}
-  # port: ${TINYAUTH_DATABASE_PORT:-5432}
-  # user: ${TINYAUTH_DATABASE_USER:-postgres}
-  # password: ${TINYAUTH_DATABASE_PASSWORD:-postgres}
-  # name: ${TINYAUTH_DATABASE_NAME:-tinyauth}
+  # host: ${ISSUARY_DATABASE_HOST:-localhost}
+  # port: ${ISSUARY_DATABASE_PORT:-5432}
+  # user: ${ISSUARY_DATABASE_USER:-postgres}
+  # password: ${ISSUARY_DATABASE_PASSWORD:-postgres}
+  # name: ${ISSUARY_DATABASE_NAME:-issuary}
   # driver_options:
   #   ssl: true
 
 security:
-  session_secret: ${TINYAUTH_SESSION_SECRET}
-  hash_secret: ${TINYAUTH_HASH_SECRET}
-  pbkdf2_iterations: ${TINYAUTH_PBKDF2_ITERATIONS:-600000}
+  session_secret: ${ISSUARY_SESSION_SECRET}
+  hash_secret: ${ISSUARY_HASH_SECRET}
+  pbkdf2_iterations: ${ISSUARY_PBKDF2_ITERATIONS:-600000}
 
 auth:
   password:
-    enabled: ${TINYAUTH_PASSWORD_ENABLED:-true}
+    enabled: ${ISSUARY_PASSWORD_ENABLED:-true}
     two_factor:
-      enrollment_required: ${TINYAUTH_PASSWORD_2FA_ENROLLMENT_REQUIRED:-false}
+      enrollment_required: ${ISSUARY_PASSWORD_2FA_ENROLLMENT_REQUIRED:-false}
     totp:
-      enabled: ${TINYAUTH_PASSWORD_TOTP_ENABLED:-false}
-      issuer: ${TINYAUTH_PASSWORD_TOTP_ISSUER:-TinyAuth}
+      enabled: ${ISSUARY_PASSWORD_TOTP_ENABLED:-false}
+      issuer: ${ISSUARY_PASSWORD_TOTP_ISSUER:-Issuary}
     policy:
-      min_length: ${TINYAUTH_PASSWORD_MIN_LENGTH:-8}
-      max_length: ${TINYAUTH_PASSWORD_MAX_LENGTH:-128}
+      min_length: ${ISSUARY_PASSWORD_MIN_LENGTH:-8}
+      max_length: ${ISSUARY_PASSWORD_MAX_LENGTH:-128}
   passkey:
-    enabled: ${TINYAUTH_PASSKEY_ENABLED:-false}
-    # rp_id: ${TINYAUTH_PASSKEY_RP_ID:-example.com}
+    enabled: ${ISSUARY_PASSKEY_ENABLED:-false}
+    # rp_id: ${ISSUARY_PASSKEY_RP_ID:-example.com}
     # origins:
     #   - https://auth.example.com
     #   - https://app.example.com
@@ -118,50 +118,50 @@ auth:
 # and password reset emails.
 # email:
 #   transport: smtp
-#   host: ${TINYAUTH_EMAIL_HOST:-smtp.example.com}
-#   port: ${TINYAUTH_EMAIL_PORT:-465}
-#   secure: ${TINYAUTH_EMAIL_SECURE:-true}
-#   user: ${TINYAUTH_EMAIL_USER}
-#   password: ${TINYAUTH_EMAIL_PASSWORD}
-#   from: ${TINYAUTH_EMAIL_FROM:-no-reply@example.com}
+#   host: ${ISSUARY_EMAIL_HOST:-smtp.example.com}
+#   port: ${ISSUARY_EMAIL_PORT:-465}
+#   secure: ${ISSUARY_EMAIL_SECURE:-true}
+#   user: ${ISSUARY_EMAIL_USER}
+#   password: ${ISSUARY_EMAIL_PASSWORD}
+#   from: ${ISSUARY_EMAIL_FROM:-no-reply@example.com}
 #
 # Test transport example:
 # email:
 #   transport: test
-#   from: ${TINYAUTH_EMAIL_FROM:-no-reply@example.com}
+#   from: ${ISSUARY_EMAIL_FROM:-no-reply@example.com}
 
 scheduler:
-  enabled: ${TINYAUTH_SCHEDULER_ENABLED:-true}
-  mode: ${TINYAUTH_SCHEDULER_MODE:-croner}
-  cleanup_cron: ${TINYAUTH_SCHEDULER_CLEANUP_CRON:-0 2 * * *}
+  enabled: ${ISSUARY_SCHEDULER_ENABLED:-true}
+  mode: ${ISSUARY_SCHEDULER_MODE:-croner}
+  cleanup_cron: ${ISSUARY_SCHEDULER_CLEANUP_CRON:-0 2 * * *}
   # Database scheduler mode only. Leave instance_id empty to generate a
   # unique per-process id automatically; if set manually, it must be unique
   # for every replica/process that runs the scheduler.
-  poll_interval_ms: ${TINYAUTH_SCHEDULER_POLL_INTERVAL_MS:-5000}
-  lock_ttl_ms: ${TINYAUTH_SCHEDULER_LOCK_TTL_MS:-60000}
-  background_retry_delay_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETRY_DELAY_MS:-1000}
-  background_max_attempts: ${TINYAUTH_SCHEDULER_BACKGROUND_MAX_ATTEMPTS:-3}
+  poll_interval_ms: ${ISSUARY_SCHEDULER_POLL_INTERVAL_MS:-5000}
+  lock_ttl_ms: ${ISSUARY_SCHEDULER_LOCK_TTL_MS:-60000}
+  background_retry_delay_ms: ${ISSUARY_SCHEDULER_BACKGROUND_RETRY_DELAY_MS:-1000}
+  background_max_attempts: ${ISSUARY_SCHEDULER_BACKGROUND_MAX_ATTEMPTS:-3}
   # Retains terminal background jobs (succeeded/failed) for 7 days by default.
   # Pending/running jobs are never deleted by this retention cleanup.
-  background_retention_ms: ${TINYAUTH_SCHEDULER_BACKGROUND_RETENTION_MS:-604800000}
-  instance_id: ${TINYAUTH_SCHEDULER_INSTANCE_ID:-}
+  background_retention_ms: ${ISSUARY_SCHEDULER_BACKGROUND_RETENTION_MS:-604800000}
+  instance_id: ${ISSUARY_SCHEDULER_INSTANCE_ID:-}
 
 cleanup:
   revoked_tokens:
-    enabled: ${TINYAUTH_CLEANUP_REVOKED_TOKENS_ENABLED:-true}
-    retention: ${TINYAUTH_CLEANUP_REVOKED_TOKENS_RETENTION:-0}
+    enabled: ${ISSUARY_CLEANUP_REVOKED_TOKENS_ENABLED:-true}
+    retention: ${ISSUARY_CLEANUP_REVOKED_TOKENS_RETENTION:-0}
   oauth_codes:
-    enabled: ${TINYAUTH_CLEANUP_OAUTH_CODES_ENABLED:-true}
-    consumed_retention: ${TINYAUTH_CLEANUP_OAUTH_CODES_RETENTION:-24h}
+    enabled: ${ISSUARY_CLEANUP_OAUTH_CODES_ENABLED:-true}
+    consumed_retention: ${ISSUARY_CLEANUP_OAUTH_CODES_RETENTION:-24h}
   email_verifications:
-    enabled: ${TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_ENABLED:-true}
-    retention: ${TINYAUTH_CLEANUP_EMAIL_VERIFICATIONS_RETENTION:-0}
+    enabled: ${ISSUARY_CLEANUP_EMAIL_VERIFICATIONS_ENABLED:-true}
+    retention: ${ISSUARY_CLEANUP_EMAIL_VERIFICATIONS_RETENTION:-0}
   password_resets:
-    enabled: ${TINYAUTH_CLEANUP_PASSWORD_RESETS_ENABLED:-true}
-    retention: ${TINYAUTH_CLEANUP_PASSWORD_RESETS_RETENTION:-0}
+    enabled: ${ISSUARY_CLEANUP_PASSWORD_RESETS_ENABLED:-true}
+    retention: ${ISSUARY_CLEANUP_PASSWORD_RESETS_RETENTION:-0}
   pending_oauth_registrations:
-    enabled: ${TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED:-true}
-    retention: ${TINYAUTH_CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION:-0}
+    enabled: ${ISSUARY_CLEANUP_PENDING_OAUTH_REGISTRATIONS_ENABLED:-true}
+    retention: ${ISSUARY_CLEANUP_PENDING_OAUTH_REGISTRATIONS_RETENTION:-0}
 
 terms:
   - id: tos
@@ -188,8 +188,8 @@ terms:
 clients:
   - id: example-client
     name: Example Web App
-    client_id: ${TINYAUTH_CLIENT_ID:-example-client}
-    client_secret: ${TINYAUTH_CLIENT_SECRET:-example-client-secret}
+    client_id: ${ISSUARY_CLIENT_ID:-example-client}
+    client_secret: ${ISSUARY_CLIENT_SECRET:-example-client-secret}
     redirect_uris:
       - http://localhost:3000/callback
     response_types:
@@ -202,7 +202,7 @@ clients:
 users:
   - sub: admin-user
     email: admin@example.com
-    password: ${TINYAUTH_ADMIN_PASSWORD:-changeme}
+    password: ${ISSUARY_ADMIN_PASSWORD:-changeme}
     role: admin
 
 identity_providers: []
@@ -211,8 +211,8 @@ identity_providers: []
 #   - id: google
 #     type: google
 #     enabled: true
-#     client_id: ${TINYAUTH_GOOGLE_CLIENT_ID}
-#     client_secret: ${TINYAUTH_GOOGLE_CLIENT_SECRET}
+#     client_id: ${ISSUARY_GOOGLE_CLIENT_ID}
+#     client_secret: ${ISSUARY_GOOGLE_CLIENT_SECRET}
 #     scopes:
 #       - openid
 #       - profile

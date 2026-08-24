@@ -35,7 +35,7 @@ describe('createStandaloneApp', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-static-app-'),
+        path.join(os.tmpdir(), 'issuary-static-app-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
@@ -87,7 +87,7 @@ describe('createStandaloneApp', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-public-app-'),
+        path.join(os.tmpdir(), 'issuary-public-app-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),
@@ -130,7 +130,7 @@ describe('createStandaloneApp', () => {
 
     beforeAll(async () => {
       publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'tinyauth-disabled-admin-app-'),
+        path.join(os.tmpdir(), 'issuary-disabled-admin-app-'),
       );
       await fs.promises.writeFile(
         path.join(publicPath, 'index.html'),

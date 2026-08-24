@@ -2,7 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
-import type { TinyAuthRuntimeConfigInput } from '../../../lib/config/index.js';
+import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -29,7 +29,7 @@ const REFRESHABLE_CLIENT_SECRET = 'token-refresh-perf-secret';
 const REFRESHABLE_REDIRECT_URI = 'http://localhost:8080/token-refresh/callback';
 const REFRESHABLE_SCOPE = 'openid profile email offline_access';
 const CLIENT_CREDENTIALS_CLIENT: NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
+  IssuaryRuntimeConfigInput['clients']
 >[number] = {
   id: 'token-client-credentials-perf',
   name: 'Token Client Credentials Perf',
@@ -41,7 +41,7 @@ const CLIENT_CREDENTIALS_CLIENT: NonNullable<
   scope: 'api:read api:write',
 };
 const REFRESHABLE_CLIENT: NonNullable<
-  TinyAuthRuntimeConfigInput['clients']
+  IssuaryRuntimeConfigInput['clients']
 >[number] = {
   id: 'token-refresh-perf',
   name: 'Token Refresh Perf',

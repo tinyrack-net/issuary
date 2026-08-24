@@ -17,7 +17,7 @@ import {
 async function createCustomConfigFile(
   config: Record<string, unknown>,
 ): Promise<{ configPath: string; cleanup: () => Promise<void> }> {
-  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tinyauth-e2e-'));
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'issuary-e2e-'));
   const configPath = path.join(tmpDir, 'config.yaml');
   await fs.writeFile(configPath, YAML.stringify(config), 'utf-8');
   return {
@@ -215,7 +215,7 @@ describe('config loading priority', { timeout: 180_000 }, () => {
     cliProcess = startCli({
       args: ['serve', '-c', configPath],
       timeout: 60_000,
-      env: { TINYAUTH_PUBLIC_ORIGIN: 'https://env-host:5678' },
+      env: { ISSUARY_PUBLIC_ORIGIN: 'https://env-host:5678' },
     });
 
     const res = await waitForCliReady(cliProcess, port);

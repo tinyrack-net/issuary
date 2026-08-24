@@ -35,7 +35,7 @@ describe('/setup/passkey', () => {
       body: {
         options: {
           challenge: 'challenge',
-          rp: { name: 'TinyAuth', id: 'localhost' },
+          rp: { name: 'Issuary', id: 'localhost' },
           user: {
             id: 'user-1',
             name: 'alice@example.com',
@@ -79,7 +79,7 @@ describe('/setup/passkey', () => {
       body: {
         options: {
           challenge: 'challenge',
-          rp: { name: 'TinyAuth', id: 'localhost' },
+          rp: { name: 'Issuary', id: 'localhost' },
           user: {
             id: 'user-1',
             name: 'alice@example.com',

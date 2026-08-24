@@ -194,7 +194,7 @@ const TEST_MASTER_SECRET = fromBase64Url(
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';
-const HKDF_CONTEXT = 'tinyauth-hash-master-v1';
+const HKDF_CONTEXT = 'issuary-hash-master-v1';
 const DERIVED_KEY_BYTES = 32;
 
 describe('normalizeSecret', () => {
