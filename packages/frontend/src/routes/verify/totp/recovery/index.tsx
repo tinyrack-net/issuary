@@ -201,7 +201,7 @@ function VerifyRecovery() {
         >
           <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyRecovery.error.expired')}</span>
-            <span className="text-tinyrack-sm opacity-80">
+            <span className="text-tinyrack-sm opacity-tinyrack-hover">
               {t('verifyRecovery.redirecting', {
                 seconds: redirectCountdown,
               })}

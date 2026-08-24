@@ -189,7 +189,7 @@ function VerifyTotp() {
         >
           <span className="flex flex-col items-start gap-tinyrack-3xs">
             <span>{t('verifyTotp.error.expired')}</span>
-            <span className="text-tinyrack-sm opacity-80">
+            <span className="text-tinyrack-sm opacity-tinyrack-hover">
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
             </span>
             <TRButton

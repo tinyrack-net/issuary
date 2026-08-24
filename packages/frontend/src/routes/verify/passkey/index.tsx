@@ -117,10 +117,10 @@ function VerifyPasskey() {
       />
 
       <div className="flex flex-col items-center gap-tinyrack-lg">
-        <div className="flex size-16 items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
+        <div className="flex size-tinyrack-3xl items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
           <FingerprintIcon
             aria-hidden
-            className="size-8 text-tinyrack-text-muted"
+            className="size-tinyrack-2xl text-tinyrack-text-muted"
           />
         </div>
 

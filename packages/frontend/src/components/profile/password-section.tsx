@@ -71,7 +71,7 @@ export function PasswordSection({
                       <div className="flex items-start gap-tinyrack-sm">
                         <InfoIcon
                           aria-hidden
-                          className="size-4 shrink-0 text-tinyrack-warning"
+                          className="size-tinyrack-lg shrink-0 text-tinyrack-warning"
                         />
                         <div>{t('profile.password.removeDisabledReason')}</div>
                       </div>
@@ -104,7 +104,7 @@ export function PasswordSection({
             color="muted"
             variant="caption"
           >
-            <SettingsIcon aria-hidden className="size-3 shrink-0" />
+            <SettingsIcon aria-hidden className="size-tinyrack-md shrink-0" />
             <span>{t('profile.password.configManaged')}</span>
           </TRText>
         ) : undefined

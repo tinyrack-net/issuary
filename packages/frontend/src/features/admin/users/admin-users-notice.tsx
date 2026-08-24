@@ -28,9 +28,9 @@ export function AdminUsersNotice({ notice, onDismiss }: AdminUsersNoticeProps) {
       variant={isSuccess ? 'success' : 'danger'}
     >
       {isSuccess ? (
-        <CheckIcon aria-hidden className="size-5" />
+        <CheckIcon aria-hidden className="size-tinyrack-xl" />
       ) : (
-        <TriangleAlertIcon aria-hidden className="size-5" />
+        <TriangleAlertIcon aria-hidden className="size-tinyrack-xl" />
       )}
       <TRAlert.Title>{notice.message}</TRAlert.Title>
       <TRButton
@@ -41,7 +41,7 @@ export function AdminUsersNotice({ notice, onDismiss }: AdminUsersNoticeProps) {
         type="button"
         uiSize="sm"
       >
-        <XIcon aria-hidden className="size-4" />
+        <XIcon aria-hidden className="size-tinyrack-lg" />
       </TRButton>
     </TRAlert.Root>
   );

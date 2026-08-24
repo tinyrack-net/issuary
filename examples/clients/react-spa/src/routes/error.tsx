@@ -18,19 +18,21 @@ function ErrorPage() {
   const { error, description } = useSearch({ from: '/error' });
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <TRCard.Root className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
+      <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
         <TRCard.Header>
-          <TRCard.Title className="text-red-600 dark:text-red-400">
+          <TRCard.Title className="text-tinyrack-danger dark:text-tinyrack-danger">
             Error
           </TRCard.Title>
           <TRCard.Description>
             {error && (
-              <div className="mt-2">
+              <div className="mt-tinyrack-sm">
                 <TRBadge variant="danger">{error}</TRBadge>
               </div>
             )}
-            {description && <p className="mt-2 text-sm">{description}</p>}
+            {description && (
+              <p className="mt-tinyrack-sm text-tinyrack-sm">{description}</p>
+            )}
           </TRCard.Description>
         </TRCard.Header>
         <TRCard.Footer className="justify-end">

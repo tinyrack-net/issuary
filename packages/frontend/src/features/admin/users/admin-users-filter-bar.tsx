@@ -47,17 +47,17 @@ export function AdminUsersFilterBar({
           })}
         </TRText>
         {query ? (
-          <TRBadge uiSize="sm" variant="neutral">
+          <TRBadge uiSize="md" variant="neutral">
             {t('admin.users.queryChip', { query })}
           </TRBadge>
         ) : null}
         {includeDeleted ? (
-          <TRBadge uiSize="sm" variant="warning">
+          <TRBadge uiSize="md" variant="warning">
             {t('admin.users.includeDeleted')}
           </TRBadge>
         ) : null}
         {activeQuickFilter !== 'all' ? (
-          <TRBadge uiSize="sm">
+          <TRBadge uiSize="md">
             {t(`admin.users.filter.${activeQuickFilter}`)}
           </TRBadge>
         ) : null}

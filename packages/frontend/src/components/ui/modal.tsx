@@ -23,13 +23,14 @@ interface ModalProps {
   property into its own `width: min(…)` calculation, so a utility would move
   the max-width while leaving the width computation on the old value.
 
-  This is the design system's overlay scale (20/32/48rem), not Tailwind's
-  (24/28/32rem), and `md` is what an unstyled `TRDialog` already defaults to.
+  This is the current design system overlay scale (20/32rem), not Tailwind's
+  width scale. The local `lg` compatibility option now resolves to the largest
+  supported overlay token, and `md` remains the unstyled `TRDialog` default.
 */
 const sizeClasses = {
   sm: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-sm)]',
   md: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-md)]',
-  lg: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-lg)]',
+  lg: '[--tr-dialog-box-max-width:var(--tinyrack-overlay-width-md)]',
 } as const;
 
 const iconVariantClasses: Record<ModalVariant, string> = {
@@ -86,9 +87,9 @@ export function Modal({
             <div className="flex items-start gap-tinyrack-md">
               {IconComponent && (
                 <div
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-tinyrack-full ${iconVariantClasses[variant]}`}
+                  className={`flex size-tinyrack-2xl shrink-0 items-center justify-center rounded-tinyrack-full ${iconVariantClasses[variant]}`}
                 >
-                  <IconComponent aria-hidden className="size-4" />
+                  <IconComponent aria-hidden className="size-tinyrack-lg" />
                 </div>
               )}
               <div className="flex min-w-0 flex-1 flex-col gap-tinyrack-3xs">
@@ -105,7 +106,7 @@ export function Modal({
                   className="shrink-0"
                   data-testid="modal-close"
                 >
-                  <XIcon aria-hidden className="size-4" />
+                  <XIcon aria-hidden className="size-tinyrack-lg" />
                 </TRDialog.Close>
               )}
             </div>

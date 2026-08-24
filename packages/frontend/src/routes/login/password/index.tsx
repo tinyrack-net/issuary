@@ -311,7 +311,7 @@ function LoginPassword() {
 
       {implicitNotice && (
         <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
           dangerouslySetInnerHTML={{ __html: implicitNotice }}
         />
       )}

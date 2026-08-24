@@ -32,7 +32,7 @@ export function Alert({
       data-testid={dataTestid ?? `alert-${type}`}
       variant={variantMap[type]}
     >
-      <IconComponent className="size-5" />
+      <IconComponent className="size-tinyrack-xl" />
       <TRAlert.Title>{children}</TRAlert.Title>
     </TRAlert.Root>
   );

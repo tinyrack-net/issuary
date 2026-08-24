@@ -8,6 +8,7 @@
     "test": "node packages/tools/src/scripts/run-validation-tests.ts --profile=local",
     "test:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
+    "check:ui": "pnpm --filter @tinyrack/tinyauth-frontend check:ui && pnpm --filter @tinyrack/tinyauth-homepage check:ui && pnpm --filter @tinyauth-client-examples/react-spa check:ui",
     "biome": "biome",
     "screen:dev": "pnpm --filter @tinyrack/tinyauth-frontend screen:dev",
     "tools": "tinyauth-tools",

@@ -30,7 +30,7 @@ export function Toaster() {
               <TRToast.Description />
             </TRToast.Content>
             <TRToast.Close aria-label={t('common.dismiss')}>
-              <XIcon aria-hidden className="size-4" />
+              <XIcon aria-hidden className="size-tinyrack-lg" />
             </TRToast.Close>
           </TRToast.Root>
         ))}

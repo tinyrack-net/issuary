@@ -26,11 +26,11 @@ export function DangerZoneSection({
       className="border-tinyrack-danger-border bg-tinyrack-danger-surface"
       variant="outlined"
     >
-      <TRCard.Header className="border-tinyrack-danger-border border-b px-tinyrack-lg py-tinyrack-md">
+      <TRCard.Header className="border-tinyrack-danger-border border-b-tinyrack-default px-tinyrack-lg py-tinyrack-md">
         <div className="flex items-center gap-tinyrack-sm">
           <TriangleAlertIcon
             aria-hidden
-            className="size-4 text-tinyrack-danger"
+            className="size-tinyrack-lg text-tinyrack-danger"
           />
           <TRCard.Title className="text-tinyrack-danger">
             {t('profile.dangerZone.title')}
@@ -61,7 +61,7 @@ export function DangerZoneSection({
             type="button"
             uiSize="sm"
           >
-            <Trash2Icon aria-hidden className="size-4" />
+            <Trash2Icon aria-hidden className="size-tinyrack-lg" />
             {t('profile.deleteAccount.button')}
           </TRButton>
         </div>

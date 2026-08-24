@@ -46,6 +46,9 @@ jobs:
       - name: Lint
         run: pnpm biome check .
 
+      - name: Check Tinyrack UI contracts
+        run: pnpm check:ui
+
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v7.0.1
         with:

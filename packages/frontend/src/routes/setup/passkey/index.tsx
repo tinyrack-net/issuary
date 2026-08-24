@@ -162,7 +162,7 @@ function SetupPasskey() {
         <div className="flex flex-col items-center gap-tinyrack-lg py-tinyrack-xl">
           <FingerprintIcon
             aria-hidden
-            className="size-16 animate-pulse text-tinyrack-primary"
+            className="size-tinyrack-3xl animate-pulse text-tinyrack-primary"
           />
           <TRText align="center" as="p" color="muted" variant="body">
             {t('setupPasskey.waiting')}
@@ -194,7 +194,7 @@ function SetupPasskey() {
               }
               uiSize="lg"
             >
-              <ShieldCheckIcon aria-hidden className="size-5" />
+              <ShieldCheckIcon aria-hidden className="size-tinyrack-xl" />
               {t('setupPasskey.useTotp')}
             </TRLinkButton>
           )}

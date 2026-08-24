@@ -47,7 +47,7 @@ function DiscoveryPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
         <TRSpinner uiSize="lg" />
       </div>
     );
@@ -55,10 +55,10 @@ function DiscoveryPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <TRCard.Root className="w-full max-w-md">
+      <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
+        <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
           <TRCard.Header>
-            <TRCard.Title className="text-red-600 dark:text-red-400">
+            <TRCard.Title className="text-tinyrack-danger dark:text-tinyrack-danger">
               Error
             </TRCard.Title>
             <TRCard.Description>{error}</TRCard.Description>
@@ -74,11 +74,13 @@ function DiscoveryPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="min-h-screen p-tinyrack-2xl">
+      <div className="mx-auto max-w-tinyrack-overlay-md space-y-tinyrack-xl">
         <TRCard.Root>
           <TRCard.Header>
-            <TRCard.Title className="text-3xl">OpenID Discovery</TRCard.Title>
+            <TRCard.Title className="text-tinyrack-3xl">
+              OpenID Discovery
+            </TRCard.Title>
             <TRCard.Description>
               OpenID Provider metadata from{' '}
               <TRCode>
@@ -94,7 +96,7 @@ function DiscoveryPage() {
               <TRCard.Title>OpenID Configuration</TRCard.Title>
             </TRCard.Header>
             <TRCard.Content>
-              <pre className="overflow-x-auto rounded border p-4 font-mono text-xs">
+              <pre className="overflow-x-auto rounded border p-tinyrack-lg font-tinyrack-mono text-tinyrack-xs">
                 {JSON.stringify(discovery, null, 2)}
               </pre>
             </TRCard.Content>
@@ -110,14 +112,14 @@ function DiscoveryPage() {
               </TRCard.Description>
             </TRCard.Header>
             <TRCard.Content>
-              <pre className="overflow-x-auto rounded border p-4 font-mono text-xs">
+              <pre className="overflow-x-auto rounded border p-tinyrack-lg font-tinyrack-mono text-tinyrack-xs">
                 {JSON.stringify(jwks, null, 2)}
               </pre>
             </TRCard.Content>
           </TRCard.Root>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-tinyrack-lg">
           <TRButton appearance="outline" render={<Link to="/" />}>
             Back to Home
           </TRButton>

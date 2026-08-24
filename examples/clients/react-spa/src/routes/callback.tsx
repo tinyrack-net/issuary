@@ -69,10 +69,10 @@ function CallbackPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <TRCard.Root className="w-full max-w-md">
+      <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
+        <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
           <TRCard.Header>
-            <TRCard.Title className="text-red-600 dark:text-red-400">
+            <TRCard.Title className="text-tinyrack-danger dark:text-tinyrack-danger">
               Authentication Error
             </TRCard.Title>
             <TRCard.Description>
@@ -96,9 +96,9 @@ function CallbackPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <TRCard.Root className="w-full max-w-md">
-        <TRCard.Content className="flex flex-col items-center gap-4 text-center">
+    <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
+      <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
+        <TRCard.Content className="flex flex-col items-center gap-tinyrack-lg text-center">
           <TRSpinner uiSize="lg" />
           <p>Processing authentication...</p>
         </TRCard.Content>

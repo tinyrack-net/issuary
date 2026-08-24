@@ -96,11 +96,11 @@ function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="mx-auto max-w-4xl space-y-6">
+    <div className="min-h-screen p-tinyrack-2xl">
+      <div className="mx-auto max-w-tinyrack-overlay-md space-y-tinyrack-xl">
         <TRCard.Root>
           <TRCard.Header>
-            <TRCard.Title className="text-3xl">
+            <TRCard.Title className="text-tinyrack-3xl">
               Authentication Successful
             </TRCard.Title>
             <TRCard.Description>
@@ -117,7 +117,10 @@ function ProfilePage() {
             <TRTabs.Tab value="revoke">Token Revocation</TRTabs.Tab>
           </TRTabs.List>
 
-          <TRTabs.Panel className="space-y-6 pt-4" value="info">
+          <TRTabs.Panel
+            className="space-y-tinyrack-xl pt-tinyrack-lg"
+            value="info"
+          >
             {idTokenPayload && <UserInfo payload={idTokenPayload} />}
 
             <TokenDisplay tokens={tokens} />
@@ -137,7 +140,10 @@ function ProfilePage() {
             )}
           </TRTabs.Panel>
 
-          <TRTabs.Panel className="space-y-6 pt-4" value="introspect">
+          <TRTabs.Panel
+            className="space-y-tinyrack-xl pt-tinyrack-lg"
+            value="introspect"
+          >
             <TRCard.Root>
               <TRCard.Header>
                 <TRCard.Title>Token Introspection</TRCard.Title>
@@ -145,8 +151,8 @@ function ProfilePage() {
                   RFC 7662 - Check the active state of a token
                 </TRCard.Description>
               </TRCard.Header>
-              <TRCard.Content className="space-y-4">
-                <div className="flex flex-wrap gap-2">
+              <TRCard.Content className="space-y-tinyrack-lg">
+                <div className="flex flex-wrap gap-tinyrack-sm">
                   <TRButton
                     appearance="outline"
                     disabled={introspectionLoading}
@@ -185,7 +191,10 @@ function ProfilePage() {
             </TRCard.Root>
           </TRTabs.Panel>
 
-          <TRTabs.Panel className="space-y-6 pt-4" value="revoke">
+          <TRTabs.Panel
+            className="space-y-tinyrack-xl pt-tinyrack-lg"
+            value="revoke"
+          >
             <TRCard.Root>
               <TRCard.Header>
                 <TRCard.Title>Token Revocation</TRCard.Title>
@@ -193,8 +202,8 @@ function ProfilePage() {
                   RFC 7009 - Revoke tokens to invalidate them
                 </TRCard.Description>
               </TRCard.Header>
-              <TRCard.Content className="space-y-4">
-                <div className="flex flex-wrap gap-2">
+              <TRCard.Content className="space-y-tinyrack-lg">
+                <div className="flex flex-wrap gap-tinyrack-sm">
                   <TRButton
                     appearance="outline"
                     disabled={revokeLoading}
@@ -234,7 +243,7 @@ function ProfilePage() {
           </TRTabs.Panel>
         </TRTabs.Root>
 
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-tinyrack-lg">
           <TRButton intent="danger" onClick={handleLogout}>
             Logout
           </TRButton>

@@ -178,7 +178,7 @@ function Consent() {
             >
               <ShieldCheckIcon
                 aria-hidden
-                className="size-4 shrink-0 text-tinyrack-info"
+                className="size-tinyrack-lg shrink-0 text-tinyrack-info"
               />
               <TRText variant="body">
                 {t(`consent.scope.${scope.name}`, {
@@ -194,7 +194,7 @@ function Consent() {
         Sticky so the decision stays reachable when a client asks for a long
         list of scopes and the page scrolls.
       */}
-      <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t bg-tinyrack-canvas/80 py-tinyrack-md backdrop-blur-sm">
+      <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface/80 py-tinyrack-md backdrop-blur-sm">
         <TRButton
           appearance="outline"
           className="flex-1"
@@ -206,7 +206,7 @@ function Consent() {
           type="button"
           uiSize="lg"
         >
-          <XIcon aria-hidden className="size-4" />
+          <XIcon aria-hidden className="size-tinyrack-lg" />
           {t('consent.deny')}
         </TRButton>
         <TRButton
@@ -219,7 +219,7 @@ function Consent() {
           type="button"
           uiSize="lg"
         >
-          <ShieldCheckIcon aria-hidden className="size-4" />
+          <ShieldCheckIcon aria-hidden className="size-tinyrack-lg" />
           {t('consent.allow')}
         </TRButton>
       </div>

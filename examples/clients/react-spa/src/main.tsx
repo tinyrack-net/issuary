@@ -27,15 +27,15 @@ function App() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-surface">
-        <TRCard.Root className="w-96 shadow-xl">
+      <div className="flex min-h-screen items-center justify-center bg-tinyrack-surface">
+        <TRCard.Root className="w-tinyrack-measure-xl shadow-tinyrack-overlay">
           <TRCard.Header>
-            <TRCard.Title className="text-red-600 dark:text-red-400">
+            <TRCard.Title className="text-tinyrack-danger dark:text-tinyrack-danger">
               Initialization Error
             </TRCard.Title>
             <TRCard.Description>
-              <p className="text-sm">{error}</p>
-              <p className="mt-2 text-muted-foreground text-xs">
+              <p className="text-tinyrack-sm">{error}</p>
+              <p className="mt-tinyrack-sm text-tinyrack-text-muted text-tinyrack-xs">
                 Make sure the OIDC provider is running at the configured issuer
                 URL.
               </p>

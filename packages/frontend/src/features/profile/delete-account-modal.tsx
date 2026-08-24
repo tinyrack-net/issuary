@@ -96,7 +96,7 @@ export function DeleteAccountModal({
                 days: retentionDays,
               })}
             </p>
-            <p className="text-tinyrack-xs opacity-80">
+            <p className="text-tinyrack-xs opacity-tinyrack-hover">
               {t('profile.deleteAccount.modal.warning')}
             </p>
           </div>

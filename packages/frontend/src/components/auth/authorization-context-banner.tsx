@@ -52,7 +52,7 @@ function AuthorizationContextContent({
         <div className="flex items-center gap-tinyrack-sm">
           <ShieldCheckIcon
             aria-hidden
-            className="size-4 shrink-0 text-tinyrack-info"
+            className="size-tinyrack-lg shrink-0 text-tinyrack-info"
           />
           <TRText variant="body" weight="medium">
             {t('authorizationContext.title', { app: data.client.name })}
@@ -62,7 +62,7 @@ function AuthorizationContextContent({
         <div className="flex min-w-0 items-center gap-tinyrack-xs">
           <GlobeIcon
             aria-hidden
-            className="size-4 shrink-0 text-tinyrack-text-muted"
+            className="size-tinyrack-lg shrink-0 text-tinyrack-text-muted"
           />
           <TRText color="muted" truncate variant="caption">
             {t('authorizationContext.redirect', {
@@ -79,7 +79,7 @@ function AuthorizationContextContent({
             <ul className="flex flex-wrap gap-tinyrack-xs">
               {data.scopes.map((scope) => (
                 <li key={scope.name}>
-                  <TRBadge uiSize="sm" variant="neutral">
+                  <TRBadge uiSize="md" variant="neutral">
                     {t(`consent.scope.${scope.name}`, {
                       defaultValue: scope.description,
                     })}
