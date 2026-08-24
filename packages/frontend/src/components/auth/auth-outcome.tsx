@@ -37,9 +37,9 @@ export function AuthOutcome({
   return (
     <div className="flex flex-col items-center gap-tinyrack-lg text-center">
       <span
-        className={`flex size-12 items-center justify-center rounded-tinyrack-full ${toneClasses[tone]}`}
+        className={`flex size-tinyrack-3xl items-center justify-center rounded-tinyrack-full ${toneClasses[tone]}`}
       >
-        <Icon aria-hidden className="size-6" />
+        <Icon aria-hidden className="size-tinyrack-xl" />
       </span>
       <div className="flex flex-col gap-tinyrack-xs">
         <TRText align="center" as="h2" variant="headingLg">

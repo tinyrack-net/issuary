@@ -37,7 +37,7 @@ export function LinkedAccountsSection({
 
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Header className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md">
+      <TRCard.Header className="border-tinyrack-border border-b-tinyrack-default px-tinyrack-lg py-tinyrack-md">
         <TRCard.Title>{t('profile.linkedAccounts.title')}</TRCard.Title>
         <TRCard.Description>
           {t('profile.linkedAccounts.description')}
@@ -85,7 +85,7 @@ export function LinkedAccountsSection({
             */
             icon={
               <ProviderMark
-                className="size-4"
+                className="size-tinyrack-lg"
                 iconUrl={provider.icon_url}
                 providerId={provider.id}
               />

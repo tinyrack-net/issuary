@@ -86,7 +86,10 @@ export function AuthField({
       >
         {Icon && (
           <TRInput.Adornment>
-            <Icon aria-hidden className="size-5 opacity-70" />
+            <Icon
+              aria-hidden
+              className="size-tinyrack-xl opacity-tinyrack-hover"
+            />
           </TRInput.Adornment>
         )}
         <TRInput
@@ -108,9 +111,9 @@ export function AuthField({
             onClick={() => setRevealed((value) => !value)}
           >
             {revealed ? (
-              <EyeOffIcon aria-hidden className="size-4" />
+              <EyeOffIcon aria-hidden className="size-tinyrack-lg" />
             ) : (
-              <EyeIcon aria-hidden className="size-4" />
+              <EyeIcon aria-hidden className="size-tinyrack-lg" />
             )}
           </TRInput.Action>
         )}

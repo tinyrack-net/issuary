@@ -78,26 +78,30 @@ export function AdminShell({
   });
 
   return (
-    <TRAppShell.Root breakpoint="lg" className="bg-tinyrack-canvas">
+    <TRAppShell.Root breakpoint="lg" className="bg-tinyrack-surface">
       <Toaster />
 
       {/*
         No `w-*` here: `app-shell.css` sizes the sidebar track itself, and the
         20rem this used to declare overflowed the 18rem track it sits in.
       */}
-      <TRAppShell.Sidebar className="flex flex-col gap-tinyrack-xl border-tinyrack-border border-r bg-tinyrack-surface p-tinyrack-lg">
+      <TRAppShell.Sidebar className="flex flex-col gap-tinyrack-xl border-tinyrack-border border-r-tinyrack-default bg-tinyrack-surface p-tinyrack-lg">
         {/* The design system hides this outside the mobile drawer. */}
         <TRAppShell.Close aria-label={t('admin.nav.close')}>
-          <XIcon aria-hidden className="size-4" />
+          <XIcon aria-hidden className="size-tinyrack-lg" />
         </TRAppShell.Close>
 
         <div className="flex items-center gap-tinyrack-md">
           {iconUrl ? (
-            <img alt="" className="size-8 object-contain" src={iconUrl} />
+            <img
+              alt=""
+              className="size-tinyrack-2xl object-contain"
+              src={iconUrl}
+            />
           ) : (
             <TRAvatar.Root shape="square" uiSize="lg">
               <TRAvatar.Fallback className="bg-tinyrack-primary text-tinyrack-on-primary">
-                <ShieldIcon aria-hidden className="size-5" />
+                <ShieldIcon aria-hidden className="size-tinyrack-xl" />
               </TRAvatar.Fallback>
             </TRAvatar.Root>
           )}
@@ -137,14 +141,14 @@ export function AdminShell({
           adjacency the profile header uses. The console previously offered no
           way out at all.
         */}
-        <div className="mt-auto flex flex-col items-start gap-tinyrack-sm border-tinyrack-border border-t pt-tinyrack-lg">
+        <div className="mt-auto flex flex-col items-start gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default pt-tinyrack-lg">
           <TRText color="muted" variant="label">
             {t('admin.signedInAs')}
           </TRText>
           <TRText as="p" className="w-full" truncate variant="bodySm">
             {user.email}
           </TRText>
-          <TRBadge uiSize="sm" variant="neutral">
+          <TRBadge uiSize="md" variant="neutral">
             {t('admin.roleBadge', { role: formatAdminRole(t, user.role) })}
           </TRBadge>
           <TRButton
@@ -156,7 +160,7 @@ export function AdminShell({
             type="button"
             uiSize="sm"
           >
-            <LogOutIcon aria-hidden className="size-4" />
+            <LogOutIcon aria-hidden className="size-tinyrack-lg" />
             {t('profile.logout')}
           </TRButton>
         </div>
@@ -167,9 +171,9 @@ export function AdminShell({
         scrolling under it; on the dropdown layer it sat above every scrim, so
         opening a dialog dimmed the console but left its own header bright.
       */}
-      <TRAppShell.Header className="sticky top-0 z-tinyrack-chrome flex items-center gap-tinyrack-md border-tinyrack-border border-b bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
+      <TRAppShell.Header className="sticky top-0 z-tinyrack-chrome flex items-center gap-tinyrack-md border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
         <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
-          <MenuIcon aria-hidden className="size-5" />
+          <MenuIcon aria-hidden className="size-tinyrack-xl" />
         </TRAppShell.Trigger>
 
         <TRAppShell.Brand className="min-w-0">
@@ -182,7 +186,7 @@ export function AdminShell({
             </TRText>
             <ChevronRightIcon
               aria-hidden
-              className="size-4 text-tinyrack-text-placeholder"
+              className="size-tinyrack-lg text-tinyrack-text-placeholder"
             />
             <TRText variant="bodySm" weight="medium">
               {title}
@@ -212,7 +216,7 @@ export function AdminShell({
               {t('admin.livePolicy')}
             </TRText>
           </div>
-          <TRBadge uiSize="sm" variant="neutral">
+          <TRBadge uiSize="md" variant="neutral">
             {t('admin.environment')}
           </TRBadge>
           <LanguageSelector />
@@ -220,7 +224,7 @@ export function AdminShell({
         </TRAppShell.Actions>
       </TRAppShell.Header>
 
-      <TRAppShell.Main className="mx-auto flex w-full max-w-tinyrack-page-xl flex-1 flex-col gap-tinyrack-xl px-tinyrack-lg py-tinyrack-2xl lg:px-tinyrack-2xl">
+      <TRAppShell.Main className="mx-auto flex w-full flex-1 flex-col gap-tinyrack-xl px-tinyrack-lg py-tinyrack-2xl lg:px-tinyrack-2xl">
         {/*
           Not a card. A card around nothing but a title is a box for its own
           sake, and it made the page's real content look like a peer of its
@@ -236,7 +240,7 @@ export function AdminShell({
             </TRText>
             <TRText
               as="p"
-              className="max-w-tinyrack-reading-sm"
+              className="max-w-tinyrack-overlay-md"
               color="muted"
               variant="body"
             >
@@ -244,7 +248,7 @@ export function AdminShell({
             </TRText>
           </div>
           <Alert
-            className="max-w-tinyrack-measure-2xl"
+            className="max-w-tinyrack-overlay-md"
             icon={TriangleAlertIcon}
             type="warning"
           >
@@ -275,7 +279,7 @@ function AdminNavLink({ active, icon: Icon, to, children }: AdminNavLinkProps) {
       }`}
       to={to}
     >
-      <Icon aria-hidden className="size-4" />
+      <Icon aria-hidden className="size-tinyrack-lg" />
       <span>{children}</span>
     </Link>
   );

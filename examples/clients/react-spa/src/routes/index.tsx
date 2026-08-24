@@ -38,10 +38,10 @@ function HomePage() {
   const config = getOIDCConfig();
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <TRCard.Root className="w-full max-w-2xl">
+    <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
+      <TRCard.Root className="w-full max-w-tinyrack-overlay-md">
         <TRCard.Header>
-          <TRCard.Title className="text-3xl">
+          <TRCard.Title className="text-tinyrack-3xl">
             React SPA OIDC Test Client
           </TRCard.Title>
           <TRCard.Description>
@@ -50,7 +50,7 @@ function HomePage() {
           </TRCard.Description>
         </TRCard.Header>
 
-        <TRCard.Content className="flex flex-col gap-4">
+        <TRCard.Content className="flex flex-col gap-tinyrack-lg">
           <TRButton intent="primary" onClick={handleLogin} uiSize="lg">
             Sign In with OIDC
           </TRButton>
@@ -59,37 +59,39 @@ function HomePage() {
             View Discovery Endpoints
           </TRButton>
 
-          <TRSeparator className="my-4" />
+          <TRSeparator className="my-tinyrack-lg" />
 
-          <div className="rounded-lg border p-4">
-            <h2 className="mb-3 font-semibold text-lg">Test Configuration</h2>
-            <dl className="space-y-2 text-sm">
-              <div className="flex gap-2">
-                <dt className="font-medium">Issuer:</dt>
-                <dd className="font-mono text-muted-foreground">
+          <div className="rounded-tinyrack-lg border p-tinyrack-lg">
+            <h2 className="mb-tinyrack-md font-tinyrack-strong text-tinyrack-lg">
+              Test Configuration
+            </h2>
+            <dl className="space-y-tinyrack-sm text-tinyrack-sm">
+              <div className="flex gap-tinyrack-sm">
+                <dt className="font-tinyrack-medium">Issuer:</dt>
+                <dd className="font-tinyrack-mono text-tinyrack-text-muted">
                   {env.OIDC_ISSUER}
                 </dd>
               </div>
-              <div className="flex gap-2">
-                <dt className="font-medium">Client ID:</dt>
-                <dd className="font-mono text-muted-foreground">
+              <div className="flex gap-tinyrack-sm">
+                <dt className="font-tinyrack-medium">Client ID:</dt>
+                <dd className="font-tinyrack-mono text-tinyrack-text-muted">
                   {config.client_id}
                 </dd>
               </div>
-              <div className="flex gap-2">
-                <dt className="font-medium">Redirect URI:</dt>
-                <dd className="font-mono text-muted-foreground">
+              <div className="flex gap-tinyrack-sm">
+                <dt className="font-tinyrack-medium">Redirect URI:</dt>
+                <dd className="font-tinyrack-mono text-tinyrack-text-muted">
                   {config.redirect_uri}
                 </dd>
               </div>
-              <div className="flex gap-2">
-                <dt className="font-medium">Scope:</dt>
-                <dd className="font-mono text-muted-foreground">
+              <div className="flex gap-tinyrack-sm">
+                <dt className="font-tinyrack-medium">Scope:</dt>
+                <dd className="font-tinyrack-mono text-tinyrack-text-muted">
                   {config.scope}
                 </dd>
               </div>
-              <div className="flex gap-2">
-                <dt className="font-medium">Client Type:</dt>
+              <div className="flex gap-tinyrack-sm">
+                <dt className="font-tinyrack-medium">Client Type:</dt>
                 <dd>
                   <TRBadge variant="info">Public Client (PKCE)</TRBadge>
                 </dd>

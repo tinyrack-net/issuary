@@ -214,7 +214,8 @@ describe('/admin/users', () => {
       .getByRole('textbox', { name: 'Email' })
       .fill('created@example.com');
     await screen.getByLabelText('Password').fill('Created123!');
-    await screen.getByLabelText('Role').selectOptions('admin');
+    await screen.getByLabelText('Role').click();
+    await screen.getByRole('option', { name: 'Admin' }).click();
     await screen.getByRole('checkbox', { name: 'Email verified' }).click();
     await screen.getByRole('button', { name: 'Create', exact: true }).click();
 
@@ -326,7 +327,8 @@ describe('/admin/users', () => {
     await screen
       .getByRole('textbox', { name: 'Email' })
       .fill('updated@example.com');
-    await screen.getByLabelText('Role').selectOptions('admin');
+    await screen.getByLabelText('Role').click();
+    await screen.getByRole('option', { name: 'Admin' }).click();
     await screen.getByRole('button', { name: 'Save changes' }).click();
 
     await vi.waitFor(() =>

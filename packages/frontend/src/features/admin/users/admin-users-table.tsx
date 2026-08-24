@@ -71,7 +71,7 @@ export function AdminUsersTable({
               <TRTable.Cell>
                 <TRBadge
                   className="whitespace-nowrap"
-                  uiSize="sm"
+                  uiSize="md"
                   variant={managedUser.role === 'admin' ? 'neutral' : undefined}
                 >
                   {formatAdminRole(t, managedUser.role)}
@@ -80,7 +80,7 @@ export function AdminUsersTable({
               <TRTable.Cell>
                 <TRBadge
                   className="whitespace-nowrap"
-                  uiSize="sm"
+                  uiSize="md"
                   variant={
                     managedUser.managed_by === 'config' ? 'warning' : 'info'
                   }
@@ -111,7 +111,7 @@ export function AdminUsersTable({
                 */}
                 <TRBadge
                   className="whitespace-nowrap"
-                  uiSize="sm"
+                  uiSize="md"
                   variant={managedUser.deleted_at ? 'danger' : 'success'}
                 >
                   {managedUser.deleted_at
@@ -148,7 +148,7 @@ export function AdminUsersTable({
                     </TRButton>
                   </div>
                 ) : (
-                  <TRBadge className="whitespace-nowrap" uiSize="sm">
+                  <TRBadge className="whitespace-nowrap" uiSize="md">
                     {t('admin.users.readonly')}
                   </TRBadge>
                 )}

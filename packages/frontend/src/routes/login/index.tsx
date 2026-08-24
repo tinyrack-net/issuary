@@ -222,7 +222,7 @@ function Login() {
 
         {isPasswordAuthEnabled && (
           <AuthMethodTile
-            icon={<MailIcon aria-hidden className="size-5" />}
+            icon={<MailIcon aria-hidden className="size-tinyrack-xl" />}
             label={t('login.method.password')}
             render={<a href={buildPasswordLoginHref()} />}
           />
@@ -231,7 +231,7 @@ function Login() {
         {isPasskeyEnabled && (
           <AuthMethodTile
             disabled={passkeyLoginMutation.isPending}
-            icon={<FingerprintIcon aria-hidden className="size-5" />}
+            icon={<FingerprintIcon aria-hidden className="size-tinyrack-xl" />}
             isLoading={passkeyLoginMutation.isPending}
             label={t('login.method.passkey')}
             onClick={() => {
@@ -244,7 +244,7 @@ function Login() {
 
       {implicitNotice && (
         <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
           dangerouslySetInnerHTML={{ __html: implicitNotice }}
         />
       )}

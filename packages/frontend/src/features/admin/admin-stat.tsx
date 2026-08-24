@@ -24,7 +24,7 @@ export function AdminStat({ label, value, hint, accent }: AdminStatProps) {
     <div className="flex flex-1 flex-col gap-tinyrack-xs p-tinyrack-xl">
       {accent && (
         <div
-          className={`mb-tinyrack-sm h-tinyrack-xs w-tinyrack-4xl rounded-tinyrack-full ${accent}`}
+          className={`mb-tinyrack-sm h-tinyrack-xs w-tinyrack-3xl rounded-tinyrack-full ${accent}`}
         />
       )}
       <TRText as="p" color="muted" variant="bodySm">

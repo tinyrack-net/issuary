@@ -2,8 +2,9 @@ import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRText } from '@tinyrack/ui/components/text';
-import { TriangleAlertIcon } from 'lucide-react';
+import { CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -58,7 +59,7 @@ export function AdminUserFormModal({
       >
         <div className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-lg text-tinyrack-danger">
           <div className="flex items-center gap-tinyrack-sm">
-            <TriangleAlertIcon aria-hidden className="size-4" />
+            <TriangleAlertIcon aria-hidden className="size-tinyrack-lg" />
             <TRText as="p" weight="medium">
               {t('admin.users.deleteWarning')}
             </TRText>
@@ -165,23 +166,32 @@ export function AdminUserFormModal({
           <TRField.Label htmlFor="admin-user-role">
             {t('admin.users.role')}
           </TRField.Label>
-          {/*
-            Deliberately a native `<select>`, not `TRSelect`. This is the only
-            raw control left in admin and it stays: the design system's select
-            is a `button[role=combobox]`, and the directory test drives this
-            field with Playwright's `selectOptions`, which requires a real
-            `HTMLSelectElement`. Swapping it would buy design-system parity at
-            the cost of the only coverage this form has.
-          */}
-          <select
-            className="h-tinyrack-control-height-md w-full rounded-tinyrack-sm border border-tinyrack-control-border bg-tinyrack-surface px-tinyrack-md text-tinyrack-control-sm text-tinyrack-text focus:border-tinyrack-focus focus:outline-hidden"
+          <TRSelect.Root
             defaultValue={defaultValues?.role ?? 'user'}
-            id="admin-user-role"
             name="role"
           >
-            <option value="user">{t('admin.users.roleUser')}</option>
-            <option value="admin">{t('admin.users.roleAdmin')}</option>
-          </select>
+            <TRSelect.Trigger id="admin-user-role" uiSize="sm">
+              <TRSelect.Value />
+            </TRSelect.Trigger>
+            <TRSelect.Positioner>
+              <TRSelect.Popup>
+                <TRSelect.List>
+                  {['user', 'admin'].map((role) => (
+                    <TRSelect.Item key={role} value={role}>
+                      <TRSelect.ItemText>
+                        {t(
+                          `admin.users.role${role === 'user' ? 'User' : 'Admin'}`,
+                        )}
+                      </TRSelect.ItemText>
+                      <TRSelect.ItemIndicator>
+                        <CheckIcon aria-hidden />
+                      </TRSelect.ItemIndicator>
+                    </TRSelect.Item>
+                  ))}
+                </TRSelect.List>
+              </TRSelect.Popup>
+            </TRSelect.Positioner>
+          </TRSelect.Root>
         </TRField.Root>
 
         <TRField.Root>
@@ -190,7 +200,7 @@ export function AdminUserFormModal({
               aria-label={t('admin.users.emailVerified')}
               defaultChecked={defaultValues?.email_verified ?? false}
               name="email_verified"
-              uiSize="sm"
+              uiSize="md"
               value="on"
             >
               <TRCheckbox.Indicator />

@@ -26,12 +26,12 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
       <TRCard.Header>
         <TRCard.Title>Tokens</TRCard.Title>
       </TRCard.Header>
-      <TRCard.Content className="space-y-4">
+      <TRCard.Content className="space-y-tinyrack-lg">
         <TRCard.Root variant="outlined">
-          <TRCard.Content className="space-y-2">
+          <TRCard.Content className="space-y-tinyrack-sm">
             <div className="flex items-center justify-between">
-              <span className="font-semibold">Access Token</span>
-              <div className="flex gap-2">
+              <span className="font-tinyrack-strong">Access Token</span>
+              <div className="flex gap-tinyrack-sm">
                 <TRButton
                   appearance="ghost"
                   onClick={() => setShowAccessToken(!showAccessToken)}
@@ -48,12 +48,12 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
                 </TRButton>
               </div>
             </div>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all font-tinyrack-mono text-tinyrack-xs">
               {showAccessToken
                 ? tokens.access_token
                 : maskToken(tokens.access_token)}
             </pre>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-tinyrack-text-muted text-tinyrack-xs">
               Expires in: {tokens.expires_in} seconds | Type:{' '}
               {tokens.token_type}
             </div>
@@ -81,9 +81,9 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
         )}
 
         {tokens.scope && (
-          <div className="text-sm">
-            <span className="font-semibold">Granted Scopes: </span>
-            <span className="text-muted-foreground">{tokens.scope}</span>
+          <div className="text-tinyrack-sm">
+            <span className="font-tinyrack-strong">Granted Scopes: </span>
+            <span className="text-tinyrack-text-muted">{tokens.scope}</span>
           </div>
         )}
       </TRCard.Content>
@@ -108,10 +108,10 @@ function RefreshTokenSection({
 }: RefreshTokenSectionProps) {
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Content className="space-y-2">
+      <TRCard.Content className="space-y-tinyrack-sm">
         <div className="flex items-center justify-between">
-          <span className="font-semibold">Refresh Token</span>
-          <div className="flex gap-2">
+          <span className="font-tinyrack-strong">Refresh Token</span>
+          <div className="flex gap-tinyrack-sm">
             <TRButton
               appearance="ghost"
               onClick={() => setShowRefreshToken(!showRefreshToken)}
@@ -128,7 +128,7 @@ function RefreshTokenSection({
             </TRButton>
           </div>
         </div>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-tinyrack-mono text-tinyrack-xs">
           {showRefreshToken ? refreshToken : maskToken(refreshToken)}
         </pre>
       </TRCard.Content>
@@ -153,10 +153,10 @@ function IdTokenSection({
 }: IdTokenSectionProps) {
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Content className="space-y-2">
+      <TRCard.Content className="space-y-tinyrack-sm">
         <div className="flex items-center justify-between">
-          <span className="font-semibold">ID Token</span>
-          <div className="flex gap-2">
+          <span className="font-tinyrack-strong">ID Token</span>
+          <div className="flex gap-tinyrack-sm">
             <TRButton
               appearance="ghost"
               onClick={() => setShowIdToken(!showIdToken)}
@@ -173,7 +173,7 @@ function IdTokenSection({
             </TRButton>
           </div>
         </div>
-        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs">
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all font-tinyrack-mono text-tinyrack-xs">
           {showIdToken ? idToken : maskToken(idToken)}
         </pre>
       </TRCard.Content>

@@ -222,7 +222,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
             users={data.users}
           />
 
-          <div className="flex items-center justify-between border-tinyrack-border border-t bg-tinyrack-surface-muted p-tinyrack-lg">
+          <div className="flex items-center justify-between border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface-muted p-tinyrack-lg">
             <TRButton
               appearance="outline"
               disabled={filters.page <= 1}
@@ -237,7 +237,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
             >
               {t('admin.users.previous')}
             </TRButton>
-            <TRBadge uiSize="sm">
+            <TRBadge uiSize="md">
               {t('admin.users.page', { page: data.pagination.page })}
             </TRBadge>
             <TRButton

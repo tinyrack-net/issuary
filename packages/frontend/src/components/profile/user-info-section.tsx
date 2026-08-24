@@ -27,7 +27,7 @@ export function UserInfoSection({ user }: UserInfoSectionProps) {
 
   return (
     <TRCard.Root variant="outlined">
-      <TRCard.Header className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md">
+      <TRCard.Header className="border-tinyrack-border border-b-tinyrack-default px-tinyrack-lg py-tinyrack-md">
         <TRCard.Title>{t('profile.account.title')}</TRCard.Title>
         <TRCard.Description>
           {t('profile.account.description')}

@@ -300,7 +300,7 @@ function PasskeyItem({
     return (
       <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-sm text-tinyrack-on-danger">
         <div className="flex items-center gap-tinyrack-sm">
-          <Trash2Icon className="size-4" />
+          <Trash2Icon className="size-tinyrack-lg" />
           <span className="text-tinyrack-xs">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
           </span>
@@ -334,12 +334,12 @@ function PasskeyItem({
     >
       <div className="flex items-center gap-tinyrack-sm">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon className="size-4 text-tinyrack-primary" />
+          <CloudIcon className="size-tinyrack-lg text-tinyrack-primary" />
         ) : (
-          <SmartphoneIcon className="size-4 text-tinyrack-primary" />
+          <SmartphoneIcon className="size-tinyrack-lg text-tinyrack-primary" />
         )}
         <div>
-          <div className="font-medium text-tinyrack-xs">
+          <div className="font-tinyrack-medium text-tinyrack-xs">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </div>
           <div className="flex items-center gap-tinyrack-xs text-tinyrack-text-muted text-tinyrack-xs">
@@ -349,7 +349,7 @@ function PasskeyItem({
               })}
             </span>
             {passkey.backed_up && (
-              <TRBadge uiSize="sm" variant="success">
+              <TRBadge uiSize="md" variant="success">
                 {t('profile.passkey.manageModal.backedUp')}
               </TRBadge>
             )}
@@ -364,7 +364,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          <PencilIcon className="size-3.5" />
+          <PencilIcon className="size-tinyrack-lg" />
         </TRButton>
         <TRButton
           appearance="ghost"
@@ -376,7 +376,7 @@ function PasskeyItem({
           type="button"
           uiSize="sm"
         >
-          {isDeleting ? undefined : <Trash2Icon className="size-3.5" />}
+          {isDeleting ? undefined : <Trash2Icon className="size-tinyrack-lg" />}
         </TRButton>
       </div>
     </div>

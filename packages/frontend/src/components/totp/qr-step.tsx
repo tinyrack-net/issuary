@@ -34,7 +34,7 @@ export function QrStep({
         <div className="rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-tinyrack-lg">
           <img
             alt="TOTP QR Code"
-            className="block size-40"
+            className="block size-tinyrack-measure-sm"
             src={setupData.qr_code}
           />
         </div>

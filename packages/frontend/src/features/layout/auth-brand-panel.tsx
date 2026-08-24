@@ -26,7 +26,7 @@ export function AuthBrandPanel() {
 
   return (
     <div
-      className="relative isolate col-span-full flex flex-col items-start justify-between gap-tinyrack-xs overflow-hidden border-tinyrack-border border-b bg-tinyrack-surface-muted px-tinyrack-lg py-tinyrack-md text-tinyrack-text md:col-span-4 md:gap-tinyrack-2xl md:border-e md:border-b-0 md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5"
+      className="relative isolate z-0 col-span-full flex flex-col items-start justify-between gap-tinyrack-xs overflow-hidden border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface-muted px-tinyrack-lg py-tinyrack-md text-tinyrack-text md:col-span-4 md:gap-tinyrack-2xl md:border-e-tinyrack-default md:px-tinyrack-2xl md:py-tinyrack-2xl lg:col-span-5 md:[border-block-end-width:0]"
       data-theme="tinyrack-dark"
     >
       {backgroundUrl && (
@@ -37,21 +37,18 @@ export function AuthBrandPanel() {
           */}
           <div
             aria-hidden
-            className="absolute inset-0 -z-10 bg-center bg-cover"
+            className="absolute inset-0 z-0 [background-position:center] [background-size:cover]"
             style={{ backgroundImage: `url(${backgroundUrl})` }}
           />
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 bg-tinyrack-scrim"
-          />
+          <div aria-hidden className="absolute inset-0 z-0 bg-tinyrack-scrim" />
         </>
       )}
 
-      <div className="flex min-w-0 flex-row items-center gap-tinyrack-sm md:flex-col md:items-start md:gap-tinyrack-lg">
+      <div className="relative z-tinyrack-content flex min-w-0 flex-row items-center gap-tinyrack-sm md:flex-col md:items-start md:gap-tinyrack-lg">
         {iconUrl && (
           <img
             alt=""
-            className="size-8 object-contain md:size-12"
+            className="size-tinyrack-2xl object-contain md:size-tinyrack-3xl"
             src={iconUrl}
           />
         )}
@@ -84,7 +81,7 @@ export function AuthBrandPanel() {
         <TRText
           align="start"
           as="p"
-          className="max-w-tinyrack-measure-xl truncate [--tr-text-font-size:var(--tinyrack-text-xs)] md:overflow-visible md:whitespace-normal md:[--tr-text-font-size:var(--tinyrack-text-lg)]"
+          className="relative z-tinyrack-content max-w-tinyrack-measure-xl truncate [--tr-text-font-size:var(--tinyrack-text-xs)] md:overflow-visible md:whitespace-normal md:[--tr-text-font-size:var(--tinyrack-text-lg)]"
           color="muted"
         >
           {subtitle}

@@ -96,12 +96,12 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
           variant="outlined"
         >
           <TRCard.Content className="p-0">
-            <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b p-tinyrack-xl sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b-tinyrack-default p-tinyrack-xl sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-col gap-tinyrack-sm">
                 <div className="flex items-center gap-tinyrack-sm">
                   <NetworkIcon
                     aria-hidden
-                    className="size-4 text-tinyrack-primary"
+                    className="size-tinyrack-lg text-tinyrack-primary"
                   />
                   <TRText color="muted" variant="label">
                     {t('admin.identityGraph')}
@@ -121,7 +121,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
               </TRLinkButton>
             </div>
 
-            <div className="grid gap-0 divide-y divide-tinyrack-border md:grid-cols-2 md:divide-x md:divide-y-0">
+            <div className="grid divide-y divide-tinyrack-border [gap:0] md:grid-cols-2 md:divide-x md:divide-y-0">
               {data.users.slice(0, 4).map((managedUser) => (
                 <Link
                   className="group flex flex-col gap-tinyrack-lg bg-tinyrack-surface p-tinyrack-lg transition hover:bg-tinyrack-surface-hover"
@@ -147,7 +147,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
                         "User" wraps to two lines. */}
                     <TRBadge
                       className="shrink-0"
-                      uiSize="sm"
+                      uiSize="md"
                       variant={
                         managedUser.role === 'admin' ? 'neutral' : undefined
                       }
@@ -156,7 +156,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
                     </TRBadge>
                   </div>
                   <div className="flex items-center justify-between gap-tinyrack-sm">
-                    <TRBadge uiSize="sm">
+                    <TRBadge uiSize="md">
                       {formatManagedBy(t, managedUser.managed_by)}
                     </TRBadge>
                     <TRText color="muted" variant="caption">
@@ -177,7 +177,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
           variant="outlined"
         >
           <TRCard.Content className="flex flex-col items-start gap-tinyrack-md">
-            <TRBadge uiSize="sm" variant="neutral">
+            <TRBadge uiSize="md" variant="neutral">
               {t('admin.policy.title')}
             </TRBadge>
             <TRCard.Title className="text-tinyrack-xl">
@@ -219,7 +219,7 @@ function PolicyRow({
       <TRText color="muted" variant="bodySm">
         {label}
       </TRText>
-      <TRBadge uiSize="sm" variant="neutral">
+      <TRBadge uiSize="md" variant="neutral">
         {value}
       </TRBadge>
     </div>

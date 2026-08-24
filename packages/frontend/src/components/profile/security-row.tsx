@@ -48,7 +48,7 @@ export function SecurityRow({
     mark = (
       <Icon
         aria-hidden
-        className={`size-4 ${
+        className={`size-tinyrack-lg ${
           active ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
         }`}
       />

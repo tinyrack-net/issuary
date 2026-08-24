@@ -23,7 +23,7 @@ type AppLayoutProps = {
  */
 export function AppLayout({ children, headerActions }: AppLayoutProps) {
   return (
-    <div className="flex min-h-dvh flex-col bg-tinyrack-canvas">
+    <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
       {/*
         Profile hosts the TOTP recovery-codes step, which confirms a copy with
         a toast. Without a viewport here that confirmation would go nowhere on
@@ -36,7 +36,7 @@ export function AppLayout({ children, headerActions }: AppLayoutProps) {
           The stack owns vertical rhythm so screens compose as a flat list of
           blocks instead of each one hand-rolling margins that drift apart.
         */}
-        <div className="auth-enter flex w-full max-w-tinyrack-reading-lg flex-col gap-tinyrack-xl">
+        <div className="auth-enter flex w-full max-w-tinyrack-overlay-md flex-col gap-tinyrack-xl">
           {children}
         </div>
       </main>

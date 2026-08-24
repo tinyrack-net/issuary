@@ -18,7 +18,7 @@ import { TinyAuthError } from '#frontend/libs/error.ts';
  */
 function MinimalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-tinyrack-canvas px-tinyrack-lg py-tinyrack-xl">
+    <div className="flex min-h-dvh items-center justify-center bg-tinyrack-surface px-tinyrack-lg py-tinyrack-xl">
       <div className="flex w-full max-w-tinyrack-measure-xl flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl">
         {children}
       </div>

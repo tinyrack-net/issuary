@@ -225,7 +225,7 @@ function SetupTotp() {
   } else if (step === 'error' && errorType === 'session_expired') {
     body = (
       <TRAlert.Root data-testid="totp-setup-session-expired" variant="warning">
-        <CircleAlertIcon aria-hidden className="size-5" />
+        <CircleAlertIcon aria-hidden className="size-tinyrack-xl" />
         <TRAlert.Title>{t('setupTotp.error.expired')}</TRAlert.Title>
         <TRAlert.Description>
           {t('setupTotp.redirecting', {

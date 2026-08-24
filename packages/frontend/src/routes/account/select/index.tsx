@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { TRIconButton } from '@tinyrack/ui/components/icon-button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import {
@@ -128,7 +129,7 @@ function AccountSelect() {
                   one is a button. No children — the row supplies them.
                 */
                 render={
-                  <button
+                  <TRButton
                     data-testid={`select-account-${account.sub}`}
                     disabled={selectMutation.isPending}
                     onClick={() => selectMutation.mutate({ sub: account.sub })}
@@ -138,7 +139,7 @@ function AccountSelect() {
                 trailing={
                   <>
                     {account.current ? (
-                      <TRBadge uiSize="sm" variant="info">
+                      <TRBadge uiSize="md" variant="info">
                         {t('accountSelect.current')}
                       </TRBadge>
                     ) : null}
@@ -157,7 +158,7 @@ function AccountSelect() {
                         type="button"
                         uiSize="sm"
                       >
-                        <Trash2Icon aria-hidden className="size-4" />
+                        <Trash2Icon aria-hidden className="size-tinyrack-lg" />
                       </TRIconButton>
                     ) : null}
                   </>
@@ -176,10 +177,10 @@ function AccountSelect() {
           render={<a href={buildLoginHref(search)} />}
         >
           <span className="inline-flex items-center gap-tinyrack-sm">
-            <PlusIcon aria-hidden className="size-4" />
+            <PlusIcon aria-hidden className="size-tinyrack-lg" />
             {t('accountSelect.useAnotherAccount')}
           </span>
-          <ArrowRightIcon aria-hidden className="size-4" />
+          <ArrowRightIcon aria-hidden className="size-tinyrack-lg" />
         </TRLinkButton>
       ) : null}
     </AuthLayout>

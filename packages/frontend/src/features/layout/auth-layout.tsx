@@ -14,7 +14,7 @@ type AuthLayoutProps = {
 
 const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
   form: 'max-w-tinyrack-measure-xl',
-  wide: 'max-w-tinyrack-measure-2xl',
+  wide: 'max-w-tinyrack-overlay-md',
 };
 
 /**
@@ -28,7 +28,7 @@ const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
  */
 export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-tinyrack-canvas md:grid-cols-12">
+    <div className="grid min-h-dvh grid-cols-1 bg-tinyrack-surface md:grid-cols-12">
       <Toaster />
       <AuthBrandPanel />
       <div className="col-span-full flex min-w-0 flex-col md:col-span-8 lg:col-span-7">

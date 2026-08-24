@@ -47,7 +47,9 @@ export function AuthChoiceRow({
         render={render}
       >
         {leading ??
-          (Icon ? <Icon aria-hidden className="size-5 shrink-0" /> : null)}
+          (Icon ? (
+            <Icon aria-hidden className="size-tinyrack-xl shrink-0" />
+          ) : null)}
         {/*
           Wraps rather than truncates. These rows carry the only description of
           what each option does, and at phone width even the English strings
@@ -66,7 +68,7 @@ export function AuthChoiceRow({
         </span>
         <ChevronRightIcon
           aria-hidden
-          className="size-4 shrink-0 text-tinyrack-text-muted"
+          className="size-tinyrack-lg shrink-0 text-tinyrack-text-muted"
         />
       </TRLinkButton>
       {trailing}

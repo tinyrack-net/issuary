@@ -43,7 +43,7 @@ type ProviderMarkProps = {
 export function ProviderMark({
   providerId,
   iconUrl,
-  className = 'size-5',
+  className = 'size-tinyrack-xl',
 }: ProviderMarkProps) {
   const Logo = LOGOS_BY_ID[providerId];
   if (Logo) {

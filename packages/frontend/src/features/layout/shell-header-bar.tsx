@@ -40,7 +40,11 @@ export function ShellHeaderBar({
       {brand && (
         <div className="flex min-w-0 items-center gap-tinyrack-sm">
           {iconUrl && (
-            <img alt="" className="size-6 object-contain" src={iconUrl} />
+            <img
+              alt=""
+              className="size-tinyrack-xl object-contain"
+              src={iconUrl}
+            />
           )}
           {title && (
             <TRText as="h1" truncate variant="headingSm" weight="heading">

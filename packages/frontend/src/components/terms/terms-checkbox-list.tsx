@@ -1,4 +1,5 @@
 import { TRBadge } from '@tinyrack/ui/components/badge';
+import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRLink } from '@tinyrack/ui/components/link';
 import { useState } from 'react';
@@ -72,9 +73,9 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
 
   return (
     <>
-      <div className="space-y-1">
+      <div className="space-y-tinyrack-xs">
         {terms.length > 1 && (
-          <div className="flex cursor-pointer items-center gap-1.5 py-0.5">
+          <div className="flex cursor-pointer items-center gap-tinyrack-sm py-[calc(var(--tinyrack-space-3xs)*2)]">
             <TRCheckbox.Root
               aria-labelledby="terms-all-label"
               checked={allChecked}
@@ -84,7 +85,10 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             >
               <TRCheckbox.Indicator />
             </TRCheckbox.Root>
-            <span className="font-medium text-tinyrack-xs" id="terms-all-label">
+            <span
+              className="font-tinyrack-medium text-tinyrack-xs"
+              id="terms-all-label"
+            >
               {t('terms.agreeAll')}
             </span>
             {hasOptionalTerms && (
@@ -102,8 +106,8 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             name={`termsConsents.${term.id}` as Path<T>}
             render={({ field }) => (
               <div>
-                <div className="flex items-center gap-2 py-0.5">
-                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <div className="flex items-center gap-tinyrack-sm py-[calc(var(--tinyrack-space-3xs)*2)]">
+                  <div className="flex min-w-0 flex-1 items-center gap-tinyrack-sm">
                     <TRCheckbox.Root
                       aria-labelledby={`term-label-${term.id}`}
                       checked={field.value === true}
@@ -127,7 +131,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                           ? 'terms-badge-required'
                           : 'terms-badge-optional'
                       }
-                      uiSize="sm"
+                      uiSize="md"
                       variant={term.required ? 'danger' : 'neutral'}
                     >
                       {term.required
@@ -149,26 +153,28 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                     </TRLink>
                   )}
                   {term.type === 'text' && term.content && (
-                    <TRLink
+                    <TRButton
+                      appearance="ghost"
                       aria-label={t('terms.viewSpecific', {
                         title: getTermTitle(term),
                       })}
                       className="shrink-0 text-tinyrack-xs"
                       onClick={() => setModalTerm(term)}
-                      render={<button type="button" />}
+                      type="button"
+                      uiSize="sm"
                     >
                       {t('terms.view')}
-                    </TRLink>
+                    </TRButton>
                   )}
                 </div>
                 {term.userConsent?.requiresUpdate && (
-                  <p className="ml-5 text-tinyrack-warning text-tinyrack-xs">
+                  <p className="ml-tinyrack-xl text-tinyrack-warning text-tinyrack-xs">
                     {t('terms.versionUpdated')}
                   </p>
                 )}
                 {termsConsentsErrors?.[term.id] && (
                   <p
-                    className="ml-5 text-tinyrack-danger text-tinyrack-xs"
+                    className="ml-tinyrack-xl text-tinyrack-danger text-tinyrack-xs"
                     data-testid="terms-field-error"
                   >
                     {termsConsentsErrors[term.id]?.message}

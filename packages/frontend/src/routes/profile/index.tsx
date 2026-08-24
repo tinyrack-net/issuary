@@ -218,7 +218,7 @@ function Profile() {
         >
           {logoutMutation.isPending ? undefined : (
             <>
-              <LogOutIcon aria-hidden className="size-4" />
+              <LogOutIcon aria-hidden className="size-tinyrack-lg" />
               <span className="hidden sm:inline">{t('profile.logout')}</span>
             </>
           )}
@@ -257,7 +257,7 @@ function Profile() {
 
       {hasSecurityOptions && (
         <TRCard.Root variant="outlined">
-          <TRCard.Header className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md">
+          <TRCard.Header className="border-tinyrack-border border-b-tinyrack-default px-tinyrack-lg py-tinyrack-md">
             <TRCard.Title>{t('profile.security.title')}</TRCard.Title>
             <TRCard.Description>
               {t('profile.security.description')}
@@ -265,7 +265,7 @@ function Profile() {
           </TRCard.Header>
           {showTotpSection && user.totp_recovery_codes_missing && (
             <div
-              className="border-tinyrack-border border-b px-tinyrack-lg py-tinyrack-md"
+              className="border-tinyrack-border border-b-tinyrack-default px-tinyrack-lg py-tinyrack-md"
               data-testid="profile-totp-recovery-warning"
             >
               <Alert icon={CircleAlertIcon} type="warning">

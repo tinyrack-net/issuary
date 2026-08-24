@@ -330,7 +330,7 @@ function Register() {
             {implicitNotice && (
               <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
                 <div
-                  className="prose prose-sm text-xs! **:text-xs!"
+                  className="prose prose-sm text-tinyrack-xs! **:text-tinyrack-xs!"
                   dangerouslySetInnerHTML={{
                     __html: implicitNotice,
                   }}

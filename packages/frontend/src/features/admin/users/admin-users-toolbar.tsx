@@ -36,10 +36,13 @@ export function AdminUsersToolbar({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b bg-tinyrack-surface-muted p-tinyrack-xl xl:flex-row xl:items-end xl:justify-between">
+    <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface-muted p-tinyrack-xl xl:flex-row xl:items-end xl:justify-between">
       <div className="flex flex-col gap-tinyrack-sm">
         <div className="flex items-center gap-tinyrack-sm">
-          <UsersIcon aria-hidden className="size-4 text-tinyrack-success" />
+          <UsersIcon
+            aria-hidden
+            className="size-tinyrack-lg text-tinyrack-success"
+          />
           <TRText color="muted" variant="label">
             {t('admin.users.directoryEyebrow')}
           </TRText>
@@ -54,7 +57,7 @@ export function AdminUsersToolbar({
         <div className="flex flex-col gap-tinyrack-sm lg:flex-row lg:items-center">
           <TRInput
             aria-label={t('admin.users.searchPlaceholder')}
-            className="w-full lg:w-tinyrack-control-width-md"
+            className="w-full lg:w-tinyrack-overlay-width-sm"
             onChange={(event) => onDraftQueryChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') onSearch();
@@ -79,7 +82,7 @@ export function AdminUsersToolbar({
                 onCheckedChange={(checked) =>
                   onDraftIncludeDeletedChange(checked === true)
                 }
-                uiSize="sm"
+                uiSize="md"
               >
                 <TRCheckbox.Indicator />
               </TRCheckbox.Root>
@@ -95,7 +98,7 @@ export function AdminUsersToolbar({
             type="button"
             uiSize="sm"
           >
-            <SearchIcon aria-hidden className="size-4" />
+            <SearchIcon aria-hidden className="size-tinyrack-lg" />
             {t('admin.users.search')}
           </TRButton>
           <TRButton
@@ -104,7 +107,7 @@ export function AdminUsersToolbar({
             type="button"
             uiSize="sm"
           >
-            <PlusIcon aria-hidden className="size-4" />
+            <PlusIcon aria-hidden className="size-tinyrack-lg" />
             {t('admin.users.create')}
           </TRButton>
         </div>

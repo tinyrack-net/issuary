@@ -35,7 +35,7 @@ export function InitialAvatar({ email, size = 'md' }: InitialAvatarProps) {
 
   return (
     <TRAvatar.Root
-      className="shrink-0 font-bold"
+      className="shrink-0 font-tinyrack-bold"
       shape="circle"
       style={
         {

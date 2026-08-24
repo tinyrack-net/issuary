@@ -39,9 +39,9 @@ const PROVIDER_LOGOS: Record<
   Exclude<OAuthProviderType, 'generic_oauth'>,
   ReactNode
 > = {
-  google: <GoogleLogo className="size-5" />,
-  github: <GithubLogo className="size-5" />,
-  apple: <AppleLogo className="size-5" />,
+  google: <GoogleLogo className="size-tinyrack-xl" />,
+  github: <GithubLogo className="size-tinyrack-xl" />,
+  apple: <AppleLogo className="size-tinyrack-xl" />,
 };
 
 /**
@@ -64,16 +64,16 @@ export function AuthMethodTile({
   if (providerType && providerType !== 'generic_oauth') {
     leading = PROVIDER_LOGOS[providerType];
   } else if (typeof icon === 'string') {
-    leading = <img alt="" className="size-5" src={icon} />;
+    leading = <img alt="" className="size-tinyrack-xl" src={icon} />;
   } else if (icon) {
     leading = icon;
   } else {
-    leading = <LinkIcon aria-hidden className="size-5" />;
+    leading = <LinkIcon aria-hidden className="size-tinyrack-xl" />;
   }
 
   const content = (
     <>
-      <span className="flex size-5 shrink-0 items-center justify-center">
+      <span className="flex size-tinyrack-xl shrink-0 items-center justify-center">
         {leading}
       </span>
       <TRText truncate variant="body">

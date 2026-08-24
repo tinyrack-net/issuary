@@ -200,7 +200,7 @@ function Terms() {
 
       {implicitNotice && (
         <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-xs! **:text-xs!"
+          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
           dangerouslySetInnerHTML={{ __html: implicitNotice }}
         />
       )}
@@ -235,7 +235,7 @@ function Terms() {
           Sticky, like consent: a long list of terms would otherwise push the
           only action off the bottom of the screen.
         */}
-        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t bg-tinyrack-canvas/80 py-tinyrack-md backdrop-blur-sm">
+        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface/80 py-tinyrack-md backdrop-blur-sm">
           <TRButton
             className="w-full"
             intent="primary"
