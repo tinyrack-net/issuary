@@ -3,7 +3,20 @@ import { mkdir, rm } from 'node:fs/promises';
 import { availableParallelism } from 'node:os';
 import path from 'node:path';
 
-const cpuCount = availableParallelism();
+function resolveWorkerBudget(): number {
+  const configuredBudget = process.env['TINYAUTH_TEST_WORKERS'];
+  if (configuredBudget === undefined) {
+    return availableParallelism();
+  }
+
+  const workerBudget = Number(configuredBudget);
+  if (!Number.isInteger(workerBudget) || workerBudget <= 0) {
+    throw new Error('TINYAUTH_TEST_WORKERS must be a positive integer');
+  }
+  return workerBudget;
+}
+
+const cpuCount = resolveWorkerBudget();
 const shardCount = Math.min(4, Math.max(1, Math.floor(cpuCount / 8)));
 const testWorkerBudget = Math.max(1, cpuCount - shardCount);
 const reportDirectory = path.resolve('blob-report');
