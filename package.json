@@ -5,7 +5,8 @@
   "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "pnpm --filter \"@tinyrack/tinyauth-*\" --parallel dev",
-    "test": "node packages/tools/src/scripts/run-validation-tests.ts",
+    "test": "node packages/tools/src/scripts/run-validation-tests.ts --profile=local",
+    "test:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
     "biome": "biome",
     "screen:dev": "pnpm --filter @tinyrack/tinyauth-frontend screen:dev",

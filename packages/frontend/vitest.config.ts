@@ -6,6 +6,7 @@ import { defineConfig } from 'vitest/config';
 
 const MODE = process.env['VITEST_BROWSER_MODE'];
 const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
+const IS_CHROMIUM_ONLY = process.env['VITEST_BROWSER_SET'] === 'chromium';
 const HOST = MODE === 'preview' ? '0.0.0.0' : '127.0.0.1';
 const BROWSER_API_PORT = Number(
   process.env['VITEST_BROWSER_API_PORT'] ?? Number.NaN,
@@ -56,9 +57,10 @@ export default defineConfig({
             },
             provider: MODE === 'preview' ? preview() : playwright(),
             headless: MODE !== 'preview',
-            instances: IS_COVERAGE
-              ? [{ browser: 'chromium' }]
-              : [{ browser: 'chromium' }, { browser: 'firefox' }],
+            instances:
+              IS_COVERAGE || IS_CHROMIUM_ONLY
+                ? [{ browser: 'chromium' }]
+                : [{ browser: 'chromium' }, { browser: 'firefox' }],
           },
         },
       },
