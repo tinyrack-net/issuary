@@ -2,10 +2,14 @@ import { EntityRepository } from '@mikro-orm/core';
 import type { IUserTotpRecoveryCodeEntity } from '../entities/user-totp-recovery-code.entity.ts';
 
 export class UserTotpRecoveryCodeRepository extends EntityRepository<IUserTotpRecoveryCodeEntity> {
-  async findUnusedByUserSubAndCodeHash(userSub: string, codeHash: string) {
+  async findUnusedByUserSubAndCodeHash(
+    userSub: string,
+    codeHash: string | string[],
+  ) {
+    const codeHashes = Array.isArray(codeHash) ? codeHash : [codeHash];
     return this.findOne({
       user: { sub: userSub },
-      code_hash: codeHash,
+      code_hash: { $in: codeHashes },
       used: false,
     });
   }

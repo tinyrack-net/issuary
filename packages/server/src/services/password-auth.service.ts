@@ -38,13 +38,28 @@ export class PasswordAuthService {
       throw err;
     }
 
-    const isValid = await this.securityService.verifyPassword(
-      user.password_hash,
-      params.password,
-    );
+    const verification =
+      await this.securityService.verifyPasswordAndCheckRehash(
+        user.password_hash,
+        params.password,
+      );
 
-    if (!isValid) {
+    if (!verification.valid) {
       throw err;
+    }
+
+    if (verification.needsRehash) {
+      const previousHash = user.password_hash;
+      const passwordHash = await this.securityService.hashPassword(
+        params.password,
+      );
+      const updated = await this.mikro.user.nativeUpdate(
+        { sub: user.sub, password_hash: previousHash },
+        { password_hash: passwordHash },
+      );
+      if (updated === 1) {
+        user.password_hash = passwordHash;
+      }
     }
 
     return user;

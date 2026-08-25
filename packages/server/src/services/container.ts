@@ -1,3 +1,8 @@
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
+import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
+import { UserEntity } from '../entities/user.entity.ts';
+import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
 import {
   type IssuaryRuntimeConfig,
   isSchedulerConfigResolver,
@@ -47,14 +52,55 @@ export async function initializeServices(
     securityService,
     options.seedConfig,
   );
+  const legacyHashPattern = '%$v=1$%';
+  const diagnosticsEm = mikro.orm.em.fork();
+  const [passwords, clientSecrets, recoveryCodes, oauthCodes, deviceCodes] =
+    await Promise.all([
+      diagnosticsEm.count(UserEntity, {
+        password_hash: { $like: legacyHashPattern },
+      }),
+      diagnosticsEm.count(OAuthClientEntitySchema, {
+        clientSecretHash: { $like: legacyHashPattern },
+      }),
+      diagnosticsEm.count(UserTotpRecoveryCodeEntitySchema, {
+        code_hash: { $like: legacyHashPattern },
+      }),
+      diagnosticsEm.count(OAuthCodeEntitySchema, {
+        codeHash: { $like: legacyHashPattern },
+      }),
+      diagnosticsEm.count(OAuthDeviceCodeEntitySchema, {
+        $or: [
+          { deviceCodeHash: { $like: legacyHashPattern } },
+          { userCodeHash: { $like: legacyHashPattern } },
+        ],
+      }),
+    ]);
+  const legacyHashes = {
+    passwords,
+    clientSecrets,
+    recoveryCodes,
+    oauthCodes,
+    deviceCodes,
+  };
+  const readyForLegacyRemoval =
+    Object.values(legacyHashes).reduce((total, count) => total + count, 0) ===
+    0;
   logger.info(
     {
       users: config.users.length,
       clients: config.clients.length,
       seeded,
+      legacyHashes,
+      readyForLegacyRemoval,
     },
     'Bootstrap complete',
   );
+  if (!readyForLegacyRemoval) {
+    logger.warn(
+      { legacyHashes },
+      'Legacy v1 hashes remain and compatibility verification is active',
+    );
+  }
 
   // 3. Create services (respecting dependency order)
   const emailLogger = logger.child({ service: 'email' });

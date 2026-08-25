@@ -7,6 +7,9 @@ import {
 } from '../test-utils/index.ts';
 import type { ServiceContainer } from './container.ts';
 
+const LEGACY_PASSWORD_HASH =
+  'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=4mV_6YDQh9NV944YrmvTGZdp0EOyT-ZPwJGqSTnkS04';
+
 describe('PasswordAuthService', () => {
   let services: ServiceContainer;
   let cleanup: () => Promise<void>;
@@ -44,6 +47,33 @@ describe('PasswordAuthService', () => {
     );
 
     expect(user.email).toBe(email);
+  });
+
+  test('rehashes a legacy password after successful authentication', async () => {
+    const email = generateUniqueEmail('password-auth-legacy-rehash');
+
+    await withMikroContext(services, async () => {
+      const user = services.mikro.user.create({
+        email,
+        password_hash: LEGACY_PASSWORD_HASH,
+      });
+      user.email_verified = true;
+      await services.mikro.em.persist(user).flush();
+    });
+
+    await withMikroContext(services, async () =>
+      services.passwordAuthService.authenticateByEmailAndPassword({
+        email,
+        password: 'legacy password',
+      }),
+    );
+
+    const migratedHash = await withMikroContext(services, async () => {
+      const user =
+        await services.mikro.user.findActiveByEmailForPasswordAuth(email);
+      return user.password_hash;
+    });
+    expect(migratedHash).toMatch(/^pbkdf2-sha256\$v=2\$/);
   });
 
   test('rejects authentication with the wrong password', async () => {
