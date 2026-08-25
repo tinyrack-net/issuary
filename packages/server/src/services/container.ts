@@ -1,8 +1,3 @@
-import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
-import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
-import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
-import { UserEntity } from '../entities/user.entity.ts';
-import { UserTotpRecoveryCodeEntitySchema } from '../entities/user-totp-recovery-code.entity.ts';
 import {
   type IssuaryRuntimeConfig,
   isSchedulerConfigResolver,
@@ -15,6 +10,7 @@ import {
 import { CleanupService } from './cleanup.service.ts';
 import { EmailService } from './email.service.ts';
 import { JwtService } from './jwt.service.ts';
+import { LegacyCredentialRetirementService } from './legacy-credential-retirement.service.ts';
 import { MikroService } from './mikro.service.ts';
 import { OAuthAuthorizeService } from './oauth-authorize.service.ts';
 import { OAuthClientService } from './oauth-client.service.ts';
@@ -52,53 +48,31 @@ export async function initializeServices(
     securityService,
     options.seedConfig,
   );
-  const legacyHashPattern = '%$v=1$%';
-  const diagnosticsEm = mikro.orm.em.fork();
-  const [passwords, clientSecrets, recoveryCodes, oauthCodes, deviceCodes] =
-    await Promise.all([
-      diagnosticsEm.count(UserEntity, {
-        password_hash: { $like: legacyHashPattern },
-      }),
-      diagnosticsEm.count(OAuthClientEntitySchema, {
-        clientSecretHash: { $like: legacyHashPattern },
-      }),
-      diagnosticsEm.count(UserTotpRecoveryCodeEntitySchema, {
-        code_hash: { $like: legacyHashPattern },
-      }),
-      diagnosticsEm.count(OAuthCodeEntitySchema, {
-        codeHash: { $like: legacyHashPattern },
-      }),
-      diagnosticsEm.count(OAuthDeviceCodeEntitySchema, {
-        $or: [
-          { deviceCodeHash: { $like: legacyHashPattern } },
-          { userCodeHash: { $like: legacyHashPattern } },
-        ],
-      }),
-    ]);
-  const legacyHashes = {
-    passwords,
-    clientSecrets,
-    recoveryCodes,
-    oauthCodes,
-    deviceCodes,
-  };
+  const legacyCredentialRetirementService =
+    new LegacyCredentialRetirementService(config, mikro, logger);
+  await legacyCredentialRetirementService.retireIfEnabled();
+  const [legacyHashes, passwordResetRequired] = await Promise.all([
+    legacyCredentialRetirementService.count(),
+    legacyCredentialRetirementService.countPasswordResetRequired(),
+  ]);
   const readyForLegacyRemoval =
     Object.values(legacyHashes).reduce((total, count) => total + count, 0) ===
-    0;
+      0 && passwordResetRequired === 0;
   logger.info(
     {
       users: config.users.length,
       clients: config.clients.length,
       seeded,
       legacyHashes,
+      passwordResetRequired,
       readyForLegacyRemoval,
     },
     'Bootstrap complete',
   );
   if (!readyForLegacyRemoval) {
     logger.warn(
-      { legacyHashes },
-      'Legacy v1 hashes remain and compatibility verification is active',
+      { legacyHashes, passwordResetRequired },
+      'Legacy credential migration is not yet ready for compatibility removal',
     );
   }
 

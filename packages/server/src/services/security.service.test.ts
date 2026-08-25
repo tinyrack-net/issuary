@@ -87,6 +87,7 @@ describe('SecurityService', () => {
         '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
+      retire_legacy_v1_credentials: false,
     });
     const hash = await first.hashPassword('secret password');
 
@@ -178,6 +179,7 @@ describe('SecurityService', () => {
         '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
+      retire_legacy_v1_credentials: false,
     });
 
     const firstHash = await first.hashOpaqueToken(
