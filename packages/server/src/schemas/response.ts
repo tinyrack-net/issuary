@@ -441,17 +441,6 @@ export const r = {
     })
     .describe('Authentication response'),
 
-  PasskeyAuthenticationResponse: z
-    .object({
-      user: UserSession.describe('Passkey-verified user'),
-      password_reset_required: z
-        .boolean()
-        .describe(
-          'Whether only a restricted password-reset session was issued',
-        ),
-    })
-    .describe('Passkey authentication or restricted password-reset response'),
-
   OAuthCallbackResponse: z
     .object({
       user: UserSession.describe('Authenticated user session'),

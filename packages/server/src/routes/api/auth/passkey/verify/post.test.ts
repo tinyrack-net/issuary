@@ -26,10 +26,6 @@ async function decodeSessionCookie(cookie: string): Promise<{
     sub: string;
     authenticated_at: number;
   };
-  passwordReset?: {
-    sub: string;
-    verified_at: number;
-  };
 }> {
   const decrypted = await decrypt(
     cookie,
@@ -47,10 +43,6 @@ async function decodeSessionCookie(cookie: string): Promise<{
     pending2FAUser?: {
       sub: string;
       authenticated_at: number;
-    };
-    passwordReset?: {
-      sub: string;
-      verified_at: number;
     };
   };
 }
@@ -483,7 +475,6 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
     expect(body.user.email).toBe(email);
     expect(body.user.managed_by).toBe('database');
     expect(body.user.email_verified).toBe(true);
-    expect(body.password_reset_required).toBe(false);
     // Check other required fields exist
     expect(typeof body.user.has_password).toBe('boolean');
     expect(typeof body.user.totp_registered).toBe('boolean');
@@ -505,98 +496,6 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
     expect(sessionBody.user?.email).toBe(email);
 
     // Cleanup
-    mockVerifyAuthentication.mockRestore();
-  });
-
-  test('creates only a restricted session until a retired user sets a new password', async () => {
-    const email = generateUniqueEmail('passkey-retired-password');
-    const oldPassword = 'oldPassword123!';
-    const newPassword = 'newPassword456!';
-    const { userSub } = await createDbUserWithSession(
-      app,
-      services,
-      email,
-      oldPassword,
-    );
-    const credentialId = `retired-credential-${crypto.randomUUID()}`;
-
-    const user = await withMikroContext(services, async () => {
-      const userEntity = await services.mikro.user.findOneOrFail({
-        sub: userSub,
-      });
-      const passkey = services.mikro.userPasskey.create({
-        user: userSub,
-        credential_id: credentialId,
-        public_key: 'test-public-key-base64url',
-        counter: 0,
-        device_type: 'multiDevice',
-        backed_up: true,
-        transports: ['internal'],
-        name: 'Password recovery passkey',
-        aaguid: 'test-aaguid',
-      });
-      userEntity.password_hash = null;
-      userEntity.password_reset_required = true;
-      await services.mikro.em.persist(passkey).flush();
-      return userEntity;
-    });
-
-    const optionsRes = await testClient(app).api.auth.passkey.options.$post();
-    const challengeCookie = extractCookie(optionsRes, 'session');
-    const mockVerifyAuthentication = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(user);
-
-    const verifyRes = await testClient(app).api.auth.passkey.verify.$post(
-      {
-        json: {
-          response: createMockAuthenticationResponse({
-            id: credentialId,
-            rawId: credentialId,
-          }),
-        },
-      },
-      { headers: { Cookie: `session=${challengeCookie}` } },
-    );
-    const verifyBody = await assertJsonBody(verifyRes);
-    expect(verifyBody.password_reset_required).toBe(true);
-
-    const resetCookie = extractCookie(verifyRes, 'session');
-    const restrictedSession = await decodeSessionCookie(resetCookie);
-    expect(restrictedSession.user).toBeUndefined();
-    expect(restrictedSession.pending2FAUser).toBeUndefined();
-    expect(restrictedSession.passwordReset?.sub).toBe(userSub);
-
-    const sessionRes = await testClient(app).api.user.session.$get(
-      {},
-      { headers: { Cookie: `session=${resetCookie}` } },
-    );
-    const sessionBody = await assertJsonBody(sessionRes);
-    expect(sessionBody.user).toBeNull();
-
-    const resetRes = await testClient(app).api.auth.password[
-      'reset-required'
-    ].$post(
-      { json: { password: newPassword } },
-      { headers: { Cookie: `session=${resetCookie}` } },
-    );
-    await assertJsonBody(resetRes);
-
-    await withMikroContext(services, async () => {
-      const updatedUser = await services.mikro.user.findOneOrFail({
-        sub: userSub,
-      });
-      await services.mikro.em.populate(updatedUser, ['password_hash']);
-      expect(updatedUser.password_reset_required).toBe(false);
-      expect(updatedUser.password_hash).toMatch(/^pbkdf2-sha256\$v=2\$/);
-    });
-
-    const loginRes = await testClient(app).api.auth.login.$post({
-      json: { email, password: newPassword },
-    });
-    const loginBody = await assertJsonBody(loginRes);
-    expect(loginBody.user.email).toBe(email);
-
     mockVerifyAuthentication.mockRestore();
   });
 });

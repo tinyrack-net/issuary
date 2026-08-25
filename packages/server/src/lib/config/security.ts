@@ -4,7 +4,6 @@ import { fromBase64Url } from '../base64url.ts';
 
 export const SECURITY_CONFIG_DEFAULT = {
   pbkdf2_iterations: 600000,
-  retire_legacy_v1_credentials: false,
 };
 
 export const SecurityConfigSchema = z
@@ -65,12 +64,6 @@ export const SecurityConfigSchema = z
       .pipe(zz.coerceInt().pipe(z.number().int().min(1)))
       .default(SECURITY_CONFIG_DEFAULT.pbkdf2_iterations)
       .describe('Number of PBKDF2 iterations for password hashing.'),
-    retire_legacy_v1_credentials: z
-      .boolean()
-      .default(SECURITY_CONFIG_DEFAULT.retire_legacy_v1_credentials)
-      .describe(
-        'Irreversibly retire v1 password, client-secret, recovery-code, and OAuth-code hashes at startup.',
-      ),
   })
   .strict()
   .describe('Security configuration for secrets and cryptographic settings.');

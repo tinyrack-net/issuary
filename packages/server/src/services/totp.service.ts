@@ -299,14 +299,14 @@ export class TotpService {
       throw new e.NoRecoveryCodesAvailable.Error();
     }
 
-    const codeHashes = await this.securityService.hashOpaqueTokenCandidates(
+    const codeHash = await this.securityService.hashOpaqueToken(
       'totp-recovery',
       normalizedCode,
     );
     const recoveryCode =
       await this.mikro.userTotpRecoveryCode.findUnusedByUserSubAndCodeHash(
         userId,
-        codeHashes,
+        codeHash,
       );
 
     if (!recoveryCode) {

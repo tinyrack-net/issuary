@@ -115,14 +115,6 @@ export interface SessionData {
     sub: string;
   };
   /**
-   * Restricted session created after passkey verification for a user whose
-   * legacy password was retired. It authorizes only setting a new password.
-   */
-  passwordReset?: {
-    sub: string;
-    verified_at: number;
-  };
-  /**
    * Temporary state for external OAuth provider flows (social login/register/link).
    * Stored when redirecting to the OAuth provider (authorize endpoint) and
    * consumed when the provider redirects back (callback endpoint).
@@ -152,7 +144,6 @@ export interface SessionHelper {
   removeRememberedUserSession(userSub: string): boolean;
   setPending2FASession(userSub: string, authenticatedAt?: number): void;
   setPending2FASetupSession(userSub: string): void;
-  setPasswordResetSession(userSub: string): void;
   clearAuthSessions(): void;
 }
 
@@ -225,7 +216,6 @@ export function sessionMiddleware(
           data.reauthentication?.request_fingerprint;
         delete data.pending2FAUser;
         delete data.pending2FASetup;
-        delete data.passwordReset;
         delete data.oauth;
         delete data.passkey_challenge;
         data.user = {
@@ -270,7 +260,6 @@ export function sessionMiddleware(
         }
         delete data.pending2FAUser;
         delete data.pending2FASetup;
-        delete data.passwordReset;
         delete data.oauth;
         delete data.passkey_challenge;
         data.user = {
@@ -310,7 +299,6 @@ export function sessionMiddleware(
       },
       setPending2FASession(userSub: string, authenticatedAt?: number): void {
         delete data.pending2FASetup;
-        delete data.passwordReset;
         delete data.oauth;
         delete data.passkey_challenge;
         data.pending2FAUser = {
@@ -320,30 +308,15 @@ export function sessionMiddleware(
       },
       setPending2FASetupSession(userSub: string): void {
         delete data.pending2FAUser;
-        delete data.passwordReset;
         delete data.oauth;
         delete data.passkey_challenge;
         data.pending2FASetup = { sub: userSub };
-      },
-      setPasswordResetSession(userSub: string): void {
-        delete data.user;
-        delete data.accounts;
-        delete data.reauthentication;
-        delete data.pending2FAUser;
-        delete data.pending2FASetup;
-        delete data.oauth;
-        delete data.passkey_challenge;
-        data.passwordReset = {
-          sub: userSub,
-          verified_at: nowSeconds(),
-        };
       },
       clearAuthSessions(): void {
         delete data.user;
         delete data.reauthentication;
         delete data.pending2FAUser;
         delete data.pending2FASetup;
-        delete data.passwordReset;
       },
     });
 

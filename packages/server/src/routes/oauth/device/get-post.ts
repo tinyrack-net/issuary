@@ -38,12 +38,12 @@ export const deviceGetPost = new Hono<AppEnv>()
       const { mikro, securityService } = c.var.services;
       let deviceDetails = '';
       if (userCode) {
-        const userCodeHashes = await securityService.hashOpaqueTokenCandidates(
+        const userCodeHash = await securityService.hashOpaqueToken(
           'oauth-device-user-code',
           userCode.toUpperCase(),
         );
         const deviceCode =
-          await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHashes);
+          await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHash);
         if (deviceCode) {
           await mikro.em.populate(deviceCode, ['client']);
           const scopes = deviceCode.scope
@@ -74,7 +74,7 @@ export const deviceGetPost = new Hono<AppEnv>()
     async (c) => {
       const { decision, user_code: userCode } = c.req.valid('form');
       const { mikro, securityService } = c.var.services;
-      const userCodeHashes = await securityService.hashOpaqueTokenCandidates(
+      const userCodeHash = await securityService.hashOpaqueToken(
         'oauth-device-user-code',
         userCode.toUpperCase(),
       );
@@ -82,11 +82,11 @@ export const deviceGetPost = new Hono<AppEnv>()
       const deviceCode =
         decision === 'deny'
           ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
-              userCodeHash: userCodeHashes,
+              userCodeHash,
               deniedAt: now,
             })
           : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
-              userCodeHash: userCodeHashes,
+              userCodeHash,
               userSub: c.var.verifiedUser.user.sub,
               approvedAt: now,
             });

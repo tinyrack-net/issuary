@@ -44,28 +44,24 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
 
   async findUnconsumedByClientAndCodeHash(
     clientId: string,
-    codeHash: string | string[],
+    codeHash: string,
   ): Promise<IOAuthCodeEntity | null> {
-    const codeHashes = Array.isArray(codeHash) ? codeHash : [codeHash];
     return this.findOne({
       client: clientId,
-      codeHash: { $in: codeHashes },
+      codeHash,
       consumedAt: null,
     });
   }
 
   async consumeAuthorizationCode(params: {
     clientId: string;
-    codeHash: string | string[];
+    codeHash: string;
     consumedAt: Date;
   }): Promise<IOAuthCodeEntity | null> {
-    const codeHashes = Array.isArray(params.codeHash)
-      ? params.codeHash
-      : [params.codeHash];
     const updated = await this.nativeUpdate(
       {
         client: params.clientId,
-        codeHash: { $in: codeHashes },
+        codeHash: params.codeHash,
         consumedAt: null,
         expiredAt: { $gt: params.consumedAt },
       },
@@ -78,7 +74,7 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
 
     return this.findOne({
       client: params.clientId,
-      codeHash: { $in: codeHashes },
+      codeHash: params.codeHash,
     });
   }
 }

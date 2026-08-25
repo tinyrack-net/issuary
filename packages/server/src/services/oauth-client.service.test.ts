@@ -8,9 +8,6 @@ import {
 } from '../test-utils/index.ts';
 import type { ServiceContainer } from './container.ts';
 
-const LEGACY_CLIENT_SECRET_HASH =
-  'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=GrZeZmD7qg6eQEyybxBo5CbbX3nwcJ_tQKgV8eGFlYE';
-
 describe('OAuthClientService', () => {
   let services: ServiceContainer;
   let cleanup: () => Promise<void>;
@@ -90,40 +87,5 @@ describe('OAuthClientService', () => {
       expect(err).toHaveProperty('code', 'INVALID_SCOPE');
       expect(err).toHaveProperty('data.invalidScopes', ['admin']);
     }
-  });
-
-  test('rehashes a legacy client secret after successful verification', async () => {
-    await withMikroContext(services, async () => {
-      const client = services.mikro.em.create(OAuthClientEntitySchema, {
-        clientId: 'legacy-confidential-client',
-        clientSecretHash: LEGACY_CLIENT_SECRET_HASH,
-        name: 'Legacy Confidential Client',
-        redirectUris: ['http://localhost/legacy/callback'],
-        grantTypes: ['authorization_code'],
-        responseTypes: ['code'],
-        scopes: ['openid'],
-        enabled: true,
-        managed_by: 'database',
-      });
-      await services.mikro.em.persist(client).flush();
-    });
-
-    await expect(
-      withMikroContext(services, async () =>
-        services.oauthClientService.verifyClientSecret(
-          'legacy-confidential-client',
-          'legacy client secret',
-        ),
-      ),
-    ).resolves.toBe(true);
-
-    const migratedHash = await withMikroContext(services, async () => {
-      const client = await services.mikro.oauthClient.findOneOrFail(
-        { clientId: 'legacy-confidential-client' },
-        { populate: ['clientSecretHash'] },
-      );
-      return client.clientSecretHash;
-    });
-    expect(migratedHash).toMatch(/^pbkdf2-sha256\$v=2\$/);
   });
 });

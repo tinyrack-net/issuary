@@ -34,11 +34,11 @@ import { tick } from '#frontend/libs/promise.ts';
 import { getAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { loginMutationOptions } from '#frontend/queries/login.ts';
+import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
 import {
-  type PasskeyAuthenticationResponse,
-  startConditionalPasskeyAuth,
-} from '#frontend/queries/passkey.ts';
-import { getSessionQueryOptions } from '#frontend/queries/session.ts';
+  type AuthResponse,
+  getSessionQueryOptions,
+} from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema;
 
@@ -191,11 +191,7 @@ function LoginPassword() {
   });
 
   const handlePasskeySuccess = useCallback(
-    async (data: PasskeyAuthenticationResponse) => {
-      if (data.password_reset_required) {
-        await router.navigate({ to: '/password/reset-required' });
-        return;
-      }
+    async (data: AuthResponse) => {
       if (data.user) {
         queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
         await tick();

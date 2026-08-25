@@ -18,16 +18,6 @@ export interface VerifiedPending2FASetup {
   user: UserEntity;
 }
 
-const PASSWORD_RESET_SESSION_TTL_SECONDS = 10 * 60;
-
-function clearRetiredUserSessions(
-  sessionHelper: SessionEnv['Variables']['session'],
-  userSub: string,
-): void {
-  sessionHelper.clearAuthSessions();
-  sessionHelper.removeRememberedUserSession(userSub);
-}
-
 type VerifiedAuthEnv<Optional extends boolean> = {
   Variables: {
     verifiedUser: Optional extends true
@@ -57,15 +47,6 @@ export const verifyAuth = <Optional extends boolean = false>(options?: {
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      if (userEntity.password_reset_required) {
-        clearRetiredUserSessions(sessionHelper, userEntity.sub);
-        if (options?.optional) {
-          c.set('verifiedUser', undefined as never);
-          await next();
-          return;
-        }
-        throw new e.PasswordResetRequired.Error();
-      }
       c.set('verifiedUser', {
         user: userEntity,
         authenticatedAt: session.authenticated_at,
@@ -100,10 +81,6 @@ export const requireAdmin = () =>
 
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      if (userEntity.password_reset_required) {
-        clearRetiredUserSessions(sessionHelper, userEntity.sub);
-        throw new e.PasswordResetRequired.Error();
-      }
       if (userEntity.role !== 'admin') {
         throw new e.Forbidden.Error();
       }
@@ -153,15 +130,6 @@ export const verifyPending2FAUser = <
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      if (userEntity.password_reset_required) {
-        clearRetiredUserSessions(sessionHelper, userEntity.sub);
-        if (options?.optional) {
-          c.set('verifiedPending2FAUser', undefined as never);
-          await next();
-          return;
-        }
-        throw new e.PasswordResetRequired.Error();
-      }
       c.set('verifiedPending2FAUser', {
         user: userEntity,
         authenticatedAt: session.authenticated_at,
@@ -212,15 +180,6 @@ export const verifyPending2FASetupUser = <
     }
     try {
       const userEntity = await services.mikro.user.findBySub(session.sub);
-      if (userEntity.password_reset_required) {
-        clearRetiredUserSessions(sessionHelper, userEntity.sub);
-        if (options?.optional) {
-          c.set('verifiedPending2FASetupUser', undefined as never);
-          await next();
-          return;
-        }
-        throw new e.PasswordResetRequired.Error();
-      }
       c.set('verifiedPending2FASetupUser', { user: userEntity });
     } catch (err) {
       if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
@@ -230,45 +189,6 @@ export const verifyPending2FASetupUser = <
           await next();
           return;
         }
-        throw new e.Unauthorized.Error();
-      }
-      throw err;
-    }
-    await next();
-  });
-
-type VerifiedPasswordResetEnv = {
-  Variables: {
-    verifiedPasswordResetUser: UserEntity;
-  };
-};
-
-export const verifyPasswordResetUser = () =>
-  createMiddleware<{
-    Variables: SessionEnv['Variables'] &
-      ServicesEnv['Variables'] &
-      VerifiedPasswordResetEnv['Variables'];
-  }>(async (c, next) => {
-    const sessionHelper = c.var.session;
-    const session = sessionHelper.get('passwordReset');
-    if (!session) {
-      throw new e.Unauthorized.Error();
-    }
-    const sessionAge = Math.floor(Date.now() / 1000) - session.verified_at;
-    if (sessionAge < 0 || sessionAge > PASSWORD_RESET_SESSION_TTL_SECONDS) {
-      sessionHelper.set('passwordReset', undefined);
-      throw new e.Unauthorized.Error();
-    }
-    try {
-      const userEntity = await c.var.services.mikro.user.findBySub(session.sub);
-      if (!userEntity.password_reset_required) {
-        sessionHelper.set('passwordReset', undefined);
-        throw new e.Unauthorized.Error();
-      }
-      c.set('verifiedPasswordResetUser', userEntity);
-    } catch (err) {
-      if (err instanceof IssuaryError && err.code === 'USER_NOT_FOUND') {
-        sessionHelper.set('passwordReset', undefined);
         throw new e.Unauthorized.Error();
       }
       throw err;

@@ -8,16 +8,6 @@ import { SecurityService } from './security.service.ts';
 
 const LEGACY_PASSWORD_HASH =
   'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=4mV_6YDQh9NV944YrmvTGZdp0EOyT-ZPwJGqSTnkS04';
-const LEGACY_CLIENT_SECRET_HASH =
-  'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=GrZeZmD7qg6eQEyybxBo5CbbX3nwcJ_tQKgV8eGFlYE';
-const LEGACY_RECOVERY_CODE_HASH =
-  'hmac-sha256$v=1$h=6NAtbopii9BEIun9Jb5LbKICKIYOEn76OD47-7a_cNs';
-const REBRAND_V1_PASSWORD_HASH =
-  'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=QUPCide7e7lSw4HdLzfD2Sf5BIEmuJJu9oDDt4E7Tvw';
-const REBRAND_V1_CLIENT_SECRET_HASH =
-  'pbkdf2-sha256$v=1$i=1000$s=MDEyMzQ1Njc4OWFiY2RlZg$h=sTgLsy6rqmcv_YwTpq68TrA6W3PUL-Xdn_wbKp5wzXU';
-const REBRAND_V1_RECOVERY_CODE_HASH =
-  'hmac-sha256$v=1$h=vHAjguKWT3npnulnlUISG11NXO_BRV3Azr13Mr0aJ4c';
 
 function createService(
   securityOverride?: IssuaryRuntimeConfig['security'],
@@ -43,41 +33,12 @@ describe('SecurityService', () => {
     expect(hash).toMatch(/^pbkdf2-sha256\$v=2\$/);
   });
 
-  test('verifies legacy v1 password and client-secret fixtures for rehash', async () => {
+  test('rejects retired v1 password hashes', async () => {
     const service = createService();
 
     await expect(
-      service.verifyPasswordAndCheckRehash(
-        LEGACY_PASSWORD_HASH,
-        'legacy password',
-      ),
-    ).resolves.toEqual({ valid: true, needsRehash: true });
-    await expect(
-      service.verifyClientSecretAndCheckRehash(
-        LEGACY_CLIENT_SECRET_HASH,
-        'legacy client secret',
-      ),
-    ).resolves.toEqual({ valid: true, needsRehash: true });
-    await expect(
-      service.verifyPasswordAndCheckRehash(LEGACY_PASSWORD_HASH, 'wrong'),
-    ).resolves.toEqual({ valid: false, needsRehash: false });
-  });
-
-  test('verifies ambiguous Issuary 0.21.0 v1 fixtures for rehash', async () => {
-    const service = createService();
-
-    await expect(
-      service.verifyPasswordAndCheckRehash(
-        REBRAND_V1_PASSWORD_HASH,
-        'rebrand password',
-      ),
-    ).resolves.toEqual({ valid: true, needsRehash: true });
-    await expect(
-      service.verifyClientSecretAndCheckRehash(
-        REBRAND_V1_CLIENT_SECRET_HASH,
-        'rebrand client secret',
-      ),
-    ).resolves.toEqual({ valid: true, needsRehash: true });
+      service.verifyPassword(LEGACY_PASSWORD_HASH, 'legacy password'),
+    ).resolves.toBe(false);
   });
 
   test('does not verify hashes across different instances', async () => {
@@ -87,7 +48,6 @@ describe('SecurityService', () => {
         '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
-      retire_legacy_v1_credentials: false,
     });
     const hash = await first.hashPassword('secret password');
 
@@ -179,7 +139,6 @@ describe('SecurityService', () => {
         '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
       hash_secret: 'ZmVkY2JhOTg3NjU0MzIxMGZlZGNiYTk4NzY1NDMyMTA',
       pbkdf2_iterations: 1000,
-      retire_legacy_v1_credentials: false,
     });
 
     const firstHash = await first.hashOpaqueToken(
@@ -198,22 +157,5 @@ describe('SecurityService', () => {
     expect(firstHash).toMatch(/^hmac-sha256\$v=2\$h=/);
     expect(firstHash).toBe(repeatedHash);
     expect(firstHash).not.toBe(rotatedHash);
-  });
-
-  test('returns current and legacy opaque hash lookup candidates', async () => {
-    const service = createService();
-    const candidates = await service.hashOpaqueTokenCandidates(
-      'totp-recovery',
-      'ABCD-EFGH-JKLM-NPQR',
-    );
-
-    expect(candidates[0]).toMatch(/^hmac-sha256\$v=2\$h=/);
-    expect(candidates).toContain(LEGACY_RECOVERY_CODE_HASH);
-
-    const rebrandCandidates = await service.hashOpaqueTokenCandidates(
-      'totp-recovery',
-      'WXYZ-2345-6789-ABCD',
-    );
-    expect(rebrandCandidates).toContain(REBRAND_V1_RECOVERY_CODE_HASH);
   });
 });

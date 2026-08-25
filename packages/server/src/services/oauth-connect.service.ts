@@ -278,13 +278,6 @@ export class OAuthConnectService {
         tokens,
         userInfo,
       );
-      const authenticatedUser = await this.mikro.user.findBySub(
-        result.user.sub,
-      );
-      if (authenticatedUser.password_reset_required) {
-        throw new e.PasswordResetRequired.Error();
-      }
-
       // Check if existing user needs to see terms page
       if (!result.isNewUser && explicitTerms.length > 0) {
         const pendingTerms = await this.termsService.getPendingRequiredTerms(

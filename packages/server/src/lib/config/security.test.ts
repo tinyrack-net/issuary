@@ -2,23 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { SecurityConfigSchema } from './security.ts';
 
 describe('SecurityConfigSchema', () => {
-  it('keeps legacy credential retirement opt-in', () => {
-    const base = {
-      session_secret: 'a'.repeat(64),
-      hash_secret: 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-    };
-
-    expect(SecurityConfigSchema.parse(base).retire_legacy_v1_credentials).toBe(
-      false,
-    );
-    expect(
-      SecurityConfigSchema.parse({
-        ...base,
-        retire_legacy_v1_credentials: true,
-      }).retire_legacy_v1_credentials,
-    ).toBe(true);
-  });
-
   describe('session_secret', () => {
     it('accepts a valid 64-character hex string (32 bytes, AES-256)', () => {
       const result = SecurityConfigSchema.safeParse({

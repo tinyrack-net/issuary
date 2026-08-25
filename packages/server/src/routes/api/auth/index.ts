@@ -12,7 +12,6 @@ import { authPasskeyOptionsPost } from './passkey/options/post.ts';
 import { authPasskeyVerifyPost } from './passkey/verify/post.ts';
 import { authPasswordForgotPost } from './password/forgot/post.ts';
 import { authPasswordResetPost } from './password/reset/post.ts';
-import { authPasswordResetRequiredPost } from './password/reset-required/post.ts';
 import { authRegisterPost } from './register/post.ts';
 import { authTotpRecoveryVerifyPost } from './totp/recovery/verify/post.ts';
 import { authTotpVerifyPost } from './totp/verify/post.ts';
@@ -27,7 +26,6 @@ export const authRoutes = new Hono<AppEnv>()
   .route('/', authRegisterPost)
   .route('/', authPasswordForgotPost)
   .route('/', authPasswordResetPost)
-  .route('/', authPasswordResetRequiredPost)
   .route('/', authEmailVerifyPost)
   .route('/', authEmailResendPost)
   .route('/', authTotpVerifyPost)

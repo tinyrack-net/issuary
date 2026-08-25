@@ -10,7 +10,6 @@ import {
 import { CleanupService } from './cleanup.service.ts';
 import { EmailService } from './email.service.ts';
 import { JwtService } from './jwt.service.ts';
-import { LegacyCredentialRetirementService } from './legacy-credential-retirement.service.ts';
 import { MikroService } from './mikro.service.ts';
 import { OAuthAuthorizeService } from './oauth-authorize.service.ts';
 import { OAuthClientService } from './oauth-client.service.ts';
@@ -48,33 +47,14 @@ export async function initializeServices(
     securityService,
     options.seedConfig,
   );
-  const legacyCredentialRetirementService =
-    new LegacyCredentialRetirementService(config, mikro, logger);
-  await legacyCredentialRetirementService.retireIfEnabled();
-  const [legacyHashes, passwordResetRequired] = await Promise.all([
-    legacyCredentialRetirementService.count(),
-    legacyCredentialRetirementService.countPasswordResetRequired(),
-  ]);
-  const readyForLegacyRemoval =
-    Object.values(legacyHashes).reduce((total, count) => total + count, 0) ===
-      0 && passwordResetRequired === 0;
   logger.info(
     {
       users: config.users.length,
       clients: config.clients.length,
       seeded,
-      legacyHashes,
-      passwordResetRequired,
-      readyForLegacyRemoval,
     },
     'Bootstrap complete',
   );
-  if (!readyForLegacyRemoval) {
-    logger.warn(
-      { legacyHashes, passwordResetRequired },
-      'Legacy credential migration is not yet ready for compatibility removal',
-    );
-  }
 
   // 3. Create services (respecting dependency order)
   const emailLogger = logger.child({ service: 'email' });
