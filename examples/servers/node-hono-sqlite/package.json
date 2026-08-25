@@ -8,6 +8,7 @@
     "dev": "pnpm --filter @tinyrack/issuary-frontend build && cross-env NODE_OPTIONS=--conditions=@issuary/source tsx watch src/index.ts",
     "start": "pnpm --filter @tinyrack/issuary-frontend build && node --conditions=@issuary/source --import tsx src/index.ts",
     "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "pnpm --filter @tinyrack/issuary-server build && pnpm --filter @tinyrack/issuary-frontend build && pnpm run test:prepared",
     "test:prepared": "node --conditions=@issuary/source --import tsx src/smoke-test.ts"
   },

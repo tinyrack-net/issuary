@@ -1,4 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
+import {
+  defineConfig,
+  devices,
+  type PlaywrightTestProject,
+} from '@playwright/test';
 
 const configs = [
   {
@@ -107,6 +111,17 @@ const browsers = [
   { name: 'chromium', device: devices['Desktop Chrome'] },
   { name: 'firefox', device: devices['Desktop Firefox'] },
 ];
+const includeScreenLab = process.env['ISSUARY_E2E_EXCLUDE_SCREEN_LAB'] !== '1';
+const screenLabProject: PlaywrightTestProject = {
+  name: 'screen-lab:chromium',
+  testDir: './e2e/tests/screen-lab',
+  use: {
+    colorScheme: 'light',
+    locale: 'en-US',
+    trace: 'retain-on-failure',
+    ...devices['Desktop Chrome'],
+  },
+};
 
 export default defineConfig({
   fullyParallel: true,
@@ -159,15 +174,6 @@ export default defineConfig({
         },
       })),
     ),
-    {
-      name: 'screen-lab:chromium',
-      testDir: './e2e/tests/screen-lab',
-      use: {
-        colorScheme: 'light',
-        locale: 'en-US',
-        trace: 'retain-on-failure',
-        ...devices['Desktop Chrome'],
-      },
-    },
+    ...(includeScreenLab ? [screenLabProject] : []),
   ],
 });

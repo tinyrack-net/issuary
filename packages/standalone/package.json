@@ -48,6 +48,7 @@
     "test:dist:prepared": "vitest run e2e/dist-cli.e2e.test.ts",
     "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.src.build.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo node_modules/.cache/tsconfig.e2e.tsbuildinfo",
     "build": "pnpm run clean && tsc -b tsconfig.build.json",
+    "typecheck": "tsc -b tsconfig.build.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "cli": "node dist/cli.js",
     "export:openapi": "node --conditions=@issuary/source --import tsx src/cli.ts export openapi"

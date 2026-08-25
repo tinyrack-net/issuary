@@ -30,7 +30,9 @@ Example applications for testing OIDC flows:
 ```bash
 pnpm dev        # Start all packages in dev mode
 pnpm build      # Build all packages
-pnpm test       # Run all tests
+pnpm verify:quick # Static checks, incremental types, and source tests
+pnpm verify:full  # Clean build, all tests, dist checks, and full E2E
+pnpm test         # Alias for verify:full
 ```
 
 ## Code Style Guidelines
@@ -59,17 +61,29 @@ pnpm test       # Run all tests
 - Use `react-i18next` with `useTranslation` hook
 - Translation files: `src/i18n/locales/{ko,en,ja}.json`
 
-## Post-Task Verification
+## Required Verification Workflow
 
-After completing code changes, run:
-
-```bash
-pnpm build      # Build check
-pnpm test 2>&1 | tail -200  # Test check (use tail to avoid long output)
-pnpm biome check .  # Lint check
-```
-
-**Note**: Tests take a long time (~20 min). Always pipe test output through `tail` to see only the summary.
+1. During implementation, run the smallest directly affected test file or
+   Playwright project first. Add or update a test for every behavior change.
+2. Before handing work back, run `pnpm verify:quick` and `git diff --check`.
+   This is the normal local gate; do not run the 20-minute full suite by
+   default. After a Playwright version change or on a new machine, run
+   `pnpm test:setup:browsers` once first.
+3. Run `pnpm verify:full` only when the user explicitly requests complete local
+   verification, merge-queue CI is unavailable, or a CI failure cannot be
+   isolated with a focused command.
+4. For frontend E2E, performance, and platform failures, reproduce the failing
+   file, project, or smoke command before widening the run.
+5. Workflow changes require the focused tools workflow-policy test and
+   `actionlint` in addition to `pnpm verify:quick`.
+6. Full E2E, coverage, Windows compatibility, Screen Lab snapshots, and the
+   complete performance catalog are owned by merge-group CI. Never report a
+   locally omitted gate as passed.
+7. If a task includes merging, it is complete only after the merge-group run
+   for that pull request passes `Quality Gate`.
+8. Treat intermittent failures as defects. Reproduce and fix the mechanism;
+   do not use retries, re-runs, sleeps, skipped tests, or reduced concurrency to
+   obtain a green result.
 
 ## Backward Compatibility
 - This project is under active development and **backward compatibility is not required**.

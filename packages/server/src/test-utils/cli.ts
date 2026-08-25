@@ -268,15 +268,16 @@ export async function createEmailVerification(
   let verificationId = '';
 
   await withMikroContext(services, async () => {
-    // Use repository's generateToken method for proper entity creation
-    const verification = await services.mikro.emailVerification.generateToken({
-      userSub,
-      expiresInHours: 1,
+    // Create the requested fixture state directly. generateToken() expires
+    // previous tokens at the current millisecond, which makes cleanup tests
+    // race their strict `$lt` cutoff under parallel load.
+    const verification = services.mikro.emailVerification.create({
+      user: userSub,
+      token: crypto.randomUUID(),
+      expiresAt,
+      verified,
     });
-    // Override the fields for test purposes
-    verification.expiresAt = expiresAt;
-    verification.verified = verified;
-    await services.mikro.em.flush();
+    await services.mikro.em.persist(verification).flush();
     verificationId = verification.id;
   });
 
@@ -307,15 +308,16 @@ export async function createPasswordReset(
   let resetId = '';
 
   await withMikroContext(services, async () => {
-    // Use repository's generateToken method for proper entity creation
-    const reset = await services.mikro.passwordReset.generateToken({
-      userSub,
-      expiresInHours: 1,
+    // Create the requested fixture state directly. generateToken() expires
+    // previous tokens at the current millisecond, which makes cleanup tests
+    // race their strict `$lt` cutoff under parallel load.
+    const reset = services.mikro.passwordReset.create({
+      user: userSub,
+      token: crypto.randomUUID(),
+      expiresAt,
+      used,
     });
-    // Override the fields for test purposes
-    reset.expiresAt = expiresAt;
-    reset.used = used;
-    await services.mikro.em.flush();
+    await services.mikro.em.persist(reset).flush();
     resetId = reset.id;
   });
 

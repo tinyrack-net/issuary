@@ -9,27 +9,16 @@ import {
 } from '#tools/lib/validation-runner.ts';
 
 function readProfileArgument(args: string[]): string | undefined {
-  const profileArgument = args.find((argument) =>
-    argument.startsWith('--profile='),
-  );
-  return profileArgument?.slice('--profile='.length);
-}
-
-function formatDuration(durationMilliseconds: number): string {
-  return `${(durationMilliseconds / 1000).toFixed(1)}s`;
+  const argument = args.find((value) => value.startsWith('--profile='));
+  return argument?.slice('--profile='.length);
 }
 
 function runPnpm(args: string[], label: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn('pnpm', args, {
-      stdio: 'inherit',
-    });
+    const child = spawn('pnpm', args, { stdio: 'inherit' });
     child.once('error', reject);
     child.once('exit', (code, signal) => {
-      if (code === 0) {
-        resolve();
-        return;
-      }
+      if (code === 0) return resolve();
       reject(
         new Error(
           `${label} failed (${signal ? `signal ${signal}` : `exit ${code}`})`,
@@ -44,7 +33,6 @@ const profile = parseValidationProfile(
 );
 const workerBudget = parseWorkerBudget(process.env['ISSUARY_TEST_WORKERS']);
 process.env['ISSUARY_TEST_WORKERS'] = String(workerBudget);
-
 process.stdout.write(
   `[validation] profile: ${profile}; global worker budget: ${workerBudget}\n`,
 );
@@ -60,11 +48,11 @@ await runValidationPlan(
     try {
       await runPnpm(task.args(workers), task.name);
       process.stdout.write(
-        `[validation] ${task.name}: completed in ${formatDuration(performance.now() - startedAt)}\n`,
+        `[validation] ${task.name}: completed in ${((performance.now() - startedAt) / 1000).toFixed(1)}s\n`,
       );
     } catch (error) {
       process.stderr.write(
-        `[validation] ${task.name}: failed after ${formatDuration(performance.now() - startedAt)}\n`,
+        `[validation] ${task.name}: failed after ${((performance.now() - startedAt) / 1000).toFixed(1)}s\n`,
       );
       throw error;
     }

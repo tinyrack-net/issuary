@@ -1,4 +1,4 @@
-export type ValidationProfileName = 'local' | 'full';
+export type ValidationProfileName = 'quick' | 'full';
 
 export interface ValidationTask {
   name: string;
@@ -44,16 +44,18 @@ const toolsTask: ValidationTask = {
   ],
 };
 
-const homepageTask: ValidationTask = {
-  name: 'homepage',
-  weight: 1,
-  args: (workers) => [
-    '--filter',
-    '@tinyrack/issuary-homepage',
-    'test',
-    `--maxWorkers=${workers}`,
-  ],
-};
+function homepageTask(script: 'test' | 'test:quick'): ValidationTask {
+  return {
+    name: 'homepage',
+    weight: 1,
+    args: (workers) => [
+      '--filter',
+      '@tinyrack/issuary-homepage',
+      script,
+      `--maxWorkers=${workers}`,
+    ],
+  };
+}
 
 function frontendUnitTask(script: 'test:unit' | 'test:unit:chromium') {
   return {
@@ -84,66 +86,40 @@ function standaloneTask(script: 'test' | 'test:prepared') {
 }
 
 export function parseWorkerBudget(value: string | undefined): number {
-  if (value === undefined) {
-    return DEFAULT_WORKER_BUDGET;
-  }
-
+  if (value === undefined) return DEFAULT_WORKER_BUDGET;
   const workerBudget = Number(value);
   if (!Number.isInteger(workerBudget) || workerBudget <= 0) {
     throw new Error('ISSUARY_TEST_WORKERS must be a positive integer');
   }
-
   return workerBudget;
 }
 
 export function parseValidationProfile(
   value: string | undefined,
 ): ValidationProfileName {
-  if (value === undefined || value === 'local') {
-    return 'local';
-  }
-  if (value === 'full') {
-    return 'full';
-  }
+  if (value === undefined || value === 'quick') return 'quick';
+  if (value === 'full') return 'full';
   throw new Error(`Unknown validation profile: ${value}`);
 }
 
 export function createValidationPlan(
   profile: ValidationProfileName,
 ): ValidationPlan {
-  if (profile === 'local') {
+  if (profile === 'quick') {
     return {
-      before: [],
+      before: [
+        { name: 'biome', weight: 1, args: () => ['biome', 'check', '.'] },
+        { name: 'typecheck', weight: 1, args: () => ['typecheck'] },
+      ],
       concurrent: [
         frontendUnitTask('test:unit:chromium'),
         serverTask,
         standaloneTask('test'),
         toolsTask,
+        homepageTask('test:quick'),
       ],
       concurrentTaskLimit: 2,
-      after: [
-        {
-          name: 'frontend assets',
-          weight: 1,
-          args: () => ['--filter', '@tinyrack/issuary-frontend', 'build:e2e'],
-        },
-        {
-          name: 'frontend smoke',
-          weight: 1,
-          args: (workers) => [
-            '--filter',
-            '@tinyrack/issuary-frontend',
-            'test:e2e:smoke:source',
-            `--workers=${workers}`,
-          ],
-        },
-        {
-          name: 'homepage build',
-          weight: 1,
-          args: () => ['--filter', '@tinyrack/issuary-homepage', 'build'],
-        },
-        homepageTask,
-      ],
+      after: [],
     };
   }
 
@@ -154,7 +130,7 @@ export function createValidationPlan(
       frontendUnitTask('test:unit'),
       standaloneTask('test:prepared'),
       toolsTask,
-      homepageTask,
+      homepageTask('test'),
       {
         name: 'example smoke',
         weight: 0,
@@ -196,19 +172,15 @@ export function allocateWorkers(
   if (selectedTasks.length > workerBudget) {
     throw new Error('Selected tasks exceed the global worker budget');
   }
-
   const allocations = selectedTasks.map(() => 1);
   let remaining = workerBudget - selectedTasks.length;
   const totalWeight = selectedTasks.reduce((sum, task) => sum + task.weight, 0);
-  if (totalWeight === 0) {
-    return allocations;
-  }
+  if (totalWeight === 0) return allocations;
 
   for (const [index, task] of selectedTasks.entries()) {
     const additional = Math.floor((remaining * task.weight) / totalWeight);
     allocations[index] = (allocations[index] ?? 1) + additional;
   }
-
   remaining =
     workerBudget - allocations.reduce((sum, allocation) => sum + allocation, 0);
   for (
@@ -222,7 +194,6 @@ export function allocateWorkers(
       remaining -= 1;
     }
   }
-
   return allocations;
 }
 
@@ -231,9 +202,7 @@ async function runSequentialTasks(
   workerBudget: number,
   execute: ValidationTaskExecutor,
 ): Promise<void> {
-  for (const task of tasks) {
-    await execute(task, workerBudget);
-  }
+  for (const task of tasks) await execute(task, workerBudget);
 }
 
 async function runConcurrentTasks(
