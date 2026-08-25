@@ -118,7 +118,7 @@ jobs:
           pnpm --filter @tinyrack/issuary-frontend exec playwright install --with-deps
           ${{ (github.event_name == 'merge_group' || startsWith(github.ref, 'refs/tags/v')) && 'chromium firefox' || 'chromium' }}
       - env:
-          VITEST_BROWSER_SET: ${{ github.event_name == 'pull_request' && 'chromium' || '' }}
+          VITEST_BROWSER_SET: ${{ (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') && 'chromium' || '' }}
         run: ${{ matrix.command }}
 
   frontend-smoke:
@@ -384,7 +384,9 @@ jobs:
   docker-build:
     name: Docker build
     needs: changes
-    if: needs.changes.outputs.docs_only != 'true' && github.event_name != 'pull_request'
+    if: >-
+      needs.changes.outputs.docs_only != 'true' &&
+      (github.event_name == 'merge_group' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:

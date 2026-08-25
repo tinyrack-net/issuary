@@ -46,6 +46,7 @@ describe('CI workflow policy', () => {
       'windows-build',
       'windows-tests',
       'windows-frontend',
+      'docker-build',
     ];
 
     for (const jobName of mergeOnlyJobs) {
@@ -54,11 +55,12 @@ describe('CI workflow policy', () => {
         "github.event_name == 'merge_group'",
       );
       expect(condition).not.toContain("github.event_name == 'pull_request'");
+      expect(condition).not.toContain("github.ref == 'refs/heads/main'");
     }
 
     expect(source).toContain('VITEST_BROWSER_SET:');
     expect(source).toContain(
-      "github.event_name == 'pull_request' && 'chromium'",
+      "github.event_name == 'pull_request' || github.ref == 'refs/heads/main'",
     );
     expect(source).toContain("&& 'chromium firefox' || 'chromium'");
   });
