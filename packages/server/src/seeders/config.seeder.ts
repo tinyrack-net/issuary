@@ -14,7 +14,7 @@ import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { SecurityService } from '../services/security.service.ts';
 
 const CONFIG_SEED_STATE_ID = 'config-seed';
-const CONFIG_SEED_FINGERPRINT_VERSION = 1;
+const CONFIG_SEED_FINGERPRINT_VERSION = 2;
 
 export type ConfigSeedMode = 'if-changed' | 'always' | 'skip';
 

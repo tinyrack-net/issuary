@@ -139,14 +139,14 @@ export class OAuthTokenService {
 
     // 2. Verify and consume the authorization code
     // Authorization codes are single-use (RFC 6749 §4.1.2)
-    const codeHash = await this.securityService.hashOpaqueToken(
+    const codeHashes = await this.securityService.hashOpaqueTokenCandidates(
       'oauth-code',
       code,
     );
     const consumedAt = new Date();
     const codeEntity = await this.mikro.oauthCode.consumeAuthorizationCode({
       clientId: client.id,
-      codeHash,
+      codeHash: codeHashes,
       consumedAt,
     });
 
@@ -280,14 +280,15 @@ export class OAuthTokenService {
     const client = await this.oauthClientService.findByClientId(
       params.clientId,
     );
-    const deviceCodeHash = await this.securityService.hashOpaqueToken(
-      'oauth-device-code',
-      params.deviceCode,
-    );
+    const deviceCodeHashes =
+      await this.securityService.hashOpaqueTokenCandidates(
+        'oauth-device-code',
+        params.deviceCode,
+      );
     const deviceCode =
       await this.mikro.oauthDeviceCode.findByClientAndDeviceCodeHash(
         client.id,
-        deviceCodeHash,
+        deviceCodeHashes,
       );
 
     if (!deviceCode) {

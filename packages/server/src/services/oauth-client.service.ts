@@ -138,10 +138,7 @@ export class OAuthClientService {
       return false;
     }
 
-    return this.securityService.verifyClientSecret(
-      client.clientSecretHash,
-      clientSecret,
-    );
+    return this.verifyAndMigrateClientSecret(client, clientSecret);
   }
 
   public async validateClientSecretIfRequired(
@@ -168,8 +165,8 @@ export class OAuthClientService {
       throw new e.InvalidClientCredentials.Error();
     }
 
-    const isValid = await this.securityService.verifyClientSecret(
-      client.clientSecretHash,
+    const isValid = await this.verifyAndMigrateClientSecret(
+      client,
       clientSecret,
     );
 
@@ -188,6 +185,36 @@ export class OAuthClientService {
     );
 
     return !client.clientSecretHash;
+  }
+
+  private async verifyAndMigrateClientSecret(
+    client: { id: string; clientSecretHash: string | null | undefined },
+    clientSecret: string,
+  ): Promise<boolean> {
+    const previousHash = client.clientSecretHash;
+    if (!previousHash) {
+      return false;
+    }
+    const verification =
+      await this.securityService.verifyClientSecretAndCheckRehash(
+        previousHash,
+        clientSecret,
+      );
+
+    if (!verification.valid) {
+      return false;
+    }
+
+    if (verification.needsRehash) {
+      const clientSecretHash =
+        await this.securityService.hashClientSecret(clientSecret);
+      await this.mikro.oauthClient.nativeUpdate(
+        { id: client.id, clientSecretHash: previousHash },
+        { clientSecretHash },
+      );
+    }
+
+    return true;
   }
 
   public async validateConfidentialClient(clientId: string): Promise<void> {
