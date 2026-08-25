@@ -28,11 +28,11 @@ import {
   type AppConfigs,
   appConfigQueryOptions,
 } from '#frontend/queries/config.ts';
-import { authenticateWithPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
 import {
-  type AuthResponse,
-  getSessionQueryOptions,
-} from '#frontend/queries/session.ts';
+  authenticateWithPasskeyMutationOptions,
+  type PasskeyAuthenticationResponse,
+} from '#frontend/queries/passkey.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
 const SearchSchema = OAuthSearchSchema.extend({
   oauth_error: z.string().optional(),
@@ -113,7 +113,11 @@ function Login() {
   const isPasskeyEnabled = configData.auth.passkey.enabled;
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
 
-  const handlePasskeySuccess = async (data: AuthResponse) => {
+  const handlePasskeySuccess = async (data: PasskeyAuthenticationResponse) => {
+    if (data.password_reset_required) {
+      await router.navigate({ to: '/password/reset-required' });
+      return;
+    }
     if (data.user) {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, data);
       await tick();

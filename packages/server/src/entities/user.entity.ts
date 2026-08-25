@@ -28,6 +28,10 @@ export const UserEntitySchema = defineEntity({
       .comment('Hashed password for local authentication')
       .nullable()
       .lazy(),
+    password_reset_required: p
+      .boolean()
+      .comment('Whether the user must set a new password before authentication')
+      .default(false),
     managed_by: p
       .string()
       .$type<'database' | 'config'>()

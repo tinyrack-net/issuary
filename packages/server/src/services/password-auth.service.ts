@@ -34,7 +34,7 @@ export class PasswordAuthService {
       params.email,
     );
 
-    if (!user.password_hash) {
+    if (user.password_reset_required || !user.password_hash) {
       throw err;
     }
 
@@ -169,6 +169,7 @@ export class PasswordAuthService {
     assertPasswordPolicy(newPassword, this.passwordPolicy);
 
     user.password_hash = await this.securityService.hashPassword(newPassword);
+    user.password_reset_required = false;
     await this.mikro.em.flush();
   }
 }

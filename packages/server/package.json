@@ -1,6 +1,6 @@
 {
   "name": "@tinyrack/issuary-server",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "type": "module",
   "description": "OpenID Connect Provider with OAuth2 support",
   "license": "MIT",

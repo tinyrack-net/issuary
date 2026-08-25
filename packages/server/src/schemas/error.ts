@@ -344,6 +344,11 @@ export const e = {
     'INVALID_PASSWORD_RESET_TOKEN',
     'The password reset token is invalid or has expired.',
   ),
+  PasswordResetRequired: createError(
+    403,
+    'PASSWORD_RESET_REQUIRED',
+    'A new password must be set before authentication can continue.',
+  ),
   UserNotEditable: createError(
     403,
     'USER_NOT_EDITABLE',

@@ -6,7 +6,11 @@ import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
 import { client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
-import type { AuthResponse } from './session';
+
+export type PasskeyAuthenticationResponse = InferResponseType<
+  (typeof client.api.auth.passkey.verify)['$post'],
+  200
+>;
 
 export type PasskeysResponse = InferResponseType<
   (typeof client.api.user.passkeys)['$get'],
@@ -150,7 +154,7 @@ export const authenticateWithPasskeyMutationOptions = mutationOptions({
  *   conditional authentication
  */
 export const startConditionalPasskeyAuth = async (
-  onSuccess: (data: AuthResponse) => void,
+  onSuccess: (data: PasskeyAuthenticationResponse) => void,
   abortSignal: AbortSignal,
 ): Promise<void> => {
   try {
