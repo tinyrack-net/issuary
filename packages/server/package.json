@@ -186,6 +186,7 @@
     "test:perf:smoke": "tsx ./scripts/run-perf-tests.ts src/routes/api/health/health.perf.test.ts src/routes/api/user/session/session.perf.test.ts src/routes/api/auth/login/login.perf.test.ts src/routes/oauth/token/token.perf.test.ts",
     "clean": "node ../../packages/tools/src/scripts/rm.ts dist node_modules/.cache/tsconfig.src.tsbuildinfo node_modules/.cache/tsconfig.test.tsbuildinfo publish",
     "build": "pnpm run clean && pnpm run mikro-orm:compile && tsc -b tsconfig.json",
+    "typecheck": "tsc -b tsconfig.json",
     "build:watch": "tsc -b -w tsconfig.json",
     "email:preview": "email dev --dir src/emails/templates --port 3001",
     "mikro-orm": "mikro-orm",

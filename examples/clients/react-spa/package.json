@@ -22,6 +22,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "check:ui": "tinyrack-ui-check",
+    "typecheck": "tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {

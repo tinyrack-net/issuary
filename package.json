@@ -5,14 +5,16 @@
   "packageManager": "pnpm@11.10.0",
   "scripts": {
     "dev": "pnpm --filter \"@tinyrack/issuary-*\" --parallel dev",
-    "test": "node packages/tools/src/scripts/run-validation-tests.ts --profile=local",
-    "test:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
+    "test": "pnpm verify:full",
+    "verify:quick": "node packages/tools/src/scripts/run-validation-tests.ts --profile=quick",
+    "verify:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
+    "typecheck": "pnpm -r --workspace-concurrency=Infinity --if-present typecheck",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
     "check:ui": "pnpm --filter @tinyrack/issuary-frontend check:ui && pnpm --filter @tinyrack/issuary-homepage check:ui && pnpm --filter @issuary-client-examples/react-spa check:ui",
     "biome": "biome",
     "screen:dev": "pnpm --filter @tinyrack/issuary-frontend screen:dev",
     "tools": "issuary-tools",
-    "test:setup:browsers": "pnpm --filter @tinyrack/issuary-frontend exec playwright install"
+    "test:setup:browsers": "pnpm --filter @tinyrack/issuary-frontend exec playwright install chromium firefox"
   },
   "author": "",
   "license": "MIT",

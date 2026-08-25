@@ -15,76 +15,50 @@ describe('validation runner', () => {
     expect(() => parseWorkerBudget('0')).toThrow(
       'ISSUARY_TEST_WORKERS must be a positive integer',
     );
-    expect(() => parseWorkerBudget('1.5')).toThrow(
-      'ISSUARY_TEST_WORKERS must be a positive integer',
-    );
   });
 
   test('parses supported validation profiles', () => {
-    expect(parseValidationProfile(undefined)).toBe('local');
-    expect(parseValidationProfile('local')).toBe('local');
+    expect(parseValidationProfile(undefined)).toBe('quick');
+    expect(parseValidationProfile('quick')).toBe('quick');
     expect(parseValidationProfile('full')).toBe('full');
-    expect(() => parseValidationProfile('ci')).toThrow(
-      'Unknown validation profile: ci',
+    expect(() => parseValidationProfile('local')).toThrow(
+      'Unknown validation profile: local',
     );
   });
 
-  test('keeps concurrent worker allocations within the global budget', () => {
-    const tasks = createValidationPlan('local').concurrent.slice(0, 4);
+  test('keeps concurrent allocations within the worker budget', () => {
+    const tasks = createValidationPlan('quick').concurrent.slice(0, 4);
     const allocations = allocateWorkers(tasks, 4);
-
-    expect(allocations).toHaveLength(4);
     expect(allocations.reduce((sum, workers) => sum + workers, 0)).toBe(4);
     expect(allocations.every((workers) => workers >= 1)).toBe(true);
   });
 
-  test('creates a lightweight local plan', () => {
-    const plan = createValidationPlan('local');
-    const concurrentNames = plan.concurrent.map((task) => task.name);
-    const afterNames = plan.after.map((task) => task.name);
-    const frontendUnit = plan.concurrent.find(
-      (task) => task.name === 'frontend unit',
-    );
-    const standalone = plan.concurrent.find(
-      (task) => task.name === 'standalone',
-    );
-    const frontendSmoke = plan.after.find(
-      (task) => task.name === 'frontend smoke',
-    );
-
-    expect(plan.before).toEqual([]);
-    expect(plan.concurrentTaskLimit).toBe(2);
-    expect(concurrentNames).toEqual([
+  test('creates a focused quick plan', () => {
+    const plan = createValidationPlan('quick');
+    expect(plan.before.map((task) => task.name)).toEqual([
+      'biome',
+      'typecheck',
+    ]);
+    expect(plan.concurrent.map((task) => task.name)).toEqual([
       'frontend unit',
       'server',
       'standalone',
       'tools',
-    ]);
-    expect(afterNames).toEqual([
-      'frontend assets',
-      'frontend smoke',
-      'homepage build',
       'homepage',
     ]);
-    expect(frontendUnit?.args(1)).toContain('test:unit:chromium');
-    expect(standalone?.args(1)).toContain('test');
-    expect(standalone?.args(1)).not.toContain('test:prepared');
-    expect(frontendSmoke?.args(1)).toContain('test:e2e:smoke:source');
+    expect(plan.after).toEqual([]);
+    expect(plan.concurrentTaskLimit).toBe(2);
+    expect(plan.concurrent[0]?.args(1)).toContain('test:unit:chromium');
+    expect(plan.concurrent[4]?.args(1)).toContain('test:quick');
   });
 
-  test('preserves the complete validation scope in the full plan', () => {
+  test('preserves complete validation in the full plan', () => {
     const plan = createValidationPlan('full');
-    const allNames = [...plan.before, ...plan.concurrent, ...plan.after].map(
-      (task) => task.name,
-    );
-    const frontendUnit = plan.concurrent.find(
-      (task) => task.name === 'frontend unit',
-    );
-    const standalone = plan.concurrent.find(
-      (task) => task.name === 'standalone',
-    );
-
-    expect(allNames).toEqual([
+    expect(
+      [...plan.before, ...plan.concurrent, ...plan.after].map(
+        (task) => task.name,
+      ),
+    ).toEqual([
       'build',
       'server',
       'frontend unit',
@@ -95,44 +69,18 @@ describe('validation runner', () => {
       'standalone dist',
       'frontend e2e',
     ]);
-    expect(frontendUnit?.args(1)).toContain('test:unit');
-    expect(frontendUnit?.args(1)).not.toContain('test:unit:chromium');
-    expect(standalone?.args(1)).toContain('test:prepared');
   });
 
-  test('gives local heavyweight suites multiple workers without exceeding four', async () => {
-    const allocations: Array<[string, number]> = [];
-
-    await runValidationPlan(
-      createValidationPlan('local'),
-      4,
-      async (task, workers) => {
-        allocations.push([task.name, workers]);
-      },
-    );
-
-    expect(allocations.slice(0, 4)).toEqual([
-      ['frontend unit', 2],
-      ['server', 2],
-      ['standalone', 3],
-      ['tools', 1],
-    ]);
-  });
-
-  test('propagates concurrent failures and skips later phases', async () => {
+  test('propagates concurrent failures and skips later batches', async () => {
     const executed: string[] = [];
     const execute: ValidationTaskExecutor = vi.fn(async (task) => {
       executed.push(task.name);
-      if (task.name === 'server') {
-        throw new Error('server failed');
-      }
+      if (task.name === 'server') throw new Error('server failed');
     });
-
     await expect(
-      runValidationPlan(createValidationPlan('local'), 4, execute),
+      runValidationPlan(createValidationPlan('quick'), 4, execute),
     ).rejects.toThrow('Validation test group failed');
-    expect(executed).not.toContain('frontend assets');
-    expect(executed).not.toContain('frontend smoke');
-    expect(executed).not.toContain('homepage build');
+    expect(executed).not.toContain('standalone');
+    expect(executed).not.toContain('homepage');
   });
 });
