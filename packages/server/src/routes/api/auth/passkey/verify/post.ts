@@ -26,9 +26,7 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
     responses: {
       200: {
         content: {
-          'application/json': {
-            schema: resolver(r.PasskeyAuthenticationResponse),
-          },
+          'application/json': { schema: resolver(r.AuthResponse) },
         },
         description: 'Success',
       },
@@ -97,16 +95,11 @@ export const authPasskeyVerifyPost = new Hono<AppEnv>().post(
 
     const userEntity = await mikro.user.verifyBySub(passkeyUser.sub);
     const sessionUser = await userService.userEntityToSessionUser(userEntity);
-    if (userEntity.password_reset_required) {
-      session.setPasswordResetSession(passkeyUser.sub);
-      return c.json({ user: sessionUser, password_reset_required: true }, 200);
-    }
-
     const authTime =
       pending2FA?.authenticatedAt ?? Math.floor(Date.now() / 1000);
 
     session.setUserSession(passkeyUser.sub, authTime);
 
-    return c.json({ user: sessionUser, password_reset_required: false }, 200);
+    return c.json({ user: sessionUser }, 200);
   },
 );

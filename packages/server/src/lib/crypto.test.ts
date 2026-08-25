@@ -194,7 +194,7 @@ const TEST_MASTER_SECRET = fromBase64Url(
 
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';
-const HKDF_CONTEXT = 'issuary-hash-master-v1';
+const HKDF_CONTEXT = 'auth-hash-master-v2';
 const DERIVED_KEY_BYTES = 32;
 
 describe('normalizeSecret', () => {
@@ -219,7 +219,7 @@ describe('parsePbkdf2Hash / formatPbkdf2Hash', () => {
     const digest = new Uint8Array(32).fill(42);
     const formatted = formatPbkdf2Hash({
       algorithm: PBKDF2_ALGORITHM,
-      version: 1,
+      version: 2,
       iterations: 100000,
       salt,
       digest,
@@ -228,7 +228,7 @@ describe('parsePbkdf2Hash / formatPbkdf2Hash', () => {
 
     expect(parsed).toBeDefined();
     expect(parsed?.iterations).toBe(100000);
-    expect(parsed?.version).toBe(1);
+    expect(parsed?.version).toBe(2);
     expect(parsed?.salt).toEqual(salt);
     expect(parsed?.digest).toEqual(digest);
   });
@@ -264,11 +264,11 @@ describe('formatOpaqueHash', () => {
     const digest = new Uint8Array(32).fill(7);
     const result = formatOpaqueHash({
       algorithm: HMAC_ALGORITHM,
-      version: 1,
+      version: 2,
       digest,
     });
 
-    expect(result).toMatch(/^hmac-sha256\$v=1\$h=/);
+    expect(result).toMatch(/^hmac-sha256\$v=2\$h=/);
   });
 });
 
@@ -278,14 +278,14 @@ describe('derivePurposeKeyBytes', () => {
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'password-v1',
+      'password-v2',
       DERIVED_KEY_BYTES,
     );
     const key2 = await derivePurposeKeyBytes(
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'password-v1',
+      'password-v2',
       DERIVED_KEY_BYTES,
     );
 
@@ -297,14 +297,14 @@ describe('derivePurposeKeyBytes', () => {
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'password-v1',
+      'password-v2',
       DERIVED_KEY_BYTES,
     );
     const clientSecretKey = await derivePurposeKeyBytes(
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'client-secret-v1',
+      'client-secret-v2',
       DERIVED_KEY_BYTES,
     );
 
@@ -318,7 +318,7 @@ describe('derivePbkdf2Bytes', () => {
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'password-v1',
+      'password-v2',
       DERIVED_KEY_BYTES,
     );
     const salt = new Uint8Array(16).fill(1);
@@ -350,7 +350,7 @@ describe('signOpaqueValue', () => {
       crypto,
       TEST_MASTER_SECRET,
       HKDF_CONTEXT,
-      'oauth-code-v1',
+      'oauth-code-v2',
       DERIVED_KEY_BYTES,
     );
 

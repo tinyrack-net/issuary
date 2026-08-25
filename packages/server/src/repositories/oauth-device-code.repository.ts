@@ -28,13 +28,10 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
   }
 
   async findPendingByUserCodeHash(
-    userCodeHash: string | string[],
+    userCodeHash: string,
   ): Promise<IOAuthDeviceCodeEntity | null> {
-    const userCodeHashes = Array.isArray(userCodeHash)
-      ? userCodeHash
-      : [userCodeHash];
     return this.findOne({
-      userCodeHash: { $in: userCodeHashes },
+      userCodeHash,
       consumedAt: null,
       authorizedAt: null,
       deniedAt: null,
@@ -43,16 +40,13 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
   }
 
   async approvePendingByUserCodeHash(params: {
-    userCodeHash: string | string[];
+    userCodeHash: string;
     userSub: string;
     approvedAt: Date;
   }): Promise<IOAuthDeviceCodeEntity | null> {
-    const userCodeHashes = Array.isArray(params.userCodeHash)
-      ? params.userCodeHash
-      : [params.userCodeHash];
     const updated = await this.nativeUpdate(
       {
-        userCodeHash: { $in: userCodeHashes },
+        userCodeHash: params.userCodeHash,
         consumedAt: null,
         authorizedAt: null,
         deniedAt: null,
@@ -69,21 +63,18 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
     }
 
     return this.findOne(
-      { userCodeHash: { $in: userCodeHashes } },
+      { userCodeHash: params.userCodeHash },
       { populate: ['client'] },
     );
   }
 
   async denyPendingByUserCodeHash(params: {
-    userCodeHash: string | string[];
+    userCodeHash: string;
     deniedAt: Date;
   }): Promise<IOAuthDeviceCodeEntity | null> {
-    const userCodeHashes = Array.isArray(params.userCodeHash)
-      ? params.userCodeHash
-      : [params.userCodeHash];
     const updated = await this.nativeUpdate(
       {
-        userCodeHash: { $in: userCodeHashes },
+        userCodeHash: params.userCodeHash,
         consumedAt: null,
         authorizedAt: null,
         deniedAt: null,
@@ -99,21 +90,18 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
     }
 
     return this.findOne(
-      { userCodeHash: { $in: userCodeHashes } },
+      { userCodeHash: params.userCodeHash },
       { populate: ['client'] },
     );
   }
 
   async findByClientAndDeviceCodeHash(
     clientId: string,
-    deviceCodeHash: string | string[],
+    deviceCodeHash: string,
   ): Promise<IOAuthDeviceCodeEntity | null> {
-    const deviceCodeHashes = Array.isArray(deviceCodeHash)
-      ? deviceCodeHash
-      : [deviceCodeHash];
     return this.findOne({
       client: clientId,
-      deviceCodeHash: { $in: deviceCodeHashes },
+      deviceCodeHash,
       consumedAt: null,
     });
   }

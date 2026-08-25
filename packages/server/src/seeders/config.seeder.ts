@@ -266,7 +266,6 @@ async function syncUsers(
         sub: configUser.sub,
         email: configUser.email,
         password_hash: hashedPassword,
-        password_reset_required: false,
         email_verified: true,
         managed_by: 'config',
         role: configUser.role ?? 'user',

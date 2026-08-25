@@ -38,16 +38,3 @@ export const resetPasswordMutationOptions = mutationOptions({
     return jsonOk(res);
   },
 });
-
-export type ResetRequiredPasswordParams = InferRequestType<
-  (typeof client.api.auth.password)['reset-required']['$post']
->['json'];
-
-export const resetRequiredPasswordMutationOptions = mutationOptions({
-  mutationFn: async (values: ResetRequiredPasswordParams) => {
-    const res = await client.api.auth.password['reset-required'].$post({
-      json: values,
-    });
-    return jsonOk(res);
-  },
-});

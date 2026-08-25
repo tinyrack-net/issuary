@@ -109,8 +109,6 @@ describe('IssuaryRuntimeConfigSchema', () => {
     expect(parsed.security).toEqual({
       ...MINIMAL_INPUT_CONFIG.security,
       pbkdf2_iterations: SECURITY_CONFIG_DEFAULT.pbkdf2_iterations,
-      retire_legacy_v1_credentials:
-        SECURITY_CONFIG_DEFAULT.retire_legacy_v1_credentials,
     });
     expect(parsed.cleanup).toEqual(CLEANUP_CONFIG_DEFAULT);
     expect(parsed.scheduler).toBeUndefined();

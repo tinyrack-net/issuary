@@ -14,7 +14,6 @@ import {
 const PBKDF2_ALGORITHM = 'pbkdf2-sha256';
 const HMAC_ALGORITHM = 'hmac-sha256';
 const CURRENT_HASH_FORMAT_VERSION = 2;
-const LEGACY_HASH_FORMAT_VERSION = 1;
 const PBKDF2_SALT_BYTES = 16;
 const PBKDF2_DERIVED_KEY_BYTES = 32;
 
@@ -26,62 +25,17 @@ export type OpaquePurpose =
   | 'totp-recovery';
 type Purpose = Pbkdf2Purpose | OpaquePurpose;
 
-type HashPolicyId = 'v2' | 'tinyauth-v1' | 'issuary-v1';
-
-export interface SecretVerificationResult {
-  valid: boolean;
-  needsRehash: boolean;
-}
-
-const HASH_POLICIES: Record<
-  HashPolicyId,
-  {
-    formatVersion: number;
-    context: string;
-    purposeLabels: Record<Purpose, string>;
-  }
-> = {
-  'tinyauth-v1': {
-    // Kept only while persisted v1 hashes still exist. Remove with v1 support.
-    formatVersion: LEGACY_HASH_FORMAT_VERSION,
-    context: 'tinyauth-hash-master-v1',
-    purposeLabels: {
-      password: 'password-v1',
-      'client-secret': 'client-secret-v1',
-      'oauth-code': 'oauth-code-v1',
-      'oauth-device-code': 'oauth-device-code-v1',
-      'oauth-device-user-code': 'oauth-device-user-code-v1',
-      'totp-recovery': 'totp-recovery-v1',
-    },
-  },
-  'issuary-v1': {
-    // Issuary 0.21.0 wrote this ambiguous v1 variant after the rebrand.
-    formatVersion: LEGACY_HASH_FORMAT_VERSION,
-    context: 'issuary-hash-master-v1',
-    purposeLabels: {
-      password: 'password-v1',
-      'client-secret': 'client-secret-v1',
-      'oauth-code': 'oauth-code-v1',
-      'oauth-device-code': 'oauth-device-code-v1',
-      'oauth-device-user-code': 'oauth-device-user-code-v1',
-      'totp-recovery': 'totp-recovery-v1',
-    },
-  },
-  v2: {
-    formatVersion: CURRENT_HASH_FORMAT_VERSION,
-    context: 'auth-hash-master-v2',
-    purposeLabels: {
-      password: 'password-v2',
-      'client-secret': 'client-secret-v2',
-      'oauth-code': 'oauth-code-v2',
-      'oauth-device-code': 'oauth-device-code-v2',
-      'oauth-device-user-code': 'oauth-device-user-code-v2',
-      'totp-recovery': 'totp-recovery-v2',
-    },
-  },
+const HASH_POLICY = {
+  context: 'auth-hash-master-v2',
+  purposeLabels: {
+    password: 'password-v2',
+    'client-secret': 'client-secret-v2',
+    'oauth-code': 'oauth-code-v2',
+    'oauth-device-code': 'oauth-device-code-v2',
+    'oauth-device-user-code': 'oauth-device-user-code-v2',
+    'totp-recovery': 'totp-recovery-v2',
+  } satisfies Record<Purpose, string>,
 };
-const CURRENT_HASH_POLICY: HashPolicyId = 'v2';
-const LEGACY_HASH_POLICIES: HashPolicyId[] = ['tinyauth-v1', 'issuary-v1'];
 
 export class SecurityService {
   private readonly hashMasterSecret: Uint8Array;
@@ -98,25 +52,20 @@ export class SecurityService {
     this.pbkdf2Iterations = config.security.pbkdf2_iterations;
   }
 
-  private async resolvePurposeKey(
-    purpose: Purpose,
-    policyId: HashPolicyId,
-  ): Promise<Uint8Array> {
-    const cacheKey = `${policyId}:${purpose}`;
-    const cached = this.purposeKeyCache.get(cacheKey);
+  private async resolvePurposeKey(purpose: Purpose): Promise<Uint8Array> {
+    const cached = this.purposeKeyCache.get(purpose);
     if (cached) {
       return cached;
     }
 
-    const policy = HASH_POLICIES[policyId];
     const derivation = derivePurposeKeyBytes(
       globalThis.crypto,
       this.hashMasterSecret,
-      policy.context,
-      policy.purposeLabels[purpose],
+      HASH_POLICY.context,
+      HASH_POLICY.purposeLabels[purpose],
       PBKDF2_DERIVED_KEY_BYTES,
     );
-    this.purposeKeyCache.set(cacheKey, derivation);
+    this.purposeKeyCache.set(purpose, derivation);
     return derivation;
   }
 
@@ -125,10 +74,7 @@ export class SecurityService {
     secret: string,
   ): Promise<string> {
     const crypto = globalThis.crypto;
-    const purposeKey = await this.resolvePurposeKey(
-      purpose,
-      CURRENT_HASH_POLICY,
-    );
+    const purposeKey = await this.resolvePurposeKey(purpose);
     const salt = getRandomBytes(PBKDF2_SALT_BYTES);
     const digest = await derivePbkdf2Bytes(
       crypto,
@@ -152,43 +98,25 @@ export class SecurityService {
     purpose: Pbkdf2Purpose,
     hash: string,
     secret: string,
-  ): Promise<SecretVerificationResult> {
+  ): Promise<boolean> {
     const parsed = parsePbkdf2Hash(hash, PBKDF2_ALGORITHM);
 
-    if (
-      !parsed ||
-      (parsed.version !== CURRENT_HASH_FORMAT_VERSION &&
-        parsed.version !== LEGACY_HASH_FORMAT_VERSION)
-    ) {
-      return { valid: false, needsRehash: false };
+    if (!parsed || parsed.version !== CURRENT_HASH_FORMAT_VERSION) {
+      return false;
     }
 
     const crypto = globalThis.crypto;
-    const policyIds =
-      parsed.version === CURRENT_HASH_FORMAT_VERSION
-        ? [CURRENT_HASH_POLICY]
-        : LEGACY_HASH_POLICIES;
+    const purposeKey = await this.resolvePurposeKey(purpose);
+    const derived = await derivePbkdf2Bytes(
+      crypto,
+      purposeKey,
+      secret,
+      parsed.salt,
+      parsed.iterations,
+      PBKDF2_DERIVED_KEY_BYTES,
+    );
 
-    for (const policyId of policyIds) {
-      const purposeKey = await this.resolvePurposeKey(purpose, policyId);
-      const derived = await derivePbkdf2Bytes(
-        crypto,
-        purposeKey,
-        secret,
-        parsed.salt,
-        parsed.iterations,
-        PBKDF2_DERIVED_KEY_BYTES,
-      );
-
-      if (timingSafeEqualBytes(derived, parsed.digest)) {
-        return {
-          valid: true,
-          needsRehash: parsed.version !== CURRENT_HASH_FORMAT_VERSION,
-        };
-      }
-    }
-
-    return { valid: false, needsRehash: false };
+    return timingSafeEqualBytes(derived, parsed.digest);
   }
 
   public async hashPassword(password: string): Promise<string> {
@@ -199,13 +127,6 @@ export class SecurityService {
     hash: string,
     password: string,
   ): Promise<boolean> {
-    return (await this.verifyPasswordAndCheckRehash(hash, password)).valid;
-  }
-
-  public async verifyPasswordAndCheckRehash(
-    hash: string,
-    password: string,
-  ): Promise<SecretVerificationResult> {
     return this.verifyPbkdf2Secret('password', hash, password);
   }
 
@@ -217,14 +138,6 @@ export class SecurityService {
     hash: string,
     clientSecret: string,
   ): Promise<boolean> {
-    return (await this.verifyClientSecretAndCheckRehash(hash, clientSecret))
-      .valid;
-  }
-
-  public async verifyClientSecretAndCheckRehash(
-    hash: string,
-    clientSecret: string,
-  ): Promise<SecretVerificationResult> {
     return this.verifyPbkdf2Secret('client-secret', hash, clientSecret);
   }
 
@@ -232,32 +145,12 @@ export class SecurityService {
     purpose: OpaquePurpose,
     value: string,
   ): Promise<string> {
-    return this.hashOpaqueTokenForPolicy(purpose, value, CURRENT_HASH_POLICY);
-  }
-
-  public async hashOpaqueTokenCandidates(
-    purpose: OpaquePurpose,
-    value: string,
-  ): Promise<string[]> {
-    return Promise.all(
-      [CURRENT_HASH_POLICY, ...LEGACY_HASH_POLICIES].map((policyId) =>
-        this.hashOpaqueTokenForPolicy(purpose, value, policyId),
-      ),
-    );
-  }
-
-  private async hashOpaqueTokenForPolicy(
-    purpose: OpaquePurpose,
-    value: string,
-    policyId: HashPolicyId,
-  ): Promise<string> {
     const crypto = globalThis.crypto;
-    const policy = HASH_POLICIES[policyId];
-    const purposeKey = await this.resolvePurposeKey(purpose, policyId);
+    const purposeKey = await this.resolvePurposeKey(purpose);
     const digest = await signOpaqueValue(crypto, purposeKey, value);
     return formatOpaqueHash({
       algorithm: HMAC_ALGORITHM,
-      version: policy.formatVersion,
+      version: CURRENT_HASH_FORMAT_VERSION,
       digest,
     });
   }
