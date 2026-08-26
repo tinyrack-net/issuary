@@ -178,15 +178,16 @@ async function authorizeSelectedAccount(params: {
   const callbackRouteHandler = async (
     route: import('@playwright/test').Route,
   ) => {
-    await route.fulfill({
-      body: 'Mock OAuth client callback captured',
-      contentType: 'text/plain',
-      status: 200,
-    });
+    await route.abort('aborted');
   };
   await params.page.route(callbackRoute, callbackRouteHandler);
   let redirectUrl: URL | undefined;
   try {
+    const callbackFailurePromise = params.page.waitForEvent('requestfailed', {
+      predicate: (request) =>
+        request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+      timeout: CLIENT_REDIRECT_TIMEOUT_MS,
+    });
     const redirectPromise = params.page.waitForRequest(
       (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
       { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
@@ -217,10 +218,7 @@ async function authorizeSelectedAccount(params: {
     }
 
     redirectUrl = new URL(redirectRequest.url());
-    const callbackResponse = await redirectRequest.response();
-    if (callbackResponse) {
-      await callbackResponse.finished();
-    }
+    await callbackFailurePromise;
   } finally {
     await params.page.unroute(callbackRoute, callbackRouteHandler);
   }
