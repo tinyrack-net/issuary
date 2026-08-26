@@ -45,10 +45,6 @@ const screenLabConfig = {
     default_language: variant.locale,
     fallback_language: 'en',
   },
-  branding: {
-    ...routeTestAppConfig.branding,
-    background_url: '/e2e/screen-lab/background.svg',
-  },
   auth: {
     ...routeTestAppConfig.auth,
     passkey: {

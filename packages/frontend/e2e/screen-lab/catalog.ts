@@ -37,14 +37,10 @@ function createScreenConfig(
   overrides: Partial<E2EConfigInput> = {},
 ): ScreenScenarioConfigFactory {
   return (backendPort, frontendPort) => {
-    const { branding, ...restOverrides } = overrides;
     return {
       ...E2E_BASE_CONFIG,
       ...createTestConfig(backendPort, {
-        ...restOverrides,
-        branding: branding ?? {
-          background_url: `http://127.0.0.1:${backendPort}/test/screen-lab-background.svg`,
-        },
+        ...overrides,
       }),
       frontend: createProxyHandler({
         upstream: `http://127.0.0.1:${frontendPort}`,

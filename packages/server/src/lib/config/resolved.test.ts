@@ -213,7 +213,6 @@ describe('IssuaryRuntimeConfigSchema', () => {
     expect(parsed.branding.title).toEqual({
       en: 'Custom',
     });
-    expect(parsed.branding.subtitle).toEqual(BRANDING_CONFIG_DEFAULT.subtitle);
     expect(parsed.openapi).toEqual({
       ...OPENAPI_CONFIG_DEFAULT,
       enabled: false,
@@ -221,6 +220,29 @@ describe('IssuaryRuntimeConfigSchema', () => {
     });
     expect(parsed.registration.allowed_email_patterns).toEqual(
       REGISTRATION_CONFIG_DEFAULT.allowed_email_patterns,
+    );
+  });
+
+  test.each([
+    ['background_url', 'https://example.com/background.png'],
+    ['subtitle', { en: 'Legacy subtitle' }],
+  ])('rejects removed branding option %s', (option, value) => {
+    const result = IssuaryRuntimeConfigSchema.safeParse({
+      ...MINIMAL_INPUT_CONFIG,
+      branding: { [option]: value },
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      throw new Error('Expected removed branding option to be rejected.');
+    }
+
+    expect(result.error.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'unrecognized_keys',
+        keys: [option],
+        path: ['branding'],
+      }),
     );
   });
 

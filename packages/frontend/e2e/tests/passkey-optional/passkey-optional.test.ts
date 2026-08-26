@@ -85,7 +85,7 @@ test.describe('Passkey optional configuration', () => {
       await page.goto('/setup/passkey?passkey_name=default');
       await page.waitForURL('**/profile');
       await expect(page).toHaveURL(/\/profile/);
-      await expect(page.getByText('Passkeys')).toBeVisible();
+      await expect(page.getByText('Passkeys', { exact: true })).toBeVisible();
     } finally {
       await virtualAuth.teardown();
     }

@@ -13,8 +13,8 @@ type AuthPageHeaderProps = {
 /**
  * Titles the current screen.
  *
- * Heading level follows the brand panel: when the deployment has configured a
- * product name that name is the page's `h1`, so this is an `h2` beneath it.
+ * Heading level follows the brand header: when the deployment has configured
+ * a product name that name is the page's `h1`, so this is an `h2` beneath it.
  * With no branding there is no other heading, so this becomes the `h1` rather
  * than leaving the page starting at level 2.
  *

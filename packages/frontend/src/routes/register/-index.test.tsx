@@ -19,10 +19,8 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    background_url: '',
     icon_url: '',
     title: {},
-    subtitle: {},
   },
   registration: {
     public_registration: true,

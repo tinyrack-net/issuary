@@ -14,13 +14,9 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    background_url: 'https://example.com/background.png',
     icon_url: 'https://example.com/icon.png',
     title: {
       en: 'Issuary',
-    },
-    subtitle: {
-      en: 'Sign in',
     },
   },
   registration: {
