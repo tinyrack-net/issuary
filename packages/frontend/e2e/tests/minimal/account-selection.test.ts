@@ -206,18 +206,21 @@ async function authorizeSelectedAccount(params: {
         .then(createConsentOutcome),
     ]);
 
+    let redirectRequest: import('@playwright/test').Request;
     if (redirectOutcome.kind === 'consent') {
       await params.page.locator(consentPage.allowButton).click({
         noWaitAfter: true,
       });
-      redirectUrl = new URL((await redirectPromise).url());
+      redirectRequest = await redirectPromise;
     } else {
-      redirectUrl = new URL(redirectOutcome.request.url());
+      redirectRequest = redirectOutcome.request;
     }
 
-    await params.page
-      .waitForLoadState('domcontentloaded', { timeout: 15_000 })
-      .catch(() => undefined);
+    redirectUrl = new URL(redirectRequest.url());
+    const callbackResponse = await redirectRequest.response();
+    if (callbackResponse) {
+      await callbackResponse.finished();
+    }
   } finally {
     await params.page.unroute(callbackRoute, callbackRouteHandler);
   }
