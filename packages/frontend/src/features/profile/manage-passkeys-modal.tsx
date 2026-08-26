@@ -298,7 +298,7 @@ function PasskeyItem({
 
   if (isConfirmingDelete) {
     return (
-      <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-sm text-tinyrack-on-danger">
+      <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-sm text-tinyrack-danger-foreground">
         <div className="flex items-center gap-tinyrack-sm">
           <Trash2Icon className="size-tinyrack-lg" />
           <span className="text-tinyrack-xs">
@@ -334,9 +334,9 @@ function PasskeyItem({
     >
       <div className="flex items-center gap-tinyrack-sm">
         {passkey.device_type === 'multiDevice' ? (
-          <CloudIcon className="size-tinyrack-lg text-tinyrack-primary" />
+          <CloudIcon className="size-tinyrack-lg text-tinyrack-primary-foreground" />
         ) : (
-          <SmartphoneIcon className="size-tinyrack-lg text-tinyrack-primary" />
+          <SmartphoneIcon className="size-tinyrack-lg text-tinyrack-primary-foreground" />
         )}
         <div>
           <div className="font-tinyrack-medium text-tinyrack-xs">

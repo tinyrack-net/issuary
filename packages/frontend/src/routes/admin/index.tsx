@@ -101,7 +101,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
                 <div className="flex items-center gap-tinyrack-sm">
                   <NetworkIcon
                     aria-hidden
-                    className="size-tinyrack-lg text-tinyrack-primary"
+                    className="size-tinyrack-lg text-tinyrack-primary-foreground"
                   />
                   <TRText color="muted" variant="label">
                     {t('admin.identityGraph')}

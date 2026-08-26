@@ -29,7 +29,7 @@
 
 .issuary-home-mark {
   block-size: calc(var(--tinyrack-space-3xl) * 2);
-  color: var(--tinyrack-primary);
+  color: var(--tinyrack-primary-foreground);
   inline-size: calc(var(--tinyrack-space-3xl) * 2);
 }
 
@@ -43,7 +43,7 @@
 
 .issuary-typewriter,
 .issuary-typewriter-cursor {
-  color: var(--tinyrack-primary);
+  color: var(--tinyrack-primary-foreground);
 }
 
 .issuary-typewriter-cursor {

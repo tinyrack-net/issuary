@@ -168,13 +168,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   )}
                 </div>
                 {term.userConsent?.requiresUpdate && (
-                  <p className="ml-tinyrack-xl text-tinyrack-warning text-tinyrack-xs">
+                  <p className="ml-tinyrack-xl text-tinyrack-warning-foreground text-tinyrack-xs">
                     {t('terms.versionUpdated')}
                   </p>
                 )}
                 {termsConsentsErrors?.[term.id] && (
                   <p
-                    className="ml-tinyrack-xl text-tinyrack-danger text-tinyrack-xs"
+                    className="ml-tinyrack-xl text-tinyrack-danger-foreground text-tinyrack-xs"
                     data-testid="terms-field-error"
                   >
                     {termsConsentsErrors[term.id]?.message}

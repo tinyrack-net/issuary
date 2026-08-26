@@ -14,9 +14,9 @@ type AuthOutcomeProps = {
 };
 
 const toneClasses: Record<AuthOutcomeTone, string> = {
-  success: 'bg-tinyrack-success-surface text-tinyrack-success',
-  danger: 'bg-tinyrack-danger-surface text-tinyrack-danger',
-  info: 'bg-tinyrack-info-surface text-tinyrack-info',
+  success: 'bg-tinyrack-success-surface text-tinyrack-success-foreground',
+  danger: 'bg-tinyrack-danger-surface text-tinyrack-danger-foreground',
+  info: 'bg-tinyrack-info-surface text-tinyrack-info-foreground',
 };
 
 /**
