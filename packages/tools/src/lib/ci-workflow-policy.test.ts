@@ -89,4 +89,18 @@ describe('CI workflow policy', () => {
     expect(source).toContain('and (.changes.result == "success")');
     expect(source).toContain('*.md|docs/*');
   });
+
+  test('evaluates tag publishing after skipped quality jobs', async () => {
+    const { workflow } = await readWorkflow();
+
+    for (const jobName of ['docker-push', 'npm-publish']) {
+      const condition = workflow.jobs[jobName]?.if;
+      expect(
+        condition,
+        `${jobName} must override skipped-need propagation`,
+      ).toContain('always()');
+      expect(condition).toContain("startsWith(github.ref, 'refs/tags/v')");
+      expect(condition).toContain("needs.quality-gate.result == 'success'");
+    }
+  });
 });
