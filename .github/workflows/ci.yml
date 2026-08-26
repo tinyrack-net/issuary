@@ -418,7 +418,7 @@ jobs:
   docker-push:
     name: Docker push
     needs: [quality-gate, docker-build]
-    if: startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
     runs-on: ubuntu-24.04
     permissions: { contents: read, packages: write }
     steps:
@@ -456,7 +456,7 @@ jobs:
   npm-publish:
     name: Publish to npm
     needs: quality-gate
-    if: startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
     runs-on: ubuntu-24.04
     permissions: { contents: read, id-token: write }
     steps:
