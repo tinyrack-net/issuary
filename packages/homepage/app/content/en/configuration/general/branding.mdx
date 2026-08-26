@@ -4,3 +4,20 @@ description: Customize the branding of your Issuary instance
 section: configuration
 order: 13
 ---
+
+## Branding options
+
+Issuary authentication screens can use a custom logo and localized service name.
+
+```yaml
+branding:
+  icon_url: https://example.com/logo.png
+
+  title:
+    en: My App
+    ko: 내 앱
+    ja: マイアプリ
+```
+
+- `icon_url`: URL for the icon or logo shown on authentication pages and other branded interfaces. The recommended size is 128×128 pixels.
+- `title`: Localized application title keyed by ISO 639-1 language code, such as `en`, `ko`, or `ja`.

@@ -14,38 +14,28 @@ const test = createScenarioFixture((backendPort) => ({
       fallback_language: 'en',
     },
     branding: {
-      background_url: 'https://example.com/e2e-background.jpg',
       icon_url: 'https://example.com/e2e-icon.svg',
       title: {
         en: 'E2E Brand Title',
-      },
-      subtitle: {
-        en: 'E2E Brand Subtitle',
       },
     },
   }),
 }));
 
 test.describe('UI config driven rendering', () => {
-  test('login page renders branding title subtitle and icon', async ({
+  test('login page renders branding title and icon with heading hierarchy', async ({
     page,
   }) => {
     await page.goto('/login');
 
     await expect(
-      page.getByRole('heading', { name: 'E2E Brand Title' }),
+      page.getByRole('heading', { level: 1, name: 'E2E Brand Title' }),
     ).toBeVisible();
-    await expect(page.getByText('E2E Brand Subtitle')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 2, name: 'Welcome back!' }),
+    ).toBeVisible();
     await expect(
       page.locator('img[src="https://example.com/e2e-icon.svg"]'),
-    ).toBeVisible();
-  });
-
-  test('layout applies background image from config', async ({ page }) => {
-    await page.goto('/login');
-
-    await expect(
-      page.locator('div[style*="e2e-background.jpg"]'),
     ).toBeVisible();
   });
 

@@ -8,9 +8,8 @@ type ShellHeaderBarProps = {
   /**
    * Renders the deployment's mark on the leading edge.
    *
-   * Off by default, and it must stay that way: on auth screens
-   * `AuthBrandPanel` already owns the brand title as the page's `h1`, so
-   * turning this on there would give the title two heading nodes.
+   * Off by default: auth screens render their identity in the centred content
+   * column, while application screens opt into it here.
    */
   brand?: boolean;
   /** Page-level action, ahead of the presentation controls. */

@@ -643,7 +643,6 @@ export const r = {
       fallback_language: z.string().describe('Fallback UI language'),
     }),
     branding: z.object({
-      background_url: z.url().optional().describe('Background image URL'),
       icon_url: z
         .url()
         .optional()
@@ -652,10 +651,6 @@ export const r = {
         .record(z.string(), z.string())
         .optional()
         .describe('Localized title text for login page'),
-      subtitle: z
-        .record(z.string(), z.string())
-        .optional()
-        .describe('Localized subtitle text for login page'),
     }),
     registration: z.object({
       public_registration: z

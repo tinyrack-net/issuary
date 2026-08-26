@@ -13,12 +13,10 @@ const loginConfig = {
     fallback_language: 'en',
   },
   branding: {
-    background_url: '',
     icon_url: '',
     title: {
       en: 'Issuary',
     },
-    subtitle: {},
   },
   registration: {
     public_registration: true,

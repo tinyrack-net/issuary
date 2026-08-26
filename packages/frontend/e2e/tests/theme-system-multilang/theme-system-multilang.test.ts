@@ -17,9 +17,6 @@ const test = createScenarioFixture((backendPort) => ({
       title: {
         en: 'Theme System Title',
       },
-      subtitle: {
-        en: 'Theme System Subtitle',
-      },
     },
     registration: {
       signup_notice: {
@@ -40,7 +37,6 @@ test.describe('Color scheme and language fallback behavior', () => {
     await expect(
       page.getByRole('heading', { name: 'Theme System Title' }),
     ).toBeVisible();
-    await expect(page.getByText('Theme System Subtitle')).toBeVisible();
     await expect(
       page.getByText(/Theme system.*implicit terms.*notice\./),
     ).toBeVisible();

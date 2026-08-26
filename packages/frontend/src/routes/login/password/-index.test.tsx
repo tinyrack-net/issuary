@@ -21,10 +21,8 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    background_url: '',
     icon_url: '',
     title: {},
-    subtitle: {},
   },
   registration: {
     public_registration: true,
@@ -132,6 +130,17 @@ afterEach(() => {
 });
 
 describe('/login/password', () => {
+  test('uses the screen title as h1 when no brand title is configured', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: '/login/password',
+      queryData: seedConfig(),
+    });
+
+    await expect
+      .element(screen.getByRole('heading', { level: 1, name: 'Welcome back!' }))
+      .toBeVisible();
+  });
+
   test('navigates to email verification after login while preserving OAuth params', async () => {
     const fetchMock = mockJsonResponses({
       url: '/api/auth/login',

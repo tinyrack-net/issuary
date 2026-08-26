@@ -1,5 +1,5 @@
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
-import { AuthBrandPanel } from '#frontend/features/layout/auth-brand-panel.tsx';
+import { AuthBrandHeader } from '#frontend/features/layout/auth-brand-header.tsx';
 import { ShellHeaderBar } from '#frontend/features/layout/shell-header-bar.tsx';
 
 type AuthLayoutProps = {
@@ -20,33 +20,29 @@ const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
 /**
  * The shell every auth screen sits in.
  *
- * Split canvas: the deployment's identity on the left, the task on the right.
- * The form is not in a card on desktop — hierarchy comes from the contrast
- * between the inverse brand panel and the canvas, so a card would only add a
- * box inside a box. Below `md:` the panel collapses to a banner and the form
- * does get a surface, because on a phone it would otherwise float unanchored.
+ * A single, flat column keeps the deployment identity and the current task on
+ * one reading line at every breakpoint. The column uses auto block margins so
+ * short tasks sit centrally while long consent and setup flows keep their
+ * viewport padding and scroll instead of overflowing above the canvas.
  */
 export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
   return (
-    <div className="grid min-h-dvh grid-cols-1 bg-tinyrack-surface md:grid-cols-12">
+    <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
       <Toaster />
-      <AuthBrandPanel />
-      <div className="col-span-full flex min-w-0 flex-col md:col-span-8 lg:col-span-7">
-        {/* No `brand`: AuthBrandPanel already owns the deployment's title. */}
-        <ShellHeaderBar />
-        <main className="flex flex-1 items-center justify-center px-tinyrack-lg py-tinyrack-xl">
-          {/*
-            The stack owns vertical rhythm so screens compose as a flat list of
-            blocks — header, alerts, form, footer — instead of each one
-            hand-rolling `mb-4`/`mt-6` margins that drift apart over time.
-          */}
-          <div
-            className={`auth-enter flex w-full flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl md:border-0 md:bg-transparent md:p-0 ${widthClasses[width]}`}
-          >
-            {children}
-          </div>
-        </main>
-      </div>
+      <ShellHeaderBar />
+      <main className="flex flex-1 px-tinyrack-lg py-tinyrack-xl">
+        {/*
+          The stack owns vertical rhythm so screens compose as a flat list of
+          brand, header, alerts, form, and footer blocks. `m-auto` centres both
+          axes only when space is available and collapses safely for tall flows.
+        */}
+        <div
+          className={`auth-enter m-auto flex w-full flex-col gap-tinyrack-xl ${widthClasses[width]}`}
+        >
+          <AuthBrandHeader />
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

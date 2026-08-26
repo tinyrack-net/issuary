@@ -33,10 +33,8 @@ function buildConfigResponse(config: IssuaryRuntimeConfig): ConfigResponse {
       fallback_language: config.i18n.fallback_language,
     },
     branding: {
-      background_url: config.branding.background_url,
       icon_url: config.branding.icon_url,
       title: config.branding.title,
-      subtitle: config.branding.subtitle,
     },
     registration: {
       public_registration: config.registration.enabled,

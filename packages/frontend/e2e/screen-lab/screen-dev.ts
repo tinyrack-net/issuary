@@ -4,7 +4,6 @@ import { chromium } from '@playwright/test';
 import { createServer as createViteServer } from 'vite';
 import { AsyncCleanupStack } from '#frontend/test-utils/async-cleanup-stack.ts';
 import { findScreenScenarioVariant } from '#frontend/test-utils/screen-scenario-catalog.ts';
-import { waitForScreenAssets } from '#frontend-e2e/screen-lab/assets.ts';
 import {
   findScreenScenario,
   screenScenarios,
@@ -161,7 +160,6 @@ try {
     await scenario.prepare({ baseURL, page, scenario });
   }
 
-  await waitForScreenAssets(page);
   await page
     .locator(scenario.readySelector)
     .first()

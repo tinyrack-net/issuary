@@ -29,6 +29,13 @@ The current config model is organized by top-level groups:
 
 `frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyrack/issuary-standalone` and are not part of the server's declarative config contract.
 
+## `branding`
+
+| Field | Type | Default | Description |
+|------|------|--------|------|
+| `icon_url` | `string` (URL) | - | Logo image URL. |
+| `title` | `Record<string, string>` | Default localized title | Localized title keyed by language code. |
+
 ## `registration`
 
 | Field | Type | Default | Description |

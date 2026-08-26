@@ -1,7 +1,6 @@
 import { expect, type Page, test as routeTest } from '@playwright/test';
 import type { ScreenScenarioVariant } from '#frontend/test-utils/screen-scenario-catalog.ts';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
-import { waitForScreenAssets } from '#frontend-e2e/screen-lab/assets.ts';
 import { screenScenarios } from '#frontend-e2e/screen-lab/catalog.ts';
 
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 };
@@ -46,7 +45,6 @@ async function expectScreenScreenshot(
   scenario: (typeof screenScenarios)[number],
   variant: ScreenScenarioVariant,
 ): Promise<void> {
-  await waitForScreenAssets(page);
   await expect(page.locator(scenario.readySelector).first()).toBeVisible();
   await expect(page).toHaveScreenshot(getSnapshotName(scenario.id, variant), {
     animations: 'disabled',

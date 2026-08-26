@@ -61,7 +61,13 @@ describe('GET /api/config', () => {
     expect(json.i18n.supported_languages).toBeInstanceOf(Array);
     expect(json.i18n.default_language).toBeTypeOf('string');
     expect(json.i18n.fallback_language).toBeTypeOf('string');
-    expect(json.branding).toBeDefined();
+    expect(json.branding).toEqual({
+      title: {
+        en: 'Issuary',
+        ja: 'Issuary',
+        ko: 'Issuary',
+      },
+    });
     expect(json.registration).toBeDefined();
     expect(json.registration.public_registration).toBeTypeOf('boolean');
     expect(json.registration.public_registration).toBe(true);

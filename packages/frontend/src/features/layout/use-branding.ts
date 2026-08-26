@@ -11,10 +11,7 @@ type Branding = {
    * "Welcome back!" at the top of the register and consent screens.
    */
   title: string | undefined;
-  /** Supporting line under the title, if the deployment configured one. */
-  subtitle: string | undefined;
   iconUrl: string | undefined;
-  backgroundUrl: string | undefined;
 };
 
 /**
@@ -42,8 +39,6 @@ export function useBranding(): Branding {
 
   return {
     title: localized(config.branding.title),
-    subtitle: localized(config.branding.subtitle),
     iconUrl: config.branding.icon_url ?? undefined,
-    backgroundUrl: config.branding.background_url ?? undefined,
   };
 }
