@@ -71,7 +71,7 @@ export function PasswordSection({
                       <div className="flex items-start gap-tinyrack-sm">
                         <InfoIcon
                           aria-hidden
-                          className="size-tinyrack-lg shrink-0 text-tinyrack-warning"
+                          className="size-tinyrack-lg shrink-0 text-tinyrack-warning-foreground"
                         />
                         <div>{t('profile.password.removeDisabledReason')}</div>
                       </div>

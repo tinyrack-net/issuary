@@ -30,9 +30,9 @@ export function DangerZoneSection({
         <div className="flex items-center gap-tinyrack-sm">
           <TriangleAlertIcon
             aria-hidden
-            className="size-tinyrack-lg text-tinyrack-danger"
+            className="size-tinyrack-lg text-tinyrack-danger-foreground"
           />
-          <TRCard.Title className="text-tinyrack-danger">
+          <TRCard.Title className="text-tinyrack-danger-foreground">
             {t('profile.dangerZone.title')}
           </TRCard.Title>
         </div>

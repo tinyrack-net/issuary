@@ -21,7 +21,7 @@ function ErrorPage() {
     <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
       <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
         <TRCard.Header>
-          <TRCard.Title className="text-tinyrack-danger dark:text-tinyrack-danger">
+          <TRCard.Title className="text-tinyrack-danger-foreground">
             Error
           </TRCard.Title>
           <TRCard.Description>

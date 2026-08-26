@@ -52,7 +52,7 @@ function AuthorizationContextContent({
         <div className="flex items-center gap-tinyrack-sm">
           <ShieldCheckIcon
             aria-hidden
-            className="size-tinyrack-lg shrink-0 text-tinyrack-info"
+            className="size-tinyrack-lg shrink-0 text-tinyrack-info-foreground"
           />
           <TRText variant="body" weight="medium">
             {t('authorizationContext.title', { app: data.client.name })}

@@ -178,7 +178,7 @@ function Consent() {
             >
               <ShieldCheckIcon
                 aria-hidden
-                className="size-tinyrack-lg shrink-0 text-tinyrack-info"
+                className="size-tinyrack-lg shrink-0 text-tinyrack-info-foreground"
               />
               <TRText variant="body">
                 {t(`consent.scope.${scope.name}`, {

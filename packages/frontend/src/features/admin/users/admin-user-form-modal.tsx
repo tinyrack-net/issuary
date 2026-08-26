@@ -57,7 +57,7 @@ export function AdminUserFormModal({
         title={t('admin.users.deleteTitle', { email: modal.user.email })}
         variant="destructive"
       >
-        <div className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-lg text-tinyrack-danger">
+        <div className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-lg text-tinyrack-danger-foreground">
           <div className="flex items-center gap-tinyrack-sm">
             <TriangleAlertIcon aria-hidden className="size-tinyrack-lg" />
             <TRText as="p" weight="medium">

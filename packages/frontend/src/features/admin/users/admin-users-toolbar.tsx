@@ -41,7 +41,7 @@ export function AdminUsersToolbar({
         <div className="flex items-center gap-tinyrack-sm">
           <UsersIcon
             aria-hidden
-            className="size-tinyrack-lg text-tinyrack-success"
+            className="size-tinyrack-lg text-tinyrack-success-foreground"
           />
           <TRText color="muted" variant="label">
             {t('admin.users.directoryEyebrow')}

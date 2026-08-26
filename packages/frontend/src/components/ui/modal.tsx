@@ -35,7 +35,7 @@ const sizeClasses = {
 
 const iconVariantClasses: Record<ModalVariant, string> = {
   default: 'bg-tinyrack-surface-muted text-tinyrack-text',
-  destructive: 'bg-tinyrack-danger-surface text-tinyrack-danger',
+  destructive: 'bg-tinyrack-danger-surface text-tinyrack-danger-foreground',
 };
 
 export function Modal({

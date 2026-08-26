@@ -49,7 +49,9 @@ export function SecurityRow({
       <Icon
         aria-hidden
         className={`size-tinyrack-lg ${
-          active ? 'text-tinyrack-success' : 'text-tinyrack-text-muted'
+          active
+            ? 'text-tinyrack-success-foreground'
+            : 'text-tinyrack-text-muted'
         }`}
       />
     );
