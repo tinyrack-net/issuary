@@ -364,15 +364,22 @@ test.describe('OIDC account selection', () => {
       'account-selection-carol',
     ]);
 
-    const aliceAfterAdd = await authorizeSelectedAccount({
-      page,
-      request,
-      baseURL: String(baseURL),
-      browserName,
-      state: 'account-selection-add-account-switch-back-alice',
-      email: 'account-selection-alice@example.com',
-      expectedSub: 'account-selection-alice',
-    });
+    const aliceAfterAdd = await (async () => {
+      const accountSelectionPage = await page.context().newPage();
+      try {
+        return await authorizeSelectedAccount({
+          page: accountSelectionPage,
+          request,
+          baseURL: String(baseURL),
+          browserName,
+          state: 'account-selection-add-account-switch-back-alice',
+          email: 'account-selection-alice@example.com',
+          expectedSub: 'account-selection-alice',
+        });
+      } finally {
+        await accountSelectionPage.close();
+      }
+    })();
     expect(aliceAfterAdd).toMatchObject({
       sub: 'account-selection-alice',
       email: 'account-selection-alice@example.com',

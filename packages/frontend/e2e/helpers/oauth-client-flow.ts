@@ -166,21 +166,7 @@ export async function captureClientRedirectAfterAction(
   page: Page,
   action: () => Promise<void>,
 ): Promise<URL> {
-  const isClientRedirect = (request: { url: () => string }) =>
-    request.url().startsWith(E2E_TEST_CLIENT.redirectUri);
-  const callbackSettledPromise = Promise.race([
-    page.waitForEvent('requestfinished', {
-      predicate: isClientRedirect,
-      timeout: CLIENT_REDIRECT_TIMEOUT_MS,
-    }),
-    page.waitForEvent('requestfailed', {
-      predicate: isClientRedirect,
-      timeout: CLIENT_REDIRECT_TIMEOUT_MS,
-    }),
-  ]);
   const redirectPromise = waitForClientRedirect(page);
   await action();
-  const redirectUrl = await redirectPromise;
-  await callbackSettledPromise;
-  return redirectUrl;
+  return redirectPromise;
 }
