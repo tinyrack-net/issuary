@@ -9,10 +9,26 @@ import {
 } from './validation-runner.ts';
 
 describe('validation runner', () => {
-  test('uses a four-worker default and validates overrides', () => {
-    expect(parseWorkerBudget(undefined)).toBe(4);
-    expect(parseWorkerBudget('2')).toBe(2);
+  test.each([
+    1, 4, 24,
+  ])('uses detected parallelism %i as the default worker budget', (detectedParallelism) => {
+    expect(parseWorkerBudget(undefined, detectedParallelism)).toBe(
+      detectedParallelism,
+    );
+  });
+
+  test('prefers a valid configured worker budget and rejects invalid values', () => {
+    expect(parseWorkerBudget('2', 24)).toBe(2);
     expect(() => parseWorkerBudget('0')).toThrow(
+      'ISSUARY_TEST_WORKERS must be a positive integer',
+    );
+    expect(() => parseWorkerBudget('-1')).toThrow(
+      'ISSUARY_TEST_WORKERS must be a positive integer',
+    );
+    expect(() => parseWorkerBudget('1.5')).toThrow(
+      'ISSUARY_TEST_WORKERS must be a positive integer',
+    );
+    expect(() => parseWorkerBudget('invalid')).toThrow(
       'ISSUARY_TEST_WORKERS must be a positive integer',
     );
   });
@@ -30,6 +46,15 @@ describe('validation runner', () => {
     const tasks = createValidationPlan('quick').concurrent.slice(0, 4);
     const allocations = allocateWorkers(tasks, 4);
     expect(allocations.reduce((sum, workers) => sum + workers, 0)).toBe(4);
+    expect(allocations.every((workers) => workers >= 1)).toBe(true);
+  });
+
+  test('allocates all available workers across the full concurrent group', () => {
+    const tasks = createValidationPlan('full').concurrent;
+    const allocations = allocateWorkers(tasks, 24);
+
+    expect(allocations).toHaveLength(tasks.length);
+    expect(allocations.reduce((sum, workers) => sum + workers, 0)).toBe(24);
     expect(allocations.every((workers) => workers >= 1)).toBe(true);
   });
 

@@ -31,10 +31,11 @@ function runPnpm(args: string[], label: string): Promise<void> {
 const profile = parseValidationProfile(
   readProfileArgument(process.argv.slice(2)),
 );
-const workerBudget = parseWorkerBudget(process.env['ISSUARY_TEST_WORKERS']);
+const configuredWorkerBudget = process.env['ISSUARY_TEST_WORKERS'];
+const workerBudget = parseWorkerBudget(configuredWorkerBudget);
 process.env['ISSUARY_TEST_WORKERS'] = String(workerBudget);
 process.stdout.write(
-  `[validation] profile: ${profile}; global worker budget: ${workerBudget}\n`,
+  `[validation] profile: ${profile}; global worker budget: ${workerBudget} (${configuredWorkerBudget === undefined ? 'auto-detected' : 'ISSUARY_TEST_WORKERS'})\n`,
 );
 
 await runValidationPlan(
