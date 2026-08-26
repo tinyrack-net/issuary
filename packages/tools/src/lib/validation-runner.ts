@@ -1,3 +1,5 @@
+import { availableParallelism } from 'node:os';
+
 export type ValidationProfileName = 'quick' | 'full';
 
 export interface ValidationTask {
@@ -17,8 +19,6 @@ export type ValidationTaskExecutor = (
   task: ValidationTask,
   workers: number,
 ) => Promise<void>;
-
-const DEFAULT_WORKER_BUDGET = 4;
 
 const serverTask: ValidationTask = {
   name: 'server',
@@ -85,8 +85,11 @@ function standaloneTask(script: 'test' | 'test:prepared') {
   } satisfies ValidationTask;
 }
 
-export function parseWorkerBudget(value: string | undefined): number {
-  if (value === undefined) return DEFAULT_WORKER_BUDGET;
+export function parseWorkerBudget(
+  value: string | undefined,
+  detectedParallelism = availableParallelism(),
+): number {
+  if (value === undefined) return detectedParallelism;
   const workerBudget = Number(value);
   if (!Number.isInteger(workerBudget) || workerBudget <= 0) {
     throw new Error('ISSUARY_TEST_WORKERS must be a positive integer');

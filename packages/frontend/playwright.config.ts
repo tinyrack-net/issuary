@@ -149,7 +149,8 @@ export default defineConfig({
       maxDiffPixels: 100,
     },
   },
-  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}{ext}',
+  snapshotPathTemplate:
+    '{testDir}/{testFilePath}-snapshots/{platform}/{arg}{ext}',
   use: {
     actionTimeout: 30_000,
     navigationTimeout: 45_000,
