@@ -31,6 +31,7 @@ export function ThemeToggle({ colorScheme, onToggle }: ThemeToggleProps) {
               appearance="ghost"
               aria-label={label}
               onClick={onToggle}
+              uiSize="lg"
             >
               <SchemeIcon />
             </TRIconButton>

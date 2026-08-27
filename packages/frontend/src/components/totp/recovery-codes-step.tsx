@@ -65,6 +65,7 @@ export function RecoveryCodesStep({
         intent="neutral"
         onClick={handleCopy}
         type="button"
+        uiSize="lg"
       >
         <CopyIcon aria-hidden className="size-tinyrack-lg" />
         {t('setupTotp.recoveryCodes.copy')}
@@ -82,7 +83,7 @@ export function RecoveryCodesStep({
             data-testid="recovery-codes-confirm"
             disabled={isLoading}
             onCheckedChange={(checked) => setConfirmed(checked === true)}
-            uiSize="md"
+            uiSize="lg"
           >
             <TRCheckbox.Indicator />
           </TRCheckbox.Root>

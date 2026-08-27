@@ -274,6 +274,7 @@ function VerifyEmail() {
             intent="neutral"
             onClick={handleResend}
             type="button"
+            uiSize="lg"
           >
             {resendVerificationMutation.isPending ? (
               <>

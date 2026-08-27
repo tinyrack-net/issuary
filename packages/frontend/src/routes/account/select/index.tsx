@@ -134,6 +134,7 @@ function AccountSelect() {
                     disabled={selectMutation.isPending}
                     onClick={() => selectMutation.mutate({ sub: account.sub })}
                     type="button"
+                    uiSize="lg"
                   />
                 }
                 trailing={
@@ -175,6 +176,7 @@ function AccountSelect() {
           className="w-full justify-between"
           intent="neutral"
           render={<a href={buildLoginHref(search)} />}
+          uiSize="lg"
         >
           <span className="inline-flex items-center gap-tinyrack-sm">
             <PlusIcon aria-hidden className="size-tinyrack-lg" />

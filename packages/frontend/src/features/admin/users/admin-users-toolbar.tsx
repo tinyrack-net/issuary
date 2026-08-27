@@ -82,7 +82,7 @@ export function AdminUsersToolbar({
                 onCheckedChange={(checked) =>
                   onDraftIncludeDeletedChange(checked === true)
                 }
-                uiSize="md"
+                uiSize="lg"
               >
                 <TRCheckbox.Indicator />
               </TRCheckbox.Root>
