@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { playwright } from '@vitest/browser-playwright';
 import { preview } from '@vitest/browser-preview';
 import { defineConfig } from 'vitest/config';
+import { getBrowserTestMaxWorkers } from './src/test-utils/browser-test-policy.js';
 
 const MODE = process.env['VITEST_BROWSER_MODE'];
 const IS_COVERAGE = process.env['VITEST_COVERAGE'] === '1';
@@ -49,6 +50,7 @@ export default defineConfig({
           name: 'unit',
           include: ['src/**/*.test.{ts,tsx}'],
           setupFiles: ['./src/test-utils/vitest-browser-setup.ts'],
+          maxWorkers: getBrowserTestMaxWorkers(IS_COVERAGE, IS_CHROMIUM_ONLY),
           browser: {
             enabled: true,
             api: {
