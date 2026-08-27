@@ -41,8 +41,11 @@ order: 32
 
 | アイテム | タイプ | デフォルト | 環境変数 | 説明 |
 |------|------|--------|-----------|------|
-| `icon_url` | `string` (URL) | - | `ICON_URL` | ロゴ画像 URL |
+| `icon_url` | `string` (URL) | 公式 Issuary アイコン | - | アプリアイコン URL |
+| `logo_url` | `string` (URL) | - | - | アイコンとタイトルを置き換えるロゴ URL |
 | `title` | `Record<string, string>` | 基本多言語タイトル | - | 言語別のタイトル |
+| `subtitle` | `Record<string, string>` | 基本の多言語挨拶 | - | ログインのサブタイトル。空文字列で非表示 |
+| `login_method_description` | `Record<string, string>` | 基本の多言語案内 | - | ログイン方法の案内。空文字列で非表示 |
 
 ## `registration`
 

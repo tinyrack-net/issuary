@@ -1,3 +1,4 @@
+import defaultIconUrl from '@tinyrack/ui/brand/apps/issuary-app-icon.svg';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -24,8 +25,11 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    icon_url: '',
-    title: {},
+    title: { en: 'Issuary' },
+    subtitle: { en: 'Nice to meet you!' },
+    login_method_description: {
+      en: "Choose how you'd like to sign in.",
+    },
   },
   registration: {
     public_registration: true,
@@ -103,6 +107,81 @@ afterEach(() => {
 });
 
 describe('/login', () => {
+  test('shows the brand subtitle and login method guidance', async () => {
+    const { screen } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(),
+    });
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Issuary' });
+    await expect.element(heading).toBeVisible();
+    expect(
+      heading
+        .element()
+        .parentElement?.querySelector('img')
+        ?.getAttribute('src'),
+    ).toBe(defaultIconUrl);
+    expect(heading.element().parentElement?.classList).toContain(
+      'justify-center',
+    );
+    await expect.element(screen.getByText('Nice to meet you!')).toBeVisible();
+    await expect
+      .element(screen.getByText("Choose how you'd like to sign in."))
+      .toBeVisible();
+  });
+
+  test('uses a custom logo instead of the icon and text title', async () => {
+    const logoConfig = {
+      ...baseConfig,
+      branding: {
+        ...baseConfig.branding,
+        icon_url: 'https://example.com/icon.svg',
+        logo_url: defaultIconUrl,
+      },
+    } satisfies AppConfigs;
+
+    const { screen } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(logoConfig),
+    });
+
+    const heading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Issuary',
+    });
+    await expect.element(heading).toBeVisible();
+    expect(heading.element().querySelector('img')?.getAttribute('src')).toBe(
+      defaultIconUrl,
+    );
+    expect(heading.element().querySelector('img')?.classList).toContain(
+      'object-center',
+    );
+    await expect.element(screen.getByText('Issuary')).not.toBeInTheDocument();
+  });
+
+  test('hides empty configurable login copy', async () => {
+    const emptyCopyConfig = {
+      ...baseConfig,
+      branding: {
+        ...baseConfig.branding,
+        subtitle: { en: '' },
+        login_method_description: { en: '' },
+      },
+    } satisfies AppConfigs;
+
+    const { screen } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(emptyCopyConfig),
+    });
+
+    await expect
+      .element(screen.getByText('Nice to meet you!'))
+      .not.toBeInTheDocument();
+    await expect
+      .element(screen.getByText("Choose how you'd like to sign in."))
+      .not.toBeInTheDocument();
+  });
+
   test('shows configured OAuth, password, and passkey auth methods', async () => {
     const { screen } = await renderRoute({
       initialLocation: oauthLocation,

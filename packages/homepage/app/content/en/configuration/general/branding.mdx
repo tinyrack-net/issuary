@@ -7,17 +7,34 @@ order: 13
 
 ## Branding options
 
-Issuary authentication screens can use a custom logo and localized service name.
+Issuary uses the official app icon by default. You can customize the app icon,
+replace the complete title treatment with a logo, and localize the login copy.
 
 ```yaml
 branding:
-  icon_url: https://example.com/logo.png
+  icon_url: https://example.com/icon.svg
+  logo_url: https://example.com/logo.svg
 
   title:
     en: My App
     ko: 내 앱
     ja: マイアプリ
+
+  subtitle:
+    en: Nice to meet you!
+    ko: 만나서 반가워요!
+    ja: はじめまして！
+
+  login_method_description:
+    en: Choose how you'd like to sign in.
+    ko: 원하는 방식으로 로그인하세요.
+    ja: お好きな方法でログインしてください。
 ```
 
-- `icon_url`: URL for the icon or logo shown on authentication pages and other branded interfaces. The recommended size is 128×128 pixels.
+- `icon_url`: App icon URL. It replaces the official Issuary icon in the UI, favicon, and Apple Touch Icon.
+- `logo_url`: Optional logo URL that replaces the icon and text title together on authentication pages. The configured title remains the accessible name.
 - `title`: Localized application title keyed by ISO 639-1 language code, such as `en`, `ko`, or `ja`.
+- `subtitle`: Localized subtitle on `/login` and `/login/password`.
+- `login_method_description`: Localized guidance shown only on the login method selection screen.
+
+Set `subtitle` or `login_method_description` to an empty string for a locale to hide that text.

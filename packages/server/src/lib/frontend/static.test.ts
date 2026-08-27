@@ -165,9 +165,9 @@ describe('createStaticHandler', () => {
 
       expect(res.status).toBe(200);
       const body = await res.text();
-      expect(body).toContain('<title>Tinyrack</title>');
+      expect(body).toContain('<title>Issuary</title>');
       expect(body).toContain('content="OIDC Provider for everyone"');
-      expect(body).toContain('href="/vite.svg"');
+      expect(body).toContain('href="/issuary-app-icon.svg"');
     });
   });
 

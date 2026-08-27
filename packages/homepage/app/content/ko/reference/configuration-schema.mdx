@@ -41,8 +41,11 @@ order: 32
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
 |------|------|--------|-----------|------|
-| `icon_url` | `string` (URL) | - | `ICON_URL` | 로고 이미지 URL |
+| `icon_url` | `string` (URL) | 공식 Issuary 아이콘 | - | 앱 아이콘 URL |
+| `logo_url` | `string` (URL) | - | - | 아이콘과 제목을 대체하는 로고 URL |
 | `title` | `Record<string, string>` | 기본 다국어 제목 | - | 언어별 제목 |
+| `subtitle` | `Record<string, string>` | 기본 다국어 인사말 | - | 로그인 부제목. 빈 문자열이면 숨김 |
+| `login_method_description` | `Record<string, string>` | 기본 다국어 안내 | - | 로그인 방식 안내. 빈 문자열이면 숨김 |
 
 ## `registration`
 

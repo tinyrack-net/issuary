@@ -16,6 +16,13 @@ beforeAll(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     admin: { enabled: true },
+    branding: {
+      icon_url: 'https://example.com/icon.svg',
+      logo_url: 'https://example.com/logo.svg',
+      title: { en: 'Custom Issuary', ko: '커스텀 Issuary' },
+      subtitle: { en: 'Hello!', ko: '' },
+      login_method_description: { en: 'Choose one.', ko: '' },
+    },
     email,
     registration: {
       enabled: true,
@@ -62,11 +69,11 @@ describe('GET /api/config', () => {
     expect(json.i18n.default_language).toBeTypeOf('string');
     expect(json.i18n.fallback_language).toBeTypeOf('string');
     expect(json.branding).toEqual({
-      title: {
-        en: 'Issuary',
-        ja: 'Issuary',
-        ko: 'Issuary',
-      },
+      icon_url: 'https://example.com/icon.svg',
+      logo_url: 'https://example.com/logo.svg',
+      login_method_description: { en: 'Choose one.', ko: '' },
+      subtitle: { en: 'Hello!', ko: '' },
+      title: { en: 'Custom Issuary', ko: '커스텀 Issuary' },
     });
     expect(json.registration).toBeDefined();
     expect(json.registration.public_registration).toBeTypeOf('boolean');

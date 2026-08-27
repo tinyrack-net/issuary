@@ -17,7 +17,6 @@ import {
   AuthFooter,
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
-import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -247,13 +246,7 @@ function LoginPassword() {
   };
 
   return (
-    <AuthLayout>
-      {/* Branding lives in the layout's brand panel — see /login. */}
-      <AuthPageHeader
-        subtitle={t('login.selectMethod.subtitle') || undefined}
-        title={t('login.title')}
-      />
-
+    <AuthLayout showBrandSubtitle>
       <AuthorizationContextBanner search={search} />
 
       {isPasswordAuthEnabled && (

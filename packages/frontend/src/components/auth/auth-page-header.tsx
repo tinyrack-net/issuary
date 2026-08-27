@@ -30,8 +30,8 @@ export function AuthPageHeader({
   eyebrow,
   align = 'start',
 }: AuthPageHeaderProps) {
-  const { title: brandTitle } = useBranding();
-  const headingTag = brandTitle ? 'h2' : 'h1';
+  const { title: brandTitle, logoUrl } = useBranding();
+  const headingTag = brandTitle || logoUrl ? 'h2' : 'h1';
 
   return (
     <div

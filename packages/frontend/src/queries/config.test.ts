@@ -18,6 +18,12 @@ const baseConfig = {
     title: {
       en: 'Issuary',
     },
+    subtitle: {
+      en: 'Nice to meet you!',
+    },
+    login_method_description: {
+      en: "Choose how you'd like to sign in.",
+    },
   },
   registration: {
     public_registration: true,

@@ -7,14 +7,14 @@ const HTML_PLACEHOLDER_PATTERN = /\{\{([A-Za-z_][A-Za-z0-9_]*)\}\}/g;
 const TEXT_ENCODER = new TextEncoder();
 
 export const DEFAULT_HTML_VARIABLES = {
-  TITLE: 'Tinyrack',
+  TITLE: 'Issuary',
   DESCRIPTION: 'OIDC Provider for everyone',
-  FAVICON_URL: '/vite.svg',
+  FAVICON_URL: '/issuary-app-icon.svg',
   COLOR_SCHEME: 'light dark',
   THEME_COLOR: '#6b7280',
   OG_IMAGE_URL: '',
   OG_URL: '',
-  APPLE_TOUCH_ICON_URL: '/vite.svg',
+  APPLE_TOUCH_ICON_URL: '/issuary-app-icon-512.png',
 } as const satisfies HtmlVariables;
 
 export type BuiltInHtmlVariables = typeof DEFAULT_HTML_VARIABLES;

@@ -7,17 +7,34 @@ order: 13
 
 ## 브랜딩 옵션
 
-`issuary`의 인증 화면은 로고와 다국어 서비스명을 사용자 정의할 수 있어요.
+Issuary는 공식 앱 아이콘을 기본으로 사용해요. 앱 아이콘을 바꾸거나 제목 영역 전체를
+로고로 대체하고, 로그인 문구를 언어별로 설정할 수 있어요.
 
 ```yaml
 branding:
-  icon_url: https://example.com/logo.png
+  icon_url: https://example.com/icon.svg
+  logo_url: https://example.com/logo.svg
 
   title:
     en: My App
     ko: 내 앱
     ja: マイアプリ
+
+  subtitle:
+    ko: 만나서 반가워요!
+    en: Nice to meet you!
+    ja: はじめまして！
+
+  login_method_description:
+    ko: 원하는 방식으로 로그인하세요.
+    en: Choose how you'd like to sign in.
+    ja: お好きな方法でログインしてください。
 ```
 
-- `icon_url`: 로그인 페이지 및 기타 인터페이스 요소에 표시될 아이콘 또는 로고 이미지 URL이에요. 권장 크기는 128x128 픽셀이에요.
+- `icon_url`: UI, 파비콘, Apple Touch Icon의 공식 Issuary 아이콘을 대체할 앱 아이콘 URL이에요.
+- `logo_url`: 인증 화면의 아이콘과 텍스트 제목을 함께 대체할 로고 URL이에요. 접근성 이름은 설정된 제목을 유지해요.
 - `title`: 다국어로 된 애플리케이션의 제목이에요. 언어 코드는 `ISO 639-1` 규격을 사용해요. 예를 들어, 영어는 `en`, 한국어는 `ko`, 일본어는 `ja`예요.
+- `subtitle`: `/login`과 `/login/password`에 표시할 다국어 부제목이에요.
+- `login_method_description`: 로그인 방식 선택 화면에만 표시할 다국어 안내 문구예요.
+
+언어별 `subtitle` 또는 `login_method_description`을 빈 문자열로 설정하면 해당 문구를 숨길 수 있어요.
