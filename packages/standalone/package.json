@@ -1,6 +1,6 @@
 {
   "name": "@tinyrack/issuary-standalone",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "type": "module",
   "description": "Issuary standalone CLI server",
   "license": "MIT",
