@@ -45,6 +45,7 @@ export function AuthChoiceRow({
         className="h-auto min-w-0 flex-1 justify-start gap-tinyrack-md px-tinyrack-lg py-tinyrack-md text-start transition-colors duration-tinyrack-fast ease-tinyrack-standard"
         intent="neutral"
         render={render}
+        uiSize="lg"
       >
         {leading ??
           (Icon ? (

@@ -140,6 +140,7 @@ export function RouteErrorFallback({
           intent="neutral"
           onClick={() => window.history.back()}
           type="button"
+          uiSize="lg"
         >
           {t('error.goBack')}
         </TRButton>

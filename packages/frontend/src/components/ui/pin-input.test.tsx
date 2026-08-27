@@ -19,6 +19,32 @@ test('renders custom number of input fields', async () => {
   expect(inputs.length).toBe(4);
 });
 
+test('distributes square input fields evenly across the available width', async () => {
+  const screen = await render(
+    <div className="w-tinyrack-overlay-width-sm" data-testid="pin-container">
+      <PinInput />
+    </div>,
+  );
+  const container = screen.getByTestId('pin-container').element();
+  const group = screen.container.querySelector('.tr-otp-field');
+  expect(group).not.toBeNull();
+  if (!(group instanceof HTMLElement)) return;
+
+  expect(group.dataset.layout).toBe('stretch');
+  expect(group.getBoundingClientRect().width).toBeCloseTo(
+    container.getBoundingClientRect().width,
+  );
+
+  const inputRects = getAllInputs(screen).map((input) =>
+    input.element().getBoundingClientRect(),
+  );
+  const widths = inputRects.map((rect) => rect.width);
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(1);
+  for (const rect of inputRects) {
+    expect(Math.abs(rect.width - rect.height)).toBeLessThan(0.1);
+  }
+});
+
 test('accepts digit input and advances focus', async () => {
   const onChange = vi.fn();
   const screen = await render(<PinInput onChange={onChange} />);

@@ -83,6 +83,7 @@ export function AuthField({
       <TRInput.Group
         data-invalid={error ? '' : undefined}
         data-testid={error ? 'input-error-wrapper' : undefined}
+        uiSize="lg"
       >
         {Icon && (
           <TRInput.Adornment>
@@ -101,6 +102,7 @@ export function AuthField({
           placeholder={placeholder}
           ref={ref}
           type={resolvedType}
+          uiSize="lg"
           {...props}
         />
         {canReveal && (

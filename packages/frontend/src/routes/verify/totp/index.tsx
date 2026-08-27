@@ -262,6 +262,7 @@ function VerifyTotp() {
             })
           }
           type="button"
+          uiSize="lg"
         >
           {t('verifyTotp.useRecoveryCode')}
         </TRButton>

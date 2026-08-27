@@ -114,6 +114,7 @@ export function VerifyStep({
           intent="neutral"
           onClick={onBack}
           type="button"
+          uiSize="lg"
         >
           {backLabel ?? t('setupTotp.back')}
         </TRButton>

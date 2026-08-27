@@ -67,6 +67,7 @@ class AppErrorBoundary extends Component<
                 intent="primary"
                 onClick={() => window.location.reload()}
                 type="button"
+                uiSize="lg"
               >
                 Reload
               </TRButton>

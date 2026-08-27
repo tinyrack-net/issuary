@@ -82,6 +82,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
               data-testid="terms-checkbox"
               disabled={disabled}
               onCheckedChange={handleAllChange}
+              uiSize="lg"
             >
               <TRCheckbox.Indicator />
             </TRCheckbox.Root>
@@ -116,6 +117,7 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                       onCheckedChange={(checked) =>
                         field.onChange(checked === true)
                       }
+                      uiSize="lg"
                     >
                       <TRCheckbox.Indicator />
                     </TRCheckbox.Root>

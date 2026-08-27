@@ -375,8 +375,8 @@ importers:
         specifier: 'catalog:'
         version: 1.170.17(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tinyrack/ui':
-        specifier: 0.27.1
-        version: 0.27.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)
+        specifier: 0.29.0
+        version: 0.29.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)
       hono:
         specifier: 'catalog:'
         version: 4.12.28
@@ -3192,8 +3192,8 @@ packages:
       shiki:
         optional: true
 
-  '@tinyrack/ui@0.27.1':
-    resolution: {integrity: sha512-J9UaXFPDMCrQk38cs+lRbD2ckZ2SBmNhvZfTiDdiXi4WO3/7tDUxYcBa6bVHTXgzKkp27Yn4bhDGmrdLsL5Zlg==}
+  '@tinyrack/ui@0.29.0':
+    resolution: {integrity: sha512-b5oyTlb+3QwSTJe/xOpJDpsZ2LEEg5VpSnBfQzk80brC+i0Druw0Gtm/Uwd8xUaDdjPK5B6o+1RCrNN1aemFHA==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -8209,7 +8209,7 @@ snapshots:
       - '@types/react'
       - date-fns
 
-  '@tinyrack/ui@0.27.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)':
+  '@tinyrack/ui@0.29.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)':
     dependencies:
       '@babel/parser': 7.29.7
       '@base-ui/react': 1.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

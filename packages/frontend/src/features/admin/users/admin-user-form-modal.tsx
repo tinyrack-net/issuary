@@ -200,7 +200,7 @@ export function AdminUserFormModal({
               aria-label={t('admin.users.emailVerified')}
               defaultChecked={defaultValues?.email_verified ?? false}
               name="email_verified"
-              uiSize="md"
+              uiSize="lg"
               value="on"
             >
               <TRCheckbox.Indicator />

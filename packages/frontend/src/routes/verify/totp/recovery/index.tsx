@@ -236,6 +236,7 @@ function VerifyRecovery() {
               inputRef.current = el as HTMLInputElement | null;
             }}
             type="text"
+            uiSize="lg"
           />
           {errors.code && (
             <div className="tr-field-error" data-testid="recovery-error">
@@ -283,6 +284,7 @@ function VerifyRecovery() {
             })
           }
           type="button"
+          uiSize="lg"
         >
           {t('verifyRecovery.backToTotp')}
         </TRButton>

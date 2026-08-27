@@ -85,7 +85,7 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
     );
 
     return (
-      <TRField.Root className={className} ref={containerRef}>
+      <TRField.Root className={`w-full ${className}`} ref={containerRef}>
         {/*
           A real label, not `aria-label`: Base UI deliberately ignores
           `aria-label` on the first OTP input and warns to use a label instead,
@@ -104,10 +104,11 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
            * a real input rather than at the wrapping group.
            */
           id={otpId}
+          layout="stretch"
           length={length}
           onValueChange={handleValueChange}
           onValueComplete={handleValueComplete}
-          uiSize="md"
+          uiSize="lg"
           validationType="numeric"
           value={internalValue}
         >
