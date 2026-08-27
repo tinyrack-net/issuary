@@ -1,5 +1,6 @@
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { AuthBrandHeader } from '#frontend/features/layout/auth-brand-header.tsx';
+import { ShellFooter } from '#frontend/features/layout/shell-footer.tsx';
 import { ShellHeaderBar } from '#frontend/features/layout/shell-header-bar.tsx';
 
 type AuthLayoutProps = {
@@ -43,6 +44,7 @@ export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
           {children}
         </div>
       </main>
+      <ShellFooter />
     </div>
   );
 }

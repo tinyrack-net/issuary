@@ -375,8 +375,8 @@ importers:
         specifier: 'catalog:'
         version: 1.170.17(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tinyrack/ui':
-        specifier: 0.27.0
-        version: 0.27.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)
+        specifier: 0.27.1
+        version: 0.27.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)
       hono:
         specifier: 'catalog:'
         version: 4.12.28
@@ -3181,6 +3181,19 @@ packages:
 
   '@tinyrack/ui@0.27.0':
     resolution: {integrity: sha512-f8oIrQ5Epqmpi7+39+irDY61ffefJG8RmXrqfaX0zgNw51gt271usraWfRpiecfP3NsTj3/jTiOas7b6NlcUhA==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
+    peerDependencies:
+      react: '>=19.0.0'
+      react-dom: '>=19.0.0'
+      shiki: '>=4.0.0 <5.0.0'
+      tailwindcss: '>=4.3.0 <5.0.0'
+    peerDependenciesMeta:
+      shiki:
+        optional: true
+
+  '@tinyrack/ui@0.27.1':
+    resolution: {integrity: sha512-J9UaXFPDMCrQk38cs+lRbD2ckZ2SBmNhvZfTiDdiXi4WO3/7tDUxYcBa6bVHTXgzKkp27Yn4bhDGmrdLsL5Zlg==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -8180,6 +8193,23 @@ snapshots:
       - date-fns
 
   '@tinyrack/ui@0.27.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)':
+    dependencies:
+      '@babel/parser': 7.29.7
+      '@base-ui/react': 1.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tanstack/react-virtual': 3.14.9(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react: 1.28.0(react@19.2.7)
+      postcss: 8.5.25
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+      tailwindcss: 4.3.2
+    optionalDependencies:
+      shiki: 4.4.2
+    transitivePeerDependencies:
+      - '@date-fns/tz'
+      - '@types/react'
+      - date-fns
+
+  '@tinyrack/ui@0.27.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(shiki@4.4.2)(tailwindcss@4.3.2)':
     dependencies:
       '@babel/parser': 7.29.7
       '@base-ui/react': 1.7.0(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
