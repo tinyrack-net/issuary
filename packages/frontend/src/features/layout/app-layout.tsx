@@ -1,4 +1,5 @@
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
+import { ShellFooter } from '#frontend/features/layout/shell-footer.tsx';
 import { ShellHeaderBar } from '#frontend/features/layout/shell-header-bar.tsx';
 
 type AppLayoutProps = {
@@ -40,6 +41,7 @@ export function AppLayout({ children, headerActions }: AppLayoutProps) {
           {children}
         </div>
       </main>
+      <ShellFooter />
     </div>
   );
 }

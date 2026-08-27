@@ -1,5 +1,5 @@
 import { TRSelect } from '@tinyrack/ui/components/select';
-import { CheckIcon } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, LanguagesIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '#frontend/hooks/use-language.ts';
 import { LANGUAGE_LABELS } from '#frontend/i18n/index.ts';
@@ -41,6 +41,7 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   return (
     <div className={className}>
       <TRSelect.Root
+        items={options}
         onValueChange={(value) => {
           if (typeof value !== 'string') {
             return;
@@ -59,11 +60,16 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
           control announces as an unnamed button.
         */}
         <TRSelect.Trigger
+          appearance="ghost"
           aria-label={t('common.language.select')}
           data-testid="language-selector"
           uiSize="sm"
         >
+          <LanguagesIcon aria-hidden className="size-tinyrack-lg" />
           <TRSelect.Value />
+          <TRSelect.Icon>
+            <ChevronDownIcon aria-hidden />
+          </TRSelect.Icon>
         </TRSelect.Trigger>
         <TRSelect.Portal>
           <TRSelect.Positioner>
@@ -73,7 +79,7 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
                   <TRSelect.Item key={option.value} value={option.value}>
                     <TRSelect.ItemText>{option.label}</TRSelect.ItemText>
                     <TRSelect.ItemIndicator>
-                      <CheckIcon />
+                      <CheckIcon aria-hidden />
                     </TRSelect.ItemIndicator>
                   </TRSelect.Item>
                 ))}

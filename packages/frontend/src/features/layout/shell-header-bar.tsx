@@ -1,6 +1,5 @@
 import { TRText } from '@tinyrack/ui/components/text';
 import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
-import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
 import { useBranding } from '#frontend/features/layout/use-branding.ts';
 import { useColorScheme } from '#frontend/hooks/use-theme.ts';
 
@@ -19,13 +18,9 @@ type ShellHeaderBarProps = {
 /**
  * Presentation controls for every shell.
  *
- * These used to float over the page — the theme toggle pinned to the viewport
- * corner and the language selector centred under the card. Giving them a real
- * bar puts them in the tab order where a header is expected and stops the
- * toggle overlapping content on short viewports.
- *
- * The language selector renders nothing when the deployment fixes a language,
- * so the bar has to stay balanced with only one control in it.
+ * The theme toggle, brand, and page-level actions live in a predictable header
+ * row. Language selection sits in the shell footer so it stays centred without
+ * competing with those controls.
  */
 export function ShellHeaderBar({
   brand = false,
@@ -60,7 +55,6 @@ export function ShellHeaderBar({
       */}
       <div className="ms-auto flex items-center gap-tinyrack-sm">
         {actions}
-        <LanguageSelector />
         <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
       </div>
     </div>
