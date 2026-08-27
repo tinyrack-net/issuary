@@ -76,11 +76,13 @@ pnpm test         # Alias for verify:full
    file, project, or smoke command before widening the run.
 5. Workflow changes require the focused tools workflow-policy test and
    `actionlint` in addition to `pnpm verify:quick`.
-6. Full E2E, coverage, Windows compatibility, Screen Lab snapshots, and the
-   complete performance catalog are owned by merge-group CI. Never report a
+6. Full Chromium E2E, Windows compatibility, and Screen Lab snapshots are
+   owned by merge-group CI. Full Firefox E2E, coverage, and the complete
+   performance catalog run nightly and for release tags. Never report a
    locally omitted gate as passed.
-7. If a task includes merging, it is complete only after the merge-group run
-   for that pull request passes `Quality Gate`.
+7. If a task includes merging, enable auto-merge immediately after creating
+   the pull request with `gh pr merge --auto --match-head-commit <sha>`. The
+   task is complete only after the merge-group run passes `Quality Gate`.
 8. Treat intermittent failures as defects. Reproduce and fix the mechanism;
    do not use retries, re-runs, sleeps, skipped tests, or reduced concurrency to
    obtain a green result.
