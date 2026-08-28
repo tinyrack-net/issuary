@@ -33,8 +33,11 @@ The current config model is organized by top-level groups:
 
 | Field | Type | Default | Description |
 |------|------|--------|------|
-| `icon_url` | `string` (URL) | - | Logo image URL. |
+| `icon_url` | `string` (URL) | Official Issuary icon | App icon URL. |
+| `logo_url` | `string` (URL) | - | Logo that replaces the icon and title. |
 | `title` | `Record<string, string>` | Default localized title | Localized title keyed by language code. |
+| `subtitle` | `Record<string, string>` | Default localized greeting | Login subtitle. An empty localized value hides it. |
+| `login_method_description` | `Record<string, string>` | Default localized guidance | Login method guidance. An empty localized value hides it. |
 
 ## `registration`
 

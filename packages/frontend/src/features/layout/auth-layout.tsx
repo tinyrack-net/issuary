@@ -11,6 +11,7 @@ type AuthLayoutProps = {
    * account selection, recovery codes.
    */
   width?: 'form' | 'wide';
+  showBrandSubtitle?: boolean;
 };
 
 const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
@@ -26,7 +27,11 @@ const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
  * short tasks sit centrally while long consent and setup flows keep their
  * viewport padding and scroll instead of overflowing above the canvas.
  */
-export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
+export function AuthLayout({
+  children,
+  width = 'form',
+  showBrandSubtitle = false,
+}: AuthLayoutProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
       <Toaster />
@@ -40,7 +45,7 @@ export function AuthLayout({ children, width = 'form' }: AuthLayoutProps) {
         <div
           className={`auth-enter m-auto flex w-full flex-col gap-tinyrack-xl ${widthClasses[width]}`}
         >
-          <AuthBrandHeader />
+          <AuthBrandHeader showSubtitle={showBrandSubtitle} />
           {children}
         </div>
       </main>

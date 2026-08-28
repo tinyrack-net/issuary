@@ -646,11 +646,20 @@ export const r = {
       icon_url: z
         .url()
         .optional()
-        .describe('Icon/logo URL displayed on authentication pages'),
+        .describe('App icon URL displayed on authentication pages'),
+      logo_url: z
+        .url()
+        .optional()
+        .describe('Logo URL that replaces the app icon and title'),
       title: z
         .record(z.string(), z.string())
-        .optional()
         .describe('Localized title text for login page'),
+      subtitle: z
+        .record(z.string(), z.string())
+        .describe('Localized subtitle text for login pages'),
+      login_method_description: z
+        .record(z.string(), z.string())
+        .describe('Localized guidance shown on the login method screen'),
     }),
     registration: z.object({
       public_registration: z

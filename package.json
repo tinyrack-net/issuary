@@ -10,6 +10,8 @@
     "verify:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",
     "typecheck": "pnpm -r --workspace-concurrency=Infinity --if-present typecheck",
     "build": "pnpm -r --workspace-concurrency=Infinity build",
+    "brand:sync": "node packages/tools/src/scripts/sync-brand-assets.ts",
+    "brand:check": "node packages/tools/src/scripts/sync-brand-assets.ts --check",
     "check:ui": "pnpm --filter @tinyrack/issuary-frontend check:ui && pnpm --filter @tinyrack/issuary-homepage check:ui && pnpm --filter @issuary-client-examples/react-spa check:ui",
     "biome": "biome",
     "screen:dev": "pnpm --filter @tinyrack/issuary-frontend screen:dev",

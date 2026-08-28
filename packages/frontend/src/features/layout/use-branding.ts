@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
+import defaultIconUrl from '@tinyrack/ui/brand/apps/issuary-app-icon.svg';
 import { useTranslation } from 'react-i18next';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
@@ -7,11 +8,14 @@ type Branding = {
   /**
    * The deployment's product name, or `undefined` when it has not configured
    * one. Deliberately not defaulted to any screen's copy: this is the page's
-   * `h1` on every auth screen, so borrowing e.g. the sign-in title would put
-   * "Welcome back!" at the top of the register and consent screens.
+   * `h1` on every auth screen, so it is kept separate from screen-specific
+   * task copy.
    */
   title: string | undefined;
-  iconUrl: string | undefined;
+  subtitle: string | undefined;
+  loginMethodDescription: string | undefined;
+  iconUrl: string;
+  logoUrl: string | undefined;
 };
 
 /**
@@ -39,6 +43,9 @@ export function useBranding(): Branding {
 
   return {
     title: localized(config.branding.title),
-    iconUrl: config.branding.icon_url ?? undefined,
+    subtitle: localized(config.branding.subtitle),
+    loginMethodDescription: localized(config.branding.login_method_description),
+    iconUrl: config.branding.icon_url ?? defaultIconUrl,
+    logoUrl: config.branding.logo_url ?? undefined,
   };
 }

@@ -7,17 +7,34 @@ order: 13
 
 ## ブランディングオプション
 
-`issuary`の認証画面では、ロゴと多言語のサービス名をカスタマイズできます。
+Issuary は公式アプリアイコンをデフォルトで使用します。アプリアイコンの変更、
+タイトル領域全体のロゴへの置き換え、ログイン文言のローカライズができます。
 
 ```yaml
 branding:
-  icon_url: https://example.com/logo.png
+  icon_url: https://example.com/icon.svg
+  logo_url: https://example.com/logo.svg
 
   title:
     en: My App
     ko: 내 앱
     ja: マイアプリ
+
+  subtitle:
+    ko: 만나서 반가워요!
+    en: Nice to meet you!
+    ja: はじめまして！
+
+  login_method_description:
+    ko: 원하는 방식으로 로그인하세요.
+    en: Choose how you'd like to sign in.
+    ja: お好きな方法でログインしてください。
 ```
 
-- `icon_url`：ログインページやその他のインターフェイス要素に表示されるアイコンまたはロゴ画像 URLこれです。推奨サイズは128×128ピクセルです。
-- `title`：多言語のアプリケーションのタイトルです。言語コードは `ISO 639-1` 規格を使用します。たとえば、英語は `en`、韓国語 `ko`、日本語は `ja`はい。
+- `icon_url`：UI、favicon、Apple Touch Icon の公式 Issuary アイコンを置き換えるアプリアイコン URL です。
+- `logo_url`：認証画面のアイコンとテキストタイトルをまとめて置き換えるロゴ URL です。設定したタイトルはアクセシブルネームとして維持されます。
+- `title`：`ISO 639-1` 言語コードをキーにした多言語アプリケーションタイトルです。たとえば、英語は `en`、韓国語は `ko`、日本語は `ja` です。
+- `subtitle`：`/login` と `/login/password` に表示する多言語サブタイトルです。
+- `login_method_description`：ログイン方法選択画面だけに表示する多言語案内文です。
+
+言語ごとの `subtitle` または `login_method_description` を空文字列にすると、その文言を非表示にできます。

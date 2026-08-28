@@ -161,7 +161,42 @@ testPartial.describe('HTML interpolation - partial variables', () => {
       const appleTouchIcon = await page
         .locator('link[rel="apple-touch-icon"]')
         .getAttribute('href');
-      expect(appleTouchIcon).toBe('/vite.svg');
+      expect(appleTouchIcon).toBe('/issuary-app-icon-512.png');
+
+      const favicon = await page
+        .locator('link[rel="icon"]')
+        .getAttribute('href');
+      expect(favicon).toBe('/issuary-app-icon.svg');
+    },
+  );
+});
+
+const testBrandingIcon = createScenarioFixture((backendPort, frontendPort) => ({
+  ...E2E_BASE_CONFIG,
+  ...createTestConfig(backendPort, {
+    branding: {
+      icon_url: 'https://example.com/branding-icon.svg',
+    },
+  }),
+  users: [E2E_TEST_USER_CONFIG],
+  frontend: createProxyHandler({
+    upstream: `http://localhost:${frontendPort}`,
+  }),
+}));
+
+testBrandingIcon.describe('HTML interpolation - branding icon', () => {
+  testBrandingIcon(
+    'branding icon replaces favicon and Apple Touch Icon',
+    async ({ page }) => {
+      await page.goto('/login');
+
+      await expect(page.locator('link[rel="icon"]')).toHaveAttribute(
+        'href',
+        'https://example.com/branding-icon.svg',
+      );
+      await expect(
+        page.locator('link[rel="apple-touch-icon"]'),
+      ).toHaveAttribute('href', 'https://example.com/branding-icon.svg');
     },
   );
 });

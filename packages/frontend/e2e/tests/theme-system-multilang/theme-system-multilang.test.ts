@@ -13,9 +13,20 @@ const test = createScenarioFixture((backendPort) => ({
       default_language: 'ko',
       fallback_language: 'en',
     },
+    auth: {
+      passkey: {
+        enabled: true,
+      },
+    },
     branding: {
       title: {
         en: 'Theme System Title',
+      },
+      subtitle: {
+        en: 'Fallback subtitle',
+      },
+      login_method_description: {
+        en: 'Fallback login guidance',
       },
     },
     registration: {
@@ -37,6 +48,8 @@ test.describe('Color scheme and language fallback behavior', () => {
     await expect(
       page.getByRole('heading', { name: 'Theme System Title' }),
     ).toBeVisible();
+    await expect(page.getByText('Fallback subtitle')).toBeVisible();
+    await expect(page.getByText('Fallback login guidance')).toBeVisible();
     await expect(
       page.getByText(/Theme system.*implicit terms.*notice\./),
     ).toBeVisible();

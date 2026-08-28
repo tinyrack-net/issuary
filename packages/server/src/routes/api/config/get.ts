@@ -34,7 +34,10 @@ function buildConfigResponse(config: IssuaryRuntimeConfig): ConfigResponse {
     },
     branding: {
       icon_url: config.branding.icon_url,
+      logo_url: config.branding.logo_url,
       title: config.branding.title,
+      subtitle: config.branding.subtitle,
+      login_method_description: config.branding.login_method_description,
     },
     registration: {
       public_registration: config.registration.enabled,

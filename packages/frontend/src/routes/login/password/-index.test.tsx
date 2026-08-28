@@ -21,8 +21,11 @@ const baseConfig = {
     fallback_language: 'en',
   },
   branding: {
-    icon_url: '',
-    title: {},
+    title: { en: 'Issuary' },
+    subtitle: { en: 'Nice to meet you!' },
+    login_method_description: {
+      en: "Choose how you'd like to sign in.",
+    },
   },
   registration: {
     public_registration: true,
@@ -130,15 +133,19 @@ afterEach(() => {
 });
 
 describe('/login/password', () => {
-  test('uses the screen title as h1 when no brand title is configured', async () => {
+  test('shows the brand title and subtitle without method guidance', async () => {
     const { screen } = await renderRoute({
       initialLocation: '/login/password',
       queryData: seedConfig(),
     });
 
     await expect
-      .element(screen.getByRole('heading', { level: 1, name: 'Welcome back!' }))
+      .element(screen.getByRole('heading', { level: 1, name: 'Issuary' }))
       .toBeVisible();
+    await expect.element(screen.getByText('Nice to meet you!')).toBeVisible();
+    await expect
+      .element(screen.getByText("Choose how you'd like to sign in."))
+      .not.toBeInTheDocument();
   });
 
   test('navigates to email verification after login while preserving OAuth params', async () => {
