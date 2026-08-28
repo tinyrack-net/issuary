@@ -109,6 +109,10 @@ export class UserService {
     includeDeleted: boolean;
     managedBy?: UserEntity['managed_by'] | undefined;
     role?: UserEntity['role'] | undefined;
+    emailVerified?: boolean | undefined;
+    twoFactor?: boolean | undefined;
+    sort?: 'email' | 'role' | 'created_at' | undefined;
+    direction?: 'asc' | 'desc' | undefined;
   }): Promise<z.infer<typeof r.AdminUserListResponse>> {
     const where: Record<string, unknown> = {};
     if (!params.includeDeleted) {
@@ -119,6 +123,14 @@ export class UserService {
     }
     if (params.role) {
       where['role'] = params.role;
+    }
+    if (params.emailVerified !== undefined) {
+      where['email_verified'] = params.emailVerified;
+    }
+    if (params.twoFactor !== undefined) {
+      where['totps'] = params.twoFactor
+        ? { verified: true, recovery_confirmed: true }
+        : { $none: { verified: true, recovery_confirmed: true } };
     }
 
     const query = params.query?.trim();
@@ -137,7 +149,9 @@ export class UserService {
       },
       limit: params.pageSize,
       offset: (params.page - 1) * params.pageSize,
-      orderBy: { email: 'ASC' },
+      orderBy: {
+        [params.sort ?? 'email']: params.direction ?? 'asc',
+      },
     });
 
     return {
@@ -234,6 +248,78 @@ export class UserService {
     }
 
     return this.adminUserEntityToResponse(user);
+  }
+
+  public async restoreAdminUser(
+    sub: string,
+  ): Promise<z.infer<typeof r.AdminUser>> {
+    const user = await this.mikro.user.verifyBySubIncludingDeleted(sub);
+    if (user.managed_by === 'config') {
+      throw new e.UserNotEditable.Error();
+    }
+    if (user.deleted_at) {
+      user.deleted_at = null;
+      await this.mikro.em.flush();
+    }
+    return this.adminUserEntityToResponse(user);
+  }
+
+  public async bulkSetAdminUserDeleted(params: {
+    ids?: string[] | undefined;
+    filter?:
+      | {
+          query?: string | undefined;
+          includeDeleted: boolean;
+          managedBy?: UserEntity['managed_by'] | undefined;
+          role?: UserEntity['role'] | undefined;
+          emailVerified?: boolean | undefined;
+        }
+      | undefined;
+    deleted: boolean;
+    actorSub: string;
+  }): Promise<{
+    matched: number;
+    changed: number;
+    skipped: Record<string, number>;
+  }> {
+    const where: Record<string, unknown> = params.ids
+      ? { sub: { $in: params.ids } }
+      : {};
+    if (params.filter) {
+      if (!params.filter.includeDeleted) where['deleted_at'] = null;
+      if (params.filter.managedBy)
+        where['managed_by'] = params.filter.managedBy;
+      if (params.filter.role) where['role'] = params.filter.role;
+      if (params.filter.emailVerified !== undefined) {
+        where['email_verified'] = params.filter.emailVerified;
+      }
+      const query = params.filter.query?.trim();
+      if (query) {
+        where['$or'] = [
+          { email: { $like: `%${query}%` } },
+          { sub: { $like: `%${query}%` } },
+        ];
+      }
+    }
+
+    const users = await this.mikro.user.find(where);
+    const skipped: Record<string, number> = {};
+    let changed = 0;
+    for (const user of users) {
+      let reason: string | undefined;
+      if (user.managed_by === 'config') reason = 'config';
+      else if (user.sub === params.actorSub) reason = 'self';
+      else if (Boolean(user.deleted_at) === params.deleted)
+        reason = 'unchanged';
+      if (reason) {
+        skipped[reason] = (skipped[reason] ?? 0) + 1;
+        continue;
+      }
+      user.deleted_at = params.deleted ? new Date() : null;
+      changed += 1;
+    }
+    await this.mikro.em.flush();
+    return { matched: users.length, changed, skipped };
   }
 
   public async register(params: {

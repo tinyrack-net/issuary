@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../lib/app-env.ts';
+import { adminConsoleRoutes } from './console/index.ts';
 import { adminMeGet } from './me/get.ts';
 import { adminUsersRoutes } from './users/index.ts';
 
@@ -11,4 +12,5 @@ export const adminRoutes = new Hono<AppEnv>()
     return await next();
   })
   .route('/', adminMeGet)
-  .route('/', adminUsersRoutes);
+  .route('/', adminUsersRoutes)
+  .route('/', adminConsoleRoutes);

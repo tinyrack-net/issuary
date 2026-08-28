@@ -10,6 +10,7 @@ import { Migration20260624223000_add_oauth_device_poll_state as PostgresOAuthDev
 import { Migration20260626103000_allow_revoked_token_without_user as PostgresRevokedTokenNullableUserMigration } from '../../migrations/postgres/Migration20260626103000_allow_revoked_token_without_user.js';
 import { Migration20260825110000_add_password_reset_required as PostgresPasswordResetRequiredMigration } from '../../migrations/postgres/Migration20260825110000_add_password_reset_required.js';
 import { Migration20260825140000_drop_password_reset_required as PostgresDropPasswordResetRequiredMigration } from '../../migrations/postgres/Migration20260825140000_drop_password_reset_required.js';
+import { Migration20260827090000_archive_terms as PostgresArchiveTermsMigration } from '../../migrations/postgres/Migration20260827090000_archive_terms.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -21,6 +22,7 @@ import { Migration20260624223000_add_oauth_device_poll_state as SqliteOAuthDevic
 import { Migration20260626103000_allow_revoked_token_without_user as SqliteRevokedTokenNullableUserMigration } from '../../migrations/sqlite/Migration20260626103000_allow_revoked_token_without_user.js';
 import { Migration20260825110000_add_password_reset_required as SqlitePasswordResetRequiredMigration } from '../../migrations/sqlite/Migration20260825110000_add_password_reset_required.js';
 import { Migration20260825140000_drop_password_reset_required as SqliteDropPasswordResetRequiredMigration } from '../../migrations/sqlite/Migration20260825140000_drop_password_reset_required.js';
+import { Migration20260827090000_archive_terms as SqliteArchiveTermsMigration } from '../../migrations/sqlite/Migration20260827090000_archive_terms.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -35,6 +37,7 @@ type MigrationClass =
   | typeof PostgresRevokedTokenNullableUserMigration
   | typeof PostgresPasswordResetRequiredMigration
   | typeof PostgresDropPasswordResetRequiredMigration
+  | typeof PostgresArchiveTermsMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
   | typeof SqliteDeviceAuthorizationMigration
@@ -44,7 +47,8 @@ type MigrationClass =
   | typeof SqliteOAuthDevicePollStateMigration
   | typeof SqliteRevokedTokenNullableUserMigration
   | typeof SqlitePasswordResetRequiredMigration
-  | typeof SqliteDropPasswordResetRequiredMigration;
+  | typeof SqliteDropPasswordResetRequiredMigration
+  | typeof SqliteArchiveTermsMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -80,6 +84,7 @@ describe('database migrations', () => {
       PostgresRevokedTokenNullableUserMigration,
       PostgresPasswordResetRequiredMigration,
       PostgresDropPasswordResetRequiredMigration,
+      PostgresArchiveTermsMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -122,6 +127,7 @@ describe('database migrations', () => {
       SqliteRevokedTokenNullableUserMigration,
       SqlitePasswordResetRequiredMigration,
       SqliteDropPasswordResetRequiredMigration,
+      SqliteArchiveTermsMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();

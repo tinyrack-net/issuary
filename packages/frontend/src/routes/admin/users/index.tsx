@@ -6,28 +6,46 @@ import {
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
-import { TRCard } from '@tinyrack/ui/components/card';
+import { TRTable } from '@tinyrack/ui/components/table';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import {
+  AdminBulkBar,
+  AdminFilterSelect,
+  AdminListToolbar,
+  AdminPagination,
+  AdminRowCheckbox,
+  AdminSelectAll,
+  AdminSortButton,
+  AdminStickyActionCell,
+  AdminStickyIdentityCell,
+  AdminStickySelectCell,
+  AdminTable,
+  AdminTableFrame,
+} from '#frontend/features/admin/admin-data-table.tsx';
 import { AdminGateScreen } from '#frontend/features/admin/admin-gate-screen.tsx';
 import { AdminShell } from '#frontend/features/admin/admin-shell.tsx';
-import { AdminUserFormModal } from '#frontend/features/admin/users/admin-user-form-modal.tsx';
-import { AdminUsersFilterBar } from '#frontend/features/admin/users/admin-users-filter-bar.tsx';
 import {
-  getActiveQuickFilter,
-  type NoticeState,
-  type QuickFilter,
-  type UserModalState,
+  formatAdminRole,
+  formatManagedBy,
+} from '#frontend/features/admin/format-admin-user.ts';
+import { useAdminSelection } from '#frontend/features/admin/use-admin-selection.ts';
+import { AdminUserFormModal } from '#frontend/features/admin/users/admin-user-form-modal.tsx';
+import type {
+  NoticeState,
+  UserModalState,
 } from '#frontend/features/admin/users/admin-users-filters.ts';
 import { AdminUsersNotice } from '#frontend/features/admin/users/admin-users-notice.tsx';
-import { AdminUsersSummary } from '#frontend/features/admin/users/admin-users-summary.tsx';
-import { AdminUsersTable } from '#frontend/features/admin/users/admin-users-table.tsx';
-import { AdminUsersToolbar } from '#frontend/features/admin/users/admin-users-toolbar.tsx';
 import {
+  type AdminBulkTarget,
   adminUsersQueryOptions,
+  bulkSetAdminUsersActive,
   createAdminUser,
   deleteAdminUser,
   normalizeAdminUsersQuery,
+  restoreAdminUser,
   updateAdminUser,
 } from '#frontend/queries/admin-users.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
@@ -36,27 +54,21 @@ import type { SessionUser } from '#frontend/queries/session.ts';
 export const Route = createFileRoute('/admin/users/')({
   component: AdminUsersPage,
   beforeLoad: async ({ context }) => {
-    if (!context.user) {
-      throw redirect({ to: '/login' });
-    }
+    if (!context.user) throw redirect({ to: '/login' });
   },
 });
 
 function AdminUsersPage() {
   const user = Route.useRouteContext({ select: (context) => context.user });
-
-  if (user?.role !== 'admin') {
+  if (user?.role !== 'admin')
     return <AdminGateScreen reason="access-required" />;
-  }
-
   return <AdminUsersGate user={user} />;
 }
 
 function AdminUsersGate({ user }: { user: SessionUser }) {
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
-  if (!config.admin.enabled) {
+  if (!config.admin.enabled)
     return <AdminGateScreen reason="console-disabled" />;
-  }
   return <AdminUsersContent user={user} />;
 }
 
@@ -64,205 +76,430 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [draftQuery, setDraftQuery] = useState('');
-  const [draftIncludeDeleted, setDraftIncludeDeleted] = useState(false);
   const [filters, setFilters] = useState(() => normalizeAdminUsersQuery());
   const [notice, setNotice] = useState<NoticeState>(null);
   const [modal, setModal] = useState<UserModalState>(null);
+  const [bulkActive, setBulkActive] = useState<boolean | null>(null);
   const { data } = useSuspenseQuery(adminUsersQueryOptions(filters));
-
-  const activeUsers = data.users.filter(
-    (managedUser) => !managedUser.deleted_at,
-  ).length;
-  const configUsers = data.users.filter(
-    (managedUser) => managedUser.managed_by === 'config',
-  ).length;
-  const databaseUsers = data.users.filter(
-    (managedUser) => managedUser.managed_by === 'database',
-  ).length;
-  const activeQuickFilter = getActiveQuickFilter(filters);
-  const hasActiveFilters =
-    filters.query !== '' ||
-    filters.includeDeleted ||
-    filters.managedBy !== undefined ||
-    filters.role !== undefined;
-  const pageStart =
-    data.pagination.total === 0
-      ? 0
-      : (data.pagination.page - 1) * data.pagination.page_size + 1;
-  const pageEnd = Math.min(
-    data.pagination.page * data.pagination.page_size,
-    data.pagination.total,
+  const selection = useAdminSelection(
+    data.users.map((managedUser) => managedUser.sub),
   );
-
-  const noticeOn = (message: string) => setNotice({ tone: 'success', message });
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['admin'] });
   const noticeFail = () =>
     setNotice({ tone: 'error', message: t('admin.users.operationFailed') });
+  const noticeOn = (message: string) => setNotice({ tone: 'success', message });
 
   const createMutation = useMutation({
     mutationFn: createAdminUser,
-    onSuccess: ({ user: nextUser }) => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      noticeOn(t('admin.users.createdNotice', { email: nextUser.email }));
+    onSuccess: ({ user: next }) => {
+      void invalidate();
+      noticeOn(t('admin.users.createdNotice', { email: next.email }));
       setModal(null);
     },
     onError: noticeFail,
   });
-
   const updateMutation = useMutation({
     mutationFn: updateAdminUser,
-    onSuccess: ({ user: nextUser }) => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      noticeOn(t('admin.users.updatedNotice', { email: nextUser.email }));
+    onSuccess: ({ user: next }) => {
+      void invalidate();
+      noticeOn(t('admin.users.updatedNotice', { email: next.email }));
       setModal(null);
     },
     onError: noticeFail,
   });
-
   const deleteMutation = useMutation({
     mutationFn: deleteAdminUser,
-    onSuccess: ({ user: nextUser }) => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      noticeOn(t('admin.users.deletedNotice', { email: nextUser.email }));
+    onSuccess: ({ user: next }) => {
+      void invalidate();
+      noticeOn(t('admin.users.deletedNotice', { email: next.email }));
       setModal(null);
     },
     onError: noticeFail,
   });
+  const restoreMutation = useMutation({
+    mutationFn: restoreAdminUser,
+    onSuccess: ({ user: next }) => {
+      void invalidate();
+      noticeOn(t('admin.users.restoredNotice', { email: next.email }));
+    },
+    onError: noticeFail,
+  });
+  const bulkMutation = useMutation({
+    mutationFn: bulkSetAdminUsersActive,
+    onSuccess: (result) => {
+      void invalidate();
+      selection.clear();
+      setBulkActive(null);
+      noticeOn(t('admin.selection.result', result));
+    },
+    onError: noticeFail,
+  });
 
-  const isMutating =
+  const resetSelectionAndSet = (next: typeof filters) => {
+    selection.clear();
+    setFilters(next);
+  };
+  const applySearch = () =>
+    resetSelectionAndSet({ ...filters, query: draftQuery.trim(), page: 1 });
+  const target: AdminBulkTarget =
+    selection.selection.kind === 'filter'
+      ? {
+          kind: 'filter',
+          filter: {
+            query: filters.query || undefined,
+            include_deleted: filters.includeDeleted,
+            managed_by: filters.managedBy,
+            role: filters.role,
+            email_verified: filters.emailVerified,
+          },
+        }
+      : { kind: 'ids', ids: [...selection.selection.ids] };
+  const selected =
+    selection.selection.kind === 'filter'
+      ? data.pagination.total
+      : (selection.selectedCount ?? 0);
+  const mutating =
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending;
 
-  const applySearch = () => {
-    setFilters((current) => ({
-      ...current,
-      query: draftQuery.trim(),
-      includeDeleted: draftIncludeDeleted,
-      page: 1,
-    }));
-  };
-
-  const clearFilters = () => {
-    setDraftQuery('');
-    setDraftIncludeDeleted(false);
-    setFilters(normalizeAdminUsersQuery());
-  };
-
-  const applyQuickFilter = (nextFilter: QuickFilter) => {
-    setFilters((current) => ({
-      ...current,
-      page: 1,
-      managedBy:
-        nextFilter === 'database'
-          ? 'database'
-          : nextFilter === 'config'
-            ? 'config'
-            : undefined,
-      role: nextFilter === 'admins' ? 'admin' : undefined,
-    }));
-  };
-
   return (
-    <AdminShell
-      current="users"
-      description={t('admin.users.description')}
-      title={t('admin.users.title')}
-      user={user}
-    >
-      <AdminUsersSummary
-        active={activeUsers}
-        config={configUsers}
-        database={databaseUsers}
-      />
-
+    <AdminShell current="users" title={t('admin.users.title')} user={user}>
       {notice ? (
         <AdminUsersNotice notice={notice} onDismiss={() => setNotice(null)} />
       ) : null}
-
-      <TRCard.Root
-        className="overflow-hidden shadow-tinyrack-raised"
+      <div
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
         data-testid="admin-users-directory"
-        variant="outlined"
       >
-        <TRCard.Content className="gap-tinyrack-lg p-0">
-          <AdminUsersToolbar
-            activeQuickFilter={activeQuickFilter}
-            draftIncludeDeleted={draftIncludeDeleted}
-            draftQuery={draftQuery}
-            onCreate={() => setModal({ type: 'create' })}
-            onDraftIncludeDeletedChange={setDraftIncludeDeleted}
-            onDraftQueryChange={setDraftQuery}
-            onQuickFilter={applyQuickFilter}
-            onSearch={applySearch}
-            total={data.pagination.total}
+        <AdminListToolbar
+          onCreate={() => setModal({ type: 'create' })}
+          onQueryChange={setDraftQuery}
+          onSearch={applySearch}
+          query={draftQuery}
+          title={t('admin.users.title')}
+          total={data.pagination.total}
+        >
+          <AdminFilterSelect
+            label={t('admin.users.managedBy')}
+            onChange={(value) =>
+              resetSelectionAndSet({
+                ...filters,
+                managedBy:
+                  value === 'database'
+                    ? 'database'
+                    : value === 'config'
+                      ? 'config'
+                      : undefined,
+                page: 1,
+              })
+            }
+            options={[
+              ['all', t('admin.filter.allSources')],
+              ['database', t('admin.source.database')],
+              ['config', t('admin.source.config')],
+            ]}
+            value={filters.managedBy ?? 'all'}
           />
-
-          <AdminUsersFilterBar
-            activeQuickFilter={activeQuickFilter}
-            hasActiveFilters={hasActiveFilters}
-            includeDeleted={filters.includeDeleted}
-            onClearFilters={clearFilters}
+          <AdminFilterSelect
+            label={t('admin.users.role')}
+            onChange={(value) =>
+              resetSelectionAndSet({
+                ...filters,
+                role:
+                  value === 'user'
+                    ? 'user'
+                    : value === 'admin'
+                      ? 'admin'
+                      : undefined,
+                page: 1,
+              })
+            }
+            options={[
+              ['all', t('admin.filter.allRoles')],
+              ['user', t('admin.users.roleUser')],
+              ['admin', t('admin.users.roleAdmin')],
+            ]}
+            value={filters.role ?? 'all'}
+          />
+          <AdminFilterSelect
+            label={t('admin.table.status')}
+            onChange={(value) =>
+              resetSelectionAndSet({
+                ...filters,
+                includeDeleted: value === 'all',
+                page: 1,
+              })
+            }
+            options={[
+              ['active', t('admin.status.active')],
+              ['all', t('admin.filter.includeInactive')],
+            ]}
+            value={filters.includeDeleted ? 'all' : 'active'}
+          />
+        </AdminListToolbar>
+        <AdminTableFrame>
+          <AdminTable label={t('admin.users.title')}>
+            <TRTable.Header className="sticky top-0 z-tinyrack-raised">
+              <TRTable.Row>
+                <AdminStickySelectCell header>
+                  <AdminSelectAll
+                    checked={selection.allOnPage}
+                    indeterminate={selection.someOnPage}
+                    onChange={selection.togglePage}
+                  />
+                </AdminStickySelectCell>
+                <AdminStickyIdentityCell header>
+                  <AdminSortButton
+                    direction={
+                      filters.sort === 'email' ? filters.direction : undefined
+                    }
+                    label={t('admin.users.email')}
+                    onClick={() =>
+                      resetSelectionAndSet({
+                        ...filters,
+                        sort: 'email',
+                        direction:
+                          filters.sort === 'email' &&
+                          filters.direction === 'asc'
+                            ? 'desc'
+                            : 'asc',
+                        page: 1,
+                      })
+                    }
+                  />
+                </AdminStickyIdentityCell>
+                <TRTable.Head>
+                  <AdminSortButton
+                    direction={
+                      filters.sort === 'role' ? filters.direction : undefined
+                    }
+                    label={t('admin.users.role')}
+                    onClick={() =>
+                      resetSelectionAndSet({
+                        ...filters,
+                        sort: 'role',
+                        direction:
+                          filters.sort === 'role' && filters.direction === 'asc'
+                            ? 'desc'
+                            : 'asc',
+                        page: 1,
+                      })
+                    }
+                  />
+                </TRTable.Head>
+                <TRTable.Head>{t('admin.users.managedBy')}</TRTable.Head>
+                <TRTable.Head>{t('admin.users.emailVerified')}</TRTable.Head>
+                <TRTable.Head>{t('admin.users.twoFactor')}</TRTable.Head>
+                <TRTable.Head>{t('admin.table.status')}</TRTable.Head>
+                <TRTable.Head>{t('admin.users.sub')}</TRTable.Head>
+                <AdminStickyActionCell header>
+                  {t('admin.table.actions')}
+                </AdminStickyActionCell>
+              </TRTable.Row>
+            </TRTable.Header>
+            <TRTable.Body>
+              {data.users.length === 0 ? (
+                <TRTable.Row>
+                  <TRTable.Cell
+                    className="py-tinyrack-3xl text-center"
+                    colSpan={9}
+                  >
+                    {t('admin.table.empty')}
+                  </TRTable.Cell>
+                </TRTable.Row>
+              ) : (
+                data.users.map((managedUser) => (
+                  <TRTable.Row
+                    className={
+                      selection.isSelected(managedUser.sub)
+                        ? 'bg-tinyrack-surface-selected'
+                        : undefined
+                    }
+                    data-selected={
+                      selection.isSelected(managedUser.sub) ? '' : undefined
+                    }
+                    key={managedUser.sub}
+                  >
+                    <AdminStickySelectCell
+                      selected={selection.isSelected(managedUser.sub)}
+                    >
+                      <AdminRowCheckbox
+                        checked={selection.isSelected(managedUser.sub)}
+                        label={t('admin.selection.row', {
+                          name: managedUser.email,
+                        })}
+                        onChange={(checked) =>
+                          selection.toggleOne(managedUser.sub, checked)
+                        }
+                      />
+                    </AdminStickySelectCell>
+                    <AdminStickyIdentityCell
+                      selected={selection.isSelected(managedUser.sub)}
+                    >
+                      <TRText as="p" truncate variant="bodySm" weight="medium">
+                        {managedUser.email}
+                      </TRText>
+                    </AdminStickyIdentityCell>
+                    <TRTable.Cell>
+                      <TRBadge
+                        variant={
+                          managedUser.role === 'admin' ? 'info' : 'neutral'
+                        }
+                      >
+                        {formatAdminRole(t, managedUser.role)}
+                      </TRBadge>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      {formatManagedBy(t, managedUser.managed_by)}
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      {t(
+                        managedUser.email_verified ? 'common.yes' : 'common.no',
+                      )}
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      {t(
+                        managedUser.totp_registered ||
+                          managedUser.passkey_count > 0
+                          ? 'common.yes'
+                          : 'common.no',
+                      )}
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      <TRBadge
+                        className="whitespace-nowrap"
+                        variant={managedUser.deleted_at ? 'neutral' : 'success'}
+                      >
+                        {t(
+                          managedUser.deleted_at
+                            ? 'admin.status.inactive'
+                            : 'admin.status.active',
+                        )}
+                      </TRBadge>
+                    </TRTable.Cell>
+                    <TRTable.Cell>
+                      <span className="font-tinyrack-mono text-tinyrack-xs">
+                        {managedUser.sub}
+                      </span>
+                    </TRTable.Cell>
+                    <AdminStickyActionCell
+                      selected={selection.isSelected(managedUser.sub)}
+                    >
+                      {managedUser.deleted_at ? (
+                        <TRButton
+                          disabled={managedUser.managed_by === 'config'}
+                          onClick={() =>
+                            restoreMutation.mutate(managedUser.sub)
+                          }
+                          type="button"
+                          uiSize="sm"
+                        >
+                          {t('admin.actions.restore')}
+                        </TRButton>
+                      ) : (
+                        <div className="flex justify-end gap-tinyrack-xs">
+                          <TRButton
+                            appearance="ghost"
+                            disabled={managedUser.managed_by === 'config'}
+                            onClick={() =>
+                              setModal({ type: 'edit', user: managedUser })
+                            }
+                            type="button"
+                            uiSize="sm"
+                          >
+                            {t('admin.actions.edit')}
+                          </TRButton>
+                          <TRButton
+                            appearance="ghost"
+                            disabled={
+                              managedUser.managed_by === 'config' ||
+                              managedUser.sub === user.sub
+                            }
+                            onClick={() =>
+                              setModal({ type: 'delete', user: managedUser })
+                            }
+                            type="button"
+                            uiSize="sm"
+                          >
+                            {t('admin.actions.deactivate')}
+                          </TRButton>
+                        </div>
+                      )}
+                    </AdminStickyActionCell>
+                  </TRTable.Row>
+                ))
+              )}
+            </TRTable.Body>
+          </AdminTable>
+          <AdminPagination
+            onPageChange={(page) => {
+              selection.clear();
+              setFilters({ ...filters, page });
+            }}
             onPageSizeChange={(pageSize) =>
-              setFilters((current) => ({ ...current, page: 1, pageSize }))
+              resetSelectionAndSet({ ...filters, page: 1, pageSize })
             }
-            pageEnd={pageEnd}
+            page={filters.page}
             pageSize={filters.pageSize}
-            pageStart={pageStart}
-            query={filters.query}
             total={data.pagination.total}
           />
-
-          <AdminUsersTable
-            onDelete={(managedUser) =>
-              setModal({ type: 'delete', user: managedUser })
-            }
-            onEdit={(managedUser) =>
-              setModal({ type: 'edit', user: managedUser })
-            }
-            users={data.users}
-          />
-
-          <div className="flex items-center justify-between border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface-muted p-tinyrack-lg">
+        </AdminTableFrame>
+      </div>
+      {selected > 0 ? (
+        <AdminBulkBar
+          canExpand={
+            selection.allOnPage && data.pagination.total > data.users.length
+          }
+          filterSelected={selection.selection.kind === 'filter'}
+          onActivate={() => setBulkActive(true)}
+          onClear={selection.clear}
+          onDeactivate={() => setBulkActive(false)}
+          onExpand={selection.selectFilter}
+          pending={bulkMutation.isPending}
+          selected={selected}
+          total={data.pagination.total}
+        />
+      ) : null}
+      <Modal
+        isOpen={bulkActive !== null}
+        onClose={() => setBulkActive(null)}
+        title={t(
+          bulkActive
+            ? 'admin.bulk.activateTitle'
+            : 'admin.bulk.deactivateTitle',
+        )}
+      >
+        <div className="pt-tinyrack-lg">
+          <TRText color="muted" variant="bodySm">
+            {t('admin.bulk.confirm', {
+              count: selected,
+              scope: t(
+                selection.selection.kind === 'filter'
+                  ? 'admin.selection.filterScope'
+                  : 'admin.selection.pageScope',
+              ),
+            })}
+          </TRText>
+          <ModalActions>
+            <TRButton onClick={() => setBulkActive(null)} type="button">
+              {t('common.dismiss')}
+            </TRButton>
             <TRButton
-              appearance="outline"
-              disabled={filters.page <= 1}
+              intent={bulkActive ? 'primary' : 'danger'}
               onClick={() =>
-                setFilters((current) => ({
-                  ...current,
-                  page: current.page - 1,
-                }))
+                bulkMutation.mutate({ target, active: bulkActive ?? true })
               }
               type="button"
-              uiSize="sm"
             >
-              {t('admin.users.previous')}
+              {t('admin.bulk.run')}
             </TRButton>
-            <TRBadge uiSize="md">
-              {t('admin.users.page', { page: data.pagination.page })}
-            </TRBadge>
-            <TRButton
-              appearance="outline"
-              disabled={
-                data.pagination.page * data.pagination.page_size >=
-                data.pagination.total
-              }
-              onClick={() =>
-                setFilters((current) => ({
-                  ...current,
-                  page: current.page + 1,
-                }))
-              }
-              type="button"
-              uiSize="sm"
-            >
-              {t('admin.users.next')}
-            </TRButton>
-          </div>
-        </TRCard.Content>
-      </TRCard.Root>
-
+          </ModalActions>
+        </div>
+      </Modal>
       <AdminUserFormModal
-        isMutating={isMutating}
+        isMutating={mutating}
         modal={modal}
         onClose={() => setModal(null)}
         onCreate={(values) => createMutation.mutate(values)}

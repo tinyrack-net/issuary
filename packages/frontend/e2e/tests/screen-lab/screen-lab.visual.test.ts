@@ -46,6 +46,18 @@ async function expectScreenScreenshot(
   variant: ScreenScenarioVariant,
 ): Promise<void> {
   await expect(page.locator(scenario.readySelector).first()).toBeVisible();
+  if (scenario.id === 'admin-settings') {
+    const languageSelect = page.getByRole('combobox', {
+      name: 'Select language',
+    });
+    const themeSelect = page.getByRole('combobox', { name: 'Theme' });
+    await expect(languageSelect).toHaveAttribute('data-appearance', 'solid');
+    await expect(themeSelect).toHaveAttribute('data-appearance', 'solid');
+    await expect(languageSelect).toHaveCSS(
+      'width',
+      await themeSelect.evaluate((element) => getComputedStyle(element).width),
+    );
+  }
   await expect(page).toHaveScreenshot(getSnapshotName(scenario.id, variant), {
     animations: 'disabled',
     caret: 'hide',

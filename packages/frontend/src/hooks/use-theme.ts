@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-type ColorScheme = 'light' | 'dark';
+export type ColorScheme = 'light' | 'dark';
 
 const STORAGE_KEY = 'issuary-color-scheme';
 
@@ -87,5 +87,10 @@ export function useColorScheme() {
     window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGE_EVENT));
   }, [colorScheme]);
 
-  return { colorScheme, toggleColorScheme };
+  const setColorScheme = useCallback((scheme: ColorScheme) => {
+    localStorage.setItem(STORAGE_KEY, scheme);
+    window.dispatchEvent(new CustomEvent(COLOR_SCHEME_CHANGE_EVENT));
+  }, []);
+
+  return { colorScheme, setColorScheme, toggleColorScheme };
 }

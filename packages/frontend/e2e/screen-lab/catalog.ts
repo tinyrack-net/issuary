@@ -54,6 +54,7 @@ function createScreenConfigWithRecords(
     overrides?: Partial<E2EConfigInput>;
     users?: E2EConfigInput['users'];
     clients?: E2EConfigInput['clients'];
+    terms?: E2EConfigInput['terms'];
   } = {},
 ): ScreenScenarioConfigFactory {
   const configFactory = createScreenConfig(options.overrides);
@@ -61,6 +62,7 @@ function createScreenConfigWithRecords(
     ...configFactory(backendPort, frontendPort, auxiliaryPort),
     ...(options.users ? { users: options.users } : {}),
     ...(options.clients ? { clients: options.clients } : {}),
+    ...(options.terms ? { terms: options.terms } : {}),
   });
 }
 
@@ -110,18 +112,68 @@ const accountConfig = createScreenConfigWithRecords({
   users: [SCREEN_USER_CONFIG],
 });
 
+const adminConfig = createScreenConfigWithRecords({
+  overrides: { admin: { enabled: true } },
+  users: [SCREEN_USER_CONFIG, SCREEN_SECOND_USER],
+  clients: [E2E_TEST_CLIENT_CONFIG],
+  terms: [
+    {
+      id: 'privacy',
+      required: true,
+      consent_mode: 'explicit',
+      version: '1.0.0',
+      content: {
+        en: {
+          title: 'Privacy policy',
+          type: 'text',
+          content: 'Screen Lab privacy policy.',
+        },
+      },
+    },
+  ],
+});
+
 export const serverScreenScenarioAdapters = {
   profile: {
     config: accountConfig,
     prepare: loginAndOpen,
   },
-  'admin-users': {
-    config: createScreenConfigWithRecords({
-      overrides: { admin: { enabled: true } },
-      users: [SCREEN_USER_CONFIG, SCREEN_SECOND_USER],
-    }),
-    prepare: loginAndOpen,
+  'admin-overview': { config: adminConfig, prepare: loginAndOpen },
+  'admin-users': { config: adminConfig, prepare: loginAndOpen },
+  'admin-account-menu': {
+    config: adminConfig,
+    prepare: async (context) => {
+      await performLogin(context.page, SCREEN_USER.email, SCREEN_USER.password);
+      await context.page.waitForURL('**/profile');
+      await gotoAndWait(
+        context.page,
+        context.scenario.entryPath,
+        'table[aria-label="Users"]',
+      );
+      await context.page
+        .getByRole('button', { name: 'Open account menu' })
+        .click();
+    },
   },
+  'admin-users-selected': {
+    config: adminConfig,
+    prepare: async (context) => {
+      await performLogin(context.page, SCREEN_USER.email, SCREEN_USER.password);
+      await context.page.waitForURL('**/profile');
+      await gotoAndWait(
+        context.page,
+        context.scenario.entryPath,
+        'table[aria-label="Users"]',
+      );
+      await context.page
+        .getByRole('checkbox', { name: 'Select current page' })
+        .click();
+    },
+  },
+  'admin-clients': { config: adminConfig, prepare: loginAndOpen },
+  'admin-terms': { config: adminConfig, prepare: loginAndOpen },
+  'admin-system': { config: adminConfig, prepare: loginAndOpen },
+  'admin-settings': { config: adminConfig, prepare: loginAndOpen },
   'oauth-consent': {
     config: createScreenConfigWithRecords({
       users: [SCREEN_USER_CONFIG],

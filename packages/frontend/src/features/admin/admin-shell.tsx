@@ -1,67 +1,122 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
 import { TRAppShell } from '@tinyrack/ui/components/app-shell';
 import { TRAvatar } from '@tinyrack/ui/components/avatar';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRIconButton } from '@tinyrack/ui/components/icon-button';
+import { TRInput } from '@tinyrack/ui/components/input';
+import { TRMenu } from '@tinyrack/ui/components/menu';
 import { TRText } from '@tinyrack/ui/components/text';
 import {
-  ChevronRightIcon,
+  BookOpenIcon,
+  BoxesIcon,
+  CommandIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   type LucideIcon,
   MenuIcon,
+  SearchIcon,
+  SettingsIcon,
   ShieldIcon,
-  TriangleAlertIcon,
   UsersIcon,
   XIcon,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert } from '#frontend/components/ui/alert.tsx';
-import { ThemeToggle } from '#frontend/components/ui/theme-toggle.tsx';
+import { Modal } from '#frontend/components/ui/modal.tsx';
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { formatAdminRole } from '#frontend/features/admin/format-admin-user.ts';
-import { LanguageSelector } from '#frontend/features/layout/language-selector.tsx';
 import { useBranding } from '#frontend/features/layout/use-branding.ts';
-import { useColorScheme } from '#frontend/hooks/use-theme.ts';
 import { tick } from '#frontend/libs/promise.ts';
+import { searchAdmin } from '#frontend/queries/admin-console.ts';
 import { logoutMutationOptions } from '#frontend/queries/logout.ts';
 import {
   getSessionQueryOptions,
   type SessionUser,
 } from '#frontend/queries/session.ts';
 
+export type AdminSection =
+  | 'dashboard'
+  | 'users'
+  | 'clients'
+  | 'terms'
+  | 'system'
+  | 'settings';
+
 type AdminShellProps = {
   user: SessionUser;
-  current: 'dashboard' | 'users';
+  current: AdminSection;
   title: string;
-  description: string;
+  description?: string | undefined;
   children: ReactNode;
 };
 
-/**
- * The admin console's chrome.
- *
- * Stays on `TRAppShell` — a dashboard with persistent nav is what that
- * primitive is for, and the split-canvas auth shell would have nowhere to put
- * the sidebar. What changes is everything inside it: the console had no theme
- * toggle, no language selector, no way to sign out, and no toast viewport,
- * which made it the one authenticated surface where the presentation controls
- * simply vanished.
- */
+const NAV_ITEMS: Array<{
+  section: AdminSection;
+  icon: LucideIcon;
+  to:
+    | '/admin'
+    | '/admin/users'
+    | '/admin/clients'
+    | '/admin/terms'
+    | '/admin/system';
+  label: string;
+}> = [
+  {
+    section: 'dashboard',
+    icon: LayoutDashboardIcon,
+    to: '/admin',
+    label: 'admin.nav.dashboard',
+  },
+  {
+    section: 'users',
+    icon: UsersIcon,
+    to: '/admin/users',
+    label: 'admin.nav.users',
+  },
+  {
+    section: 'clients',
+    icon: BoxesIcon,
+    to: '/admin/clients',
+    label: 'admin.nav.clients',
+  },
+  {
+    section: 'terms',
+    icon: BookOpenIcon,
+    to: '/admin/terms',
+    label: 'admin.nav.terms',
+  },
+  {
+    section: 'system',
+    icon: SettingsIcon,
+    to: '/admin/system',
+    label: 'admin.nav.system',
+  },
+];
+
 export function AdminShell({
   user,
   current,
   title,
-  description,
   children,
 }: AdminShellProps) {
   const { t } = useTranslation();
   const { title: brandTitle, iconUrl } = useBranding();
-  const { colorScheme, toggleColorScheme } = useColorScheme();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const logoutMutation = useMutation({
     ...logoutMutationOptions,
@@ -78,35 +133,35 @@ export function AdminShell({
   });
 
   return (
-    <TRAppShell.Root breakpoint="lg" className="bg-tinyrack-surface">
+    <TRAppShell.Root
+      breakpoint="lg"
+      className="admin-app-shell bg-tinyrack-surface"
+      sidebarMode="expanded"
+    >
       <Toaster />
-
-      {/*
-        No `w-*` here: `app-shell.css` sizes the sidebar track itself, and the
-        20rem this used to declare overflowed the 18rem track it sits in.
-      */}
-      <TRAppShell.Sidebar className="flex flex-col gap-tinyrack-xl border-tinyrack-border border-r-tinyrack-default bg-tinyrack-surface p-tinyrack-lg">
-        {/* The design system hides this outside the mobile drawer. */}
+      <TRAppShell.Sidebar
+        aria-label={t('admin.console')}
+        className="bg-tinyrack-surface-muted [&_.tr-scroll-area-content]:flex [&_.tr-scroll-area-content]:min-h-full [&_.tr-scroll-area-content]:min-w-full [&_.tr-scroll-area-content]:flex-col [&_.tr-scroll-area-content]:p-tinyrack-md"
+      >
         <TRAppShell.Close aria-label={t('admin.nav.close')}>
-          <XIcon aria-hidden className="size-tinyrack-lg" />
+          <XIcon aria-hidden />
         </TRAppShell.Close>
-
-        <div className="flex items-center gap-tinyrack-md">
+        <div className="mb-tinyrack-xl flex items-center gap-tinyrack-sm px-tinyrack-sm">
           {iconUrl ? (
             <img
               alt=""
-              className="size-tinyrack-2xl object-contain"
+              className="size-tinyrack-xl object-contain"
               src={iconUrl}
             />
           ) : (
-            <TRAvatar.Root shape="square" uiSize="lg">
-              <TRAvatar.Fallback className="bg-tinyrack-primary text-tinyrack-on-primary">
-                <ShieldIcon aria-hidden className="size-tinyrack-xl" />
+            <TRAvatar.Root shape="square" uiSize="md">
+              <TRAvatar.Fallback>
+                <ShieldIcon aria-hidden />
               </TRAvatar.Fallback>
             </TRAvatar.Root>
           )}
           <div className="min-w-0">
-            <TRText as="p" truncate weight="medium">
+            <TRText as="p" truncate variant="bodySm" weight="strong">
               {brandTitle ?? t('admin.mobileTitle')}
             </TRText>
             <TRText as="p" color="muted" variant="caption">
@@ -114,173 +169,290 @@ export function AdminShell({
             </TRText>
           </div>
         </div>
-
-        <ul className="flex w-full flex-col gap-tinyrack-xs p-0">
-          <li>
-            <AdminNavLink
-              active={current === 'dashboard'}
-              icon={LayoutDashboardIcon}
-              to="/admin"
-            >
-              {t('admin.nav.dashboard')}
-            </AdminNavLink>
-          </li>
-          <li>
-            <AdminNavLink
-              active={current === 'users'}
-              icon={UsersIcon}
-              to="/admin/users"
-            >
-              {t('admin.nav.users')}
-            </AdminNavLink>
-          </li>
-        </ul>
-
-        {/*
-          Sign-out lives beside the identity it signs out of, the same
-          adjacency the profile header uses. The console previously offered no
-          way out at all.
-        */}
-        <div className="mt-auto flex flex-col items-start gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default pt-tinyrack-lg">
-          <TRText color="muted" variant="label">
-            {t('admin.signedInAs')}
-          </TRText>
-          <TRText as="p" className="w-full" truncate variant="bodySm">
-            {user.email}
-          </TRText>
-          <TRBadge uiSize="md" variant="neutral">
-            {t('admin.roleBadge', { role: formatAdminRole(t, user.role) })}
-          </TRBadge>
-          <TRButton
-            appearance="ghost"
-            data-testid="admin-logout"
-            disabled={logoutMutation.isPending}
-            loading={logoutMutation.isPending}
-            onClick={() => logoutMutation.mutate()}
-            type="button"
-            uiSize="sm"
-          >
-            <LogOutIcon aria-hidden className="size-tinyrack-lg" />
-            {t('profile.logout')}
-          </TRButton>
-        </div>
+        <nav aria-label={t('admin.console')}>
+          <ul className="flex flex-col gap-tinyrack-xs p-0">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.section}>
+                <AdminNavLink
+                  active={current === item.section}
+                  icon={item.icon}
+                  to={item.to}
+                >
+                  {t(item.label)}
+                </AdminNavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </TRAppShell.Sidebar>
 
-      {/*
-        `chrome`, not `dropdown`. The header only has to out-paint the content
-        scrolling under it; on the dropdown layer it sat above every scrim, so
-        opening a dialog dimmed the console but left its own header bright.
-      */}
-      <TRAppShell.Header className="sticky top-0 z-tinyrack-chrome flex items-center gap-tinyrack-md border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface px-tinyrack-lg lg:px-tinyrack-2xl">
+      <TRAppShell.Header className="admin-titlebar relative sticky top-0 z-tinyrack-chrome flex items-center gap-tinyrack-sm border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface px-tinyrack-lg">
         <TRAppShell.Trigger aria-label={t('admin.nav.open')}>
-          <MenuIcon aria-hidden className="size-tinyrack-xl" />
+          <MenuIcon aria-hidden />
         </TRAppShell.Trigger>
-
         <TRAppShell.Brand className="min-w-0">
-          <nav
-            aria-label={t('admin.breadcrumbLabel')}
-            className="hidden items-center gap-tinyrack-sm lg:flex"
-          >
-            <TRText color="muted" variant="bodySm">
-              {t('admin.console')}
-            </TRText>
-            <ChevronRightIcon
-              aria-hidden
-              className="size-tinyrack-lg text-tinyrack-text-placeholder"
-            />
-            <TRText variant="bodySm" weight="medium">
-              {title}
-            </TRText>
-          </nav>
-          <div className="min-w-0 lg:hidden">
-            <TRText as="p" truncate weight="medium">
-              {t('admin.mobileTitle')}
-            </TRText>
-            <TRText as="p" color="muted" truncate variant="caption">
-              {user.email}
-            </TRText>
-          </div>
+          <TRText as="p" truncate variant="bodySm" weight="strong">
+            {title}
+          </TRText>
         </TRAppShell.Brand>
-
-        {/*
-          Language then theme, matching the auth header bar, so the two shells
-          put the same control in the same place.
-        */}
-        <TRAppShell.Actions>
-          <div className="hidden items-center gap-tinyrack-xs rounded-tinyrack-full border border-tinyrack-border bg-tinyrack-surface-muted px-tinyrack-md py-tinyrack-xs sm:flex">
-            <span
-              aria-hidden
-              className="size-tinyrack-sm rounded-tinyrack-full bg-tinyrack-success"
-            />
-            <TRText color="muted" variant="caption">
-              {t('admin.livePolicy')}
-            </TRText>
-          </div>
-          <TRBadge uiSize="md" variant="neutral">
+        <TRButton
+          appearance="outline"
+          className="admin-header-search absolute hidden min-w-tinyrack-overlay-sm text-tinyrack-text-muted lg:flex"
+          onClick={() => setSearchOpen(true)}
+          type="button"
+          uiSize="md"
+        >
+          <SearchIcon aria-hidden className="size-tinyrack-md" />
+          <span className="flex-1 text-left text-tinyrack-xs">
+            {t('admin.search.placeholder')}
+          </span>
+          <kbd className="flex items-center gap-tinyrack-3xs">
+            <CommandIcon aria-hidden className="size-tinyrack-sm" />K
+          </kbd>
+        </TRButton>
+        <TRAppShell.Actions className="gap-tinyrack-xs">
+          <TRBadge
+            className="hidden sm:inline-flex"
+            uiSize="md"
+            variant="neutral"
+          >
             {t('admin.environment')}
           </TRBadge>
-          <LanguageSelector />
-          <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />
+          <TRIconButton
+            appearance="ghost"
+            aria-label={t('admin.search.title')}
+            className="lg:hidden"
+            onClick={() => setSearchOpen(true)}
+            type="button"
+            uiSize="md"
+          >
+            <SearchIcon aria-hidden />
+          </TRIconButton>
+          <AdminAccountMenu
+            email={user.email}
+            logoutPending={logoutMutation.isPending}
+            onLogout={() => logoutMutation.mutate()}
+            role={formatAdminRole(t, user.role)}
+          />
         </TRAppShell.Actions>
       </TRAppShell.Header>
 
-      <TRAppShell.Main className="mx-auto flex w-full flex-1 flex-col gap-tinyrack-xl px-tinyrack-lg py-tinyrack-2xl lg:px-tinyrack-2xl">
-        {/*
-          Not a card. A card around nothing but a title is a box for its own
-          sake, and it made the page's real content look like a peer of its
-          heading rather than its subject.
-        */}
-        <header className="flex flex-col gap-tinyrack-xl xl:flex-row xl:items-end xl:justify-between">
-          <div className="flex min-w-0 flex-col gap-tinyrack-md">
-            <TRText color="primary" variant="label">
-              {t('admin.eyebrow')}
-            </TRText>
-            <TRText as="h1" variant="display">
-              {title}
-            </TRText>
-            <TRText
-              as="p"
-              className="max-w-tinyrack-overlay-md"
-              color="muted"
-              variant="body"
-            >
-              {description}
-            </TRText>
-          </div>
-          <Alert
-            className="max-w-tinyrack-overlay-md"
-            icon={TriangleAlertIcon}
-            type="warning"
-          >
-            {t('admin.readonlyNotice')}
-          </Alert>
-        </header>
-
+      <TRAppShell.Main className="mx-auto flex min-h-0 w-full min-w-0 flex-1 flex-col gap-tinyrack-lg overflow-y-auto px-tinyrack-lg py-tinyrack-lg lg:px-tinyrack-xl">
         {children}
       </TRAppShell.Main>
+      <AdminGlobalSearch
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
     </TRAppShell.Root>
   );
 }
 
-type AdminNavLinkProps = {
+function AdminAccountMenu({
+  email,
+  role,
+  logoutPending,
+  onLogout,
+}: {
+  email: string;
+  role: string;
+  logoutPending: boolean;
+  onLogout: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <TRMenu.Root>
+      <TRMenu.Trigger
+        render={
+          <TRIconButton
+            appearance="ghost"
+            aria-label={t('admin.account.menu')}
+            uiSize="md"
+          >
+            <TRAvatar.Root uiSize="md">
+              <TRAvatar.Fallback>
+                {email.slice(0, 1).toLocaleUpperCase()}
+              </TRAvatar.Fallback>
+            </TRAvatar.Root>
+          </TRIconButton>
+        }
+      />
+      <TRMenu.Portal>
+        <TRMenu.Positioner align="end">
+          <TRMenu.Popup>
+            <div className="flex min-w-0 flex-col gap-tinyrack-3xs px-tinyrack-sm py-tinyrack-xs">
+              <TRText as="p" truncate variant="bodySm" weight="strong">
+                {email}
+              </TRText>
+              <TRText as="p" color="muted" variant="caption">
+                {role}
+              </TRText>
+            </div>
+            <TRMenu.Separator />
+            <TRMenu.LinkItem render={<Link to="/admin/settings" />}>
+              <SettingsIcon aria-hidden />
+              {t('admin.settings.title')}
+            </TRMenu.LinkItem>
+            <TRMenu.Item disabled={logoutPending} onClick={onLogout}>
+              <LogOutIcon aria-hidden />
+              {t('profile.logout')}
+            </TRMenu.Item>
+          </TRMenu.Popup>
+        </TRMenu.Positioner>
+      </TRMenu.Portal>
+    </TRMenu.Root>
+  );
+}
+
+function AdminNavLink({
+  active,
+  icon: Icon,
+  to,
+  children,
+}: {
   active: boolean;
   icon: LucideIcon;
-  to: '/admin' | '/admin/users';
+  to:
+    | '/admin'
+    | '/admin/users'
+    | '/admin/clients'
+    | '/admin/terms'
+    | '/admin/system';
   children: ReactNode;
-};
-
-function AdminNavLink({ active, icon: Icon, to, children }: AdminNavLinkProps) {
+}) {
   return (
     <Link
-      className={`flex items-center gap-tinyrack-sm rounded-tinyrack-md px-tinyrack-lg py-tinyrack-sm ${
-        active
-          ? 'bg-tinyrack-surface-selected font-tinyrack-medium text-tinyrack-text'
-          : 'text-tinyrack-text-muted hover:bg-tinyrack-surface-hover hover:text-tinyrack-text'
-      }`}
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-tinyrack-sm rounded-tinyrack-md px-tinyrack-sm py-tinyrack-sm ${active ? 'bg-tinyrack-surface-selected text-tinyrack-text' : 'text-tinyrack-text-muted hover:bg-tinyrack-surface-hover'}`}
       to={to}
     >
-      <Icon aria-hidden className="size-tinyrack-lg" />
-      <span>{children}</span>
+      <Icon aria-hidden className="size-tinyrack-lg shrink-0" />
+      <TRAppShell.SidebarLabel>
+        <TRText
+          as="span"
+          color={active ? 'default' : 'muted'}
+          variant="bodySm"
+          weight={active ? 'strong' : 'regular'}
+        >
+          {children}
+        </TRText>
+      </TRAppShell.SidebarLabel>
     </Link>
+  );
+}
+
+function AdminGlobalSearch({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
+  const menuRows = NAV_ITEMS.filter((item) =>
+    t(item.label)
+      .toLocaleLowerCase()
+      .includes(query.trim().toLocaleLowerCase()),
+  );
+  const { data, isFetching } = useQuery({
+    queryKey: ['admin', 'search', query],
+    queryFn: () => searchAdmin(query),
+    enabled: isOpen && query.trim().length > 0,
+  });
+  return (
+    <Modal
+      description={t('admin.search.description')}
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('admin.search.title')}
+    >
+      <div className="flex flex-col gap-tinyrack-md pt-tinyrack-lg">
+        <TRInput
+          autoFocus
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={t('admin.search.placeholder')}
+          value={query}
+        />
+        {isFetching ? (
+          <TRText color="muted" variant="bodySm">
+            {t('admin.search.loading')}
+          </TRText>
+        ) : null}
+        {data ? (
+          <div className="flex max-h-tinyrack-overlay-sm flex-col overflow-y-auto">
+            {menuRows.length > 0 ? (
+              <section className="border-tinyrack-border border-t-tinyrack-default py-tinyrack-sm">
+                <TRText color="muted" variant="label">
+                  {t('admin.search.menu')}
+                </TRText>
+                {menuRows.map((row) => (
+                  <Link
+                    className="flex rounded-tinyrack-sm px-tinyrack-sm py-tinyrack-xs hover:bg-tinyrack-surface-hover"
+                    key={row.section}
+                    onClick={onClose}
+                    to={row.to}
+                  >
+                    <TRText variant="bodySm">{t(row.label)}</TRText>
+                  </Link>
+                ))}
+              </section>
+            ) : null}
+            <SearchGroup
+              label={t('admin.nav.users')}
+              onClose={onClose}
+              rows={data.users}
+              to="/admin/users"
+            />
+            <SearchGroup
+              label={t('admin.nav.clients')}
+              onClose={onClose}
+              rows={data.clients}
+              to="/admin/clients"
+            />
+            <SearchGroup
+              label={t('admin.nav.terms')}
+              onClose={onClose}
+              rows={data.terms}
+              to="/admin/terms"
+            />
+          </div>
+        ) : null}
+      </div>
+    </Modal>
+  );
+}
+
+function SearchGroup({
+  label,
+  rows,
+  to,
+  onClose,
+}: {
+  label: string;
+  rows: Array<{ id: string; title: string; subtitle: string }>;
+  to: '/admin/users' | '/admin/clients' | '/admin/terms';
+  onClose: () => void;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <section className="border-tinyrack-border border-t-tinyrack-default py-tinyrack-sm">
+      <TRText color="muted" variant="label">
+        {label}
+      </TRText>
+      {rows.map((row) => (
+        <Link
+          className="flex flex-col rounded-tinyrack-sm px-tinyrack-sm py-tinyrack-xs hover:bg-tinyrack-surface-hover"
+          key={row.id}
+          onClick={onClose}
+          to={to}
+        >
+          <TRText variant="bodySm">{row.title}</TRText>
+          <TRText color="muted" variant="caption">
+            {row.subtitle}
+          </TRText>
+        </Link>
+      ))}
+    </section>
   );
 }

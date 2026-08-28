@@ -28,6 +28,10 @@ import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/
 import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
 import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminTermsIndexRouteImport } from './routes/admin/terms/index'
+import { Route as AdminSystemIndexRouteImport } from './routes/admin/system/index'
+import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
+import { Route as AdminClientsIndexRouteImport } from './routes/admin/clients/index'
 import { Route as AccountSelectIndexRouteImport } from './routes/account/select/index'
 import { Route as VerifyTotpRecoveryIndexRouteImport } from './routes/verify/totp/recovery/index'
 
@@ -126,6 +130,26 @@ const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
   path: '/admin/users/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminTermsIndexRoute = AdminTermsIndexRouteImport.update({
+  id: '/admin/terms/',
+  path: '/admin/terms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSystemIndexRoute = AdminSystemIndexRouteImport.update({
+  id: '/admin/system/',
+  path: '/admin/system/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
+  id: '/admin/settings/',
+  path: '/admin/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminClientsIndexRoute = AdminClientsIndexRouteImport.update({
+  id: '/admin/clients/',
+  path: '/admin/clients/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountSelectIndexRoute = AccountSelectIndexRouteImport.update({
   id: '/account/select/',
   path: '/account/select/',
@@ -147,6 +171,10 @@ export interface FileRoutesByFullPath {
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
   '/account/select/': typeof AccountSelectIndexRoute
+  '/admin/clients/': typeof AdminClientsIndexRoute
+  '/admin/settings/': typeof AdminSettingsIndexRoute
+  '/admin/system/': typeof AdminSystemIndexRoute
+  '/admin/terms/': typeof AdminTermsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
@@ -170,6 +198,10 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterIndexRoute
   '/terms': typeof TermsIndexRoute
   '/account/select': typeof AccountSelectIndexRoute
+  '/admin/clients': typeof AdminClientsIndexRoute
+  '/admin/settings': typeof AdminSettingsIndexRoute
+  '/admin/system': typeof AdminSystemIndexRoute
+  '/admin/terms': typeof AdminTermsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
   '/login/password': typeof LoginPasswordIndexRoute
   '/password/forgot': typeof PasswordForgotIndexRoute
@@ -194,6 +226,10 @@ export interface FileRoutesById {
   '/register/': typeof RegisterIndexRoute
   '/terms/': typeof TermsIndexRoute
   '/account/select/': typeof AccountSelectIndexRoute
+  '/admin/clients/': typeof AdminClientsIndexRoute
+  '/admin/settings/': typeof AdminSettingsIndexRoute
+  '/admin/system/': typeof AdminSystemIndexRoute
+  '/admin/terms/': typeof AdminTermsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
   '/login/password/': typeof LoginPasswordIndexRoute
   '/password/forgot/': typeof PasswordForgotIndexRoute
@@ -219,6 +255,10 @@ export interface FileRouteTypes {
     | '/register/'
     | '/terms/'
     | '/account/select/'
+    | '/admin/clients/'
+    | '/admin/settings/'
+    | '/admin/system/'
+    | '/admin/terms/'
     | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
@@ -242,6 +282,10 @@ export interface FileRouteTypes {
     | '/register'
     | '/terms'
     | '/account/select'
+    | '/admin/clients'
+    | '/admin/settings'
+    | '/admin/system'
+    | '/admin/terms'
     | '/admin/users'
     | '/login/password'
     | '/password/forgot'
@@ -265,6 +309,10 @@ export interface FileRouteTypes {
     | '/register/'
     | '/terms/'
     | '/account/select/'
+    | '/admin/clients/'
+    | '/admin/settings/'
+    | '/admin/system/'
+    | '/admin/terms/'
     | '/admin/users/'
     | '/login/password/'
     | '/password/forgot/'
@@ -289,6 +337,10 @@ export interface RootRouteChildren {
   RegisterIndexRoute: typeof RegisterIndexRoute
   TermsIndexRoute: typeof TermsIndexRoute
   AccountSelectIndexRoute: typeof AccountSelectIndexRoute
+  AdminClientsIndexRoute: typeof AdminClientsIndexRoute
+  AdminSettingsIndexRoute: typeof AdminSettingsIndexRoute
+  AdminSystemIndexRoute: typeof AdminSystemIndexRoute
+  AdminTermsIndexRoute: typeof AdminTermsIndexRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
   LoginPasswordIndexRoute: typeof LoginPasswordIndexRoute
   PasswordForgotIndexRoute: typeof PasswordForgotIndexRoute
@@ -438,6 +490,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/terms/': {
+      id: '/admin/terms/'
+      path: '/admin/terms'
+      fullPath: '/admin/terms/'
+      preLoaderRoute: typeof AdminTermsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/system/': {
+      id: '/admin/system/'
+      path: '/admin/system'
+      fullPath: '/admin/system/'
+      preLoaderRoute: typeof AdminSystemIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings/': {
+      id: '/admin/settings/'
+      path: '/admin/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/clients/': {
+      id: '/admin/clients/'
+      path: '/admin/clients'
+      fullPath: '/admin/clients/'
+      preLoaderRoute: typeof AdminClientsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account/select/': {
       id: '/account/select/'
       path: '/account/select'
@@ -465,6 +545,10 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterIndexRoute: RegisterIndexRoute,
   TermsIndexRoute: TermsIndexRoute,
   AccountSelectIndexRoute: AccountSelectIndexRoute,
+  AdminClientsIndexRoute: AdminClientsIndexRoute,
+  AdminSettingsIndexRoute: AdminSettingsIndexRoute,
+  AdminSystemIndexRoute: AdminSystemIndexRoute,
+  AdminTermsIndexRoute: AdminTermsIndexRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
   LoginPasswordIndexRoute: LoginPasswordIndexRoute,
   PasswordForgotIndexRoute: PasswordForgotIndexRoute,

@@ -8,8 +8,11 @@ export class TermsRepository extends EntityRepository<ITermsEntity> {
   async findAllWithContents(): Promise<
     Loaded<ITermsEntity, 'contents', '*', never>[]
   > {
-    return this.findAll({
-      populate: ['contents'],
-    });
+    return this.find(
+      { archivedAt: null },
+      {
+        populate: ['contents'],
+      },
+    );
   }
 }

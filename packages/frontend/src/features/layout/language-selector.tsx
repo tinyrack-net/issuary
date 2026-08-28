@@ -5,10 +5,20 @@ import { useLanguage } from '#frontend/hooks/use-language.ts';
 import { LANGUAGE_LABELS } from '#frontend/i18n/index.ts';
 
 type LanguageSelectorProps = {
+  alwaysVisible?: boolean;
   className?: string;
+  presentation?: 'field' | 'toolbar';
+  triggerClassName?: string;
+  uiSize?: 'sm' | 'md' | 'lg' | undefined;
 };
 
-export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
+export function LanguageSelector({
+  alwaysVisible = false,
+  className = '',
+  presentation = 'toolbar',
+  triggerClassName,
+  uiSize = 'sm',
+}: LanguageSelectorProps) {
   const { t } = useTranslation();
   const {
     language,
@@ -20,7 +30,7 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
     showLanguageSelector,
   } = useLanguage();
 
-  if (!showLanguageSelector) {
+  if (!(showLanguageSelector || alwaysVisible)) {
     return null;
   }
 
@@ -37,7 +47,6 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
   ];
 
   const currentValue = isAutoMode ? 'auto' : language;
-
   return (
     <div className={className}>
       <TRSelect.Root
@@ -60,10 +69,11 @@ export function LanguageSelector({ className = '' }: LanguageSelectorProps) {
           control announces as an unnamed button.
         */}
         <TRSelect.Trigger
-          appearance="ghost"
+          appearance={presentation === 'toolbar' ? 'ghost' : 'solid'}
           aria-label={t('common.language.select')}
+          className={triggerClassName}
           data-testid="language-selector"
-          uiSize="sm"
+          uiSize={uiSize}
         >
           <LanguagesIcon aria-hidden className="size-tinyrack-lg" />
           <TRSelect.Value />
