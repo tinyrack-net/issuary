@@ -2,7 +2,9 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import {
   CloudIcon,
   FingerprintIcon,
@@ -121,6 +123,7 @@ export function ManagePasskeysModal({
       size="lg"
       title={t('profile.passkey.manageModal.title')}
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural modal body containing DS feedback and passkey rows. */}
       <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-sm">
         {deleteError && (
           <AlertBanner variant="error">{deleteError}</AlertBanner>
@@ -133,15 +136,19 @@ export function ManagePasskeysModal({
         )}
 
         {!isLoading && passkeys.length === 0 && (
-          <div
-            className="py-tinyrack-xl text-center text-tinyrack-sm text-tinyrack-text-muted"
+          <TRText
+            align="center"
+            className="py-tinyrack-xl"
+            color="muted"
             data-testid="passkeys-empty"
+            variant="bodySm"
           >
-            <p>{t('profile.passkey.manageModal.noPasskeys')}</p>
-          </div>
+            {t('profile.passkey.manageModal.noPasskeys')}
+          </TRText>
         )}
 
         {!isLoading && passkeys.length > 0 && (
+          /* tinyrack-check-ignore-next-line components/no-native-text -- Structural list containing PasskeyItem components. */
           <div className="flex flex-col gap-tinyrack-sm">
             {passkeys.map((passkey) => (
               <PasskeyItem
@@ -254,7 +261,7 @@ function PasskeyItem({
 
   if (isEditing) {
     return (
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-sm"
         onSubmit={handleRename}
       >
@@ -292,18 +299,19 @@ function PasskeyItem({
               : t('profile.passkey.manageModal.save')}
           </TRButton>
         </div>
-      </form>
+      </TRForm>
     );
   }
 
   if (isConfirmingDelete) {
     return (
+      /* tinyrack-check-ignore-next-line components/no-native-text -- Structural inline confirmation row; copy uses TRText and actions are DS controls. */
       <div className="flex items-center justify-between rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-sm text-tinyrack-danger-foreground">
         <div className="flex items-center gap-tinyrack-sm">
           <Trash2Icon className="size-tinyrack-lg" />
-          <span className="text-tinyrack-xs">
+          <TRText color="danger" variant="caption">
             {t('profile.passkey.manageModal.deleteConfirmInline')}
-          </span>
+          </TRText>
         </div>
         <div className="flex gap-tinyrack-xs">
           <TRButton
@@ -328,26 +336,30 @@ function PasskeyItem({
   }
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural passkey row; visible copy uses TRText. */
     <div
       className="flex items-center justify-between rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-sm"
       data-testid="passkey-item"
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural passkey identity group. */}
       <div className="flex items-center gap-tinyrack-sm">
         {passkey.device_type === 'multiDevice' ? (
           <CloudIcon className="size-tinyrack-lg text-tinyrack-primary-foreground" />
         ) : (
           <SmartphoneIcon className="size-tinyrack-lg text-tinyrack-primary-foreground" />
         )}
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural identity stack containing TRText parts. */}
         <div>
-          <div className="font-tinyrack-medium text-tinyrack-xs">
+          <TRText as="div" variant="caption" weight="medium">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
-          </div>
-          <div className="flex items-center gap-tinyrack-xs text-tinyrack-text-muted text-tinyrack-xs">
-            <span>
+          </TRText>
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural metadata row containing TRText and an optional badge. */}
+          <div className="flex items-center gap-tinyrack-xs">
+            <TRText color="muted" variant="caption">
               {t('profile.passkey.manageModal.createdAt', {
                 date: formatDate(passkey.created_at),
               })}
-            </span>
+            </TRText>
             {passkey.backed_up && (
               <TRBadge uiSize="md" variant="success">
                 {t('profile.passkey.manageModal.backedUp')}

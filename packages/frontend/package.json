@@ -65,7 +65,6 @@
     "@fontsource/ibm-plex-sans-kr": "5.3.0",
     "@hookform/resolvers": "catalog:",
     "@simplewebauthn/browser": "catalog:",
-    "@tailwindcss/typography": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "hono": "catalog:",
@@ -75,7 +74,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "react-i18next": "catalog:",
-    "@tinyrack/ui": "0.30.0",
+    "@tinyrack/ui": "0.31.0",
     "zod": "catalog:"
   },
   "devDependencies": {

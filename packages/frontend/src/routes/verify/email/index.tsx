@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { TRText } from '@tinyrack/ui/components/text';
 import { TRToast } from '@tinyrack/ui/components/toast';
@@ -237,7 +238,7 @@ function VerifyEmail() {
         </Alert>
       )}
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -260,7 +261,7 @@ function VerifyEmail() {
         >
           {t('verifyEmail.submit')}
         </TRButton>
-      </form>
+      </TRForm>
 
       {email && (
         <div className="flex flex-col gap-tinyrack-md">

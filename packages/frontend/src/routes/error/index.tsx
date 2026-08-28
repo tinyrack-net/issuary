@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCode } from '@tinyrack/ui/components/code';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
@@ -48,9 +49,7 @@ function ErrorPage() {
         */}
         <TRText color="muted" variant="caption">
           {t('error.codeLabel')}{' '}
-          <span className="font-tinyrack-mono" data-testid="error-code">
-            {errorCode}
-          </span>
+          <TRCode data-testid="error-code">{errorCode}</TRCode>
         </TRText>
 
         <TRLinkButton

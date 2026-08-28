@@ -5,6 +5,8 @@ type AlertProps = {
   type: 'success' | 'error' | 'info' | 'warning';
   icon: LucideIcon;
   children: React.ReactNode;
+  title?: React.ReactNode;
+  actions?: React.ReactNode;
   className?: string;
   'data-testid'?: string;
 };
@@ -23,6 +25,8 @@ export function Alert({
   type,
   icon: IconComponent,
   children,
+  title,
+  actions,
   className = '',
   'data-testid': dataTestid,
 }: AlertProps) {
@@ -33,7 +37,9 @@ export function Alert({
       variant={variantMap[type]}
     >
       <IconComponent className="size-tinyrack-xl" />
-      <TRAlert.Title>{children}</TRAlert.Title>
+      {title && <TRAlert.Title>{title}</TRAlert.Title>}
+      <TRAlert.Description>{children}</TRAlert.Description>
+      {actions && <TRAlert.Actions>{actions}</TRAlert.Actions>}
     </TRAlert.Root>
   );
 }

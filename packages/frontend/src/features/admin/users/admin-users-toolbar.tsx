@@ -4,6 +4,8 @@ import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRField } from '@tinyrack/ui/components/field';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRText } from '@tinyrack/ui/components/text';
+import { TRToggle } from '@tinyrack/ui/components/toggle';
+import { TRToggleGroup } from '@tinyrack/ui/components/toggle-group';
 import { PlusIcon, SearchIcon, UsersIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { QuickFilter } from '#frontend/features/admin/users/admin-users-filters.ts';
@@ -36,6 +38,7 @@ export function AdminUsersToolbar({
   const { t } = useTranslation();
 
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural directory toolbar; visible descendants use design-system components.
     <div className="flex flex-col gap-tinyrack-lg border-tinyrack-border border-b-tinyrack-default bg-tinyrack-surface-muted p-tinyrack-xl xl:flex-row xl:items-end xl:justify-between">
       <div className="flex flex-col gap-tinyrack-sm">
         <div className="flex items-center gap-tinyrack-sm">
@@ -53,7 +56,9 @@ export function AdminUsersToolbar({
         </TRCard.Description>
       </div>
 
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural control stack; controls own their typography. */}
       <div className="flex flex-col gap-tinyrack-md xl:items-end">
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural search-controls row; controls own their typography. */}
         <div className="flex flex-col gap-tinyrack-sm lg:flex-row lg:items-center">
           <TRInput
             aria-label={t('admin.users.searchPlaceholder')}
@@ -112,20 +117,23 @@ export function AdminUsersToolbar({
           </TRButton>
         </div>
 
-        <div className="inline-flex items-center gap-tinyrack-3xs rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted p-tinyrack-xs">
+        <TRToggleGroup
+          aria-label={t('admin.users.directory')}
+          className="rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted p-tinyrack-xs"
+          onValueChange={(values) => {
+            const nextFilter = QUICK_FILTERS.find(
+              (filter) => filter === values.at(-1),
+            );
+            if (nextFilter) onQuickFilter(nextFilter);
+          }}
+          value={[activeQuickFilter]}
+        >
           {QUICK_FILTERS.map((filter) => (
-            <TRButton
-              appearance={activeQuickFilter === filter ? 'solid' : 'ghost'}
-              intent={activeQuickFilter === filter ? 'primary' : undefined}
-              key={filter}
-              onClick={() => onQuickFilter(filter)}
-              type="button"
-              uiSize="sm"
-            >
+            <TRToggle key={filter} value={filter}>
               {t(`admin.users.filter.${filter}`)}
-            </TRButton>
+            </TRToggle>
           ))}
-        </div>
+        </TRToggleGroup>
       </div>
     </div>
   );

@@ -39,6 +39,7 @@ function Setup2FA() {
         {t('setup2fa.required')}
       </Alert>
 
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural method list; visible copy is owned by AuthChoiceRow. */}
       <div className="flex flex-col gap-tinyrack-sm">
         {appConfig.auth.password.enabled &&
           appConfig.auth.password.totp.enabled && (

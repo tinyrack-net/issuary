@@ -46,7 +46,7 @@ function AdminSettingsContent({ user }: { user: SessionUser }) {
       title={t('admin.settings.title')}
       user={user}
     >
-      <div className="mx-auto flex w-full max-w-tinyrack-overlay-md flex-col gap-tinyrack-2xl">
+      <div className="mx-auto flex w-full max-w-tinyrack-measure-xl flex-col gap-tinyrack-2xl">
         <header className="flex flex-col gap-tinyrack-xs">
           <TRText as="h1" variant="headingMd" weight="heading">
             {t('admin.settings.title')}

@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRLink } from '@tinyrack/ui/components/link';
 import { LockIcon, MailIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -18,6 +19,7 @@ import {
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
+import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
@@ -250,7 +252,7 @@ function LoginPassword() {
       <AuthorizationContextBanner search={search} />
 
       {isPasswordAuthEnabled && (
-        <form
+        <TRForm
           className="flex flex-col gap-tinyrack-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
@@ -299,14 +301,11 @@ function LoginPassword() {
           >
             {t('login.submit')}
           </TRButton>
-        </form>
+        </TRForm>
       )}
 
       {implicitNotice && (
-        <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
-          dangerouslySetInnerHTML={{ __html: implicitNotice }}
-        />
+        <DesignSystemRichText html={implicitNotice} variant="notice" />
       )}
 
       {(configData.registration.public_registration ||

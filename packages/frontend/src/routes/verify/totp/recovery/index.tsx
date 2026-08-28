@@ -3,7 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRField } from '@tinyrack/ui/components/field';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRInput } from '@tinyrack/ui/components/input';
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -199,13 +201,16 @@ function VerifyRecovery() {
           icon={CircleAlertIcon}
           type="warning"
         >
-          <span className="flex flex-col items-start gap-tinyrack-3xs">
-            <span>{t('verifyRecovery.error.expired')}</span>
-            <span className="text-tinyrack-sm opacity-tinyrack-hover">
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural alert content; visible copy uses TRText and TRButton. */}
+          <div className="flex flex-col items-start gap-tinyrack-3xs">
+            <TRText as="span" variant="bodySm">
+              {t('verifyRecovery.error.expired')}
+            </TRText>
+            <TRText as="span" color="muted" variant="caption">
               {t('verifyRecovery.redirecting', {
                 seconds: redirectCountdown,
               })}
-            </span>
+            </TRText>
             <TRButton
               appearance="ghost"
               intent="neutral"
@@ -215,11 +220,11 @@ function VerifyRecovery() {
             >
               {t('verifyRecovery.redirectNow')}
             </TRButton>
-          </span>
+          </div>
         </Alert>
       )}
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -238,11 +243,12 @@ function VerifyRecovery() {
             type="text"
             uiSize="lg"
           />
-          {errors.code && (
-            <div className="tr-field-error" data-testid="recovery-error">
-              {errors.code.message}
-            </div>
-          )}
+          <TRField.Error
+            data-testid="recovery-error"
+            match={Boolean(errors.code)}
+          >
+            {errors.code?.message}
+          </TRField.Error>
         </TRField.Root>
 
         {sessionExpired ? (
@@ -267,7 +273,7 @@ function VerifyRecovery() {
             {t('verifyRecovery.submit')}
           </TRButton>
         )}
-      </form>
+      </TRForm>
 
       {/* Mirrors /verify/totp: the other second factor sits below the rule. */}
       <div className="flex flex-col gap-tinyrack-md">

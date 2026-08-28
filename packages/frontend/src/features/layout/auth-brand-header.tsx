@@ -18,6 +18,7 @@ export function AuthBrandHeader({
   const { title, subtitle, iconUrl, logoUrl } = useBranding();
 
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural brand stack; title and subtitle use TRText and images are approved brand assets.
     <div className="flex min-w-0 flex-col items-start gap-tinyrack-sm">
       {logoUrl ? (
         <TRText
@@ -33,6 +34,7 @@ export function AuthBrandHeader({
           />
         </TRText>
       ) : (
+        /* tinyrack-check-ignore-next-line components/no-native-text -- Structural brand row; visible title uses TRText. */
         <div className="flex w-full min-w-0 items-center justify-center gap-tinyrack-sm">
           <img
             alt=""

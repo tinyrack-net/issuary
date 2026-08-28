@@ -44,6 +44,12 @@ const toolsTask: ValidationTask = {
   ],
 };
 
+const uiCheckTask: ValidationTask = {
+  name: 'design system',
+  weight: 1,
+  args: () => ['check:ui'],
+};
+
 function homepageTask(script: 'test' | 'test:quick'): ValidationTask {
   return {
     name: 'homepage',
@@ -111,6 +117,7 @@ export function createValidationPlan(
   if (profile === 'quick') {
     return {
       before: [
+        uiCheckTask,
         { name: 'biome', weight: 1, args: () => ['biome', 'check', '.'] },
         { name: 'typecheck', weight: 1, args: () => ['typecheck'] },
       ],
@@ -127,7 +134,7 @@ export function createValidationPlan(
   }
 
   return {
-    before: [{ name: 'build', weight: 1, args: () => ['build'] }],
+    before: [uiCheckTask, { name: 'build', weight: 1, args: () => ['build'] }],
     concurrent: [
       serverTask,
       frontendUnitTask('test:unit'),

@@ -1,6 +1,7 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -94,7 +95,7 @@ export function RemovePasswordModal({
       title={t('profile.password.removeModal.title')}
       variant="destructive"
     >
-      <form
+      <TRForm
         className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
         onSubmit={handleSubmit}
       >
@@ -140,7 +141,7 @@ export function RemovePasswordModal({
               : t('profile.password.removeModal.submit')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }

@@ -2,6 +2,8 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -187,11 +189,14 @@ function VerifyTotp() {
           icon={CircleAlertIcon}
           type="warning"
         >
-          <span className="flex flex-col items-start gap-tinyrack-3xs">
-            <span>{t('verifyTotp.error.expired')}</span>
-            <span className="text-tinyrack-sm opacity-tinyrack-hover">
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural alert content; visible copy uses TRText and TRButton. */}
+          <div className="flex flex-col items-start gap-tinyrack-3xs">
+            <TRText as="span" variant="bodySm">
+              {t('verifyTotp.error.expired')}
+            </TRText>
+            <TRText as="span" color="muted" variant="caption">
               {t('verifyTotp.redirecting', { seconds: redirectCountdown })}
-            </span>
+            </TRText>
             <TRButton
               appearance="ghost"
               intent="neutral"
@@ -201,11 +206,11 @@ function VerifyTotp() {
             >
               {t('verifyTotp.redirectNow')}
             </TRButton>
-          </span>
+          </div>
         </Alert>
       )}
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -242,7 +247,7 @@ function VerifyTotp() {
             {t('verifyTotp.submit')}
           </TRButton>
         )}
-      </form>
+      </TRForm>
 
       {/*
         The recovery code is the way out when the authenticator is gone, so it

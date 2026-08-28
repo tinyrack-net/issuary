@@ -194,7 +194,7 @@ function Consent() {
         Sticky so the decision stays reachable when a client asks for a long
         list of scopes and the page scrolls.
       */}
-      <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface/80 py-tinyrack-md backdrop-blur-sm">
+      <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface py-tinyrack-md">
         <TRButton
           appearance="outline"
           className="flex-1"

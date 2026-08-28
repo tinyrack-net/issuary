@@ -54,6 +54,7 @@ function AdminSystemContent({ user }: { user: SessionUser }) {
           </TRBadge>
         </div>
       </div>
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural system-card grid; cards own visible typography. */}
       <div className="grid gap-tinyrack-lg xl:grid-cols-2">
         {data.sections.map((section) => (
           <section key={section.id}>
@@ -97,7 +98,13 @@ function SystemValue({
     );
   if (Array.isArray(value))
     return (
-      <span>{value.length > 0 ? value.join(', ') : t('common.none')}</span>
+      <TRText as="span" variant="bodySm">
+        {value.length > 0 ? value.join(', ') : t('common.none')}
+      </TRText>
     );
-  return <span>{value}</span>;
+  return (
+    <TRText as="span" variant="bodySm">
+      {value}
+    </TRText>
+  );
 }

@@ -241,7 +241,7 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
         </AdminListToolbar>
         <AdminTableFrame>
           <AdminTable label={t('admin.users.title')}>
-            <TRTable.Header className="sticky top-0 z-tinyrack-raised">
+            <TRTable.Header className="sticky top-0 z-tinyrack-component-raised">
               <TRTable.Row>
                 <AdminStickySelectCell header>
                   <AdminSelectAll
@@ -380,9 +380,9 @@ function AdminUsersContent({ user }: { user: SessionUser }) {
                       </TRBadge>
                     </TRTable.Cell>
                     <TRTable.Cell>
-                      <span className="font-tinyrack-mono text-tinyrack-xs">
+                      <TRText as="span" variant="code">
                         {managedUser.sub}
-                      </span>
+                      </TRText>
                     </TRTable.Cell>
                     <AdminStickyActionCell
                       selected={selection.isSelected(managedUser.sub)}

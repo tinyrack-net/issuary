@@ -37,7 +37,9 @@ export function AdminUsersFilterBar({
   const { t } = useTranslation();
 
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural filter bar; visible descendants use design-system components.
     <div className="flex flex-wrap items-center justify-between gap-tinyrack-md px-tinyrack-xl">
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural filter-summary row; visible descendants use design-system components. */}
       <div className="flex flex-wrap items-center gap-tinyrack-sm">
         <TRText color="muted" variant="bodySm">
           {t('admin.users.showingRange', {

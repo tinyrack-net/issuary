@@ -1,6 +1,7 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRField } from '@tinyrack/ui/components/field';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRText } from '@tinyrack/ui/components/text';
@@ -129,7 +130,7 @@ export function AdminUserFormModal({
       onClose={onClose}
       title={title}
     >
-      <form
+      <TRForm
         className="mt-tinyrack-lg flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit}
       >
@@ -229,7 +230,7 @@ export function AdminUserFormModal({
             {submit}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }

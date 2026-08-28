@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRText } from '@tinyrack/ui/components/text';
 import {
@@ -184,6 +185,7 @@ function SetupPasskey() {
           {errorMessage}
         </Alert>
 
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural action stack; controls own their typography. */}
         <div className="flex flex-col gap-tinyrack-sm">
           {canUseTotpSetup && (
             <TRLinkButton
@@ -247,7 +249,7 @@ function SetupPasskey() {
         {t('setupPasskey.description')}
       </TRText>
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -272,7 +274,7 @@ function SetupPasskey() {
         >
           {t('setupPasskey.continue')}
         </TRButton>
-      </form>
+      </TRForm>
 
       <AuthFooter>
         <AuthFooterLink

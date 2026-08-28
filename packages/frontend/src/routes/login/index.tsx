@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { AuthMethodTile } from '#frontend/components/auth/auth-method-tile.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { useBranding } from '#frontend/features/layout/use-branding.ts';
@@ -204,6 +205,7 @@ function Login() {
         </Alert>
       )}
 
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural method list; AuthMethodTile owns visible typography. */}
       <div className="flex flex-col gap-tinyrack-sm">
         {oauthProviders.map((provider) => (
           <AuthMethodTile
@@ -241,10 +243,7 @@ function Login() {
       </div>
 
       {implicitNotice && (
-        <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
-          dangerouslySetInnerHTML={{ __html: implicitNotice }}
-        />
+        <DesignSystemRichText html={implicitNotice} variant="notice" />
       )}
     </AuthLayout>
   );

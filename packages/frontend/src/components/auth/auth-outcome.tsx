@@ -35,12 +35,15 @@ export function AuthOutcome({
   children,
 }: AuthOutcomeProps) {
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural outcome layout; visible copy is rendered by TRText. */
     <div className="flex flex-col items-center gap-tinyrack-lg text-center">
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural icon host. */}
       <span
         className={`flex size-tinyrack-3xl items-center justify-center rounded-tinyrack-full ${toneClasses[tone]}`}
       >
         <Icon aria-hidden className="size-tinyrack-xl" />
       </span>
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural TRText stack. */}
       <div className="flex flex-col gap-tinyrack-xs">
         <TRText align="center" as="h2" variant="headingLg">
           {title}
@@ -52,6 +55,7 @@ export function AuthOutcome({
         )}
       </div>
       {children && (
+        /* tinyrack-check-ignore-next-line components/no-native-text -- Structural action slot. */
         <div className="flex w-full flex-col items-center gap-tinyrack-sm">
           {children}
         </div>

@@ -46,6 +46,7 @@ function AdminDashboardContent({ user }: { user: SessionUser }) {
       title={t('admin.dashboardTitle')}
       user={user}
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural metrics grid; AdminStat owns visible typography. */}
       <div className="grid grid-cols-2 bg-tinyrack-surface lg:grid-cols-4">
         {metrics.map(([label, value]) => (
           <div

@@ -1,6 +1,8 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { TRCode } from '@tinyrack/ui/components/code';
 import { TRField } from '@tinyrack/ui/components/field';
+import { TRText } from '@tinyrack/ui/components/text';
 import { TRToast } from '@tinyrack/ui/components/toast';
 import { CopyIcon, TriangleAlertIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -32,26 +34,28 @@ export function RecoveryCodesStep({
   }, [recoveryCodes, toast, t]);
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural recovery stack; copy uses TRText/TRCode and remaining children are DS controls. */
     <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
-      <p className="text-tinyrack-sm text-tinyrack-text-muted">
+      <TRText as="p" color="muted" variant="bodySm">
         {t('setupTotp.recoveryCodes.description')}
-      </p>
+      </TRText>
 
       {/*
         Two columns so a full set of codes stays on one screen without
         scrolling — this is the only time the user will ever see them.
       */}
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural grid containing TRCode items. */}
       <div
         className="grid grid-cols-2 gap-tinyrack-sm rounded-tinyrack-lg border border-tinyrack-border bg-tinyrack-surface p-tinyrack-lg"
         data-testid="recovery-codes-grid"
       >
         {recoveryCodes.map((code) => (
-          <code
+          <TRCode
             className="rounded-tinyrack-sm bg-tinyrack-surface-muted px-tinyrack-sm py-tinyrack-3xs text-center font-tinyrack-mono text-tinyrack-sm text-tinyrack-text"
             key={code}
           >
             {code}
-          </code>
+          </TRCode>
         ))}
       </div>
 

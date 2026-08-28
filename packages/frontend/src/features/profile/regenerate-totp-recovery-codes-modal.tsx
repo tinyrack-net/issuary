@@ -125,6 +125,7 @@ export function RegenerateTotpRecoveryCodesModal({
       }
     >
       {step === 'verify' ? (
+        /* tinyrack-check-ignore-next-line components/no-native-text -- Structural verification-step host containing DS alert and form components. */
         <div className="mt-tinyrack-lg">
           {errorMessage && (
             <div className="mb-tinyrack-md">

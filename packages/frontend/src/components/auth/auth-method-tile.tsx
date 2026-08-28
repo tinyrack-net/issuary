@@ -1,13 +1,9 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
+import { TRProviderMark } from '@tinyrack/ui/components/provider-mark';
 import { TRText } from '@tinyrack/ui/components/text';
 import { LinkIcon } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
-import {
-  AppleLogo,
-  GithubLogo,
-  GoogleLogo,
-} from '#frontend/components/auth/provider-logos.tsx';
 import type { OAuthProviderType } from '#frontend/queries/config.ts';
 
 type AuthMethodTileBaseProps = {
@@ -39,9 +35,23 @@ const PROVIDER_LOGOS: Record<
   Exclude<OAuthProviderType, 'generic_oauth'>,
   ReactNode
 > = {
-  google: <GoogleLogo className="size-tinyrack-xl" />,
-  github: <GithubLogo className="size-tinyrack-xl" />,
-  apple: <AppleLogo className="size-tinyrack-xl" />,
+  google: (
+    <TRProviderMark
+      aria-hidden
+      className="size-tinyrack-xl"
+      provider="google"
+    />
+  ),
+  github: (
+    <TRProviderMark
+      aria-hidden
+      className="size-tinyrack-xl"
+      provider="github"
+    />
+  ),
+  apple: (
+    <TRProviderMark aria-hidden className="size-tinyrack-xl" provider="apple" />
+  ),
 };
 
 /**
@@ -63,7 +73,7 @@ export function AuthMethodTile({
   let leading: ReactNode;
   if (providerType && providerType !== 'generic_oauth') {
     leading = PROVIDER_LOGOS[providerType];
-  } else if (typeof icon === 'string') {
+  } else if (typeof icon === 'string' && icon.length > 0) {
     leading = <img alt="" className="size-tinyrack-xl" src={icon} />;
   } else if (icon) {
     leading = icon;
@@ -73,6 +83,7 @@ export function AuthMethodTile({
 
   const content = (
     <>
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural icon host; provider marks and deployment images are approved assets. */}
       <span className="flex size-tinyrack-xl shrink-0 items-center justify-center">
         {leading}
       </span>

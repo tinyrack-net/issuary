@@ -58,8 +58,11 @@ export function SecurityRow({
   }
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural credential row; all visible copy uses TRText. */
     <div className="flex items-center justify-between gap-tinyrack-lg p-tinyrack-lg">
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural leading-content group. */}
       <div className="flex min-w-0 flex-1 items-center gap-tinyrack-md">
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural icon host. */}
         <div
           className={`flex size-9 shrink-0 items-center justify-center rounded-tinyrack-md ${
             active ? 'bg-tinyrack-success-surface' : 'bg-tinyrack-surface-muted'
@@ -67,6 +70,7 @@ export function SecurityRow({
         >
           {mark}
         </div>
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural TRText stack with an optional DS note. */}
         <div className="flex min-w-0 flex-1 flex-col gap-tinyrack-3xs">
           <TRText as="div" variant="bodySm" weight="medium">
             {title}
@@ -78,6 +82,7 @@ export function SecurityRow({
         </div>
       </div>
       {actions && (
+        /* tinyrack-check-ignore-next-line components/no-native-text -- Structural action slot. */
         <div className="flex shrink-0 flex-wrap justify-end gap-tinyrack-xs">
           {actions}
         </div>

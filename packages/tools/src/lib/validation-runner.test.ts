@@ -61,6 +61,7 @@ describe('validation runner', () => {
   test('creates a focused quick plan', () => {
     const plan = createValidationPlan('quick');
     expect(plan.before.map((task) => task.name)).toEqual([
+      'design system',
       'biome',
       'typecheck',
     ]);
@@ -75,6 +76,7 @@ describe('validation runner', () => {
     expect(plan.concurrentTaskLimit).toBe(2);
     expect(plan.concurrent[0]?.args(1)).toContain('test:unit:chromium');
     expect(plan.concurrent[4]?.args(1)).toContain('test:quick');
+    expect(plan.before[0]?.args(1)).toEqual(['check:ui']);
   });
 
   test('preserves complete validation in the full plan', () => {
@@ -84,6 +86,7 @@ describe('validation runner', () => {
         (task) => task.name,
       ),
     ).toEqual([
+      'design system',
       'build',
       'server',
       'frontend unit',

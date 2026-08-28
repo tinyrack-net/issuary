@@ -1,6 +1,7 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { ShieldCheckIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -82,7 +83,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
       title={t('profile.totp.disableModal.title')}
       variant="destructive"
     >
-      <form
+      <TRForm
         className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
         onSubmit={handleSubmit}
       >
@@ -130,7 +131,7 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
               : t('profile.totp.disableModal.disable')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }

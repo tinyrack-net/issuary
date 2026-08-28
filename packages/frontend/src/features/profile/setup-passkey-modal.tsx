@@ -1,7 +1,9 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { FingerprintIcon } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -106,13 +108,13 @@ export function SetupPasskeyModal({
       title={t('profile.passkey.setupModal.title')}
     >
       {step === 'name' && (
-        <form
+        <TRForm
           className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
           onSubmit={handleRegister}
         >
-          <p className="text-tinyrack-text-muted text-tinyrack-xs">
+          <TRText as="p" color="muted" variant="caption">
             {t('profile.passkey.setupModal.description')}
-          </p>
+          </TRText>
 
           {errorMessage && (
             <AlertBanner variant="error">{errorMessage}</AlertBanner>
@@ -150,7 +152,12 @@ export function SetupPasskeyModal({
             </TRButton>
           </ModalActions>
           {canSwitchToTotp && onSwitchToTotp && (
-            <p className="mt-tinyrack-sm text-center text-tinyrack-xs">
+            <TRText
+              align="center"
+              as="p"
+              className="mt-tinyrack-sm"
+              variant="caption"
+            >
               <TRButton
                 appearance="ghost"
                 intent="primary"
@@ -160,9 +167,9 @@ export function SetupPasskeyModal({
               >
                 {t('profile.passkey.setupModal.switchToTotp')}
               </TRButton>
-            </p>
+            </TRText>
           )}
-        </form>
+        </TRForm>
       )}
 
       {step === 'register' && (
@@ -172,9 +179,9 @@ export function SetupPasskeyModal({
             data-testid="setup-passkey-loading"
           >
             <TRSpinner uiSize="md" />
-            <p className="text-center text-tinyrack-text-muted text-tinyrack-xs">
+            <TRText align="center" as="p" color="muted" variant="caption">
               {t('profile.passkey.setupModal.waitingForDevice')}
-            </p>
+            </TRText>
           </div>
 
           <ModalActions>

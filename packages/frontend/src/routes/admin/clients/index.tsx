@@ -7,11 +7,14 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { TRCode } from '@tinyrack/ui/components/code';
 import { TRField } from '@tinyrack/ui/components/field';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRTable } from '@tinyrack/ui/components/table';
 import { TRText } from '@tinyrack/ui/components/text';
+import { TRToolbar } from '@tinyrack/ui/components/toolbar';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
@@ -199,7 +202,7 @@ function AdminClientsContent({ user }: { user: SessionUser }) {
         </AdminListToolbar>
         <AdminTableFrame>
           <AdminTable label={t('admin.clients.title')}>
-            <TRTable.Header className="sticky top-0 z-tinyrack-raised">
+            <TRTable.Header className="sticky top-0 z-tinyrack-component-raised">
               <TRTable.Row>
                 <AdminStickySelectCell header>
                   <AdminSelectAll
@@ -275,9 +278,7 @@ function AdminClientsContent({ user }: { user: SessionUser }) {
                       </TRText>
                     </AdminStickyIdentityCell>
                     <TRTable.Cell>
-                      <span className="font-tinyrack-mono text-tinyrack-xs">
-                        {client.client_id}
-                      </span>
+                      <TRCode>{client.client_id}</TRCode>
                     </TRTable.Cell>
                     <TRTable.Cell>
                       {t(`admin.clients.${client.type}`)}
@@ -302,7 +303,7 @@ function AdminClientsContent({ user }: { user: SessionUser }) {
                     <AdminStickyActionCell
                       selected={selection.isSelected(client.id)}
                     >
-                      <div className="flex justify-end gap-tinyrack-xs">
+                      <TRToolbar.Root className="flex justify-end gap-tinyrack-xs">
                         <TRButton
                           appearance="ghost"
                           disabled={client.managed_by === 'config'}
@@ -341,7 +342,7 @@ function AdminClientsContent({ user }: { user: SessionUser }) {
                               : 'admin.actions.restore',
                           )}
                         </TRButton>
-                      </div>
+                      </TRToolbar.Root>
                     </AdminStickyActionCell>
                   </TRTable.Row>
                 ))
@@ -408,9 +409,9 @@ function AdminClientsContent({ user }: { user: SessionUser }) {
         title={t('admin.clients.secretTitle')}
       >
         <div className="flex flex-col gap-tinyrack-md pt-tinyrack-lg">
-          <code className="break-all rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-md font-tinyrack-mono text-tinyrack-xs">
+          <TRCode className="break-all rounded-tinyrack-md bg-tinyrack-surface-muted p-tinyrack-md">
             {secret}
-          </code>
+          </TRCode>
           <TRText color="warning" variant="bodySm">
             {t('admin.clients.secretWarning')}
           </TRText>
@@ -480,7 +481,7 @@ function ClientModal({
         client ? 'admin.clients.editTitle' : 'admin.clients.createTitle',
       )}
     >
-      <form
+      <TRForm
         className="grid gap-tinyrack-md pt-tinyrack-lg sm:grid-cols-2"
         onSubmit={submit}
       >
@@ -541,7 +542,8 @@ function ClientModal({
           name="response_types"
           required
         />
-        <div className="flex items-center gap-tinyrack-sm text-tinyrack-xs">
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural checkbox row; visible label uses TRText. */}
+        <div className="flex items-center gap-tinyrack-sm">
           <TRCheckbox.Root
             aria-label={t('admin.clients.skipConsent')}
             defaultChecked={client?.skip_consent}
@@ -550,7 +552,7 @@ function ClientModal({
           >
             <TRCheckbox.Indicator />
           </TRCheckbox.Root>
-          {t('admin.clients.skipConsent')}
+          <TRText variant="caption">{t('admin.clients.skipConsent')}</TRText>
         </div>
         <ModalActions>
           <TRButton disabled={pending} onClick={onClose} type="button">
@@ -560,7 +562,7 @@ function ClientModal({
             {t('admin.actions.save')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }
@@ -606,7 +608,9 @@ function FormSelect({
 }) {
   return (
     <div className="flex flex-col gap-tinyrack-xs text-tinyrack-xs">
-      <span>{label}</span>
+      <TRText as="span" variant="caption">
+        {label}
+      </TRText>
       <TRSelect.Root
         defaultValue={defaultValue}
         disabled={disabled}

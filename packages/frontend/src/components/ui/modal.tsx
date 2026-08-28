@@ -84,14 +84,17 @@ export function Modal({
             `90vh`/`85vh` this used to override it with.
           */}
           <TRDialog.Popup className={sizeClasses[size]}>
+            {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural dialog header; title and description are DS dialog text parts. */}
             <div className="flex items-start gap-tinyrack-md">
               {IconComponent && (
+                /* tinyrack-check-ignore-next-line components/no-native-text -- Structural icon host. */
                 <div
                   className={`flex size-tinyrack-2xl shrink-0 items-center justify-center rounded-tinyrack-full ${iconVariantClasses[variant]}`}
                 >
                   <IconComponent aria-hidden className="size-tinyrack-lg" />
                 </div>
               )}
+              {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural DS dialog text stack. */}
               <div className="flex min-w-0 flex-1 flex-col gap-tinyrack-3xs">
                 <TRDialog.Title>{title}</TRDialog.Title>
                 {description && (
@@ -124,6 +127,7 @@ interface ModalActionsProps {
 
 export function ModalActions({ children }: ModalActionsProps) {
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural dialog action slot containing DS controls. */
     <div className="flex justify-end gap-tinyrack-sm pt-tinyrack-lg">
       {children}
     </div>

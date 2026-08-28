@@ -1,5 +1,6 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRTable } from '@tinyrack/ui/components/table';
@@ -38,10 +39,12 @@ export function AdminListToolbar({
     onSearch();
   };
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural list toolbar; visible descendants use design-system components.
     <div
       className="flex shrink-0 flex-col bg-tinyrack-surface"
       data-testid="admin-list-toolbar"
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural toolbar row; visible descendants use design-system typography. */}
       <div className="flex items-center justify-between gap-tinyrack-md py-tinyrack-md">
         <div className="flex min-w-0 items-baseline gap-tinyrack-sm">
           <TRText as="h1" variant="headingMd" weight="heading">
@@ -62,11 +65,11 @@ export function AdminListToolbar({
           </TRButton>
         ) : null}
       </div>
-      <form
+      <TRForm
         className="flex flex-wrap items-center gap-tinyrack-sm py-tinyrack-sm"
         onSubmit={submit}
       >
-        <TRInput.Group className="w-full flex-none sm:w-auto sm:min-w-tinyrack-control-sm sm:flex-1">
+        <TRInput.Group className="w-full flex-none sm:w-auto sm:min-w-tinyrack-measure-sm sm:flex-1">
           <TRInput.Adornment>
             <SearchIcon aria-hidden />
           </TRInput.Adornment>
@@ -82,13 +85,14 @@ export function AdminListToolbar({
         <TRButton appearance="outline" type="submit" uiSize="sm">
           {t('admin.table.search')}
         </TRButton>
-      </form>
+      </TRForm>
     </div>
   );
 }
 
 export function AdminTableFrame({ children }: { children: ReactNode }) {
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural table frame; its caller owns descendant typography.
     <div
       className="flex min-h-0 w-full min-w-0 flex-1 flex-col"
       data-layout="table"
@@ -108,9 +112,9 @@ export function AdminTable({
   return (
     <TRTable.Root
       aria-label={label}
-      className="min-w-tinyrack-table-wide"
       containerClassName="min-h-0 max-w-full flex-1 overflow-auto"
       density="compact"
+      layout="wide"
     >
       {children}
     </TRTable.Root>
@@ -173,7 +177,7 @@ export function AdminStickySelectCell({
   const Component = header ? TRTable.Head : TRTable.Cell;
   return (
     <Component
-      className={`sticky left-0 z-tinyrack-raised w-tinyrack-control-xs ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
+      className={`sticky left-0 z-tinyrack-component-raised w-tinyrack-measure-xs ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
     >
       {children}
     </Component>
@@ -192,7 +196,7 @@ export function AdminStickyIdentityCell({
   const Component = header ? TRTable.Head : TRTable.Cell;
   return (
     <Component
-      className={`sticky left-tinyrack-control-xs z-tinyrack-raised min-w-tinyrack-control-lg ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
+      className={`sticky left-tinyrack-measure-xs z-tinyrack-component-raised min-w-tinyrack-measure-lg ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
     >
       {children}
     </Component>
@@ -211,7 +215,7 @@ export function AdminStickyActionCell({
   const Component = header ? TRTable.Head : TRTable.Cell;
   return (
     <Component
-      className={`sticky right-0 z-tinyrack-raised text-right ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
+      className={`sticky right-0 z-tinyrack-component-raised text-right ${selected ? 'admin-sticky-selected' : header ? 'bg-tinyrack-surface-muted' : 'bg-tinyrack-surface'}`}
     >
       {children}
     </Component>
@@ -353,6 +357,7 @@ export function AdminBulkBar({
 }) {
   const { t } = useTranslation();
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural bulk-action bar; all visible copy uses design-system components.
     <div
       className="fixed right-tinyrack-lg bottom-tinyrack-lg z-tinyrack-dropdown flex max-w-[calc(100vw-var(--tinyrack-space-lg)*2)] flex-wrap items-center gap-tinyrack-sm rounded-tinyrack-lg bg-tinyrack-surface px-tinyrack-lg py-tinyrack-sm shadow-tinyrack-overlay"
       data-testid="admin-bulk-bar"

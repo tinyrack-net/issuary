@@ -24,6 +24,7 @@ type AppLayoutProps = {
  */
 export function AppLayout({ children, headerActions }: AppLayoutProps) {
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural application shell; page content owns descendant typography.
     <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
       {/*
         Profile hosts the TOTP recovery-codes step, which confirms a copy with
@@ -37,7 +38,8 @@ export function AppLayout({ children, headerActions }: AppLayoutProps) {
           The stack owns vertical rhythm so screens compose as a flat list of
           blocks instead of each one hand-rolling margins that drift apart.
         */}
-        <div className="auth-enter flex w-full max-w-tinyrack-overlay-md flex-col gap-tinyrack-xl">
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural content stack; page content owns descendant typography. */}
+        <div className="auth-enter flex w-full max-w-tinyrack-overlay-width-md flex-col gap-tinyrack-xl">
           {children}
         </div>
       </main>

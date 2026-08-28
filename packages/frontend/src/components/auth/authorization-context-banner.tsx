@@ -71,6 +71,7 @@ function AuthorizationContextContent({
           </TRText>
         </div>
 
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural permissions group containing DS text and badges. */}
         <div className="flex flex-col gap-tinyrack-xs">
           <TRText color="muted" variant="caption" weight="medium">
             {t('authorizationContext.permissions')}

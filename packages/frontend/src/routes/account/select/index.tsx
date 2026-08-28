@@ -110,6 +110,7 @@ function AccountSelect() {
             : t('accountSelect.noRememberedAccounts')}
         </Alert>
       ) : (
+        /* tinyrack-check-ignore-next-line components/no-native-text -- Structural account list; AuthChoiceRow owns visible typography. */
         <div
           className="flex flex-col gap-tinyrack-xs"
           data-testid="account-list"
@@ -178,10 +179,8 @@ function AccountSelect() {
           render={<a href={buildLoginHref(search)} />}
           uiSize="lg"
         >
-          <span className="inline-flex items-center gap-tinyrack-sm">
-            <PlusIcon aria-hidden className="size-tinyrack-lg" />
-            {t('accountSelect.useAnotherAccount')}
-          </span>
+          <PlusIcon aria-hidden className="size-tinyrack-lg" />
+          {t('accountSelect.useAnotherAccount')}
           <ArrowRightIcon aria-hidden className="size-tinyrack-lg" />
         </TRLinkButton>
       ) : null}

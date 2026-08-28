@@ -146,6 +146,7 @@ export function AdminShell({
         <TRAppShell.Close aria-label={t('admin.nav.close')}>
           <XIcon aria-hidden />
         </TRAppShell.Close>
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural brand row; visible descendants use design-system typography. */}
         <div className="mb-tinyrack-xl flex items-center gap-tinyrack-sm px-tinyrack-sm">
           {iconUrl ? (
             <img
@@ -197,15 +198,15 @@ export function AdminShell({
         </TRAppShell.Brand>
         <TRButton
           appearance="outline"
-          className="admin-header-search absolute hidden min-w-tinyrack-overlay-sm text-tinyrack-text-muted lg:flex"
+          className="admin-header-search absolute hidden min-w-tinyrack-overlay-width-sm text-tinyrack-text-muted lg:flex"
           onClick={() => setSearchOpen(true)}
           type="button"
           uiSize="md"
         >
           <SearchIcon aria-hidden className="size-tinyrack-md" />
-          <span className="flex-1 text-left text-tinyrack-xs">
+          <TRText as="span" className="flex-1 text-left" variant="caption">
             {t('admin.search.placeholder')}
-          </span>
+          </TRText>
           <kbd className="flex items-center gap-tinyrack-3xs">
             <CommandIcon aria-hidden className="size-tinyrack-sm" />K
           </kbd>
@@ -367,6 +368,7 @@ function AdminGlobalSearch({
       onClose={onClose}
       title={t('admin.search.title')}
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural search-results stack; visible descendants use design-system typography. */}
       <div className="flex flex-col gap-tinyrack-md pt-tinyrack-lg">
         <TRInput
           autoFocus
@@ -380,7 +382,8 @@ function AdminGlobalSearch({
           </TRText>
         ) : null}
         {data ? (
-          <div className="flex max-h-tinyrack-overlay-sm flex-col overflow-y-auto">
+          /* tinyrack-check-ignore-next-line components/no-native-text -- Structural result scroller; visible descendants use design-system typography. */
+          <div className="flex max-h-tinyrack-overlay-width-sm flex-col overflow-y-auto">
             {menuRows.length > 0 ? (
               <section className="border-tinyrack-border border-t-tinyrack-default py-tinyrack-sm">
                 <TRText color="muted" variant="label">

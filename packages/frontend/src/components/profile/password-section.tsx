@@ -73,7 +73,9 @@ export function PasswordSection({
                           aria-hidden
                           className="size-tinyrack-lg shrink-0 text-tinyrack-warning-foreground"
                         />
-                        <div>{t('profile.password.removeDisabledReason')}</div>
+                        <TRText as="div" variant="caption">
+                          {t('profile.password.removeDisabledReason')}
+                        </TRText>
                       </div>
                     </TRTooltip.Popup>
                   </TRTooltip.Positioner>
@@ -105,7 +107,9 @@ export function PasswordSection({
             variant="caption"
           >
             <SettingsIcon aria-hidden className="size-tinyrack-md shrink-0" />
-            <span>{t('profile.password.configManaged')}</span>
+            <TRText as="span" color="muted" variant="caption">
+              {t('profile.password.configManaged')}
+            </TRText>
           </TRText>
         ) : undefined
       }

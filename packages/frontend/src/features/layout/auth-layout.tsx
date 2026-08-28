@@ -16,7 +16,7 @@ type AuthLayoutProps = {
 
 const widthClasses: Record<NonNullable<AuthLayoutProps['width']>, string> = {
   form: 'max-w-tinyrack-measure-xl',
-  wide: 'max-w-tinyrack-overlay-md',
+  wide: 'max-w-tinyrack-overlay-width-md',
 };
 
 /**
@@ -33,6 +33,7 @@ export function AuthLayout({
   showBrandSubtitle = false,
 }: AuthLayoutProps) {
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural authentication shell; page content owns descendant typography.
     <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
       <Toaster />
       <ShellHeaderBar />
@@ -42,6 +43,7 @@ export function AuthLayout({
           brand, header, alerts, form, and footer blocks. `m-auto` centres both
           axes only when space is available and collapses safely for tall flows.
         */}
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural auth stack; visible descendants use design-system typography. */}
         <div
           className={`auth-enter m-auto flex w-full flex-col gap-tinyrack-xl ${widthClasses[width]}`}
         >

@@ -219,14 +219,18 @@ function Profile() {
           {logoutMutation.isPending ? undefined : (
             <>
               <LogOutIcon aria-hidden className="size-tinyrack-lg" />
-              <span className="hidden sm:inline">{t('profile.logout')}</span>
+              <TRText as="span" className="hidden sm:inline" variant="bodySm">
+                {t('profile.logout')}
+              </TRText>
             </>
           )}
         </TRButton>
       }
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural profile identity row; descendants own visible typography. */}
       <div className="flex items-center gap-tinyrack-lg">
         <InitialAvatar email={user.email} size="lg" />
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural profile heading group; descendants own visible typography. */}
         <div className="flex min-w-0 flex-col gap-tinyrack-3xs">
           <AuthPageHeader title={t('profile.title')} />
           {/*

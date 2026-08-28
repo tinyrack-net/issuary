@@ -1,5 +1,6 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { useCallback, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -78,8 +79,9 @@ export function VerifyStep({
   );
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural verification stack containing a TRForm and DS controls. */
     <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(handleFormSubmit)}
       >
@@ -103,7 +105,7 @@ export function VerifyStep({
         >
           {submitLabel ?? t('setupTotp.verify')}
         </TRButton>
-      </form>
+      </TRForm>
 
       {onBack && (
         <TRButton

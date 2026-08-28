@@ -7,6 +7,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import {
   CircleAlertIcon,
   CircleCheckIcon,
@@ -196,7 +197,7 @@ function ResetPassword() {
         title={t('resetPassword.title')}
       />
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -260,7 +261,7 @@ function ResetPassword() {
         >
           {t('resetPassword.submit')}
         </TRButton>
-      </form>
+      </TRForm>
 
       <AuthFooter>
         <AuthFooterLink
