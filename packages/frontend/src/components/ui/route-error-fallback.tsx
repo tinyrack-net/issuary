@@ -1,5 +1,6 @@
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCode } from '@tinyrack/ui/components/code';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { TRText } from '@tinyrack/ui/components/text';
@@ -18,7 +19,9 @@ import { IssuaryError } from '#frontend/libs/error.ts';
  */
 function MinimalLayout({ children }: { children: React.ReactNode }) {
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural viewport layout; visible content is supplied by DS components. */
     <div className="flex min-h-dvh items-center justify-center bg-tinyrack-surface px-tinyrack-lg py-tinyrack-xl">
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural fallback content slot; callers use DS text and controls. */}
       <div className="flex w-full max-w-tinyrack-measure-xl flex-col gap-tinyrack-xl rounded-tinyrack-xl border border-tinyrack-border bg-tinyrack-surface p-tinyrack-xl">
         {children}
       </div>
@@ -120,9 +123,7 @@ export function RouteErrorFallback({
         */}
         <TRText color="muted" variant="caption">
           {t('error.codeLabel')}{' '}
-          <span className="font-tinyrack-mono" data-testid="error-code">
-            {errorCode}
-          </span>
+          <TRCode data-testid="error-code">{errorCode}</TRCode>
         </TRText>
 
         <TRButton

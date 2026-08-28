@@ -5,6 +5,7 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { KeyRoundIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -114,7 +115,7 @@ export function ChangePasswordModal({
       onClose={handleClose}
       title={t('profile.password.changeModal.title')}
     >
-      <form
+      <TRForm
         className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
         onSubmit={handleSubmit}
       >
@@ -180,7 +181,7 @@ export function ChangePasswordModal({
               : t('profile.password.changeModal.submit')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }

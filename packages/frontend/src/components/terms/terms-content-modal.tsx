@@ -1,3 +1,4 @@
+import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { Modal } from '#frontend/components/ui/modal.tsx';
 
 type TermsContentModalProps = {
@@ -15,9 +16,9 @@ export function TermsContentModal({
 }: TermsContentModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={title}>
-      <div
-        className="prose prose-sm mt-tinyrack-md max-h-dvh overflow-y-auto"
-        dangerouslySetInnerHTML={{ __html: content }}
+      <DesignSystemRichText
+        className="mt-tinyrack-md max-h-dvh overflow-y-auto"
+        html={content}
       />
     </Modal>
   );

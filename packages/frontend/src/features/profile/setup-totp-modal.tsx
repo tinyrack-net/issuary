@@ -1,5 +1,6 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { ShieldCheckIcon } from 'lucide-react';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -142,7 +143,12 @@ export function SetupTotpModal({
                   </TRButton>
                 </ModalActions>
                 {canSwitchToPasskey && onSwitchToPasskey && (
-                  <p className="mt-tinyrack-sm text-center text-tinyrack-xs">
+                  <TRText
+                    align="center"
+                    as="p"
+                    className="mt-tinyrack-sm"
+                    variant="caption"
+                  >
                     <TRButton
                       appearance="ghost"
                       intent="primary"
@@ -152,7 +158,7 @@ export function SetupTotpModal({
                     >
                       {t('profile.totp.setupModal.switchToPasskey')}
                     </TRButton>
-                  </p>
+                  </TRText>
                 )}
               </>
             }

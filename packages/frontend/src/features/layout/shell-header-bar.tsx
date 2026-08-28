@@ -30,8 +30,10 @@ export function ShellHeaderBar({
   const { title, iconUrl } = useBranding();
 
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural header row; visible brand text uses TRText and actions own their labels.
     <div className="flex items-center gap-tinyrack-sm px-tinyrack-lg py-tinyrack-sm">
       {brand && (
+        // tinyrack-check-ignore-next-line components/no-native-text -- Structural brand row; visible title uses TRText.
         <div className="flex min-w-0 items-center gap-tinyrack-sm">
           {iconUrl && (
             <img
@@ -53,6 +55,7 @@ export function ShellHeaderBar({
         With no brand and no actions this renders identically to a
         right-justified row.
       */}
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural action row; controls own their accessible labels. */}
       <div className="ms-auto flex items-center gap-tinyrack-sm">
         {actions}
         <ThemeToggle colorScheme={colorScheme} onToggle={toggleColorScheme} />

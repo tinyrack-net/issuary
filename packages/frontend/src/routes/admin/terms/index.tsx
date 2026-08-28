@@ -8,6 +8,8 @@ import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRField } from '@tinyrack/ui/components/field';
+import { TRFieldset } from '@tinyrack/ui/components/fieldset';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRInput } from '@tinyrack/ui/components/input';
 import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRTable } from '@tinyrack/ui/components/table';
@@ -210,7 +212,7 @@ function AdminTermsContent({ user }: { user: SessionUser }) {
         </AdminListToolbar>
         <AdminTableFrame>
           <AdminTable label={t('admin.terms.title')}>
-            <TRTable.Header className="sticky top-0 z-tinyrack-raised">
+            <TRTable.Header className="sticky top-0 z-tinyrack-component-raised">
               <TRTable.Row>
                 <AdminStickySelectCell header>
                   <AdminSelectAll
@@ -282,9 +284,9 @@ function AdminTermsContent({ user }: { user: SessionUser }) {
                     <AdminStickyIdentityCell
                       selected={selection.isSelected(term.id)}
                     >
-                      <span className="font-tinyrack-mono text-tinyrack-xs">
+                      <TRText as="span" variant="code">
                         {term.id}
-                      </span>
+                      </TRText>
                     </AdminStickyIdentityCell>
                     <TRTable.Cell>
                       {term.contents[0]?.title ?? term.id}
@@ -460,10 +462,11 @@ function TermModal({
       onClose={onClose}
       title={t(term ? 'admin.terms.editTitle' : 'admin.terms.createTitle')}
     >
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-md pt-tinyrack-lg"
         onSubmit={submit}
       >
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural form grid; fields own visible typography. */}
         <div className="grid gap-tinyrack-md sm:grid-cols-2">
           <TermField
             defaultValue={term?.id}
@@ -485,7 +488,8 @@ function TermModal({
               ['implicit', t('admin.terms.implicit')],
             ]}
           />
-          <div className="flex items-center gap-tinyrack-sm text-tinyrack-xs">
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural checkbox row; visible label uses TRText. */}
+          <div className="flex items-center gap-tinyrack-sm">
             <TRCheckbox.Root
               aria-label={t('admin.terms.required')}
               defaultChecked={term?.required ?? true}
@@ -494,7 +498,7 @@ function TermModal({
             >
               <TRCheckbox.Indicator />
             </TRCheckbox.Root>
-            {t('admin.terms.required')}
+            <TRText variant="caption">{t('admin.terms.required')}</TRText>
           </div>
         </div>
         {term ? (
@@ -505,13 +509,11 @@ function TermModal({
         {TERM_LANGUAGES.map((lang) => {
           const content = term?.contents.find((item) => item.lang === lang);
           return (
-            <fieldset
+            <TRFieldset.Root
               className="grid gap-tinyrack-sm pt-tinyrack-md sm:grid-cols-2"
               key={lang}
             >
-              <legend className="font-tinyrack-medium text-tinyrack-xs">
-                {lang.toUpperCase()}
-              </legend>
+              <TRFieldset.Legend>{lang.toUpperCase()}</TRFieldset.Legend>
               <TermField
                 defaultValue={content?.title}
                 label={t('admin.terms.titleLabel')}
@@ -532,7 +534,7 @@ function TermModal({
                 name={`${lang}_content`}
                 placeholder={t('admin.terms.content')}
               />
-            </fieldset>
+            </TRFieldset.Root>
           );
         })}
         <ModalActions>
@@ -543,7 +545,7 @@ function TermModal({
             {t('admin.actions.save')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }
@@ -584,7 +586,9 @@ function TermFormSelect({
 }) {
   return (
     <div className="flex flex-col gap-tinyrack-xs text-tinyrack-xs">
-      <span>{label}</span>
+      <TRText as="span" variant="caption">
+        {label}
+      </TRText>
       <TRSelect.Root defaultValue={defaultValue} name={name}>
         <TRSelect.Trigger aria-label={label} uiSize="sm">
           <TRSelect.Value>

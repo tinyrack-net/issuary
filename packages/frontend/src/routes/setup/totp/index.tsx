@@ -337,6 +337,7 @@ function SetupTotp() {
       />
 
       {/* Keyed so each step animates in rather than swapping in place. */}
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural animated step host; each step owns visible typography. */}
       <div className="auth-enter flex flex-col gap-tinyrack-lg" key={step}>
         {body}
       </div>

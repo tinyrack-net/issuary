@@ -34,6 +34,7 @@ export function AuthPageHeader({
   const headingTag = brandTitle || logoUrl ? 'h2' : 'h1';
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural header stack; eyebrow is a caller-owned DS node and copy uses TRText. */
     <div
       className={`flex flex-col gap-tinyrack-xs ${align === 'center' ? 'items-center text-center' : 'items-start text-start'}`}
     >

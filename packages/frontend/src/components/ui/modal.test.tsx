@@ -1,3 +1,4 @@
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
 import { expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
@@ -20,7 +21,7 @@ test('renders title, description, and children when open', async () => {
       onClose={() => {}}
       title="My Modal"
     >
-      <p>Modal body</p>
+      <TRText as="p">Modal body</TRText>
     </Modal>,
   );
 

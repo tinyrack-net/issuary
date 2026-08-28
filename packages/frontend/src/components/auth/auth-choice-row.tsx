@@ -39,6 +39,7 @@ export function AuthChoiceRow({
   trailing,
 }: AuthChoiceRowProps) {
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural row; text is rendered by TRText and trailing is a control slot. */
     <div className="flex items-center gap-tinyrack-xs">
       <TRLinkButton
         appearance="outline"
@@ -57,6 +58,7 @@ export function AuthChoiceRow({
           exceed the available space — silently clipping them would hide the
           difference between the choices.
         */}
+        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural stack containing only TRText parts. */}
         <span className="flex min-w-0 flex-1 flex-col whitespace-normal">
           <TRText variant="body" weight="medium">
             {label}

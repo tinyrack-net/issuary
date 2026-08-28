@@ -18,6 +18,16 @@ const browserApiPort =
     : {};
 
 export default defineConfig({
+  optimizeDeps: {
+    include: [
+      '@tinyrack/ui/components/code',
+      '@tinyrack/ui/components/fieldset',
+      '@tinyrack/ui/components/form',
+      '@tinyrack/ui/components/provider-mark',
+      '@tinyrack/ui/components/steps',
+      '@tinyrack/ui/components/toolbar',
+    ],
+  },
   server: {
     host: HOST,
     allowedHosts: ['desktop.server.lan'],

@@ -23,6 +23,7 @@ export function LabeledSeparator({
   }
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural separator row; label is rendered by TRText. */
     <div className={`flex items-center gap-tinyrack-md ${className}`}>
       {/*
         The rules are wrapped rather than flexed directly: TRSeparator sets its

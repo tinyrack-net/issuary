@@ -3,6 +3,7 @@ import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon, FingerprintIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -116,6 +117,7 @@ function VerifyPasskey() {
         title={t('verifyPasskey.title')}
       />
 
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural verification state; descendants own visible typography. */}
       <div className="flex flex-col items-center gap-tinyrack-lg">
         <div className="flex size-tinyrack-3xl items-center justify-center rounded-tinyrack-full bg-tinyrack-surface-muted">
           <FingerprintIcon
@@ -127,13 +129,14 @@ function VerifyPasskey() {
         {verifyMutation.isPending && (
           <div className="flex flex-col items-center gap-tinyrack-sm">
             <TRSpinner uiSize="md" />
-            <p className="text-center text-tinyrack-sm text-tinyrack-text-muted">
+            <TRText align="center" as="p" color="muted" variant="bodySm">
               {t('verifyPasskey.waiting')}
-            </p>
+            </TRText>
           </div>
         )}
 
         {error && (
+          // tinyrack-check-ignore-next-line components/no-native-text -- Structural error actions; descendants own visible typography.
           <div className="flex w-full flex-col items-center gap-tinyrack-md">
             <Alert className="w-full" icon={CircleAlertIcon} type="error">
               {error.message}

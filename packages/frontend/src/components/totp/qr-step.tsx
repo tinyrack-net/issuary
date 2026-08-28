@@ -1,5 +1,7 @@
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRCode } from '@tinyrack/ui/components/code';
 import { TRCollapsible } from '@tinyrack/ui/components/collapsible';
+import { TRText } from '@tinyrack/ui/components/text';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TotpSetupData } from '#frontend/features/totp/use-totp-setup.ts';
@@ -20,10 +22,11 @@ export function QrStep({
   const { t } = useTranslation();
 
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural setup stack; copy uses TRText/TRCode and QR is an approved image. */
     <div className={`flex flex-col gap-tinyrack-lg ${className}`}>
-      <p className="text-center text-tinyrack-sm text-tinyrack-text-muted">
+      <TRText align="center" as="p" color="muted" variant="bodySm">
         {t('setupTotp.qrDescription')}
-      </p>
+      </TRText>
 
       {/*
         The QR sits on its own light surface with padding for the quiet zone.
@@ -45,9 +48,9 @@ export function QrStep({
           {t('setupTotp.manualEntry')}
         </TRCollapsible.Trigger>
         <TRCollapsible.Panel>
-          <code className="mt-tinyrack-xs block break-all rounded-tinyrack-sm bg-tinyrack-surface-muted p-tinyrack-sm text-tinyrack-sm text-tinyrack-text">
+          <TRCode className="mt-tinyrack-xs block break-all rounded-tinyrack-sm bg-tinyrack-surface-muted p-tinyrack-sm">
             {setupData.secret}
-          </code>
+          </TRCode>
         </TRCollapsible.Panel>
       </TRCollapsible.Root>
 

@@ -2,6 +2,7 @@ import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCheckbox } from '@tinyrack/ui/components/checkbox';
 import { TRLink } from '@tinyrack/ui/components/link';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useState } from 'react';
 import {
   type Control,
@@ -73,9 +74,11 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
 
   return (
     <>
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural terms list; all labels and errors use TRText. */}
       <div className="space-y-tinyrack-xs">
         {terms.length > 1 && (
-          <div className="flex cursor-pointer items-center gap-tinyrack-sm py-[calc(var(--tinyrack-space-3xs)*2)]">
+          /* tinyrack-check-ignore-next-line components/no-native-text -- Structural checkbox row containing DS controls and TRText. */
+          <div className="flex cursor-pointer items-center gap-tinyrack-sm py-tinyrack-2xs">
             <TRCheckbox.Root
               aria-labelledby="terms-all-label"
               checked={allChecked}
@@ -86,16 +89,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             >
               <TRCheckbox.Indicator />
             </TRCheckbox.Root>
-            <span
-              className="font-tinyrack-medium text-tinyrack-xs"
-              id="terms-all-label"
-            >
+            <TRText id="terms-all-label" variant="caption" weight="medium">
               {t('terms.agreeAll')}
-            </span>
+            </TRText>
             {hasOptionalTerms && (
-              <span className="text-tinyrack-text-muted text-tinyrack-xs">
+              <TRText color="muted" variant="caption">
                 {t('terms.agreeAllOptionalIncluded')}
-              </span>
+              </TRText>
             )}
           </div>
         )}
@@ -106,8 +106,11 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
             key={term.id}
             name={`termsConsents.${term.id}` as Path<T>}
             render={({ field }) => (
+              /* tinyrack-check-ignore-next-line components/no-native-text -- Structural term state wrapper. */
               <div>
-                <div className="flex items-center gap-tinyrack-sm py-[calc(var(--tinyrack-space-3xs)*2)]">
+                {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural term row containing DS controls and TRText. */}
+                <div className="flex items-center gap-tinyrack-sm py-tinyrack-2xs">
+                  {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural label group. */}
                   <div className="flex min-w-0 flex-1 items-center gap-tinyrack-sm">
                     <TRCheckbox.Root
                       aria-labelledby={`term-label-${term.id}`}
@@ -121,12 +124,13 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                     >
                       <TRCheckbox.Indicator />
                     </TRCheckbox.Root>
-                    <span
-                      className="truncate text-tinyrack-xs"
+                    <TRText
                       id={`term-label-${term.id}`}
+                      truncate
+                      variant="caption"
                     >
                       {getTermTitle(term)}
-                    </span>
+                    </TRText>
                     <TRBadge
                       data-testid={
                         term.required
@@ -170,17 +174,25 @@ export function TermsCheckboxList<T extends FieldValues & TermsConsentsField>({
                   )}
                 </div>
                 {term.userConsent?.requiresUpdate && (
-                  <p className="ml-tinyrack-xl text-tinyrack-warning-foreground text-tinyrack-xs">
+                  <TRText
+                    as="p"
+                    className="ml-tinyrack-xl"
+                    color="warning"
+                    variant="caption"
+                  >
                     {t('terms.versionUpdated')}
-                  </p>
+                  </TRText>
                 )}
                 {termsConsentsErrors?.[term.id] && (
-                  <p
-                    className="ml-tinyrack-xl text-tinyrack-danger-foreground text-tinyrack-xs"
+                  <TRText
+                    as="p"
+                    className="ml-tinyrack-xl"
+                    color="danger"
                     data-testid="terms-field-error"
+                    variant="caption"
                   >
                     {termsConsentsErrors[term.id]?.message}
-                  </p>
+                  </TRText>
                 )}
               </div>
             )}

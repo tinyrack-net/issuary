@@ -2,6 +2,8 @@ import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
+import { TRText } from '@tinyrack/ui/components/text';
 import { Trash2Icon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -85,21 +87,24 @@ export function DeleteAccountModal({
       title={t('profile.deleteAccount.modal.title')}
       variant="destructive"
     >
-      <form
+      <TRForm
         className="mt-tinyrack-lg flex flex-col gap-tinyrack-md"
         onSubmit={handleSubmit}
       >
         <AlertBanner variant="error">
-          <div className="flex flex-col gap-tinyrack-xs">
-            <p>
-              {t('profile.deleteAccount.modal.description', {
-                days: retentionDays,
-              })}
-            </p>
-            <p className="text-tinyrack-xs opacity-tinyrack-hover">
-              {t('profile.deleteAccount.modal.warning')}
-            </p>
-          </div>
+          <TRText as="span" variant="bodySm">
+            {t('profile.deleteAccount.modal.description', {
+              days: retentionDays,
+            })}
+          </TRText>
+          <br />
+          <TRText
+            as="span"
+            className="opacity-tinyrack-hover"
+            variant="caption"
+          >
+            {t('profile.deleteAccount.modal.warning')}
+          </TRText>
         </AlertBanner>
 
         <AuthField
@@ -145,7 +150,7 @@ export function DeleteAccountModal({
               : t('profile.deleteAccount.modal.confirm')}
           </TRButton>
         </ModalActions>
-      </form>
+      </TRForm>
     </Modal>
   );
 }

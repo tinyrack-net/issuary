@@ -51,6 +51,7 @@ export function UnlinkOAuthModal({
       title={t('profile.linkedAccounts.unlinkModal.title')}
       variant="destructive"
     >
+      {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural modal stack containing DS alerts and actions. */}
       <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-md">
         <AlertBanner variant="warning">
           {t('profile.linkedAccounts.unlinkModal.warning', {

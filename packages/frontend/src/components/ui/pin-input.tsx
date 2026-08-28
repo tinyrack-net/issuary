@@ -1,5 +1,6 @@
 import { TRField } from '@tinyrack/ui/components/field';
 import { TROTPField } from '@tinyrack/ui/components/otp-field';
+import { TRText } from '@tinyrack/ui/components/text';
 import {
   forwardRef,
   useCallback,
@@ -138,12 +139,16 @@ export const PinInput = forwardRef<PinInputRef, PinInputProps>(
           ))}
         </TROTPField.Root>
         {error && (
-          <p
-            className="mt-tinyrack-sm text-center text-tinyrack-danger-foreground text-tinyrack-sm"
+          <TRText
+            align="center"
+            as="p"
+            className="mt-tinyrack-sm"
+            color="danger"
             data-testid="pin-input-error"
+            variant="bodySm"
           >
             {error.message}
-          </p>
+          </TRText>
         )}
       </TRField.Root>
     );

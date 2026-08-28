@@ -75,10 +75,13 @@ export function AuthField({
           {label}
         </TRField.Label>
       ) : (
-        <div className="flex items-baseline justify-between gap-tinyrack-sm">
-          <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
-          {labelAction}
-        </div>
+        <>
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural row combining the DS field label with an optional action. */}
+          <div className="flex items-baseline justify-between gap-tinyrack-sm">
+            <TRField.Label htmlFor={inputId}>{label}</TRField.Label>
+            {labelAction}
+          </div>
+        </>
       )}
       <TRInput.Group
         data-invalid={error ? '' : undefined}
@@ -123,17 +126,13 @@ export function AuthField({
       {hint && !error && (
         <TRField.Description id={hintId}>{hint}</TRField.Description>
       )}
-      {/*
-        Plain element rather than `TRField.Error`: that part renders from Base
-        UI's own field validity, which nothing here drives — react-hook-form
-        owns validation. The class is the design system's, so the styling is
-        still the system's.
-      */}
-      {error && (
-        <div className="tr-field-error" data-testid={errorTestId} id={errorId}>
-          {error.message}
-        </div>
-      )}
+      <TRField.Error
+        data-testid={errorTestId}
+        id={errorId}
+        match={Boolean(error)}
+      >
+        {error?.message}
+      </TRField.Error>
     </TRField.Root>
   );
 }

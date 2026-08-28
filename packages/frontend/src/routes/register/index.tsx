@@ -11,6 +11,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { LockIcon, MailIcon } from 'lucide-react';
 import { useDeferredValue, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -25,6 +26,7 @@ import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { PasswordStrength } from '#frontend/components/auth/password-strength.tsx';
 import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.tsx';
+import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -292,7 +294,7 @@ function Register() {
       <AuthorizationContextBanner search={search} />
 
       {isPasswordAuthEnabled && (
-        <form
+        <TRForm
           className="flex flex-col gap-tinyrack-lg"
           onSubmit={handleSubmit(onSubmit)}
         >
@@ -326,16 +328,11 @@ function Register() {
             />
           </div>
 
+          {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural terms group; descendants own visible typography. */}
           <div className="flex flex-col gap-tinyrack-md">
             {implicitNotice && (
-              <div className="text-center text-tinyrack-text-muted text-tinyrack-xs">
-                <div
-                  className="prose prose-sm text-tinyrack-xs! **:text-tinyrack-xs!"
-                  dangerouslySetInnerHTML={{
-                    __html: implicitNotice,
-                  }}
-                  data-testid="terms-implicit-notice"
-                />
+              <div data-testid="terms-implicit-notice">
+                <DesignSystemRichText html={implicitNotice} variant="notice" />
               </div>
             )}
 
@@ -364,7 +361,7 @@ function Register() {
           >
             {t('register.submit')}
           </TRButton>
-        </form>
+        </TRForm>
       )}
 
       <AuthFooter>

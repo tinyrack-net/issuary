@@ -7,6 +7,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TRText } from '@tinyrack/ui/components/text';
 import { MailCheckIcon, MailIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -151,7 +152,7 @@ function ForgotPassword() {
         title={t('forgotPassword.title')}
       />
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -175,7 +176,7 @@ function ForgotPassword() {
         >
           {t('forgotPassword.submit')}
         </TRButton>
-      </form>
+      </TRForm>
 
       <AuthFooter>
         <AuthFooterLink

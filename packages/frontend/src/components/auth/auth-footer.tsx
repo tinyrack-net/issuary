@@ -17,6 +17,7 @@ type AuthFooterProps = {
  */
 export function AuthFooter({ children }: AuthFooterProps) {
   return (
+    /* tinyrack-check-ignore-next-line components/no-native-text -- Structural action stack; callers provide DS text and link components. */
     <div className="flex flex-col items-center gap-tinyrack-sm text-center">
       {children}
     </div>

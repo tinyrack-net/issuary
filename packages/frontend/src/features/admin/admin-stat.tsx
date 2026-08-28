@@ -21,6 +21,7 @@ type AdminStatProps = {
  */
 export function AdminStat({ label, value, hint, accent }: AdminStatProps) {
   return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural stat layout; all visible values use TRText.
     <div className="flex flex-1 flex-col gap-tinyrack-xs p-tinyrack-xl">
       {accent && (
         <div

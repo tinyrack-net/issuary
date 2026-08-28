@@ -2,6 +2,7 @@ import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRTable } from '@tinyrack/ui/components/table';
 import { TRText } from '@tinyrack/ui/components/text';
+import { TRToolbar } from '@tinyrack/ui/components/toolbar';
 import { useTranslation } from 'react-i18next';
 import {
   formatAdminRole,
@@ -40,24 +41,19 @@ export function AdminUsersTable({
           {users.map((managedUser) => (
             <TRTable.Row key={managedUser.sub}>
               <TRTable.Cell>
+                {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural identity stack; both values use TRText. */}
                 <div className="flex flex-col gap-tinyrack-3xs">
                   <TRText as="div" variant="bodySm" weight="medium">
                     {managedUser.email}
                   </TRText>
-                  {/*
-                    Mono on a bare span: a font utility on `TRText` loses to
-                    the component's own per-variant `font-family` rule.
-                  */}
                   <TRText
                     as="div"
                     className="max-w-tinyrack-measure-lg"
                     color="muted"
                     truncate
-                    variant="caption"
+                    variant="code"
                   >
-                    <span className="font-tinyrack-mono">
-                      {managedUser.sub}
-                    </span>
+                    {managedUser.sub}
                   </TRText>
                 </div>
               </TRTable.Cell>
@@ -122,7 +118,10 @@ export function AdminUsersTable({
               <TRTable.Cell>
                 {managedUser.managed_by === 'database' &&
                 !managedUser.deleted_at ? (
-                  <div className="inline-flex items-center whitespace-nowrap rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface-muted">
+                  <TRToolbar.Root
+                    aria-label={t('admin.users.actions')}
+                    className="inline-flex whitespace-nowrap"
+                  >
                     <TRButton
                       appearance="ghost"
                       aria-label={t('admin.users.editUser', {
@@ -146,7 +145,7 @@ export function AdminUsersTable({
                     >
                       {t('admin.users.delete')}
                     </TRButton>
-                  </div>
+                  </TRToolbar.Root>
                 ) : (
                   <TRBadge className="whitespace-nowrap" uiSize="md">
                     {t('admin.users.readonly')}

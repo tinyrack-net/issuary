@@ -11,6 +11,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
 import { TriangleAlertIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
@@ -22,6 +23,7 @@ import {
   type TermsConsentsField,
 } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
+import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -199,17 +201,14 @@ function Terms() {
       <AuthPageHeader title={t('terms.title')} />
 
       {implicitNotice && (
-        <div
-          className="prose prose-sm text-center text-tinyrack-text-muted text-tinyrack-xs! **:text-tinyrack-xs!"
-          dangerouslySetInnerHTML={{ __html: implicitNotice }}
-        />
+        <DesignSystemRichText html={implicitNotice} variant="notice" />
       )}
 
       {implicitNotice && hasExplicitTerms && (
         <LabeledSeparator label={t('terms.additionalOptionalConsent')} />
       )}
 
-      <form
+      <TRForm
         className="flex flex-col gap-tinyrack-lg"
         onSubmit={handleSubmit(onSubmit)}
       >
@@ -235,7 +234,7 @@ function Terms() {
           Sticky, like consent: a long list of terms would otherwise push the
           only action off the bottom of the screen.
         */}
-        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface/80 py-tinyrack-md backdrop-blur-sm">
+        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface py-tinyrack-md">
           <TRButton
             className="w-full"
             intent="primary"
@@ -247,7 +246,7 @@ function Terms() {
             {t('terms.submit')}
           </TRButton>
         </div>
-      </form>
+      </TRForm>
     </AuthLayout>
   );
 }
