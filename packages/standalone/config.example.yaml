@@ -28,11 +28,20 @@ i18n:
   fallback_language: ${ISSUARY_FALLBACK_LANGUAGE:-en}
 
 branding:
-  # icon_url: ${ISSUARY_ICON_URL:-https://example.com/icon.png}
+  # icon_url: ${ISSUARY_ICON_URL:-https://example.com/icon.svg}
+  # logo_url: ${ISSUARY_LOGO_URL:-https://example.com/logo.svg}
   title:
     ko: Issuary
     en: Issuary
     ja: Issuary
+  subtitle:
+    ko: 만나서 반가워요!
+    en: Nice to meet you!
+    ja: はじめまして！
+  login_method_description:
+    ko: 원하는 방식으로 로그인하세요.
+    en: Choose how you'd like to sign in.
+    ja: お好きな方法でログインしてください。
 
 registration:
   # Self-registration is disabled by default.

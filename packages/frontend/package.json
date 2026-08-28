@@ -31,9 +31,13 @@
     }
   },
   "scripts": {
+    "sync:brand-assets": "node ../tools/src/scripts/sync-brand-assets.ts --target=frontend",
+    "predev": "pnpm sync:brand-assets",
     "dev": "vite",
     "dev:build": "vite build --watch",
+    "prebuild": "pnpm sync:brand-assets",
     "build": "tsc -b tsconfig.build.json && tsc -p tsconfig.e2e.json && vite build",
+    "prebuild:e2e": "pnpm sync:brand-assets",
     "build:e2e": "vite build",
     "check:ui": "tinyrack-ui-check",
     "typecheck": "tsc -b tsconfig.build.json && tsc -p tsconfig.e2e.json",
@@ -71,7 +75,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "react-i18next": "catalog:",
-    "@tinyrack/ui": "0.29.0",
+    "@tinyrack/ui": "0.30.0",
     "zod": "catalog:"
   },
   "devDependencies": {

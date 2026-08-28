@@ -15,8 +15,9 @@ export const routeTestAppConfig = {
     fallback_language: 'en',
   },
   branding: {
-    icon_url: '',
     title: {},
+    subtitle: {},
+    login_method_description: {},
   },
   registration: {
     public_registration: true,

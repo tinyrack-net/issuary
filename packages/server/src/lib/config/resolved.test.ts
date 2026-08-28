@@ -213,6 +213,10 @@ describe('IssuaryRuntimeConfigSchema', () => {
     expect(parsed.branding.title).toEqual({
       en: 'Custom',
     });
+    expect(parsed.branding.subtitle).toEqual(BRANDING_CONFIG_DEFAULT.subtitle);
+    expect(parsed.branding.login_method_description).toEqual(
+      BRANDING_CONFIG_DEFAULT.login_method_description,
+    );
     expect(parsed.openapi).toEqual({
       ...OPENAPI_CONFIG_DEFAULT,
       enabled: false,
@@ -223,9 +227,41 @@ describe('IssuaryRuntimeConfigSchema', () => {
     );
   });
 
+  test('parses custom branding URLs and localized login copy', () => {
+    const parsed = IssuaryRuntimeConfigSchema.parse({
+      ...MINIMAL_INPUT_CONFIG,
+      branding: {
+        icon_url: 'https://example.com/icon.svg',
+        logo_url: 'https://example.com/logo.svg',
+        subtitle: { en: 'Hello there', ko: '' },
+        login_method_description: { en: 'Pick one', ko: '' },
+      },
+    });
+
+    expect(parsed.branding).toEqual({
+      icon_url: 'https://example.com/icon.svg',
+      logo_url: 'https://example.com/logo.svg',
+      title: BRANDING_CONFIG_DEFAULT.title,
+      subtitle: { en: 'Hello there', ko: '' },
+      login_method_description: { en: 'Pick one', ko: '' },
+    });
+  });
+
+  test.each([
+    'icon_url',
+    'logo_url',
+  ])('rejects an invalid branding %s', (option) => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        branding: { [option]: '/relative.svg' },
+      },
+      `branding.${option}`,
+    );
+  });
+
   test.each([
     ['background_url', 'https://example.com/background.png'],
-    ['subtitle', { en: 'Legacy subtitle' }],
   ])('rejects removed branding option %s', (option, value) => {
     const result = IssuaryRuntimeConfigSchema.safeParse({
       ...MINIMAL_INPUT_CONFIG,

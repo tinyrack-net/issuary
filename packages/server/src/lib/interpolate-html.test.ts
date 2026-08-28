@@ -155,6 +155,10 @@ describe('interpolateHtml', () => {
 describe('resolveHtmlVariables', () => {
   test('returns built-in defaults when no runtime values are provided', () => {
     expect(resolveHtmlVariables({})).toEqual(DEFAULT_HTML_VARIABLES);
+    expect(DEFAULT_HTML_VARIABLES['FAVICON_URL']).toBe('/issuary-app-icon.svg');
+    expect(DEFAULT_HTML_VARIABLES['APPLE_TOUCH_ICON_URL']).toBe(
+      '/issuary-app-icon-512.png',
+    );
   });
 
   test('derives variables from branding and server config', () => {
@@ -191,6 +195,9 @@ describe('resolveHtmlVariables', () => {
     expect(variables['COLOR_SCHEME']).toBe('dark');
     expect(variables['FAVICON_URL']).toBe(
       'https://example.com/custom-icon.png',
+    );
+    expect(variables['APPLE_TOUCH_ICON_URL']).toBe(
+      'https://example.com/default-icon.png',
     );
   });
 });

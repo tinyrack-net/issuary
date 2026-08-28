@@ -4,16 +4,17 @@ import {
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
+import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon, FingerprintIcon, MailIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { AuthMethodTile } from '#frontend/components/auth/auth-method-tile.tsx';
-import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
+import { useBranding } from '#frontend/features/layout/use-branding.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
@@ -97,6 +98,7 @@ function Login() {
 
   const lang = search.lang ?? i18n.language;
   const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const { loginMethodDescription } = useBranding();
 
   // Get implicit notice from config for OAuth signup
   const implicitNotice =
@@ -181,16 +183,12 @@ function Login() {
   };
 
   return (
-    <AuthLayout>
-      {/*
-        Branding title and subtitle are rendered once, by the brand panel in
-        the layout. Repeating them here would give the page two copies of the
-        product name and two heading nodes with the same text.
-      */}
-      <AuthPageHeader
-        subtitle={t('login.selectMethod.subtitle') || undefined}
-        title={t('login.title')}
-      />
+    <AuthLayout showBrandSubtitle>
+      {loginMethodDescription && (
+        <TRText as="p" className="-mb-tinyrack-sm" color="muted" variant="body">
+          {loginMethodDescription}
+        </TRText>
+      )}
 
       <AuthorizationContextBanner search={search} />
 
