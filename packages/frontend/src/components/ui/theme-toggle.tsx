@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 type ThemeToggleProps = {
   colorScheme: 'light' | 'dark';
   onToggle: () => void;
+  uiSize?: 'sm' | 'md' | 'lg' | undefined;
 };
 
 /**
@@ -13,7 +14,11 @@ type ThemeToggleProps = {
  * header bar; it used to be pinned to the viewport corner with `fixed`, where
  * it overlapped content on short screens.
  */
-export function ThemeToggle({ colorScheme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle({
+  colorScheme,
+  onToggle,
+  uiSize = 'lg',
+}: ThemeToggleProps) {
   const { t } = useTranslation();
 
   const label =
@@ -31,7 +36,7 @@ export function ThemeToggle({ colorScheme, onToggle }: ThemeToggleProps) {
               appearance="ghost"
               aria-label={label}
               onClick={onToggle}
-              uiSize="lg"
+              uiSize={uiSize}
             >
               <SchemeIcon />
             </TRIconButton>

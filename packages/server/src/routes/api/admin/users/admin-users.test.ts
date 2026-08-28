@@ -508,4 +508,64 @@ describe('admin user management API', () => {
       await server.cleanup();
     }
   });
+
+  test('bulk status handles explicit and filter targets while skipping config users and self', async () => {
+    const server = await createAdminTestApp();
+    try {
+      const session = await loginAdmin(server.app);
+      const first = await createDatabaseUser(server.services, {
+        email: generateUniqueEmail('bulk-one'),
+      });
+      const second = await createDatabaseUser(server.services, {
+        email: generateUniqueEmail('bulk-two'),
+      });
+
+      const explicit = await adminClient(server.app).users['bulk-status'].$post(
+        {
+          json: {
+            target: {
+              kind: 'ids',
+              ids: [first.sub, TEST_USER_CONFIG.sub],
+            },
+            active: false,
+          },
+        },
+        adminHeaders(session),
+      );
+      expect(await assertJsonBody(explicit)).toMatchObject({
+        matched: 2,
+        changed: 1,
+        skipped: { config: 1 },
+      });
+
+      const filtered = await adminClient(server.app).users['bulk-status'].$post(
+        {
+          json: {
+            target: {
+              kind: 'filter',
+              filter: {
+                query: 'bulk-',
+                include_deleted: true,
+                managed_by: 'database',
+              },
+            },
+            active: false,
+          },
+        },
+        adminHeaders(session),
+      );
+      expect(await assertJsonBody(filtered)).toMatchObject({
+        matched: 2,
+        changed: 1,
+        skipped: { unchanged: 1 },
+      });
+
+      const restored = await adminClient(server.app).users[
+        ':sub'
+      ].restore.$post({ param: { sub: second.sub } }, adminHeaders(session));
+      expect((await assertJsonBody(restored)).user.deleted_at).toBeNull();
+    } finally {
+      await server.cleanup();
+    }
+  });
 });

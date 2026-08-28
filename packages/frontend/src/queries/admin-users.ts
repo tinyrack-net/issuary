@@ -8,6 +8,10 @@ export type AdminUsersQuery = {
   includeDeleted?: boolean;
   managedBy?: 'database' | 'config';
   role?: 'user' | 'admin';
+  emailVerified?: boolean;
+  twoFactor?: boolean;
+  sort?: 'email' | 'role' | 'created_at';
+  direction?: 'asc' | 'desc';
 };
 
 export type CreateAdminUserInput = {
@@ -31,6 +35,10 @@ type NormalizedAdminUsersQuery = {
   includeDeleted: boolean;
   managedBy?: 'database' | 'config' | undefined;
   role?: 'user' | 'admin' | undefined;
+  emailVerified?: boolean | undefined;
+  twoFactor?: boolean | undefined;
+  sort: 'email' | 'role' | 'created_at';
+  direction: 'asc' | 'desc';
 };
 
 const DEFAULT_ADMIN_USERS_QUERY = {
@@ -38,6 +46,8 @@ const DEFAULT_ADMIN_USERS_QUERY = {
   page: 1,
   pageSize: 20,
   includeDeleted: false,
+  sort: 'email',
+  direction: 'asc',
 } satisfies NormalizedAdminUsersQuery;
 
 export function normalizeAdminUsersQuery(
@@ -53,6 +63,10 @@ async function fetchAdminUsers({
   includeDeleted,
   managedBy,
   role,
+  emailVerified,
+  twoFactor,
+  sort,
+  direction,
 }: NormalizedAdminUsersQuery) {
   return jsonOk(
     await client.api.admin.users.$get({
@@ -63,6 +77,11 @@ async function fetchAdminUsers({
         include_deleted: String(includeDeleted),
         managed_by: managedBy,
         role,
+        email_verified:
+          emailVerified === undefined ? undefined : String(emailVerified),
+        two_factor: twoFactor === undefined ? undefined : String(twoFactor),
+        sort,
+        direction,
       },
     }),
   );
@@ -93,6 +112,34 @@ export async function deleteAdminUser(sub: string) {
     await client.api.admin.users[':sub'].$delete({
       param: { sub },
     }),
+  );
+}
+
+export async function restoreAdminUser(sub: string) {
+  return jsonOk(
+    await client.api.admin.users[':sub'].restore.$post({ param: { sub } }),
+  );
+}
+
+export type AdminBulkTarget =
+  | { kind: 'ids'; ids: string[] }
+  | {
+      kind: 'filter';
+      filter: {
+        query?: string | undefined;
+        include_deleted: boolean;
+        managed_by?: 'database' | 'config' | undefined;
+        role?: 'user' | 'admin' | undefined;
+        email_verified?: boolean | undefined;
+      };
+    };
+
+export async function bulkSetAdminUsersActive(input: {
+  target: AdminBulkTarget;
+  active: boolean;
+}) {
+  return jsonOk(
+    await client.api.admin.users['bulk-status'].$post({ json: input }),
   );
 }
 

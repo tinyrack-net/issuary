@@ -31,6 +31,10 @@ export const TermsEntitySchema = defineEntity({
       .comment('Consent mode: explicit (checkbox) or implicit (auto-agree)')
       .default('explicit'),
     version: p.string().comment('Version string (e.g., "1.0.0")'),
+    archivedAt: p
+      .datetime()
+      .comment('Timestamp when the term was archived')
+      .nullable(),
     managed_by: p
       .string()
       .$type<'database' | 'config'>()

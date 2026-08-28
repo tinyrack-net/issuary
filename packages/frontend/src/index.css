@@ -44,6 +44,7 @@
 @import "@tinyrack/ui/components/input.css";
 @import "@tinyrack/ui/components/link.css";
 @import "@tinyrack/ui/components/link-button.css";
+@import "@tinyrack/ui/components/menu.css";
 @import "@tinyrack/ui/components/meter.css";
 @import "@tinyrack/ui/components/otp-field.css";
 @import "@tinyrack/ui/components/popover.css";
@@ -60,9 +61,32 @@
 @import "@tinyrack/ui/components/tabs.css";
 @import "@tinyrack/ui/components/text.css";
 @import "@tinyrack/ui/components/toast.css";
+@import "@tinyrack/ui/components/textarea.css";
 @import "@tinyrack/ui/components/toggle.css";
 @import "@tinyrack/ui/components/toggle-group.css";
 @import "@tinyrack/ui/components/tooltip.css";
+
+.admin-sticky-selected {
+  background-color: var(--tinyrack-surface-selected);
+}
+
+.admin-header-search {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.admin-titlebar {
+  block-size: calc(var(--tinyrack-space-3xl) + var(--tinyrack-space-sm));
+  min-block-size: calc(var(--tinyrack-space-3xl) + var(--tinyrack-space-sm));
+}
+
+.admin-app-shell {
+  --tr-app-shell-sidebar-width: calc(
+    var(--tinyrack-space-3xl) *
+    4 +
+    var(--tinyrack-space-md)
+  );
+}
 
 /*
  * Extends the design system's prose font tokens for this app.

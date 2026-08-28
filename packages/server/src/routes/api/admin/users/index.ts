@@ -23,6 +23,29 @@ const AdminUsersQuery = z.object({
   include_deleted: QueryBoolean.default(false),
   managed_by: z.enum(['database', 'config']).optional(),
   role: z.enum(['user', 'admin']).optional(),
+  email_verified: QueryBoolean.optional(),
+  two_factor: QueryBoolean.optional(),
+  sort: z.enum(['email', 'role', 'created_at']).default('email'),
+  direction: z.enum(['asc', 'desc']).default('asc'),
+});
+
+const AdminUserFilter = z.object({
+  query: z.string().trim().optional(),
+  include_deleted: z.boolean().default(false),
+  managed_by: z.enum(['database', 'config']).optional(),
+  role: z.enum(['user', 'admin']).optional(),
+  email_verified: z.boolean().optional(),
+});
+
+const AdminBulkUserStatusBody = z.object({
+  target: z.union([
+    z.object({
+      kind: z.literal('ids'),
+      ids: z.array(z.string().min(1)).min(1).max(100),
+    }),
+    z.object({ kind: z.literal('filter'), filter: AdminUserFilter }),
+  ]),
+  active: z.boolean(),
 });
 
 const AdminCreateUserBody = z.object({
@@ -107,10 +130,44 @@ export const adminUsersRoutes = new Hono<AppEnv>()
         includeDeleted: query.include_deleted,
         managedBy: query.managed_by,
         role: query.role,
+        emailVerified: query.email_verified,
+        twoFactor: query.two_factor,
+        sort: query.sort,
+        direction: query.direction,
       });
       return c.json(result, 200);
     },
   )
+  .post(
+    '/admin/users/bulk-status',
+    requireAdmin(),
+    validator('json', AdminBulkUserStatusBody),
+    async (c) => {
+      const body = c.req.valid('json');
+      const result = await c.var.services.userService.bulkSetAdminUserDeleted({
+        ids: body.target.kind === 'ids' ? body.target.ids : undefined,
+        filter:
+          body.target.kind === 'filter'
+            ? {
+                query: body.target.filter.query,
+                includeDeleted: body.target.filter.include_deleted,
+                managedBy: body.target.filter.managed_by,
+                role: body.target.filter.role,
+                emailVerified: body.target.filter.email_verified,
+              }
+            : undefined,
+        deleted: !body.active,
+        actorSub: c.var.verifiedUser.user.sub,
+      });
+      return c.json(result, 200);
+    },
+  )
+  .post('/admin/users/:sub/restore', requireAdmin(), async (c) => {
+    const user = await c.var.services.userService.restoreAdminUser(
+      c.req.param('sub'),
+    );
+    return c.json({ user }, 200);
+  })
   .post(
     '/admin/users',
     describeRoute({
