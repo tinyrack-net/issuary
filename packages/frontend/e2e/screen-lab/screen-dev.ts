@@ -1,8 +1,13 @@
 import type { AddressInfo } from 'node:net';
+import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 import { chromium } from '@playwright/test';
 import { createServer as createViteServer } from 'vite';
 import { AsyncCleanupStack } from '#frontend/test-utils/async-cleanup-stack.ts';
+import {
+  normalizeScreenDevArgs,
+  resolveScreenDevMode,
+} from '#frontend/test-utils/screen-dev-options.ts';
 import { findScreenScenarioVariant } from '#frontend/test-utils/screen-scenario-catalog.ts';
 import {
   findScreenScenario,
@@ -29,6 +34,48 @@ function printScenarioList(): void {
   }
 }
 
+function printHelp(): void {
+  process.stdout.write(
+    'Open a Screen Lab scenario in a development browser.\n\n' +
+      'Usage:\n' +
+      '  pnpm screen:dev\n' +
+      '  pnpm screen:dev --scenario <id> [--variant <id>]\n' +
+      '  pnpm screen:dev --list\n\n' +
+      'Options:\n' +
+      '  -s, --scenario <id>  Screen scenario to open\n' +
+      '  -v, --variant <id>   Scenario variant to open\n' +
+      '  -l, --list           List available scenarios and variants\n' +
+      '  -h, --help           Show this help\n',
+  );
+}
+
+async function selectItem<T>(
+  prompt: string,
+  items: readonly T[],
+  formatItem: (item: T) => string,
+): Promise<T> {
+  const input = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  try {
+    process.stdout.write(`\n${prompt}\n`);
+    for (const [index, item] of items.entries()) {
+      process.stdout.write(`  ${index + 1}) ${formatItem(item)}\n`);
+    }
+    while (true) {
+      const answer = await input.question('Choose a number: ');
+      const selected = items[Number(answer) - 1];
+      if (selected !== undefined) {
+        return selected;
+      }
+      process.stdout.write(`Enter a number from 1 to ${items.length}.\n`);
+    }
+  } finally {
+    input.close();
+  }
+}
+
 function getPort(address: AddressInfo | string | null): number {
   if (typeof address === 'object' && address !== null) {
     return address.port;
@@ -47,37 +94,64 @@ function getBrowserLocale(locale: 'en' | 'ko' | 'ja'): string {
 }
 
 const { values } = parseArgs({
+  args: normalizeScreenDevArgs(process.argv.slice(2)),
   options: {
-    list: { type: 'boolean', default: false },
+    help: { type: 'boolean', short: 'h', default: false },
+    list: { type: 'boolean', short: 'l', default: false },
     scenario: { type: 'string', short: 's' },
     variant: { type: 'string', short: 'v' },
   },
   strict: true,
 });
 
-if (values.list) {
+const mode = resolveScreenDevMode(values, process.stdin.isTTY === true);
+
+if (mode.type === 'help') {
+  printHelp();
+  process.exit(0);
+}
+
+if (mode.type === 'list') {
   printScenarioList();
   process.exit(0);
 }
 
-if (!values.scenario) {
+if (mode.type === 'missing-scenario') {
   process.stderr.write(
-    'Choose a scenario with --scenario <id>, or inspect them with --list.\n',
+    'Choose a scenario with --scenario <id>, inspect them with --list, or run this command in an interactive terminal.\n',
   );
   process.exit(1);
 }
 
-const scenario = findScreenScenario(values.scenario);
+const interactiveScenario =
+  mode.type === 'interactive'
+    ? await selectItem(
+        'Select a screen:',
+        screenScenarios,
+        (candidate) => `${candidate.id} — ${candidate.title}`,
+      )
+    : undefined;
+const scenarioId =
+  mode.type === 'run' ? mode.scenario : interactiveScenario?.id;
+const scenario = scenarioId ? findScreenScenario(scenarioId) : undefined;
 if (!scenario) {
-  process.stderr.write(`Unknown Screen Lab scenario: ${values.scenario}\n\n`);
+  process.stderr.write(`Unknown Screen Lab scenario: ${scenarioId}\n\n`);
   printScenarioList();
   process.exit(1);
 }
 
-const variant = findScreenScenarioVariant(scenario, values.variant);
+const interactiveVariant = interactiveScenario
+  ? await selectItem(
+      'Select a variant:',
+      scenario.variants,
+      (candidate) => candidate.id,
+    )
+  : undefined;
+const variantId = mode.type === 'run' ? mode.variant : interactiveVariant?.id;
+const variant = findScreenScenarioVariant(scenario, variantId);
 if (!variant) {
   process.stderr.write(
-    `Unknown variant for ${scenario.id}: ${values.variant}\n` +
+    `Unknown variant for ${scenario.id}: ${variantId}\n` +
       `Available variants: ${scenario.variants
         .map((candidate) => candidate.id)
         .join(', ')}\n`,
