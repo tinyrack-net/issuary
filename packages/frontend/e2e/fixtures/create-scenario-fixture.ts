@@ -1,9 +1,4 @@
-import {
-  test as base,
-  expect,
-  type Page,
-  type Response,
-} from '@playwright/test';
+import { test as base, type Page, type Response } from '@playwright/test';
 import { isFirefoxNavigationAbort } from '#frontend/test-utils/is-firefox-navigation-abort.ts';
 import {
   createE2EServer,
@@ -45,10 +40,6 @@ export async function gotoWithFirefoxRetry(
       .catch(() => undefined);
     return null;
   }
-}
-
-export async function waitForAppHydration(page: Page): Promise<void> {
-  await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
 }
 
 type ServerInfo = {

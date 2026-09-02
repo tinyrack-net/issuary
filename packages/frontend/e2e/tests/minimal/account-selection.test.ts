@@ -2,7 +2,6 @@ import { expect } from '@playwright/test';
 import {
   createScenarioFixture,
   gotoWithFirefoxRetry,
-  waitForAppHydration,
 } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
@@ -11,6 +10,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { waitForAppHydration } from '#frontend-e2e/helpers/hydration.ts';
 import { openPasswordLoginFromCurrentPage } from '#frontend-e2e/helpers/login.ts';
 import {
   buildAuthorizePath,

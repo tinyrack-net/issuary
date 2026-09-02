@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { waitForAppHydration } from '#frontend-e2e/helpers/hydration.ts';
 
 function isNavigationAbort(error: unknown): boolean {
   const message = String(error instanceof Error ? error.message : error);
@@ -120,6 +121,7 @@ export async function expectPasswordLoginForm(page: Page): Promise<void> {
 export async function openPasswordLoginFromCurrentPage(
   page: Page,
 ): Promise<void> {
+  await waitForAppHydration(page);
   const passwordForm = page.locator(loginPasswordPage.emailInput);
   const passwordMethodLink = page.locator(loginMethodPage.passwordMethodLink);
 
@@ -135,6 +137,7 @@ export async function openPasswordLoginFromCurrentPage(
     if (await passwordMethodLink.isVisible()) {
       await passwordMethodLink.click();
       await page.waitForURL('**/login/password**');
+      await waitForAppHydration(page);
       return;
     }
 
