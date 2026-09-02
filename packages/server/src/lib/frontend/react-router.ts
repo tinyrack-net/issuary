@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { frontendRuntimeContext } from '@tinyrack/issuary-server/internal/frontend-runtime-context';
 import type { Context } from 'hono';
 import { getMimeType } from 'hono/utils/mime';
 import {
@@ -9,6 +8,7 @@ import {
   RouterContextProvider,
   type ServerBuild,
 } from 'react-router';
+import { frontendRuntimeContext } from './runtime-context.js';
 
 export type ReactRouterRuntimeOptions = {
   loadServerBuild: () => Promise<ServerBuild>;

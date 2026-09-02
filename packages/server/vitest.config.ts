@@ -1,14 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  server: {
-    deps: {
-      external: ['@tinyrack/issuary-server/internal/frontend-runtime-context'],
-    },
-  },
   resolve: {
     alias: {
       '#server': './src/',
+      '@tinyrack/issuary-server/internal/frontend-runtime-context':
+        './src/lib/frontend/runtime-context.ts',
     },
   },
   test: {

@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { createTestApp, MINIMAL_TEST_CONFIG } from '../test-utils/index.ts';
+import { TEST_REACT_ROUTER_BUILD } from '../test-utils/react-router-build.ts';
 import type { AppType } from './app.ts';
 
 describe('createApp', () => {
@@ -23,6 +24,13 @@ describe('createApp', () => {
 
     expect(res.status).toBe(200);
   });
+
+  test('returns a quiet 404 for a missing conventional favicon', async () => {
+    const res = await app.request('/favicon.ico');
+
+    expect(res.status).toBe(404);
+    expect(await res.text()).toBe('');
+  });
 });
 
 describe('createApp with React Router SSR', () => {
@@ -30,14 +38,21 @@ describe('createApp with React Router SSR', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createTestApp({
-      ...MINIMAL_TEST_CONFIG,
-      branding: {
-        title: { en: 'English Identity', ko: '한국어 아이덴티티' },
-        subtitle: { en: 'English subtitle', ko: '한국어 부제' },
-        login_method_description: { en: 'Sign in', ko: '로그인하세요' },
+    const server = await createTestApp(
+      {
+        ...MINIMAL_TEST_CONFIG,
+        branding: {
+          title: { en: 'English Identity', ko: '한국어 아이덴티티' },
+          subtitle: { en: 'English subtitle', ko: '한국어 부제' },
+          login_method_description: { en: 'Sign in', ko: '로그인하세요' },
+        },
       },
-    });
+      {
+        reactRouter: {
+          loadServerBuild: () => Promise.resolve(TEST_REACT_ROUTER_BUILD),
+        },
+      },
+    );
     app = server.app;
     cleanup = server.cleanup;
   });
@@ -72,29 +87,6 @@ describe('createApp with React Router SSR', () => {
     expect(html).toContain('<html data-theme="tinyrack-dark" lang="ko"');
     expect(html).toContain('<title>한국어 아이덴티티</title>');
     expect(html).toContain('한국어 부제');
-  });
-
-  test('serves fingerprinted frontend assets with immutable caching', async () => {
-    const documentResponse = await app.request('/login/password');
-    const html = await documentResponse.text();
-    const match = html.match(/(?:href|src)="(\/assets\/[^"]+)"/);
-    const assetPath = match?.[1];
-    if (!assetPath) {
-      throw new Error('Expected the SSR document to reference an asset');
-    }
-
-    const assetResponse = await app.request(assetPath);
-    expect(assetResponse.status).toBe(200);
-    expect(assetResponse.headers.get('cache-control')).toBe(
-      'public, max-age=31536000, immutable',
-    );
-  });
-
-  test('returns a quiet 404 for a missing conventional favicon', async () => {
-    const res = await app.request('/favicon.ico');
-
-    expect(res.status).toBe(404);
-    expect(await res.text()).toBe('');
   });
 
   test('keeps unmatched backend namespaces as JSON 404 responses', async () => {

@@ -22,6 +22,15 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tinyrack\/issuary-server\/internal\/frontend-runtime-context$/,
+        replacement: fileURLToPath(
+          new URL(
+            '../server/src/lib/frontend/runtime-context.ts',
+            import.meta.url,
+          ),
+        ),
+      },
+      {
         find: /^@tinyrack\/issuary-server\/services$/,
         replacement: fileURLToPath(
           new URL('../server/src/entrypoints/services.ts', import.meta.url),
