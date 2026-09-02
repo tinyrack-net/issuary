@@ -72,10 +72,10 @@ export function SecurityRow({
         </div>
         {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural TRText stack with an optional DS note. */}
         <div className="flex min-w-0 flex-1 flex-col gap-tinyrack-3xs">
-          <TRText as="div" variant="bodySm" weight="medium">
+          <TRText variant="bodySm" weight="medium">
             {title}
           </TRText>
-          <TRText as="div" color="muted" variant="caption">
+          <TRText color="muted" variant="caption">
             {status}
           </TRText>
           {note}

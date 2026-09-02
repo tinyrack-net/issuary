@@ -1,5 +1,5 @@
-import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { Modal } from '#frontend/components/ui/modal.tsx';
+import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 
 type TermsContentModalProps = {
   isOpen: boolean;
@@ -16,7 +16,7 @@ export function TermsContentModal({
 }: TermsContentModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" title={title}>
-      <DesignSystemRichText
+      <SanitizedRichText
         className="mt-tinyrack-md max-h-dvh overflow-y-auto"
         html={content}
       />

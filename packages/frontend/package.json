@@ -67,6 +67,8 @@
     "@simplewebauthn/browser": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "@tinyrack/ui": "0.33.0",
+    "html-react-parser": "6.1.7",
     "hono": "catalog:",
     "i18next": "catalog:",
     "lucide-react": "catalog:",
@@ -74,7 +76,7 @@
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",
     "react-i18next": "catalog:",
-    "@tinyrack/ui": "0.31.0",
+    "sanitize-html": "2.17.7",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -89,6 +91,7 @@
     "@types/nodemailer": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/sanitize-html": "2.16.1",
     "@vitejs/plugin-react": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "@vitest/browser-preview": "catalog:",

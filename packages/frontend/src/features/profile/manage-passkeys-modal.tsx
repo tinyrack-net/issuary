@@ -350,7 +350,7 @@ function PasskeyItem({
         )}
         {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural identity stack containing TRText parts. */}
         <div>
-          <TRText as="div" variant="caption" weight="medium">
+          <TRText variant="caption" weight="medium">
             {passkey.name || t('profile.passkey.manageModal.unnamedPasskey')}
           </TRText>
           {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural metadata row containing TRText and an optional badge. */}
