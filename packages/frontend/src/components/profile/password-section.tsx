@@ -73,7 +73,7 @@ export function PasswordSection({
                           aria-hidden
                           className="size-tinyrack-lg shrink-0 text-tinyrack-warning-foreground"
                         />
-                        <TRText as="div" variant="caption">
+                        <TRText variant="caption">
                           {t('profile.password.removeDisabledReason')}
                         </TRText>
                       </div>
@@ -100,17 +100,12 @@ export function PasswordSection({
       icon={KeyRoundIcon}
       note={
         isConfigManaged ? (
-          <TRText
-            as="div"
-            className="flex items-center gap-tinyrack-xs"
-            color="muted"
-            variant="caption"
-          >
+          <div className="flex items-center gap-tinyrack-xs">
             <SettingsIcon aria-hidden className="size-tinyrack-md shrink-0" />
             <TRText as="span" color="muted" variant="caption">
               {t('profile.password.configManaged')}
             </TRText>
-          </TRText>
+          </div>
         ) : undefined
       }
       status={

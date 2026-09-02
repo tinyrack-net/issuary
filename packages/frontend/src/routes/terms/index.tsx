@@ -23,9 +23,9 @@ import {
   type TermsConsentsField,
 } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
-import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { OAuthSearchSchema } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
@@ -201,7 +201,7 @@ function Terms() {
       <AuthPageHeader title={t('terms.title')} />
 
       {implicitNotice && (
-        <DesignSystemRichText html={implicitNotice} variant="notice" />
+        <SanitizedRichText html={implicitNotice} variant="notice" />
       )}
 
       {implicitNotice && hasExplicitTerms && (

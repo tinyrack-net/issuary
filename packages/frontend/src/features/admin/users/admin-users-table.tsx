@@ -43,11 +43,10 @@ export function AdminUsersTable({
               <TRTable.Cell>
                 {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural identity stack; both values use TRText. */}
                 <div className="flex flex-col gap-tinyrack-3xs">
-                  <TRText as="div" variant="bodySm" weight="medium">
+                  <TRText variant="bodySm" weight="medium">
                     {managedUser.email}
                   </TRText>
                   <TRText
-                    as="div"
                     className="max-w-tinyrack-measure-lg"
                     color="muted"
                     truncate

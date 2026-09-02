@@ -19,8 +19,8 @@ import {
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
 import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
-import { DesignSystemRichText } from '#frontend/components/ui/design-system-rich-text.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import {
   buildAuthenticatedAuthorizeUrl,
@@ -305,7 +305,7 @@ function LoginPassword() {
       )}
 
       {implicitNotice && (
-        <DesignSystemRichText html={implicitNotice} variant="notice" />
+        <SanitizedRichText html={implicitNotice} variant="notice" />
       )}
 
       {(configData.registration.public_registration ||
