@@ -1,6 +1,7 @@
 @import "@tinyrack/ui/core.css";
 @import "@tinyrack/ui/components/badge.css";
 @import "@tinyrack/ui/components/button.css";
+@import "@tinyrack/ui/components/text.css";
 
 .issuary-home {
   align-items: center;
@@ -28,8 +29,10 @@
 }
 
 .issuary-home-mark {
+  /* tinyrack-check-ignore-next-line tokens/no-literal -- bespoke brand mark size composed from a public spacing token */
   block-size: calc(var(--tinyrack-space-3xl) * 2);
   color: var(--tinyrack-primary-foreground);
+  /* tinyrack-check-ignore-next-line tokens/no-literal -- bespoke brand mark size composed from a public spacing token */
   inline-size: calc(var(--tinyrack-space-3xl) * 2);
 }
 

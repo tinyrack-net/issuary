@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@hono/node-server": "catalog:",
+    "@hono/standard-validator": "catalog:",
     "@mikro-orm/cli": "catalog:",
     "@stricli/core": "catalog:",
     "@tinyrack/issuary-server": "workspace:*",

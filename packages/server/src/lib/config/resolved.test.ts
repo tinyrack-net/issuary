@@ -247,40 +247,41 @@ describe('IssuaryRuntimeConfigSchema', () => {
     });
   });
 
-  test.each([
-    'icon_url',
-    'logo_url',
-  ])('rejects an invalid branding %s', (option) => {
-    expectConfigIssue(
-      {
+  test.each(['icon_url', 'logo_url'])(
+    'rejects an invalid branding %s',
+    (option) => {
+      expectConfigIssue(
+        {
+          ...MINIMAL_INPUT_CONFIG,
+          branding: { [option]: '/relative.svg' },
+        },
+        `branding.${option}`,
+      );
+    },
+  );
+
+  test.each([['background_url', 'https://example.com/background.png']])(
+    'rejects removed branding option %s',
+    (option, value) => {
+      const result = IssuaryRuntimeConfigSchema.safeParse({
         ...MINIMAL_INPUT_CONFIG,
-        branding: { [option]: '/relative.svg' },
-      },
-      `branding.${option}`,
-    );
-  });
+        branding: { [option]: value },
+      });
 
-  test.each([
-    ['background_url', 'https://example.com/background.png'],
-  ])('rejects removed branding option %s', (option, value) => {
-    const result = IssuaryRuntimeConfigSchema.safeParse({
-      ...MINIMAL_INPUT_CONFIG,
-      branding: { [option]: value },
-    });
+      expect(result.success).toBe(false);
+      if (result.success) {
+        throw new Error('Expected removed branding option to be rejected.');
+      }
 
-    expect(result.success).toBe(false);
-    if (result.success) {
-      throw new Error('Expected removed branding option to be rejected.');
-    }
-
-    expect(result.error.issues).toContainEqual(
-      expect.objectContaining({
-        code: 'unrecognized_keys',
-        keys: [option],
-        path: ['branding'],
-      }),
-    );
-  });
+      expect(result.error.issues).toContainEqual(
+        expect.objectContaining({
+          code: 'unrecognized_keys',
+          keys: [option],
+          path: ['branding'],
+        }),
+      );
+    },
+  );
 
   test('applies account selection defaults for backward compatibility', () => {
     const parsed = IssuaryRuntimeConfigSchema.parse(MINIMAL_INPUT_CONFIG);

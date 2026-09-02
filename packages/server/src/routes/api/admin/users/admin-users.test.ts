@@ -386,25 +386,22 @@ describe('admin user management API', () => {
     }
   });
 
-  test.each([
-    '',
-    '1',
-    '0',
-    'yes',
-    'False',
-  ])('rejects invalid include_deleted=%s values', async (includeDeleted) => {
-    const server = await createAdminTestApp();
-    try {
-      const session = await loginAdmin(server.app);
-      const res = await adminUsersGet(server.app, session, {
-        include_deleted: includeDeleted,
-      });
+  test.each(['', '1', '0', 'yes', 'False'])(
+    'rejects invalid include_deleted=%s values',
+    async (includeDeleted) => {
+      const server = await createAdminTestApp();
+      try {
+        const session = await loginAdmin(server.app);
+        const res = await adminUsersGet(server.app, session, {
+          include_deleted: includeDeleted,
+        });
 
-      expect(res.status).toBe(400);
-    } finally {
-      await server.cleanup();
-    }
-  });
+        expect(res.status).toBe(400);
+      } finally {
+        await server.cleanup();
+      }
+    },
+  );
 
   test('invalidates existing sessions for soft-deleted users', async () => {
     const server = await createAdminTestApp();

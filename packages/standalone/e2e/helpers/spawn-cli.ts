@@ -105,7 +105,7 @@ export function startBuiltCli(options: SpawnCliOptions) {
 export async function stopCliProcess(
   cliProcess: CliProcess | undefined,
 ): Promise<void> {
-  if (!cliProcess || cliProcess.killed) {
+  if (!cliProcess) {
     return;
   }
 

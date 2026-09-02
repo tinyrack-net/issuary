@@ -43,7 +43,7 @@ jobs:
       homepage: ${{ steps.scope.outputs.homepage }}
       examples: ${{ steps.scope.outputs.examples }}
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.1
         with: { fetch-depth: 1 }
       - id: scope
         name: Classify the change
@@ -81,16 +81,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm biome check .
       - run: pnpm check:ui
       - name: Validate workflows
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12
       - uses: actions/upload-artifact@v7.0.1
         with:
           name: dist-linux
@@ -110,9 +110,9 @@ jobs:
       fail-fast: false
       matrix: { shard: [1, 2] }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: >-
@@ -126,9 +126,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @tinyrack/issuary-tools test --run
@@ -140,9 +140,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: >-
@@ -161,9 +161,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -181,9 +181,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -202,9 +202,9 @@ jobs:
       fail-fast: false
       matrix: { shard: [1, 2] }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -233,9 +233,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @tinyrack/issuary-homepage exec playwright install --with-deps chromium
@@ -252,9 +252,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @tinyrack/issuary-server test:perf:smoke
@@ -273,9 +273,9 @@ jobs:
       fail-fast: false
       matrix: { shard: [1, 2, 3, 4, 5, 6] }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -308,9 +308,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -334,9 +334,9 @@ jobs:
       fail-fast: false
       matrix: { shard: [1, 2, 3, 4, 5, 6] }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -376,9 +376,9 @@ jobs:
             command: pnpm --filter @tinyrack/issuary-frontend test:coverage
             browsers: true
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - if: matrix.browsers == true
@@ -402,9 +402,9 @@ jobs:
       fail-fast: false
       matrix: { shard: [1, 2, 3, 4] }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - env:
@@ -430,9 +430,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -459,9 +459,9 @@ jobs:
       matrix: { shard: [1, 2] }
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: >-
@@ -478,9 +478,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @tinyrack/issuary-tools test --run
@@ -495,9 +495,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - run: >-
@@ -519,9 +519,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -544,9 +544,9 @@ jobs:
       matrix: { shard: [1, 2] }
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -583,9 +583,9 @@ jobs:
       matrix: { shard: [1, 2] }
     steps:
       - run: git config --global core.autocrlf false
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24 }
       - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v8.0.1
@@ -618,9 +618,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: docker/setup-buildx-action@v4.1.0
-      - uses: docker/build-push-action@v7.2.0
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v4.3.0
+      - uses: docker/build-push-action@v7.3.0
         with:
           context: .
           file: ./packages/standalone/Dockerfile
@@ -673,17 +673,17 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: { contents: read, packages: write }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: docker/setup-qemu-action@v4.1.0
-      - uses: docker/setup-buildx-action@v4.1.0
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-qemu-action@v4.3.0
+      - uses: docker/setup-buildx-action@v4.3.0
       - env: { DOCKERHUB_TOKEN: '${{ secrets.DOCKERHUB_TOKEN }}' }
         run: test -n "$DOCKERHUB_TOKEN"
-      - uses: docker/login-action@v4.2.0
+      - uses: docker/login-action@v4.6.0
         with: { registry: '${{ env.GHCR_REGISTRY }}', username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
-      - uses: docker/login-action@v4.2.0
+      - uses: docker/login-action@v4.6.0
         with: { registry: '${{ env.DOCKERHUB_REGISTRY }}', username: '${{ env.DOCKERHUB_USERNAME }}', password: '${{ secrets.DOCKERHUB_TOKEN }}' }
       - id: metadata
-        uses: docker/metadata-action@v6.1.0
+        uses: docker/metadata-action@v6.2.0
         with:
           images: |
             ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
@@ -693,7 +693,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
             type=semver,pattern={{major}},enable=${{ !contains(github.ref_name, '-') }}
             type=sha
-      - uses: docker/build-push-action@v7.2.0
+      - uses: docker/build-push-action@v7.3.0
         with:
           context: .
           file: ./packages/standalone/Dockerfile
@@ -711,9 +711,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions: { contents: read, id-token: write }
     steps:
-      - uses: actions/checkout@v6.0.3
-      - uses: pnpm/action-setup@v6.0.9
-      - uses: actions/setup-node@v6.4.0
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.0.10
+      - uses: actions/setup-node@v7.0.0
         with: { cache: pnpm, node-version: 24, registry-url: 'https://registry.npmjs.org' }
       - run: pnpm install --frozen-lockfile
       - run: pnpm build

@@ -1,4 +1,4 @@
-import { render } from '@react-email/render';
+import { render } from 'react-email';
 import type { Locale } from '../lib/locale.ts';
 import { getTranslations } from './i18n/index.ts';
 import {

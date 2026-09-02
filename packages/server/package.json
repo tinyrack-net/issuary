@@ -201,7 +201,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@react-email/preview-server": "catalog:",
+    "@react-email/ui": "catalog:",
     "@types/node": "catalog:",
     "@types/nodemailer": "catalog:",
     "@types/pg": "catalog:",
@@ -221,9 +221,6 @@
     "@mikro-orm/postgresql": "catalog:",
     "@mikro-orm/seeder": "catalog:",
     "@mikro-orm/sql": "catalog:",
-    "@react-email/components": "catalog:",
-    "@react-email/render": "catalog:",
-    "@react-email/tailwind": "catalog:",
     "@scalar/hono-api-reference": "catalog:",
     "@simplewebauthn/server": "catalog:",
     "croner": "catalog:",

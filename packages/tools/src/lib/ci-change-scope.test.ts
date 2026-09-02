@@ -78,20 +78,19 @@ describe('CI change scope classifier', () => {
     });
   });
 
-  test.each([
-    ['pnpm-lock.yaml'],
-    ['unknown/location.txt'],
-    [],
-  ])('fails open for shared, unknown, or empty input: %j', async (...files) => {
-    await expect(classify(files)).resolves.toEqual({
-      docs_only: 'false',
-      examples: 'true',
-      frontend: 'true',
-      full: 'true',
-      homepage: 'true',
-      server: 'true',
-      standalone: 'true',
-      tools: 'true',
-    });
-  });
+  test.each([['pnpm-lock.yaml'], ['unknown/location.txt'], []])(
+    'fails open for shared, unknown, or empty input: %j',
+    async (...files) => {
+      await expect(classify(files)).resolves.toEqual({
+        docs_only: 'false',
+        examples: 'true',
+        frontend: 'true',
+        full: 'true',
+        homepage: 'true',
+        server: 'true',
+        standalone: 'true',
+        tools: 'true',
+      });
+    },
+  );
 });

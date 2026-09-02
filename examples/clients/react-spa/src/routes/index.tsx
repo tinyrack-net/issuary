@@ -3,6 +3,7 @@ import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { TRText } from '@tinyrack/ui/components/text';
 import { env } from '#example-react-spa/libs/env.ts';
 import {
   buildAuthorizationUrl,
@@ -39,7 +40,7 @@ function HomePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-tinyrack-lg">
-      <TRCard.Root className="w-full max-w-tinyrack-overlay-md">
+      <TRCard.Root className="w-full max-w-tinyrack-overlay-width-md">
         <TRCard.Header>
           <TRCard.Title className="text-tinyrack-3xl">
             React SPA OIDC Test Client
@@ -62,9 +63,12 @@ function HomePage() {
           <TRSeparator className="my-tinyrack-lg" />
 
           <div className="rounded-tinyrack-lg border p-tinyrack-lg">
-            <h2 className="mb-tinyrack-md font-tinyrack-strong text-tinyrack-lg">
+            <TRText
+              as="h2"
+              className="mb-tinyrack-md font-tinyrack-strong text-tinyrack-lg"
+            >
               Test Configuration
-            </h2>
+            </TRText>
             <dl className="space-y-tinyrack-sm text-tinyrack-sm">
               <div className="flex gap-tinyrack-sm">
                 <dt className="font-tinyrack-medium">Issuer:</dt>

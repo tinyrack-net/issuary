@@ -1,4 +1,4 @@
-import { Button, Heading, Link, Section, Text } from '@react-email/components';
+import { Button, Heading, Link, Section, Text } from 'react-email';
 import type { Locale } from '../../lib/locale.ts';
 import { EmailLayout } from '../components/email-layout.tsx';
 import { getTranslations } from '../i18n/index.ts';

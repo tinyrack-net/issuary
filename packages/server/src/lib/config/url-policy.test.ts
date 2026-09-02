@@ -12,10 +12,10 @@ describe('URL policy', () => {
     expect(isHttpsOrLocalHttpUrl(url)).toBe(true);
   });
 
-  test.each([
-    'http://127.evil/callback',
-    'http://127.0.0.1.evil/callback',
-  ])('rejects lookalike 127 hostname %s', (url) => {
-    expect(isHttpsOrLocalHttpUrl(url)).toBe(false);
-  });
+  test.each(['http://127.evil/callback', 'http://127.0.0.1.evil/callback'])(
+    'rejects lookalike 127 hostname %s',
+    (url) => {
+      expect(isHttpsOrLocalHttpUrl(url)).toBe(false);
+    },
+  );
 });
