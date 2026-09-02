@@ -94,7 +94,7 @@ export function AuthMethodTile({
   );
 
   const className =
-    'w-full justify-start gap-tinyrack-md transition-colors duration-tinyrack-fast ease-tinyrack-standard';
+    'w-full justify-start gap-tinyrack-md transition-colors duration-tinyrack-fast ease-tinyrack-standard [&>.tr-spinner]:order-last [&>.tr-spinner]:ms-auto';
 
   if (render) {
     return (

@@ -263,6 +263,43 @@ describe('/login', () => {
       .not.toBeInTheDocument();
   });
 
+  test('shows the passkey loading spinner at the end of the method button', async () => {
+    mockJsonResponses({
+      url: '/api/auth/passkey/options',
+      method: 'POST',
+      body: {
+        options: {
+          challenge: 'challenge',
+          rpId: 'localhost',
+          allowCredentials: [],
+        },
+      },
+    });
+    webauthnMocks.startAuthentication.mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    const { screen } = await renderRoute({
+      initialLocation: '/login',
+      queryData: seedConfig(),
+    });
+    const passkeyButton = screen.getByRole('button', { name: 'Passkey' });
+
+    await passkeyButton.click();
+    await expect.element(passkeyButton).toHaveAttribute('aria-busy', 'true');
+    await expect.element(passkeyButton).toBeDisabled();
+
+    const buttonElement = passkeyButton.element();
+    const label = buttonElement.querySelector('.tr-text');
+    const spinner = buttonElement.querySelector('.tr-spinner');
+
+    expect(label).not.toBeNull();
+    expect(spinner).not.toBeNull();
+    expect(spinner?.getBoundingClientRect().left).toBeGreaterThan(
+      label?.getBoundingClientRect().right ?? Number.POSITIVE_INFINITY,
+    );
+  });
+
   test('shows guidance when passkey sign in fails from the login page', async () => {
     const passkeyError = new Error('not allowed');
     passkeyError.name = 'NotAllowedError';
