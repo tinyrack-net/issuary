@@ -22,6 +22,9 @@ catalog:
   "@mikro-orm/seeder": ^7.1.14
   "@mikro-orm/sql": ^7.1.14
   "@playwright/test": ^1.62.1
+  "@react-router/dev": 8.3.1
+  "@react-router/fs-routes": 8.3.1
+  "@react-router/node": 8.3.1
   "@react-email/ui": ^6.9.3
   "@rolldown/plugin-babel": ^0.2.3
   "@scalar/hono-api-reference": ^0.12.0
@@ -54,6 +57,7 @@ catalog:
   execa: ^10.0.1
   hono: ^4.13.5
   hono-openapi: ^1.3.1
+  isbot: ^5.1.36
   i18next: ^26.4.1
   jose: ^6.2.10
   kysely: ^0.29.5
@@ -69,6 +73,7 @@ catalog:
   react-dom: ^19.2.8
   react-email: ^6.9.3
   react-hook-form: ^7.87.0
+  react-router: 8.3.1
   react-i18next: ^17.0.13
   sharp: ^0.35.4
   tailwindcss: 4.3.3

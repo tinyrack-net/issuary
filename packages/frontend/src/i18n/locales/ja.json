@@ -14,6 +14,7 @@
   "common.no": "いいえ",
   "common.none": "なし",
   "common.or": "または",
+  "common.loading": "ページを読み込み中",
   "authorizationContext.label": "認可リクエスト",
   "authorizationContext.title": "{{app}}に続行",
   "authorizationContext.redirect": "{{origin}}に戻ります",

@@ -7,10 +7,6 @@ order: 32
 
 この文書は現在 `issuary`の `config.yaml` 構造をtop-levelグループ基準でまとめたリファレンスです。
 
-:::note
-`frontend`と `frontend.html_variables`はstandalone専用の設定です。 `@tinyrack/issuary-standalone`のみこの値を解釈し、 `@tinyrack/issuary-server`の直接構成では使用しません。
-:::
-
 ## `server`
 
 | アイテム | タイプ | デフォルト | 環境変数 | 説明 |
@@ -235,15 +231,6 @@ order: 32
 | `title` | `string` | `'Issuary API'` | - | OpenAPIドキュメントのタイトル |
 | `description` | `string` | `'OpenID Connect Provider API'` | - | OpenAPI ドキュメントの説明 |
 | `ui_title` | `string` | `'Issuary API Reference'` | - | ライブスカラー API リファレンスUIのブラウザページタイトル |
-
-## `frontend` (standalone only)
-
-| アイテム | タイプ | デフォルト | 環境変数 | 説明 |
-|------|------|--------|-----------|------|
-| `enabled` | `boolean` | `true` | `FRONTEND_ENABLED` | フロントエンドサービングを有効にするかどうか |
-| `mode` | `'proxy' \| 'static'` | `'static'` | `FRONTEND_MODE` | `proxy`はアップストリーム配信、 `static`銀ディスクサービング |
-| `path` | `string` | ランタイムのデフォルト | `FRONTEND_PATH` | フロントエンドパス |
-| `html_variables` | `Record<string, string>` | `{}` | - | HTML テンプレート置換変数 |
 
 :::note
 `DurationString` フォーマット： `"0"` （即時）、 `"30s"` (秒), `"30m"` (分), `"24h"` (時間), `"7d"` (日), `"1y"` (年)

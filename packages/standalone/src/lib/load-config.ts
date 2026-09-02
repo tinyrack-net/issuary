@@ -2,8 +2,6 @@ import * as fs from 'node:fs';
 import type { IssuaryRuntimeConfig } from '@tinyrack/issuary-server/config';
 import { postgres } from '@tinyrack/issuary-server/database/postgres';
 import { sqlite } from '@tinyrack/issuary-server/database/sqlite';
-import { createProxyHandler } from '@tinyrack/issuary-server/frontend/proxy';
-import { createStaticHandler } from '@tinyrack/issuary-server/frontend/static';
 import { apple } from '@tinyrack/issuary-server/identity-providers/apple';
 import { genericOAuth } from '@tinyrack/issuary-server/identity-providers/generic-oauth';
 import { github } from '@tinyrack/issuary-server/identity-providers/github';
@@ -13,7 +11,6 @@ import { database as databaseScheduler } from '@tinyrack/issuary-server/schedule
 import YAML from 'yaml';
 import type { StandaloneDatabaseConfig } from './config/database.ts';
 import { STANDALONE_CONFIG_DEFAULTS } from './config/defaults.ts';
-import type { StandaloneFrontendConfig } from './config/frontend.ts';
 import type { StandaloneIdentityProviderConfig } from './config/identity-providers.ts';
 import {
   type StandaloneConfig,
@@ -134,33 +131,12 @@ function composeSchedulerConfig(
   }
 }
 
-function composeFrontendConfig(
-  frontend: StandaloneFrontendConfig,
-): IssuaryRuntimeConfig['frontend'] {
-  if (!frontend.enabled) {
-    return undefined;
-  }
-
-  return frontend.mode === 'proxy'
-    ? createProxyHandler({
-        upstream:
-          frontend.path ?? STANDALONE_CONFIG_DEFAULTS.FRONTEND_PROXY_UPSTREAM,
-        htmlVariables: frontend.html_variables,
-      })
-    : createStaticHandler({
-        publicPath:
-          frontend.path ?? STANDALONE_CONFIG_DEFAULTS.FRONTEND_STATIC_PATH,
-        htmlVariables: frontend.html_variables,
-      });
-}
-
 export async function resolveConfig(
   input: unknown,
 ): Promise<IssuaryRuntimeConfig> {
   const parsed = StandaloneConfigSchema.parse(input);
 
   const {
-    frontend: _frontend,
     database: _database,
     email: _email,
     identity_providers: _identityProviders,
@@ -170,7 +146,6 @@ export async function resolveConfig(
 
   return {
     ...rest,
-    frontend: composeFrontendConfig(parsed.frontend),
     database: composeDatabaseConfig(parsed.database),
     identity_providers: parsed.identity_providers.map(composeIdentityProvider),
     ...(parsed.email ? { email: await composeEmailConfig(parsed.email) } : {}),
@@ -191,12 +166,9 @@ export function loadConfig(configPath?: string | undefined): StandaloneConfig {
     : DEFAULT_CONFIG_PATH;
 
   // 1. Start with defaults template (env-var patterns with fallbacks)
-  const {
-    FRONTEND_PROXY_UPSTREAM: _,
-    FRONTEND_STATIC_PATH: __,
-    ...configTemplate
-  } = STANDALONE_CONFIG_DEFAULTS;
-  let merged: Record<string, unknown> = structuredClone(configTemplate);
+  let merged: Record<string, unknown> = structuredClone(
+    STANDALONE_CONFIG_DEFAULTS,
+  );
 
   // 2. If config file exists, deep-merge user values on top
   if (fs.existsSync(resolvedPath)) {

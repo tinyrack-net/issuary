@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router';
 import { beforeAll, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
 import { IssuaryError } from '#frontend/libs/error.ts';
@@ -51,7 +52,9 @@ test('401 error with onUnauthorized calls callback', async () => {
 test('401 error without onUnauthorized shows login link', async () => {
   const error = new IssuaryError('UNAUTHORIZED', 401, 'Unauthorized');
   const screen = await render(
-    <RouteErrorFallback error={error} reset={() => {}} />,
+    <MemoryRouter>
+      <RouteErrorFallback error={error} reset={() => {}} />
+    </MemoryRouter>,
   );
 
   await expect

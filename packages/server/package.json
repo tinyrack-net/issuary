@@ -10,7 +10,7 @@
     "directory": "packages/server"
   },
   "files": [
-    "public",
+    "frontend",
     "dist"
   ],
   "publishConfig": {
@@ -63,17 +63,9 @@
         "types": "./dist/entrypoints/identity-providers/generic-oauth.d.ts",
         "default": "./dist/entrypoints/identity-providers/generic-oauth.js"
       },
-      "./frontend": {
-        "types": "./dist/entrypoints/frontend/index.d.ts",
-        "default": "./dist/entrypoints/frontend/index.js"
-      },
-      "./frontend/static": {
-        "types": "./dist/entrypoints/frontend/static.d.ts",
-        "default": "./dist/entrypoints/frontend/static.js"
-      },
-      "./frontend/proxy": {
-        "types": "./dist/entrypoints/frontend/proxy.d.ts",
-        "default": "./dist/entrypoints/frontend/proxy.js"
+      "./internal/frontend-runtime-context": {
+        "types": "./dist/lib/frontend/runtime-context.d.ts",
+        "default": "./dist/lib/frontend/runtime-context.js"
       }
     },
     "imports": {
@@ -146,20 +138,10 @@
       "types": "./dist/entrypoints/identity-providers/generic-oauth.d.ts",
       "default": "./dist/entrypoints/identity-providers/generic-oauth.js"
     },
-    "./frontend": {
-      "@issuary/source": "./src/entrypoints/frontend/index.ts",
-      "types": "./dist/entrypoints/frontend/index.d.ts",
-      "default": "./dist/entrypoints/frontend/index.js"
-    },
-    "./frontend/static": {
-      "@issuary/source": "./src/entrypoints/frontend/static.ts",
-      "types": "./dist/entrypoints/frontend/static.d.ts",
-      "default": "./dist/entrypoints/frontend/static.js"
-    },
-    "./frontend/proxy": {
-      "@issuary/source": "./src/entrypoints/frontend/proxy.ts",
-      "types": "./dist/entrypoints/frontend/proxy.d.ts",
-      "default": "./dist/entrypoints/frontend/proxy.js"
+    "./internal/frontend-runtime-context": {
+      "@issuary/source": "./src/lib/frontend/runtime-context.ts",
+      "types": "./dist/lib/frontend/runtime-context.d.ts",
+      "default": "./dist/lib/frontend/runtime-context.js"
     }
   },
   "imports": {
@@ -236,6 +218,7 @@
     "pino": "catalog:",
     "qrcode": "catalog:",
     "react": "catalog:",
+    "react-router": "catalog:",
     "zod": "catalog:"
   },
   "mikro-orm": {

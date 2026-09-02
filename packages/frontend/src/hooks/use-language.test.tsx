@@ -1,6 +1,6 @@
+import i18n from 'i18next';
 import { beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
-import i18n from '#frontend/i18n/index.ts';
 import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 
 const { useSuspenseQueryMock } = vi.hoisted(() => ({
@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-query', async () => {
 });
 
 import { LANGUAGE_STORAGE_KEY } from '#frontend/i18n/index.ts';
+import { removePreferenceCookie } from '#frontend/libs/preferences.ts';
 import { useLanguage } from './use-language.ts';
 
 function LanguageHarness() {
@@ -52,6 +53,7 @@ beforeAll(() => {
 
 beforeEach(async () => {
   localStorage.clear();
+  removePreferenceCookie(LANGUAGE_STORAGE_KEY);
   await i18n.changeLanguage('en');
 
   Object.defineProperty(window.navigator, 'language', {
@@ -81,7 +83,7 @@ test('detects the browser language when the user is in auto mode', async () => {
     .toHaveTextContent('true');
 });
 
-test('persists manual language changes in localStorage and i18n state', async () => {
+test('persists manual language changes in the SSR-visible cookie and i18n state', async () => {
   useSuspenseQueryMock.mockReturnValue({
     data: {
       i18n: {
@@ -99,7 +101,8 @@ test('persists manual language changes in localStorage and i18n state', async ()
   await expect
     .element(screen.getByTestId('is-auto'))
     .toHaveTextContent('false');
-  expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('ko');
+  expect(document.cookie).toContain(`${LANGUAGE_STORAGE_KEY}=ko`);
+  expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBeNull();
 });
 
 test('returns to auto mode and switches to the detected browser language', async () => {
@@ -120,4 +123,5 @@ test('returns to auto mode and switches to the detected browser language', async
   await expect.element(screen.getByTestId('language')).toHaveTextContent('ja');
   await expect.element(screen.getByTestId('is-auto')).toHaveTextContent('true');
   expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBeNull();
+  expect(document.cookie).not.toContain(`${LANGUAGE_STORAGE_KEY}=`);
 });

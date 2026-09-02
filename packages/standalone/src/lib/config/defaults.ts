@@ -11,13 +11,8 @@ import { envDefault } from './env-default.ts';
  * Complex/structured fields (arrays, localized records) are excluded — they
  * must come from the YAML config file.
  *
- * Resolution-time defaults (FRONTEND_PROXY_UPSTREAM, FRONTEND_STATIC_PATH)
- * are not part of the YAML template but are referenced at config-resolution
- * time.  They are stripped before the YAML pipeline runs.
  */
 export const STANDALONE_CONFIG_DEFAULTS = {
-  FRONTEND_PROXY_UPSTREAM: 'http://localhost:8081',
-  FRONTEND_STATIC_PATH: '/opt/issuary/frontend',
   server: {
     public_origin: envDefault('ISSUARY_PUBLIC_ORIGIN', 'http://localhost:8080'),
     listen_port: envDefault('ISSUARY_LISTEN_PORT', '8080'),
@@ -73,12 +68,6 @@ export const STANDALONE_CONFIG_DEFAULTS = {
     passkey: {
       enabled: envDefault('ISSUARY_PASSKEY_ENABLED', 'false'),
     },
-  },
-
-  frontend: {
-    enabled: envDefault('ISSUARY_FRONTEND_ENABLED', 'true'),
-    mode: envDefault('ISSUARY_FRONTEND_MODE', 'static'),
-    html_variables: {},
   },
 
   admin: {

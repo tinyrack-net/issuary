@@ -1,6 +1,6 @@
-frontend:
-  mode: proxy
-  path: http://localhost:8081
+server:
+  public_origin: http://localhost:8080
+  listen_port: 8080
 
 registration:
   enabled: true

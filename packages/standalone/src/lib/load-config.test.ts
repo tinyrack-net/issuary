@@ -40,37 +40,13 @@ describe('load-config', () => {
     await fs.promises.rm(dir, { recursive: true, force: true });
   });
 
-  test('applies proxy frontend defaults during standalone resolution', async () => {
+  test('rejects the removed frontend configuration', async () => {
     const dir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), 'issuary-load-config-proxy-'),
+      path.join(os.tmpdir(), 'issuary-load-config-frontend-'),
     );
     const configFile = await writeConfigFile(
       dir,
-      'proxy.yaml',
-      [
-        'frontend:',
-        '  enabled: true',
-        '  mode: proxy',
-        'security:',
-        `  session_secret: ${VALID_SESSION_SECRET}`,
-        '  hash_secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY',
-      ].join('\n'),
-    );
-
-    const config = await resolveConfig(loadConfig(configFile));
-
-    expect(config.frontend).toBeDefined();
-    expect(typeof config.frontend).toBe('function');
-    await fs.promises.rm(dir, { recursive: true, force: true });
-  });
-
-  test('preserves disabled frontend without requiring path', async () => {
-    const dir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), 'issuary-load-config-disabled-'),
-    );
-    const configFile = await writeConfigFile(
-      dir,
-      'disabled.yaml',
+      'frontend.yaml',
       [
         'frontend:',
         '  enabled: false',
@@ -80,10 +56,11 @@ describe('load-config', () => {
       ].join('\n'),
     );
 
-    const config = await resolveConfig(loadConfig(configFile));
-
-    expect(config.frontend).toBeUndefined();
-    await fs.promises.rm(dir, { recursive: true, force: true });
+    try {
+      expect(() => loadConfig(configFile)).toThrow('Unrecognized key');
+    } finally {
+      await fs.promises.rm(dir, { recursive: true, force: true });
+    }
   });
 
   test('throws when security secrets are missing and config file does not exist', () => {

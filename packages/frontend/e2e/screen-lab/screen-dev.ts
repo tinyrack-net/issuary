@@ -15,7 +15,6 @@ import {
 } from '#frontend-e2e/screen-lab/catalog.ts';
 import { createE2EServer } from '#frontend-e2e/setup/create-server.ts';
 
-const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 const HEADLESS_ENV = 'SCREEN_LAB_HEADLESS';
 const EXIT_AFTER_READY_ENV = 'SCREEN_LAB_EXIT_AFTER_READY';
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 };
@@ -174,18 +173,8 @@ try {
   await viteServer.listen();
   cleanups.defer(() => viteServer.close());
 
-  const frontendPort = getPort(viteServer.httpServer?.address() ?? null);
-  const frontendOrigin = `http://127.0.0.1:${frontendPort}`;
-  const previousFrontendPort = process.env[SHARED_FRONTEND_PORT_ENV];
-  process.env[SHARED_FRONTEND_PORT_ENV] = String(frontendPort);
-  cleanups.defer(() => {
-    if (previousFrontendPort === undefined) {
-      delete process.env[SHARED_FRONTEND_PORT_ENV];
-      return;
-    }
-    process.env[SHARED_FRONTEND_PORT_ENV] = previousFrontendPort;
-  });
-
+  const routeHostPort = getPort(viteServer.httpServer?.address() ?? null);
+  const routeHostOrigin = `http://127.0.0.1:${routeHostPort}`;
   const backend =
     scenario.runtime === 'server'
       ? await createE2EServer(scenario.config)
@@ -196,7 +185,7 @@ try {
 
   const baseURL = backend
     ? `http://127.0.0.1:${backend.backendPort}`
-    : frontendOrigin;
+    : routeHostOrigin;
   const browser = await chromium.launch({
     headless: process.env[HEADLESS_ENV] === '1',
   });
@@ -226,7 +215,7 @@ try {
   );
 
   if (scenario.runtime === 'route') {
-    const url = new URL('/e2e/screen-lab/route-host.html', frontendOrigin);
+    const url = new URL('/e2e/screen-lab/route-host.html', routeHostOrigin);
     url.searchParams.set('scenario', scenario.id);
     url.searchParams.set('variant', variant.id);
     await page.goto(url.href);

@@ -1,4 +1,3 @@
-import type { ErrorComponentProps } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCode } from '@tinyrack/ui/components/code';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
@@ -6,8 +5,10 @@ import { TRSpinner } from '@tinyrack/ui/components/spinner';
 import { TRText } from '@tinyrack/ui/components/text';
 import { CircleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { IssuaryError } from '#frontend/libs/error.ts';
+import type { RouteErrorComponentProps } from '#frontend/libs/route-module.tsx';
 
 /**
  * Minimal error layout that does NOT depend on any queries.
@@ -37,7 +38,7 @@ function isUnauthorizedError(error: Error): boolean {
   return error instanceof IssuaryError && error.status === 401;
 }
 
-type RouteErrorFallbackProps = ErrorComponentProps & {
+type RouteErrorFallbackProps = RouteErrorComponentProps & {
   /**
    * Called when the error is a 401 Unauthorized.
    * The component will invoke this and render nothing
@@ -92,7 +93,7 @@ export function RouteErrorFallback({
           <TRLinkButton
             className="w-full"
             intent="primary"
-            render={<a href="/login" />}
+            render={<Link to="/login" />}
             uiSize="lg"
           >
             {t('error.goToLogin')}

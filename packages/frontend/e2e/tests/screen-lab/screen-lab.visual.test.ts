@@ -20,7 +20,20 @@ function getSnapshotName(
 async function configurePage(
   page: Page,
   variant: ScreenScenarioVariant,
+  origin: string,
 ): Promise<void> {
+  await page.context().addCookies([
+    {
+      name: 'issuary-color-scheme',
+      value: variant.colorScheme,
+      url: origin,
+    },
+    {
+      name: 'issuary-language',
+      value: variant.locale,
+      url: origin,
+    },
+  ]);
   await page.setViewportSize(
     variant.viewport === 'mobile' ? MOBILE_VIEWPORT : DESKTOP_VIEWPORT,
   );
@@ -28,16 +41,6 @@ async function configurePage(
     colorScheme: variant.colorScheme,
     reducedMotion: 'reduce',
   });
-  await page.addInitScript(
-    ({ colorScheme, locale }) => {
-      localStorage.setItem('issuary-color-scheme', colorScheme);
-      localStorage.setItem('issuary-language', locale);
-    },
-    {
-      colorScheme: variant.colorScheme,
-      locale: variant.locale,
-    },
-  );
 }
 
 async function expectScreenScreenshot(
@@ -73,12 +76,11 @@ for (const scenario of screenScenarios) {
     routeTest.describe(`${scenario.group}: ${scenario.title}`, () => {
       for (const variant of scenario.variants) {
         routeTest(`matches the ${variant.id} reference`, async ({ page }) => {
-          await configurePage(page, variant);
-
           const routeHostOrigin = process.env[ROUTE_HOST_ORIGIN_ENV];
           if (!routeHostOrigin) {
             throw new Error('Screen Lab route host origin is unavailable.');
           }
+          await configurePage(page, variant, routeHostOrigin);
           const url = new URL(
             '/e2e/screen-lab/route-host.html',
             routeHostOrigin,
@@ -100,7 +102,7 @@ for (const scenario of screenScenarios) {
       serverTest(
         `matches the ${variant.id} reference`,
         async ({ page, baseURL }) => {
-          await configurePage(page, variant);
+          await configurePage(page, variant, String(baseURL));
           await scenario.prepare({
             baseURL: String(baseURL),
             page,

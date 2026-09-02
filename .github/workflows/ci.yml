@@ -96,7 +96,7 @@ jobs:
           name: dist-linux
           path: |
             packages/*/dist
-            packages/server/public
+            packages/server/frontend
           include-hidden-files: true
           retention-days: 2
 
@@ -442,7 +442,7 @@ jobs:
           name: dist-windows
           path: |
             packages/*/dist
-            packages/server/public
+            packages/server/frontend
           include-hidden-files: true
           retention-days: 2
 

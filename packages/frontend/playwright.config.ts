@@ -101,10 +101,6 @@ const configs = [
     name: 'mock-oauth-client',
     testDir: './e2e/tests/mock-oauth-client',
   },
-  {
-    name: 'html-interpolation',
-    testDir: './e2e/tests/html-interpolation',
-  },
 ];
 
 const browsers = [

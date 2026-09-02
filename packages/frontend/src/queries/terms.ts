@@ -1,6 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
 
 export type TermsResponse = InferResponseType<
@@ -15,16 +15,19 @@ export type TermsContentType = TermItem['type'];
 /**
  * Get terms query options
  */
-export const getTermsQueryOptions = (lang?: string) =>
+export const createTermsQueryOptions = (apiClient: ApiClient, lang?: string) =>
   queryOptions({
     queryKey: queryKeys.terms(lang),
     queryFn: async () => {
-      const res = await client.api.terms.$get({
+      const res = await apiClient.api.terms.$get({
         query: { lang: lang ?? 'en' },
       });
       return jsonOk(res);
     },
   });
+
+export const getTermsQueryOptions = (lang?: string) =>
+  createTermsQueryOptions(client, lang);
 
 /**
  * Consent decision for a term

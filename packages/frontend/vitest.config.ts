@@ -16,7 +16,6 @@ const browserApiPort =
   Number.isInteger(BROWSER_API_PORT) && BROWSER_API_PORT > 0
     ? { port: BROWSER_API_PORT }
     : {};
-
 export default defineConfig({
   optimizeDeps: {
     include: [

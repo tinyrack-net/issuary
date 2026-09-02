@@ -8,7 +8,7 @@ This example runs `@tinyrack/issuary-server` in library mode on Node.js with Hon
 - Runtime: Node.js
 - HTTP app: Hono
 - Database: local SQLite file at `examples/servers/node-hono-sqlite/data/issuary.db`
-- Frontend: built from `@tinyrack/issuary-frontend` into `packages/server/public`
+- Frontend: bundled React Router SSR build served by the Hono process
 - Auth: self-signup enabled, no seeded users, no SMTP
 
 ## Run

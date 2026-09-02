@@ -2,15 +2,19 @@ import {
   TRRichText,
   type TRRichTextProps,
 } from '@tinyrack/ui/components/rich-text';
-import parse from 'html-react-parser';
-import { useMemo } from 'react';
-import sanitizeHtml from 'sanitize-html';
+import parse, {
+  type DOMNode,
+  domToReact,
+  Element,
+  type HTMLReactParserOptions,
+} from 'html-react-parser';
+import { createElement, Fragment, useMemo } from 'react';
 
 type SanitizedRichTextProps = Omit<TRRichTextProps, 'children'> & {
   html: string;
 };
 
-const ALLOWED_TAGS = [
+const ALLOWED_TAGS = new Set([
   'h1',
   'h2',
   'h3',
@@ -26,9 +30,22 @@ const ALLOWED_TAGS = [
   'strong',
   'em',
   'br',
-];
+]);
+
+const NON_TEXT_TAGS = new Set([
+  'script',
+  'style',
+  'textarea',
+  'option',
+  'noscript',
+  'template',
+]);
 
 const SAFE_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+
+function isDomNode(node: Element['children'][number]): node is DOMNode {
+  return node.type !== 'cdata' && node.type !== 'root';
+}
 
 function safeHref(value: string): string | undefined {
   const trimmedValue = value.trim();
@@ -48,47 +65,48 @@ function safeHref(value: string): string | undefined {
   }
 }
 
-function sanitizeRichText(html: string): string {
-  return sanitizeHtml(html, {
-    allowedTags: ALLOWED_TAGS,
-    allowedAttributes: {
-      a: ['href', 'target', 'rel'],
-    },
-    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
-    allowProtocolRelative: false,
-    disallowedTagsMode: 'discard',
-    nonTextTags: [
-      'script',
-      'style',
-      'textarea',
-      'option',
-      'noscript',
-      'template',
-    ],
-    transformTags: {
-      a: (tagName, attributes) => {
-        const href = safeHref(attributes.href ?? '');
-        if (href === undefined) {
-          return { tagName: 'span', attribs: {} };
-        }
+const PARSER_OPTIONS: HTMLReactParserOptions = {
+  replace(domNode) {
+    if (!(domNode instanceof Element)) return undefined;
 
-        const opensNewWindow = attributes.target === '_blank';
-        return {
-          tagName,
-          attribs: {
-            href,
-            ...(opensNewWindow
-              ? { target: '_blank', rel: 'noopener noreferrer' }
-              : {}),
-          },
-        };
+    const tagName = domNode.name.toLowerCase();
+    if (NON_TEXT_TAGS.has(tagName)) return createElement(Fragment);
+
+    const children = domToReact(
+      domNode.children.filter(isDomNode),
+      PARSER_OPTIONS,
+    );
+    if (!ALLOWED_TAGS.has(tagName)) {
+      return createElement(Fragment, undefined, children);
+    }
+    if (tagName !== 'a') {
+      return createElement(tagName, undefined, children);
+    }
+
+    const href = safeHref(domNode.attribs['href'] ?? '');
+    if (href === undefined) {
+      return createElement('span', undefined, children);
+    }
+    const opensNewWindow = domNode.attribs['target'] === '_blank';
+    return createElement(
+      'a',
+      {
+        href,
+        ...(opensNewWindow
+          ? { target: '_blank', rel: 'noopener noreferrer' }
+          : {}),
       },
-    },
-  });
+      children,
+    );
+  },
+};
+
+function parseRichText(html: string) {
+  return parse(html, PARSER_OPTIONS);
 }
 
 export function SanitizedRichText({ html, ...props }: SanitizedRichTextProps) {
-  const content = useMemo(() => parse(sanitizeRichText(html)), [html]);
+  const content = useMemo(() => parseRichText(html), [html]);
 
   return <TRRichText {...props}>{content}</TRRichText>;
 }

@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
 import defaultIconUrl from '@tinyrack/ui/brand/apps/issuary-app-icon.svg';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 type Branding = {
@@ -32,10 +32,8 @@ type Branding = {
 export function useBranding(): Branding {
   const { i18n } = useTranslation();
   const { data: config } = useSuspenseQuery(appConfigQueryOptions);
-  const search = useSearch({ strict: false });
-
-  const langParam = 'lang' in search ? search.lang : undefined;
-  const language = typeof langParam === 'string' ? langParam : i18n.language;
+  const [search] = useSearchParams();
+  const language = search.get('lang') ?? i18n.language;
   const fallback = config.i18n.fallback_language;
 
   const localized = (field: Record<string, string> | null | undefined) =>

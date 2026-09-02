@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "packageManager": "pnpm@11.25.0",
   "scripts": {
-    "dev": "pnpm --filter \"@tinyrack/issuary-*\" --parallel dev",
+    "dev": "pnpm --filter @tinyrack/issuary-standalone dev",
+    "dev:docs": "pnpm --filter @tinyrack/issuary-homepage dev",
+    "dev:all": "pnpm --parallel --filter @tinyrack/issuary-standalone --filter @tinyrack/issuary-homepage dev",
     "test": "pnpm verify:full",
     "verify:quick": "node packages/tools/src/scripts/run-validation-tests.ts --profile=quick",
     "verify:full": "node packages/tools/src/scripts/run-validation-tests.ts --profile=full",

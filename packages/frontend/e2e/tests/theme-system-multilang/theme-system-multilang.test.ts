@@ -1,4 +1,4 @@
-import { expect } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { createScenarioFixture } from '#frontend-e2e/fixtures/create-scenario-fixture.ts';
 import {
   createTestConfig,
@@ -37,7 +37,15 @@ const test = createScenarioFixture((backendPort) => ({
   }),
 }));
 
-const LANGUAGE_STORAGE_KEY = 'issuary-language';
+const LANGUAGE_PREFERENCE_COOKIE = 'issuary-language';
+
+async function getPreferenceCookie(
+  page: Page,
+  name: string,
+): Promise<string | null> {
+  const cookies = await page.context().cookies();
+  return cookies.find((cookie) => cookie.name === name)?.value ?? null;
+}
 
 test.describe('Color scheme and language fallback behavior', () => {
   test('lang fallback uses English branding and implicit notice', async ({
@@ -69,20 +77,20 @@ test.describe('Color scheme and language fallback behavior', () => {
     await toggle.click();
     await expect
       .poll(async () => {
-        return page.evaluate(() => ({
-          scheme: localStorage.getItem('issuary-color-scheme'),
-          theme: document.documentElement.getAttribute('data-theme'),
-        }));
+        return {
+          scheme: await getPreferenceCookie(page, 'issuary-color-scheme'),
+          theme: await page.locator('html').getAttribute('data-theme'),
+        };
       })
       .toEqual({ scheme: 'dark', theme: 'tinyrack-dark' });
 
     await toggle.click();
     await expect
       .poll(async () => {
-        return page.evaluate(() => ({
-          scheme: localStorage.getItem('issuary-color-scheme'),
-          theme: document.documentElement.getAttribute('data-theme'),
-        }));
+        return {
+          scheme: await getPreferenceCookie(page, 'issuary-color-scheme'),
+          theme: await page.locator('html').getAttribute('data-theme'),
+        };
       })
       .toEqual({ scheme: 'light', theme: 'tinyrack-light' });
   });
@@ -149,10 +157,7 @@ test.describe('Color scheme and language fallback behavior', () => {
 
     await expect
       .poll(async () => {
-        return page.evaluate(
-          (languageStorageKey) => localStorage.getItem(languageStorageKey),
-          LANGUAGE_STORAGE_KEY,
-        );
+        return getPreferenceCookie(page, LANGUAGE_PREFERENCE_COOKIE);
       })
       .toBe('en');
   });
@@ -174,10 +179,7 @@ test.describe('Color scheme and language fallback behavior', () => {
 
     await expect
       .poll(async () => {
-        return page.evaluate(
-          (languageStorageKey) => localStorage.getItem(languageStorageKey),
-          LANGUAGE_STORAGE_KEY,
-        );
+        return getPreferenceCookie(page, LANGUAGE_PREFERENCE_COOKIE);
       })
       .toBeNull();
   });

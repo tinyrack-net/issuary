@@ -18,11 +18,14 @@ const mocks = vi.hoisted(() => ({
   totpEnabled: true,
 }));
 
-vi.mock('@tanstack/react-router', () => ({
-  useRouter: () => ({
-    navigate: mocks.navigate,
-  }),
-}));
+vi.mock('react-router', async () => {
+  const actual =
+    await vi.importActual<typeof import('react-router')>('react-router');
+  return {
+    ...actual,
+    useNavigate: () => mocks.navigate,
+  };
+});
 
 vi.mock('#frontend/components/totp/verify-step.js', async () => {
   const React = await import('react');
@@ -156,7 +159,7 @@ test('redirects to login when the session is unauthorized', async () => {
       user: null,
     },
   );
-  expect(mocks.navigate).toHaveBeenCalledWith({ to: '/login' });
+  expect(mocks.navigate).toHaveBeenCalledWith('/login');
 });
 
 test('shows a modal-level error for unexpected failures', async () => {

@@ -1,10 +1,14 @@
 import { expect, test } from 'vitest';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import * as LoginRoute from '#frontend/routes/_auth.login/route.tsx';
 import {
   authorizationContextQueryData,
+  defineRouteScreen,
   renderRoute,
 } from '#frontend/test-utils/route-test-utils.tsx';
+
+const routeDefinition = defineRouteScreen('auth', LoginRoute);
 
 const loginConfig = {
   i18n: {
@@ -13,7 +17,6 @@ const loginConfig = {
     fallback_language: 'en',
   },
   branding: {
-    icon_url: '',
     title: {
       en: 'Issuary',
     },
@@ -76,7 +79,7 @@ test('renders a route with seeded query data and preserves the initial search', 
   const initialLocation =
     '/login?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&code_challenge=challenge&code_challenge_method=S256';
 
-  const { queryClient, router, screen } = await renderRoute({
+  const { queryClient, router, screen } = await renderRoute(routeDefinition, {
     initialLocation,
     queryData: [
       {

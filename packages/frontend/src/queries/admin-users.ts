@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 
 export type AdminUsersQuery = {
   query?: string;
@@ -56,20 +56,23 @@ export function normalizeAdminUsersQuery(
   return { ...DEFAULT_ADMIN_USERS_QUERY, ...input };
 }
 
-async function fetchAdminUsers({
-  query,
-  page,
-  pageSize,
-  includeDeleted,
-  managedBy,
-  role,
-  emailVerified,
-  twoFactor,
-  sort,
-  direction,
-}: NormalizedAdminUsersQuery) {
+async function fetchAdminUsers(
+  apiClient: ApiClient,
+  {
+    query,
+    page,
+    pageSize,
+    includeDeleted,
+    managedBy,
+    role,
+    emailVerified,
+    twoFactor,
+    sort,
+    direction,
+  }: NormalizedAdminUsersQuery,
+) {
   return jsonOk(
-    await client.api.admin.users.$get({
+    await apiClient.api.admin.users.$get({
       query: {
         query,
         page: String(page),
@@ -143,13 +146,19 @@ export async function bulkSetAdminUsersActive(input: {
   );
 }
 
-export const adminUsersQueryOptions = (input: AdminUsersQuery = {}) => {
+export const createAdminUsersQueryOptions = (
+  apiClient: ApiClient,
+  input: AdminUsersQuery = {},
+) => {
   const params = normalizeAdminUsersQuery(input);
   return queryOptions({
     queryKey: ['admin', 'users', params],
-    queryFn: async () => fetchAdminUsers(params),
+    queryFn: async () => fetchAdminUsers(apiClient, params),
   });
 };
+
+export const adminUsersQueryOptions = (input: AdminUsersQuery = {}) =>
+  createAdminUsersQueryOptions(client, input);
 
 export type AdminUsersResponse = Awaited<ReturnType<typeof fetchAdminUsers>>;
 export type AdminUser = AdminUsersResponse['users'][number];

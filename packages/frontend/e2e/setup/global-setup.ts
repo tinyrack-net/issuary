@@ -2,15 +2,12 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FullConfig } from '@playwright/test';
-import {
-  createServer as createViteDevServer,
-  preview as createVitePreviewServer,
-} from 'vite';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { createServer as createViteDevServer } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '../..');
-const frontendOutput = path.resolve(frontendRoot, '../server/public');
-const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 const SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV = 'SCREEN_LAB_ROUTE_HOST_ORIGIN';
 
 function getListeningPort(address: AddressInfo | string | null): number {
@@ -22,32 +19,20 @@ function getListeningPort(address: AddressInfo | string | null): number {
 }
 
 export default async function globalSetup(config: FullConfig) {
-  /*
-   * E2E validation runs after the workspace build. Serving that immutable
-   * output keeps parallel browser workers away from Vite's development-time
-   * transform and dependency-optimization lifecycle.
-   */
-  const frontendServer = await createVitePreviewServer({
-    build: {
-      outDir: frontendOutput,
-    },
-    configFile: false,
-    preview: {
-      host: '127.0.0.1',
-      port: 0,
-      strictPort: false,
-    },
-    root: frontendRoot,
-  });
-  const frontendPort = getListeningPort(frontendServer.httpServer.address());
-  process.env[SHARED_FRONTEND_PORT_ENV] = String(frontendPort);
-
   const screenLabEnabled = config.projects.some(
     (project) => project.name === 'screen-lab:chromium',
   );
   const routeHostServer = screenLabEnabled
     ? await createViteDevServer({
+        configFile: false,
         root: frontendRoot,
+        plugins: [react(), tailwindcss()],
+        resolve: {
+          alias: {
+            '#frontend': path.resolve(frontendRoot, 'src'),
+            '#frontend-e2e': path.resolve(frontendRoot, 'e2e'),
+          },
+        },
         server: {
           host: '127.0.0.1',
           port: 0,
@@ -67,8 +52,6 @@ export default async function globalSetup(config: FullConfig) {
 
   return async () => {
     delete process.env[SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV];
-    delete process.env[SHARED_FRONTEND_PORT_ENV];
     await routeHostServer?.close();
-    await frontendServer.close();
   };
 }

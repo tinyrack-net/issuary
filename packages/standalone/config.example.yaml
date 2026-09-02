@@ -61,14 +61,6 @@ account_deletion:
   enabled: ${ISSUARY_ACCOUNT_DELETION_ENABLED:-false}
   retention: ${ISSUARY_ACCOUNT_DELETION_RETENTION:-30d}
 
-# Standalone-only frontend serving.
-frontend:
-  enabled: ${ISSUARY_FRONTEND_ENABLED:-true}
-  mode: ${ISSUARY_FRONTEND_MODE:-static}
-  path: ${ISSUARY_FRONTEND_PATH:-/opt/issuary/frontend}
-  html_variables:
-    APP_NAME: Issuary
-
 # Admin console is disabled by default. It uses the normal app session and requires an admin role.
 admin:
   enabled: ${ISSUARY_ADMIN_ENABLED:-false}

@@ -14,11 +14,14 @@ export {
 import {
   createRouteScreen,
   createRouteScreenQueryClient,
+  defineRouteScreen,
+  type RouteScreenDefinition,
   type RouteScreenRenderOptions,
   type RouteTestQueryData,
-} from '#frontend/test-utils/route-screen-renderer.tsx';
+} from '#frontend/test-utils/route-test-fixture.tsx';
 
-export type { RouteTestQueryData };
+export type { RouteScreenDefinition, RouteTestQueryData };
+export { defineRouteScreen };
 
 type RenderRouteOptions = RouteScreenRenderOptions;
 
@@ -32,23 +35,25 @@ export function createTestQueryClient(): QueryClient {
   return createRouteScreenQueryClient();
 }
 
-export async function renderRoute({
-  initialLocation = '/',
-  queryClient = createTestQueryClient(),
-  queryData = [],
-  user = null,
-}: RenderRouteOptions = {}): Promise<RenderRouteResult> {
+export async function renderRoute(
+  definition: RouteScreenDefinition,
+  {
+    initialLocation = '/',
+    queryClient = createTestQueryClient(),
+    queryData = [],
+    user = null,
+  }: RenderRouteOptions = {},
+): Promise<RenderRouteResult> {
   initTestI18n();
 
-  const { content, router } = await createRouteScreen({
+  const { content, router } = await createRouteScreen(definition, {
     initialLocation,
     queryClient,
     queryData,
     user,
   });
 
-  // Mirrors the provider stack in main.tsx. AuthLayout renders the toast
-  // viewport, which needs a manager in context.
+  // AuthLayout renders the toast viewport, which needs a manager in context.
   const screen = await render(content);
 
   return {

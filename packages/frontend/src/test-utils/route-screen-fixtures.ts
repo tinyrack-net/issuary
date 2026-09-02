@@ -6,7 +6,7 @@ import {
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import type { SessionUser } from '#frontend/queries/session.ts';
-import type { RouteTestQueryData } from '#frontend/test-utils/route-screen-renderer.tsx';
+import type { RouteTestQueryData } from '#frontend/test-utils/route-test-fixture.tsx';
 
 export const routeTestAppConfig = {
   i18n: {

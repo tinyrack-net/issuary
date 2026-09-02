@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
 
 type SessionGetResponse = InferResponseType<
@@ -17,10 +17,14 @@ export type OkResponse = InferResponseType<
   200
 >;
 
-export const getSessionQueryOptions = queryOptions({
-  queryKey: queryKeys.session(),
-  queryFn: async () => {
-    const response = await client.api.user.session.$get();
-    return jsonOk(response);
-  },
-});
+export function createSessionQueryOptions(apiClient: ApiClient) {
+  return queryOptions({
+    queryKey: queryKeys.session(),
+    queryFn: async () => {
+      const response = await apiClient.api.user.session.$get();
+      return jsonOk(response);
+    },
+  });
+}
+
+export const getSessionQueryOptions = createSessionQueryOptions(client);

@@ -18,10 +18,6 @@ import z from 'zod';
 import { StandaloneAdminConfigSchema } from './admin.ts';
 import { StandaloneDatabaseConfigSchema } from './database.ts';
 import { StandaloneEmailConfigSchema } from './email.ts';
-import {
-  STANDALONE_FRONTEND_CONFIG_DEFAULT,
-  StandaloneFrontendConfigSchema,
-} from './frontend.ts';
 import { StandaloneIdentityProviderConfigsSchema } from './identity-providers.ts';
 import { StandaloneSchedulerConfigSchema } from './scheduler.ts';
 import { StandaloneUserConfigsSchema } from './user.ts';
@@ -69,12 +65,6 @@ export const StandaloneConfigSchema = z
     identity_providers: StandaloneIdentityProviderConfigsSchema.describe(
       'External identity provider settings.',
     ),
-    frontend: StandaloneFrontendConfigSchema.default({
-      ...STANDALONE_FRONTEND_CONFIG_DEFAULT,
-      html_variables: {
-        ...STANDALONE_FRONTEND_CONFIG_DEFAULT.html_variables,
-      },
-    }),
   })
   .strict()
   .describe('Issuary standalone declarative configuration.');

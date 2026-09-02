@@ -1,6 +1,5 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRForm } from '@tinyrack/ui/components/form';
 import { TRText } from '@tinyrack/ui/components/text';
@@ -8,6 +7,7 @@ import { Trash2Icon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
@@ -28,7 +28,7 @@ export function DeleteAccountModal({
   retentionDays,
 }: DeleteAccountModalProps) {
   const { t } = useTranslation();
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const schema = useMemo(
@@ -58,7 +58,7 @@ export function DeleteAccountModal({
         user: null,
       });
       await tick();
-      router.navigate({ to: '/login' });
+      navigate('/login');
     },
   });
 

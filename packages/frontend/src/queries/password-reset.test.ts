@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import { setBrowserApiLanguage } from '#frontend/libs/api.ts';
 import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   firstRequest,
@@ -46,6 +47,7 @@ async function runResetPasswordMutation(values: ResetPasswordParams) {
 
 describe('forgotPasswordMutationOptions', () => {
   afterEach(() => {
+    setBrowserApiLanguage('en');
     resetFetchMock();
   });
 
@@ -64,10 +66,22 @@ describe('forgotPasswordMutationOptions', () => {
     expect(request.headers.has('Accept-Language')).toBe(true);
     expect(jsonRequestBody(request)).toEqual({ email: 'user@example.com' });
   });
+
+  test('uses the current language for password-reset email delivery', async () => {
+    setBrowserApiLanguage('ja');
+    const fetchMock = mockJsonSuccess({ ok: true });
+
+    await runForgotPasswordMutation(forgotPasswordValues);
+
+    expect(
+      firstRequest(fetchMock.requests).headers.get('Accept-Language'),
+    ).toBe('ja');
+  });
 });
 
 describe('resetPasswordMutationOptions', () => {
   afterEach(() => {
+    setBrowserApiLanguage('en');
     resetFetchMock();
   });
 

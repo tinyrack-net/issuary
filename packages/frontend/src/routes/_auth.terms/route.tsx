@@ -1,0 +1,250 @@
+import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { TRButton } from '@tinyrack/ui/components/button';
+import { TRForm } from '@tinyrack/ui/components/form';
+import { TriangleAlertIcon } from 'lucide-react';
+import { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
+import { redirect, useNavigate } from 'react-router';
+import { z } from 'zod';
+import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
+import {
+  TermsCheckboxList,
+  type TermsConsentsField,
+} from '#frontend/components/terms/terms-checkbox-list.tsx';
+import { Alert } from '#frontend/components/ui/alert.tsx';
+import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
+import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
+import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
+import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
+import { navigateDocument } from '#frontend/libs/document-navigation.ts';
+import { OAuthSearchSchema } from '#frontend/libs/oauth-search.ts';
+import { tick } from '#frontend/libs/promise.ts';
+import {
+  createRouteLoaderData,
+  NativeRouteErrorBoundary,
+  parseRequestSearch,
+  type RouteErrorComponentProps,
+  RouteHydrationBoundary,
+} from '#frontend/libs/route-module.tsx';
+import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { appConfigQueryOptions } from '#frontend/queries/config.ts';
+import { getSessionQueryOptions } from '#frontend/queries/session.ts';
+import {
+  createTermsQueryOptions,
+  getTermsQueryOptions,
+  type TermsConsentItem,
+  termsConsentMutationOptions,
+} from '#frontend/queries/terms.ts';
+import type { Route } from './+types/route.js';
+
+const TermsSearchSchema = OAuthSearchSchema.extend({
+  redirect: z.string().optional(),
+  lang: z.string().optional(),
+  mode: z.enum(['normal', 'complete_registration']).optional(),
+  registration_token: z.string().optional(),
+});
+
+function TermsError(props: RouteErrorComponentProps) {
+  return (
+    <RouteErrorFallback
+      {...props}
+      onUnauthorized={() => {
+        navigateDocument('/login');
+      }}
+    />
+  );
+}
+
+function Terms({ search }: { search: z.infer<typeof TermsSearchSchema> }) {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: configData } = useSuspenseQuery(appConfigQueryOptions);
+  const lang = search.lang ?? i18n.language;
+  const termsQuery = useSuspenseQuery(getTermsQueryOptions(lang));
+  const implicitNotice =
+    configData.registration.signup_notice?.[lang] ??
+    configData.registration.signup_notice?.[configData.i18n.fallback_language];
+
+  // Separate explicit and implicit terms
+  const explicitTerms = useMemo(
+    () =>
+      termsQuery.data.terms.filter((term) => term.consentMode === 'explicit'),
+    [termsQuery.data.terms],
+  );
+
+  const implicitTerms = useMemo(
+    () =>
+      termsQuery.data.terms.filter((term) => term.consentMode === 'implicit'),
+    [termsQuery.data.terms],
+  );
+
+  const hasExplicitTerms = explicitTerms.length > 0;
+
+  // Schema only validates explicit terms (implicit are auto-agreed)
+  const termsSchema = useMemo(
+    () =>
+      z.object({
+        termsConsents: z.object(
+          Object.fromEntries(
+            explicitTerms.map((term) => [
+              term.id,
+              term.required
+                ? z.literal(true, {
+                    message: t('validation.terms.required'),
+                  })
+                : z.boolean(),
+            ]),
+          ),
+        ),
+      }),
+    [t, explicitTerms],
+  );
+
+  type TermsFormValues = TermsConsentsField;
+
+  const {
+    handleSubmit,
+    control,
+    setValue,
+    formState: { errors },
+  } = useForm<TermsFormValues>({
+    defaultValues: {
+      termsConsents: Object.fromEntries(
+        explicitTerms.map((term) => [
+          term.id,
+          !!(term.userConsent?.agreed && !term.userConsent.requiresUpdate),
+        ]),
+      ),
+    },
+    resolver: standardSchemaResolver(termsSchema),
+    mode: 'onChange',
+  });
+
+  const consentMutation = useMutation({
+    ...termsConsentMutationOptions,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: getSessionQueryOptions.queryKey,
+      });
+      await queryClient.fetchQuery(getSessionQueryOptions);
+      await tick();
+
+      // Redirect after successful consent
+      if (search.redirect) {
+        navigateDocument(search.redirect);
+      } else {
+        navigate('/profile');
+      }
+    },
+  });
+
+  const onSubmit = (values: TermsFormValues) => {
+    const explicitConsents = Object.entries(
+      values.termsConsents,
+    ).map<TermsConsentItem>(([termsId, agreed]) => ({
+      termsId,
+      agreed,
+      consentType: 'explicit',
+    }));
+
+    const implicitConsents = implicitTerms.map<TermsConsentItem>((term) => ({
+      termsId: term.id,
+      agreed: true,
+      consentType: 'implicit',
+    }));
+
+    consentMutation.mutate({
+      consents: [...explicitConsents, ...implicitConsents],
+      ...(search.registration_token && {
+        registrationToken: search.registration_token,
+      }),
+    });
+  };
+
+  return (
+    <AuthLayout width="wide">
+      <AuthPageHeader title={t('terms.title')} />
+
+      {implicitNotice && (
+        <SanitizedRichText html={implicitNotice} variant="notice" />
+      )}
+
+      {implicitNotice && hasExplicitTerms && (
+        <LabeledSeparator label={t('terms.additionalOptionalConsent')} />
+      )}
+
+      <TRForm
+        className="flex flex-col gap-tinyrack-lg"
+        onSubmit={handleSubmit(onSubmit)}
+      >
+        {/* Explicit terms with checkboxes */}
+        {hasExplicitTerms && (
+          <TermsCheckboxList
+            control={control}
+            disabled={consentMutation.isPending}
+            errors={errors}
+            setValue={setValue}
+            terms={explicitTerms}
+          />
+        )}
+
+        {/* Error message */}
+        {consentMutation.isError && (
+          <Alert icon={TriangleAlertIcon} type="error">
+            {t('terms.error.submitFailed')}
+          </Alert>
+        )}
+
+        {/*
+          Sticky, like consent: a long list of terms would otherwise push the
+          only action off the bottom of the screen.
+        */}
+        <div className="sticky bottom-0 flex gap-tinyrack-sm border-tinyrack-border border-t-tinyrack-default bg-tinyrack-surface py-tinyrack-md">
+          <TRButton
+            className="w-full"
+            intent="primary"
+            loading={consentMutation.isPending}
+            loadingLabel={t('terms.submit')}
+            type="submit"
+            uiSize="lg"
+          >
+            {t('terms.submit')}
+          </TRButton>
+        </div>
+      </TRForm>
+    </AuthLayout>
+  );
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const runtime = getRouteRuntime(context);
+  const search = parseRequestSearch(request, TermsSearchSchema);
+  if (search.mode !== 'complete_registration' && !runtime.session.user) {
+    throw redirect('/login');
+  }
+  const lang = search.lang ?? runtime.i18n.language;
+  await runtime.queryClient.ensureQueryData(
+    createTermsQueryOptions(runtime.api, lang),
+  );
+  return createRouteLoaderData(runtime.queryClient, search);
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <NativeRouteErrorBoundary component={TermsError} error={error} />;
+}
+
+export default function TermsRoute({ loaderData }: Route.ComponentProps) {
+  return (
+    <RouteHydrationBoundary state={loaderData.dehydratedState}>
+      <Terms search={loaderData.search} />
+    </RouteHydrationBoundary>
+  );
+}

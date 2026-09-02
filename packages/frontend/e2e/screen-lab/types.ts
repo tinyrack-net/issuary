@@ -7,7 +7,6 @@ import type { E2EConfigResult } from '#frontend-e2e/setup/create-server.ts';
 
 export type ScreenScenarioConfigFactory = (
   backendPort: number,
-  frontendPort: number,
   auxiliaryPort: number,
 ) => E2EConfigResult;
 

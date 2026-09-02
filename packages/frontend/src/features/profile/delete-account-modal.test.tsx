@@ -14,11 +14,14 @@ const routerMocks = vi.hoisted(() => ({
   navigate: vi.fn(),
 }));
 
-vi.mock('@tanstack/react-router', () => ({
-  useRouter: () => ({
-    navigate: routerMocks.navigate,
-  }),
-}));
+vi.mock('react-router', async () => {
+  const actual =
+    await vi.importActual<typeof import('react-router')>('react-router');
+  return {
+    ...actual,
+    useNavigate: () => routerMocks.navigate,
+  };
+});
 
 afterEach(() => {
   resetFetchMock();
@@ -50,7 +53,7 @@ test('deletes the account, clears session state, and navigates to login', async 
   await screen.getByTestId('delete-account-submit').click();
 
   await vi.waitFor(() => {
-    expect(routerMocks.navigate).toHaveBeenCalledWith({ to: '/login' });
+    expect(routerMocks.navigate).toHaveBeenCalledWith('/login');
   });
 
   const request = firstRequest(fetchMock.requests);

@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link, useRouter } from '@tanstack/react-router';
 import { TRAppShell } from '@tinyrack/ui/components/app-shell';
 import { TRAvatar } from '@tinyrack/ui/components/avatar';
 import { TRBadge } from '@tinyrack/ui/components/badge';
@@ -24,6 +23,13 @@ import {
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useNavigation,
+  useNavigationType,
+} from 'react-router';
 import { Modal } from '#frontend/components/ui/modal.tsx';
 import { Toaster } from '#frontend/components/ui/toaster.tsx';
 import { formatAdminRole } from '#frontend/features/admin/format-admin-user.ts';
@@ -103,9 +109,12 @@ export function AdminShell({
 }: AdminShellProps) {
   const { t } = useTranslation();
   const { title: brandTitle, iconUrl } = useBranding();
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchOpen, setSearchOpen] = useState(false);
+  const location = useLocation();
+  const navigation = useNavigation();
+  const navigationType = useNavigationType();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -123,7 +132,7 @@ export function AdminShell({
     onSuccess: async () => {
       queryClient.setQueryData(getSessionQueryOptions.queryKey, { user: null });
       await tick();
-      router.navigate({ to: '/login' });
+      navigate('/login');
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -136,6 +145,12 @@ export function AdminShell({
     <TRAppShell.Root
       breakpoint="lg"
       className="admin-app-shell bg-tinyrack-surface"
+      currentPath={location.pathname}
+      hash={location.hash}
+      loadingLabel={t('common.loading')}
+      locationKey={location.key}
+      navigationKind={navigationType}
+      pendingPath={navigation.location?.pathname}
       sidebarMode="expanded"
     >
       <Toaster />

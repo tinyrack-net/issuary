@@ -37,8 +37,11 @@ describe('createTestApp', () => {
     });
 
     try {
-      const res = await server.app.request('/login');
-      expect(res.status).toBe(404);
+      const res = await server.app.request('/.well-known/openid-configuration');
+      expect(res.status).toBe(200);
+      await expect(res.json()).resolves.toMatchObject({
+        issuer: 'http://localhost:9090',
+      });
     } finally {
       await server.cleanup();
     }

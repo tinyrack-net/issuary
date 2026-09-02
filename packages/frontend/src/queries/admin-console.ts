@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 
 export type AdminListQuery = {
   query?: string;
@@ -30,17 +30,17 @@ function commonQuery(query: AdminListQuery) {
   };
 }
 
-async function fetchOverview() {
-  return jsonOk(await client.api.admin.overview.$get());
+async function fetchOverview(apiClient: ApiClient) {
+  return jsonOk(await apiClient.api.admin.overview.$get());
 }
 
-async function fetchSystem() {
-  return jsonOk(await client.api.admin.system.$get());
+async function fetchSystem(apiClient: ApiClient) {
+  return jsonOk(await apiClient.api.admin.system.$get());
 }
 
-async function fetchClients(query: AdminClientsQuery) {
+async function fetchClients(apiClient: ApiClient, query: AdminClientsQuery) {
   return jsonOk(
-    await client.api.admin.clients.$get({
+    await apiClient.api.admin.clients.$get({
       query: {
         ...commonQuery(query),
         enabled:
@@ -51,9 +51,9 @@ async function fetchClients(query: AdminClientsQuery) {
   );
 }
 
-async function fetchTerms(query: AdminTermsQuery) {
+async function fetchTerms(apiClient: ApiClient, query: AdminTermsQuery) {
   return jsonOk(
-    await client.api.admin.terms.$get({
+    await apiClient.api.admin.terms.$get({
       query: {
         ...commonQuery(query),
         required:
@@ -66,27 +66,46 @@ async function fetchTerms(query: AdminTermsQuery) {
   );
 }
 
-export const adminOverviewQueryOptions = queryOptions({
-  queryKey: ['admin', 'overview'],
-  queryFn: fetchOverview,
-});
+export const createAdminOverviewQueryOptions = (apiClient: ApiClient) =>
+  queryOptions({
+    queryKey: ['admin', 'overview'],
+    queryFn: () => fetchOverview(apiClient),
+  });
 
-export const adminSystemQueryOptions = queryOptions({
-  queryKey: ['admin', 'system'],
-  queryFn: fetchSystem,
-});
+export const adminOverviewQueryOptions =
+  createAdminOverviewQueryOptions(client);
 
-export const adminClientsQueryOptions = (query: AdminClientsQuery = {}) =>
+export const createAdminSystemQueryOptions = (apiClient: ApiClient) =>
+  queryOptions({
+    queryKey: ['admin', 'system'],
+    queryFn: () => fetchSystem(apiClient),
+  });
+
+export const adminSystemQueryOptions = createAdminSystemQueryOptions(client);
+
+export const createAdminClientsQueryOptions = (
+  apiClient: ApiClient,
+  query: AdminClientsQuery = {},
+) =>
   queryOptions({
     queryKey: ['admin', 'clients', query],
-    queryFn: () => fetchClients(query),
+    queryFn: () => fetchClients(apiClient, query),
+  });
+
+export const adminClientsQueryOptions = (query: AdminClientsQuery = {}) =>
+  createAdminClientsQueryOptions(client, query);
+
+export const createAdminTermsQueryOptions = (
+  apiClient: ApiClient,
+  query: AdminTermsQuery = {},
+) =>
+  queryOptions({
+    queryKey: ['admin', 'terms', query],
+    queryFn: () => fetchTerms(apiClient, query),
   });
 
 export const adminTermsQueryOptions = (query: AdminTermsQuery = {}) =>
-  queryOptions({
-    queryKey: ['admin', 'terms', query],
-    queryFn: () => fetchTerms(query),
-  });
+  createAdminTermsQueryOptions(client, query);
 
 export async function searchAdmin(query: string) {
   return jsonOk(await client.api.admin.search.$get({ query: { q: query } }));

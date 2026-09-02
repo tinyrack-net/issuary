@@ -1,7 +1,7 @@
-import { Link } from '@tanstack/react-router';
 import { TRLinkButton } from '@tinyrack/ui/components/link-button';
 import { PowerOffIcon, ShieldOffIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 

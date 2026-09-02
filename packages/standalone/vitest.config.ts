@@ -108,33 +108,6 @@ export default defineConfig({
           ),
         ),
       },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/index.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend\/proxy$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/proxy.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend\/static$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/static.ts',
-            import.meta.url,
-          ),
-        ),
-      },
     ],
     conditions: ['@issuary/source'],
   },

@@ -29,18 +29,15 @@ const MINIMAL_CONFIG = {
 };
 
 describe('resolveConfig', () => {
-  test('resolves frontend handler from standalone frontend config', async () => {
-    const resolved = await resolveConfig({
-      ...MINIMAL_CONFIG,
-      frontend: {
-        enabled: true,
-        html_variables: {
-          TITLE: 'Issuary',
+  test('rejects the removed frontend setting', async () => {
+    await expect(
+      resolveConfig({
+        ...MINIMAL_CONFIG,
+        frontend: {
+          enabled: true,
         },
-      },
-    });
-
-    expect(typeof resolved.frontend).toBe('function');
+      }),
+    ).rejects.toThrow('Unrecognized key');
   });
 
   test('preserves openapi settings in backend runtime config', async () => {
@@ -271,10 +268,6 @@ describe('resolveConfig', () => {
             client_secret: 'github-client-secret',
           },
         ],
-        frontend: {
-          enabled: 'true',
-          mode: 'static',
-        },
       }),
     ).resolves.toBeDefined();
   });
