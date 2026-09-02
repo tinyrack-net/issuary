@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Body,
   Container,
@@ -5,10 +6,9 @@ import {
   Html,
   Preview,
   Section,
+  Tailwind,
   Text,
-} from '@react-email/components';
-import { Tailwind } from '@react-email/tailwind';
-import type { ReactNode } from 'react';
+} from 'react-email';
 
 export interface EmailLayoutProps {
   preview: string;

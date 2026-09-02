@@ -958,21 +958,24 @@ describe('GET /oauth/authorize', () => {
         'non-unreserved',
         'invalid-code-challenge-with-/-character-value-1234567890',
       ],
-    ])('should reject %s code_challenge format', async (_label, codeChallenge) => {
-      const sessionCookie = await createAuthenticatedSession(app);
+    ])(
+      'should reject %s code_challenge format',
+      async (_label, codeChallenge) => {
+        const sessionCookie = await createAuthenticatedSession(app);
 
-      const { location, statusCode } = await getAuthorizationCodeWithConsent(
-        {
-          ...validParams,
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256',
-        },
-        sessionCookie,
-      );
+        const { location, statusCode } = await getAuthorizationCodeWithConsent(
+          {
+            ...validParams,
+            code_challenge: codeChallenge,
+            code_challenge_method: 'S256',
+          },
+          sessionCookie,
+        );
 
-      expect(statusCode).toBe(302);
-      expectRedirectError(location, 'invalid_request');
-    });
+        expect(statusCode).toBe(302);
+        expectRedirectError(location, 'invalid_request');
+      },
+    );
 
     test('should reject public client authorization without code_challenge', async () => {
       const sessionCookie = await createAuthenticatedSession(app);

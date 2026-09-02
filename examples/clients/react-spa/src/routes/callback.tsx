@@ -3,6 +3,7 @@ import { TRAlert } from '@tinyrack/ui/components/alert';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useEffect, useState } from 'react';
 import { exchangeCodeForTokens } from '#example-react-spa/libs/oidc-client.ts';
 import {
@@ -100,7 +101,7 @@ function CallbackPage() {
       <TRCard.Root className="w-full max-w-tinyrack-measure-xl">
         <TRCard.Content className="flex flex-col items-center gap-tinyrack-lg text-center">
           <TRSpinner uiSize="lg" />
-          <p>Processing authentication...</p>
+          <TRText as="p">Processing authentication...</TRText>
         </TRCard.Content>
       </TRCard.Root>
     </div>

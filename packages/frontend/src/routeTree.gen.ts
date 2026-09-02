@@ -10,29 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TermsIndexRouteImport } from './routes/terms/index'
-import { Route as RegisterIndexRouteImport } from './routes/register/index'
-import { Route as ProfileIndexRouteImport } from './routes/profile/index'
-import { Route as LoginIndexRouteImport } from './routes/login/index'
-import { Route as ErrorIndexRouteImport } from './routes/error/index'
-import { Route as ConsentIndexRouteImport } from './routes/consent/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as VerifyTotpIndexRouteImport } from './routes/verify/totp/index'
-import { Route as VerifyPasskeyIndexRouteImport } from './routes/verify/passkey/index'
-import { Route as VerifyEmailIndexRouteImport } from './routes/verify/email/index'
-import { Route as Verify2faIndexRouteImport } from './routes/verify/2fa/index'
-import { Route as SetupTotpIndexRouteImport } from './routes/setup/totp/index'
-import { Route as SetupPasskeyIndexRouteImport } from './routes/setup/passkey/index'
-import { Route as Setup2faIndexRouteImport } from './routes/setup/2fa/index'
-import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/index'
-import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
-import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
-import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
-import { Route as AdminTermsIndexRouteImport } from './routes/admin/terms/index'
-import { Route as AdminSystemIndexRouteImport } from './routes/admin/system/index'
-import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
-import { Route as AdminClientsIndexRouteImport } from './routes/admin/clients/index'
+import { Route as ConsentIndexRouteImport } from './routes/consent/index'
+import { Route as ErrorIndexRouteImport } from './routes/error/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as RegisterIndexRouteImport } from './routes/register/index'
+import { Route as TermsIndexRouteImport } from './routes/terms/index'
 import { Route as AccountSelectIndexRouteImport } from './routes/account/select/index'
+import { Route as AdminClientsIndexRouteImport } from './routes/admin/clients/index'
+import { Route as AdminSettingsIndexRouteImport } from './routes/admin/settings/index'
+import { Route as AdminSystemIndexRouteImport } from './routes/admin/system/index'
+import { Route as AdminTermsIndexRouteImport } from './routes/admin/terms/index'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as LoginPasswordIndexRouteImport } from './routes/login/password/index'
+import { Route as PasswordForgotIndexRouteImport } from './routes/password/forgot/index'
+import { Route as PasswordResetIndexRouteImport } from './routes/password/reset/index'
+import { Route as Setup2faIndexRouteImport } from './routes/setup/2fa/index'
+import { Route as SetupPasskeyIndexRouteImport } from './routes/setup/passkey/index'
+import { Route as SetupTotpIndexRouteImport } from './routes/setup/totp/index'
+import { Route as Verify2faIndexRouteImport } from './routes/verify/2fa/index'
+import { Route as VerifyEmailIndexRouteImport } from './routes/verify/email/index'
+import { Route as VerifyPasskeyIndexRouteImport } from './routes/verify/passkey/index'
+import { Route as VerifyTotpIndexRouteImport } from './routes/verify/totp/index'
 import { Route as VerifyTotpRecoveryIndexRouteImport } from './routes/verify/totp/recovery/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,29 +40,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TermsIndexRoute = TermsIndexRouteImport.update({
-  id: '/terms/',
-  path: '/terms/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterIndexRoute = RegisterIndexRouteImport.update({
-  id: '/register/',
-  path: '/register/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileIndexRoute = ProfileIndexRouteImport.update({
-  id: '/profile/',
-  path: '/profile/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginIndexRoute = LoginIndexRouteImport.update({
-  id: '/login/',
-  path: '/login/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ErrorIndexRoute = ErrorIndexRouteImport.update({
-  id: '/error/',
-  path: '/error/',
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsentIndexRoute = ConsentIndexRouteImport.update({
@@ -70,79 +50,34 @@ const ConsentIndexRoute = ConsentIndexRouteImport.update({
   path: '/consent/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
+const ErrorIndexRoute = ErrorIndexRouteImport.update({
+  id: '/error/',
+  path: '/error/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyTotpIndexRoute = VerifyTotpIndexRouteImport.update({
-  id: '/verify/totp/',
-  path: '/verify/totp/',
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyPasskeyIndexRoute = VerifyPasskeyIndexRouteImport.update({
-  id: '/verify/passkey/',
-  path: '/verify/passkey/',
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyEmailIndexRoute = VerifyEmailIndexRouteImport.update({
-  id: '/verify/email/',
-  path: '/verify/email/',
+const RegisterIndexRoute = RegisterIndexRouteImport.update({
+  id: '/register/',
+  path: '/register/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Verify2faIndexRoute = Verify2faIndexRouteImport.update({
-  id: '/verify/2fa/',
-  path: '/verify/2fa/',
+const TermsIndexRoute = TermsIndexRouteImport.update({
+  id: '/terms/',
+  path: '/terms/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SetupTotpIndexRoute = SetupTotpIndexRouteImport.update({
-  id: '/setup/totp/',
-  path: '/setup/totp/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupPasskeyIndexRoute = SetupPasskeyIndexRouteImport.update({
-  id: '/setup/passkey/',
-  path: '/setup/passkey/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const Setup2faIndexRoute = Setup2faIndexRouteImport.update({
-  id: '/setup/2fa/',
-  path: '/setup/2fa/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PasswordResetIndexRoute = PasswordResetIndexRouteImport.update({
-  id: '/password/reset/',
-  path: '/password/reset/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PasswordForgotIndexRoute = PasswordForgotIndexRouteImport.update({
-  id: '/password/forgot/',
-  path: '/password/forgot/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginPasswordIndexRoute = LoginPasswordIndexRouteImport.update({
-  id: '/login/password/',
-  path: '/login/password/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
-  id: '/admin/users/',
-  path: '/admin/users/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminTermsIndexRoute = AdminTermsIndexRouteImport.update({
-  id: '/admin/terms/',
-  path: '/admin/terms/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSystemIndexRoute = AdminSystemIndexRouteImport.update({
-  id: '/admin/system/',
-  path: '/admin/system/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
-  id: '/admin/settings/',
-  path: '/admin/settings/',
+const AccountSelectIndexRoute = AccountSelectIndexRouteImport.update({
+  id: '/account/select/',
+  path: '/account/select/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminClientsIndexRoute = AdminClientsIndexRouteImport.update({
@@ -150,9 +85,74 @@ const AdminClientsIndexRoute = AdminClientsIndexRouteImport.update({
   path: '/admin/clients/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountSelectIndexRoute = AccountSelectIndexRouteImport.update({
-  id: '/account/select/',
-  path: '/account/select/',
+const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
+  id: '/admin/settings/',
+  path: '/admin/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSystemIndexRoute = AdminSystemIndexRouteImport.update({
+  id: '/admin/system/',
+  path: '/admin/system/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTermsIndexRoute = AdminTermsIndexRouteImport.update({
+  id: '/admin/terms/',
+  path: '/admin/terms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/admin/users/',
+  path: '/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginPasswordIndexRoute = LoginPasswordIndexRouteImport.update({
+  id: '/login/password/',
+  path: '/login/password/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasswordForgotIndexRoute = PasswordForgotIndexRouteImport.update({
+  id: '/password/forgot/',
+  path: '/password/forgot/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PasswordResetIndexRoute = PasswordResetIndexRouteImport.update({
+  id: '/password/reset/',
+  path: '/password/reset/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Setup2faIndexRoute = Setup2faIndexRouteImport.update({
+  id: '/setup/2fa/',
+  path: '/setup/2fa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupPasskeyIndexRoute = SetupPasskeyIndexRouteImport.update({
+  id: '/setup/passkey/',
+  path: '/setup/passkey/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupTotpIndexRoute = SetupTotpIndexRouteImport.update({
+  id: '/setup/totp/',
+  path: '/setup/totp/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Verify2faIndexRoute = Verify2faIndexRouteImport.update({
+  id: '/verify/2fa/',
+  path: '/verify/2fa/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailIndexRoute = VerifyEmailIndexRouteImport.update({
+  id: '/verify/email/',
+  path: '/verify/email/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyPasskeyIndexRoute = VerifyPasskeyIndexRouteImport.update({
+  id: '/verify/passkey/',
+  path: '/verify/passkey/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyTotpIndexRoute = VerifyTotpIndexRouteImport.update({
+  id: '/verify/totp/',
+  path: '/verify/totp/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyTotpRecoveryIndexRoute = VerifyTotpRecoveryIndexRouteImport.update({
@@ -364,39 +364,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/terms/': {
-      id: '/terms/'
-      path: '/terms'
-      fullPath: '/terms/'
-      preLoaderRoute: typeof TermsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register/': {
-      id: '/register/'
-      path: '/register'
-      fullPath: '/register/'
-      preLoaderRoute: typeof RegisterIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile/': {
-      id: '/profile/'
-      path: '/profile'
-      fullPath: '/profile/'
-      preLoaderRoute: typeof ProfileIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login/': {
-      id: '/login/'
-      path: '/login'
-      fullPath: '/login/'
-      preLoaderRoute: typeof LoginIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/error/': {
-      id: '/error/'
-      path: '/error'
-      fullPath: '/error/'
-      preLoaderRoute: typeof ErrorIndexRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/consent/': {
@@ -406,109 +378,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsentIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
+    '/error/': {
+      id: '/error/'
+      path: '/error'
+      fullPath: '/error/'
+      preLoaderRoute: typeof ErrorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify/totp/': {
-      id: '/verify/totp/'
-      path: '/verify/totp'
-      fullPath: '/verify/totp/'
-      preLoaderRoute: typeof VerifyTotpIndexRouteImport
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify/passkey/': {
-      id: '/verify/passkey/'
-      path: '/verify/passkey'
-      fullPath: '/verify/passkey/'
-      preLoaderRoute: typeof VerifyPasskeyIndexRouteImport
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify/email/': {
-      id: '/verify/email/'
-      path: '/verify/email'
-      fullPath: '/verify/email/'
-      preLoaderRoute: typeof VerifyEmailIndexRouteImport
+    '/register/': {
+      id: '/register/'
+      path: '/register'
+      fullPath: '/register/'
+      preLoaderRoute: typeof RegisterIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify/2fa/': {
-      id: '/verify/2fa/'
-      path: '/verify/2fa'
-      fullPath: '/verify/2fa/'
-      preLoaderRoute: typeof Verify2faIndexRouteImport
+    '/terms/': {
+      id: '/terms/'
+      path: '/terms'
+      fullPath: '/terms/'
+      preLoaderRoute: typeof TermsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/setup/totp/': {
-      id: '/setup/totp/'
-      path: '/setup/totp'
-      fullPath: '/setup/totp/'
-      preLoaderRoute: typeof SetupTotpIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup/passkey/': {
-      id: '/setup/passkey/'
-      path: '/setup/passkey'
-      fullPath: '/setup/passkey/'
-      preLoaderRoute: typeof SetupPasskeyIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup/2fa/': {
-      id: '/setup/2fa/'
-      path: '/setup/2fa'
-      fullPath: '/setup/2fa/'
-      preLoaderRoute: typeof Setup2faIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/password/reset/': {
-      id: '/password/reset/'
-      path: '/password/reset'
-      fullPath: '/password/reset/'
-      preLoaderRoute: typeof PasswordResetIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/password/forgot/': {
-      id: '/password/forgot/'
-      path: '/password/forgot'
-      fullPath: '/password/forgot/'
-      preLoaderRoute: typeof PasswordForgotIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login/password/': {
-      id: '/login/password/'
-      path: '/login/password'
-      fullPath: '/login/password/'
-      preLoaderRoute: typeof LoginPasswordIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/users/': {
-      id: '/admin/users/'
-      path: '/admin/users'
-      fullPath: '/admin/users/'
-      preLoaderRoute: typeof AdminUsersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/terms/': {
-      id: '/admin/terms/'
-      path: '/admin/terms'
-      fullPath: '/admin/terms/'
-      preLoaderRoute: typeof AdminTermsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/system/': {
-      id: '/admin/system/'
-      path: '/admin/system'
-      fullPath: '/admin/system/'
-      preLoaderRoute: typeof AdminSystemIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/settings/': {
-      id: '/admin/settings/'
-      path: '/admin/settings'
-      fullPath: '/admin/settings/'
-      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+    '/account/select/': {
+      id: '/account/select/'
+      path: '/account/select'
+      fullPath: '/account/select/'
+      preLoaderRoute: typeof AccountSelectIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/clients/': {
@@ -518,11 +427,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminClientsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account/select/': {
-      id: '/account/select/'
-      path: '/account/select'
-      fullPath: '/account/select/'
-      preLoaderRoute: typeof AccountSelectIndexRouteImport
+    '/admin/settings/': {
+      id: '/admin/settings/'
+      path: '/admin/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/system/': {
+      id: '/admin/system/'
+      path: '/admin/system'
+      fullPath: '/admin/system/'
+      preLoaderRoute: typeof AdminSystemIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/terms/': {
+      id: '/admin/terms/'
+      path: '/admin/terms'
+      fullPath: '/admin/terms/'
+      preLoaderRoute: typeof AdminTermsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/password/': {
+      id: '/login/password/'
+      path: '/login/password'
+      fullPath: '/login/password/'
+      preLoaderRoute: typeof LoginPasswordIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/password/forgot/': {
+      id: '/password/forgot/'
+      path: '/password/forgot'
+      fullPath: '/password/forgot/'
+      preLoaderRoute: typeof PasswordForgotIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/password/reset/': {
+      id: '/password/reset/'
+      path: '/password/reset'
+      fullPath: '/password/reset/'
+      preLoaderRoute: typeof PasswordResetIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup/2fa/': {
+      id: '/setup/2fa/'
+      path: '/setup/2fa'
+      fullPath: '/setup/2fa/'
+      preLoaderRoute: typeof Setup2faIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup/passkey/': {
+      id: '/setup/passkey/'
+      path: '/setup/passkey'
+      fullPath: '/setup/passkey/'
+      preLoaderRoute: typeof SetupPasskeyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup/totp/': {
+      id: '/setup/totp/'
+      path: '/setup/totp'
+      fullPath: '/setup/totp/'
+      preLoaderRoute: typeof SetupTotpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/2fa/': {
+      id: '/verify/2fa/'
+      path: '/verify/2fa'
+      fullPath: '/verify/2fa/'
+      preLoaderRoute: typeof Verify2faIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/email/': {
+      id: '/verify/email/'
+      path: '/verify/email'
+      fullPath: '/verify/email/'
+      preLoaderRoute: typeof VerifyEmailIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/passkey/': {
+      id: '/verify/passkey/'
+      path: '/verify/passkey'
+      fullPath: '/verify/passkey/'
+      preLoaderRoute: typeof VerifyPasskeyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify/totp/': {
+      id: '/verify/totp/'
+      path: '/verify/totp'
+      fullPath: '/verify/totp/'
+      preLoaderRoute: typeof VerifyTotpIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/verify/totp/recovery/': {

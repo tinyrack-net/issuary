@@ -2,6 +2,7 @@ import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRText } from '@tinyrack/ui/components/text';
 import z from 'zod';
 
 const errorSearchSchema = z.object({
@@ -31,7 +32,9 @@ function ErrorPage() {
               </div>
             )}
             {description && (
-              <p className="mt-tinyrack-sm text-tinyrack-sm">{description}</p>
+              <TRText as="p" className="mt-tinyrack-sm text-tinyrack-sm">
+                {description}
+              </TRText>
             )}
           </TRCard.Description>
         </TRCard.Header>

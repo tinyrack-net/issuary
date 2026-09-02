@@ -75,7 +75,7 @@ function DiscoveryPage() {
 
   return (
     <div className="min-h-screen p-tinyrack-2xl">
-      <div className="mx-auto max-w-tinyrack-overlay-md space-y-tinyrack-xl">
+      <div className="mx-auto max-w-tinyrack-overlay-width-md space-y-tinyrack-xl">
         <TRCard.Root>
           <TRCard.Header>
             <TRCard.Title className="text-tinyrack-3xl">

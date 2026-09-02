@@ -9,13 +9,14 @@ import {
 } from './validation-runner.ts';
 
 describe('validation runner', () => {
-  test.each([
-    1, 4, 24,
-  ])('uses detected parallelism %i as the default worker budget', (detectedParallelism) => {
-    expect(parseWorkerBudget(undefined, detectedParallelism)).toBe(
-      detectedParallelism,
-    );
-  });
+  test.each([1, 4, 24])(
+    'uses detected parallelism %i as the default worker budget',
+    (detectedParallelism) => {
+      expect(parseWorkerBudget(undefined, detectedParallelism)).toBe(
+        detectedParallelism,
+      );
+    },
+  );
 
   test('prefers a valid configured worker budget and rejects invalid values', () => {
     expect(parseWorkerBudget('2', 24)).toBe(2);

@@ -125,14 +125,12 @@ describe('oauth-search helpers', () => {
     expect(search.prompt).toBe('none select_account');
   });
 
-  test.each([
-    'invalid',
-    'login invalid',
-    'none login',
-    'none consent',
-  ])('rejects invalid prompt value %s', (prompt) => {
-    expect(OAuthSearchSchema.safeParse({ prompt }).success).toBe(false);
-  });
+  test.each(['invalid', 'login invalid', 'none login', 'none consent'])(
+    'rejects invalid prompt value %s',
+    (prompt) => {
+      expect(OAuthSearchSchema.safeParse({ prompt }).success).toBe(false);
+    },
+  );
 
   test('normalizes quoted account_selected values from router link serialization', () => {
     const parsed = OAuthSearchSchema.parse({

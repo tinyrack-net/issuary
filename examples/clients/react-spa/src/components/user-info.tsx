@@ -3,6 +3,7 @@ import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRCode } from '@tinyrack/ui/components/code';
 import { TRSeparator } from '@tinyrack/ui/components/separator';
+import { TRText } from '@tinyrack/ui/components/text';
 import type { IDTokenPayload } from '#example-react-spa/types/oidc.ts';
 
 interface UserInfoProps {
@@ -30,15 +31,19 @@ export function UserInfo({ payload }: UserInfoProps) {
           <div className="flex-1 space-y-tinyrack-sm">
             {payload.name && (
               <div>
-                <span className="font-tinyrack-strong">Name: </span>
-                <span>{payload.name}</span>
+                <TRText as="span" className="font-tinyrack-strong">
+                  Name:{' '}
+                </TRText>
+                <TRText as="span">{payload.name}</TRText>
               </div>
             )}
 
             {payload.email && (
               <div>
-                <span className="font-tinyrack-strong">Email: </span>
-                <span>{payload.email}</span>
+                <TRText as="span" className="font-tinyrack-strong">
+                  Email:{' '}
+                </TRText>
+                <TRText as="span">{payload.email}</TRText>
                 {payload.email_verified !== undefined && (
                   <TRBadge
                     className="ml-tinyrack-sm"
@@ -52,17 +57,23 @@ export function UserInfo({ payload }: UserInfoProps) {
             )}
 
             <div>
-              <span className="font-tinyrack-strong">Subject (sub): </span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Subject (sub):{' '}
+              </TRText>
               <TRCode>{payload.sub}</TRCode>
             </div>
 
             <div>
-              <span className="font-tinyrack-strong">Issuer (iss): </span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Issuer (iss):{' '}
+              </TRText>
               <TRCode>{payload.iss}</TRCode>
             </div>
 
             <div>
-              <span className="font-tinyrack-strong">Audience (aud): </span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Audience (aud):{' '}
+              </TRText>
               <TRCode>{payload.aud}</TRCode>
             </div>
           </div>
@@ -72,25 +83,33 @@ export function UserInfo({ payload }: UserInfoProps) {
 
         <div className="grid grid-cols-1 gap-tinyrack-sm text-tinyrack-sm md:grid-cols-2">
           <div>
-            <span className="font-tinyrack-strong">Issued At (iat): </span>
-            <span>{formatTimestamp(payload.iat)}</span>
+            <TRText as="span" className="font-tinyrack-strong">
+              Issued At (iat):{' '}
+            </TRText>
+            <TRText as="span">{formatTimestamp(payload.iat)}</TRText>
           </div>
 
           <div>
-            <span className="font-tinyrack-strong">Expires At (exp): </span>
-            <span>{formatTimestamp(payload.exp)}</span>
+            <TRText as="span" className="font-tinyrack-strong">
+              Expires At (exp):{' '}
+            </TRText>
+            <TRText as="span">{formatTimestamp(payload.exp)}</TRText>
           </div>
 
           {payload.auth_time && (
             <div>
-              <span className="font-tinyrack-strong">Auth Time: </span>
-              <span>{formatTimestamp(payload.auth_time)}</span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Auth Time:{' '}
+              </TRText>
+              <TRText as="span">{formatTimestamp(payload.auth_time)}</TRText>
             </div>
           )}
 
           {payload.nonce && (
             <div>
-              <span className="font-tinyrack-strong">Nonce: </span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Nonce:{' '}
+              </TRText>
               <TRCode>{payload.nonce}</TRCode>
             </div>
           )}

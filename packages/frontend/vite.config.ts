@@ -15,7 +15,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   build: {
-    outDir: path.resolve(__dirname, '../server/public'),
+    outDir: path.resolve(import.meta.dirname, '../server/public'),
     emptyOutDir: true,
     sourcemap: true,
   },

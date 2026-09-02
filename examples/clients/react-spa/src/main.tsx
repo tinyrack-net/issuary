@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { TRCard } from '@tinyrack/ui/components/card';
 import { TRSpinner } from '@tinyrack/ui/components/spinner';
+import { TRText } from '@tinyrack/ui/components/text';
 import { trShikiWebHighlighter } from '@tinyrack/ui/highlighters/shiki-web';
 import { TRCodeHighlighterProvider } from '@tinyrack/ui/providers/highlighter';
 import { StrictMode, Suspense, useEffect, useState } from 'react';
@@ -36,11 +37,16 @@ function App() {
               Initialization Error
             </TRCard.Title>
             <TRCard.Description>
-              <p className="text-tinyrack-sm">{error}</p>
-              <p className="mt-tinyrack-sm text-tinyrack-text-muted text-tinyrack-xs">
+              <TRText as="p" className="text-tinyrack-sm">
+                {error}
+              </TRText>
+              <TRText
+                as="p"
+                className="mt-tinyrack-sm text-tinyrack-text-muted text-tinyrack-xs"
+              >
                 Make sure the OIDC provider is running at the configured issuer
                 URL.
-              </p>
+              </TRText>
             </TRCard.Description>
           </TRCard.Header>
         </TRCard.Root>

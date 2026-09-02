@@ -1,5 +1,6 @@
 import { TRBadge } from '@tinyrack/ui/components/badge';
 import { TRButton } from '@tinyrack/ui/components/button';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useEffect, useState } from 'react';
 
 type HeroTypewriterProps = {
@@ -97,14 +98,20 @@ export function HeroTypewriter({
         <path d="M112 112V88a16 16 0 0 1 32 0v24" />
         <circle cx="128" cy="136" fill="currentColor" r="4" stroke="none" />
       </svg>
-      <h1>
+      <TRText as="h1" variant="headingLg">
         {prefix}
-        <span className="issuary-typewriter">{word}</span>
-        <span aria-hidden="true" className="issuary-typewriter-cursor">
+        <TRText as="span" className="issuary-typewriter">
+          {word}
+        </TRText>
+        <TRText
+          aria-hidden="true"
+          as="span"
+          className="issuary-typewriter-cursor"
+        >
           |
-        </span>
+        </TRText>
         {suffix}
-      </h1>
+      </TRText>
       <TRButton intent="primary" render={<a href={docsPath} />} uiSize="lg">
         {docsLabel} →
       </TRButton>

@@ -1,5 +1,6 @@
 import { TRButton } from '@tinyrack/ui/components/button';
 import { TRCard } from '@tinyrack/ui/components/card';
+import { TRText } from '@tinyrack/ui/components/text';
 import { useState } from 'react';
 import type { TokenResponse } from '#example-react-spa/types/oidc.ts';
 
@@ -30,7 +31,9 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
         <TRCard.Root variant="outlined">
           <TRCard.Content className="space-y-tinyrack-sm">
             <div className="flex items-center justify-between">
-              <span className="font-tinyrack-strong">Access Token</span>
+              <TRText as="span" className="font-tinyrack-strong">
+                Access Token
+              </TRText>
               <div className="flex gap-tinyrack-sm">
                 <TRButton
                   appearance="ghost"
@@ -54,8 +57,10 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
                 : maskToken(tokens.access_token)}
             </pre>
             <div className="text-tinyrack-text-muted text-tinyrack-xs">
-              Expires in: {tokens.expires_in} seconds | Type:{' '}
-              {tokens.token_type}
+              <TRText as="span">
+                Expires in: {tokens.expires_in} seconds | Type:{' '}
+                {tokens.token_type}
+              </TRText>
             </div>
           </TRCard.Content>
         </TRCard.Root>
@@ -82,8 +87,12 @@ export function TokenDisplay({ tokens }: TokenDisplayProps) {
 
         {tokens.scope && (
           <div className="text-tinyrack-sm">
-            <span className="font-tinyrack-strong">Granted Scopes: </span>
-            <span className="text-tinyrack-text-muted">{tokens.scope}</span>
+            <TRText as="span" className="font-tinyrack-strong">
+              Granted Scopes:{' '}
+            </TRText>
+            <TRText as="span" className="text-tinyrack-text-muted">
+              {tokens.scope}
+            </TRText>
           </div>
         )}
       </TRCard.Content>
@@ -110,7 +119,9 @@ function RefreshTokenSection({
     <TRCard.Root variant="outlined">
       <TRCard.Content className="space-y-tinyrack-sm">
         <div className="flex items-center justify-between">
-          <span className="font-tinyrack-strong">Refresh Token</span>
+          <TRText as="span" className="font-tinyrack-strong">
+            Refresh Token
+          </TRText>
           <div className="flex gap-tinyrack-sm">
             <TRButton
               appearance="ghost"
@@ -155,7 +166,9 @@ function IdTokenSection({
     <TRCard.Root variant="outlined">
       <TRCard.Content className="space-y-tinyrack-sm">
         <div className="flex items-center justify-between">
-          <span className="font-tinyrack-strong">ID Token</span>
+          <TRText as="span" className="font-tinyrack-strong">
+            ID Token
+          </TRText>
           <div className="flex gap-tinyrack-sm">
             <TRButton
               appearance="ghost"

@@ -68,8 +68,8 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tinyrack/ui": "0.33.0",
-    "html-react-parser": "6.1.7",
     "hono": "catalog:",
+    "html-react-parser": "6.1.7",
     "i18next": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",
@@ -80,6 +80,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@biomejs/biome": "catalog:",
     "@hono/node-server": "catalog:",
     "@playwright/test": "catalog:",
@@ -98,7 +99,7 @@
     "@vitest/coverage-v8": "catalog:",
     "@vitest/ui": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
-    "@axe-core/playwright": "4.12.1",
+    "cross-env": "catalog:",
     "nodemailer": "catalog:",
     "otplib": "catalog:",
     "tailwindcss": "catalog:",
@@ -106,7 +107,6 @@
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
-    "vitest-browser-react": "catalog:",
-    "cross-env": "catalog:"
+    "vitest-browser-react": "catalog:"
   }
 }
