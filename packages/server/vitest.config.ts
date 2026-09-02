@@ -4,6 +4,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '#server': './src/',
+      '@tinyrack/issuary-server/internal/frontend-runtime-context':
+        './src/lib/frontend/runtime-context.ts',
     },
   },
   test: {

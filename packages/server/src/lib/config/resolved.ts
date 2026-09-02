@@ -7,7 +7,6 @@ import { CleanupConfigSchema } from './cleanup.ts';
 import { ClientConfigsSchema } from './client.ts';
 import { DatabaseConfigSchema } from './database.ts';
 import { EmailConfigSchema } from './email.ts';
-import { FrontendConfigSchema } from './frontend.ts';
 import { I18nConfigSchema } from './i18n.ts';
 import { IdentityProviderConfigsSchema } from './identity-providers.ts';
 import { LoggingConfigSchema } from './logging.ts';
@@ -53,9 +52,6 @@ export const IssuaryRuntimeConfigSchema = z
     ),
     users: UserConfigsSchema.describe('Pre-provisioned user accounts.'),
     database: DatabaseConfigSchema.describe('Database adapter settings.'),
-    frontend: FrontendConfigSchema.describe(
-      'Frontend handler for serving the UI.',
-    ),
     email: EmailConfigSchema.describe('Email transport adapter settings.'),
     identity_providers: IdentityProviderConfigsSchema.describe(
       'External identity provider settings.',

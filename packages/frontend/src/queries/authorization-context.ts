@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 import type { AuthorizationContextSearch } from '#frontend/libs/oauth-search.ts';
 import { queryKeys } from './keys';
 
@@ -12,7 +12,8 @@ export type AuthorizationContextResponse = InferResponseType<
 export type AuthorizationContextScope =
   AuthorizationContextResponse['scopes'][number];
 
-export const getAuthorizationContextQueryOptions = (
+export const createAuthorizationContextQueryOptions = (
+  apiClient: ApiClient,
   search: AuthorizationContextSearch,
 ) =>
   queryOptions({
@@ -23,7 +24,7 @@ export const getAuthorizationContextQueryOptions = (
       search.scope,
     ),
     queryFn: async () => {
-      const res = await client.api.oauth['authorization-context'].$get({
+      const res = await apiClient.api.oauth['authorization-context'].$get({
         query: {
           client_id: search.client_id,
           redirect_uri: search.redirect_uri,
@@ -35,3 +36,7 @@ export const getAuthorizationContextQueryOptions = (
     },
     staleTime: 1000 * 60,
   });
+
+export const getAuthorizationContextQueryOptions = (
+  search: AuthorizationContextSearch,
+) => createAuthorizationContextQueryOptions(client, search);

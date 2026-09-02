@@ -29,12 +29,6 @@ export type {
   EmailTransport,
 } from './email.ts';
 export { EmailConfigSchema } from './email.ts';
-export type {
-  FrontendConfig,
-  FrontendHandler,
-  FrontendRuntimeContext,
-} from './frontend.ts';
-export { FrontendConfigSchema } from './frontend.ts';
 export type { I18nConfig } from './i18n.ts';
 export { I18nConfigSchema, LocaleSchema } from './i18n.ts';
 export type { IdentityProviderConfig } from './identity-providers.ts';

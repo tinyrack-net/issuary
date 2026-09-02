@@ -7,6 +7,10 @@ import {
   IssuaryRuntimeConfigSchema,
 } from '../lib/config/index.ts';
 import { parseDurationToMs } from '../lib/duration.ts';
+import {
+  createReactRouterFrontendHandler,
+  type ReactRouterRuntimeOptions,
+} from '../lib/frontend/react-router.ts';
 import { createLogger } from '../lib/logger.ts';
 import { createOpenApiDocumentation } from '../lib/openapi.ts';
 import { csrfProtection } from '../middleware/csrf.ts';
@@ -27,7 +31,9 @@ import {
  * Application configuration for the backend runtime.
  */
 export type CreateAppOptions = IssuaryRuntimeConfigInput;
-export type CreateAppRuntimeOptions = InitializeServicesOptions;
+export type CreateAppRuntimeOptions = InitializeServicesOptions & {
+  reactRouter?: ReactRouterRuntimeOptions | undefined;
+};
 
 export async function createApp(
   options: CreateAppOptions,
@@ -40,19 +46,18 @@ export async function createApp(
   const logger = createLogger({ logging: config.logging });
 
   // Initialize all services (DB, mail, scheduler, etc.)
+  const { reactRouter: reactRouterRuntime, ...serviceRuntimeOptions } =
+    runtimeOptions;
   const { services, cleanup } = await initializeServices(
     config,
     logger,
-    runtimeOptions,
+    serviceRuntimeOptions,
   );
   await RequestContext.create(services.mikro.em, () =>
     services.jwtService.ensureActiveKey(),
   );
 
-  const frontendHandler = config.frontend?.({
-    branding: config.branding,
-    server: config.server,
-  });
+  const frontendHandler = createReactRouterFrontendHandler(reactRouterRuntime);
   const accountSelectionPolicy = normalizeAccountSelectionPolicy(config);
   let cachedOpenApiSpec: Awaited<ReturnType<typeof generateSpecs>> | undefined;
 
@@ -95,10 +100,13 @@ export async function createApp(
     .use('*', mikroOrmMiddleware)
     .route('/', routes)
     .notFound(async (c) => {
-      if (frontendHandler) {
-        return frontendHandler(c);
+      if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/oauth/')) {
+        return c.json({ error: 'Not Found' }, 404);
       }
-      return c.json({ error: 'Not Found' }, 404);
+      return frontendHandler(c, (input, init) => {
+        const request = new Request(input, init);
+        return Promise.resolve(app.fetch(request));
+      });
     });
 
   app.get('/api/docs/json', async (c) => {

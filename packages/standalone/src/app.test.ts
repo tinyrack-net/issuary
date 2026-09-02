@@ -1,18 +1,9 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { StandaloneConfigInput } from './lib/config/index.ts';
 
 const BASE_CONFIG = {
-  logging: {
-    level: 'silent',
-    format: 'json',
-  },
-  database: {
-    type: 'sqlite',
-    test: true,
-  },
+  logging: { level: 'silent', format: 'json' },
+  database: { type: 'sqlite', test: true },
   security: {
     session_secret:
       '3e8a82a5d70bc32809c1757e06c3cccbc32f14dbbbded8d494983099cd84a92b',
@@ -28,31 +19,16 @@ describe('createStandaloneApp', () => {
     ({ createStandaloneApp } = await import('./app.ts'));
   });
 
-  describe('static frontend mode', () => {
-    let publicPath = '';
+  describe('bundled frontend', () => {
     let cleanup = async () => {};
     let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
 
     beforeAll(async () => {
-      publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'issuary-static-app-'),
-      );
-      await fs.promises.writeFile(
-        path.join(publicPath, 'index.html'),
-        '<!doctype html><html><body>{{APP_NAME}}</body></html>',
-        'utf-8',
-      );
-
       const server = await createStandaloneApp({
         config: {
           ...BASE_CONFIG,
-          frontend: {
-            enabled: true,
-            mode: 'static',
-            path: publicPath,
-            html_variables: {
-              APP_NAME: 'standalone static app',
-            },
+          branding: {
+            title: { en: 'Standalone Issuary' },
           },
         },
       });
@@ -60,173 +36,53 @@ describe('createStandaloneApp', () => {
       cleanup = server.cleanup;
     });
 
-    afterAll(async () => {
-      await cleanup();
-      await fs.promises.rm(publicPath, { recursive: true, force: true });
+    afterAll(async () => cleanup());
+
+    test('server-renders the login document from the same process', async () => {
+      const response = await app.request('/login/password', {
+        headers: { 'Accept-Language': 'en-US' },
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      await expect(response.text()).resolves.toContain(
+        '<title>Standalone Issuary</title>',
+      );
     });
 
-    test('serves static frontend fallback', async () => {
-      const res = await app.request('/login');
-
-      expect(res.status).toBe(200);
-      await expect(res.text()).resolves.toContain('standalone static app');
+    test('does not turn missing API routes into HTML', async () => {
+      const response = await app.request('/api/nonexistent');
+      expect(response.status).toBe(404);
+      expect(response.headers.get('content-type')).toContain(
+        'application/json',
+      );
     });
 
-    test('delegates unmatched API routes to frontend handler', async () => {
-      const res = await app.request('/api/nonexistent');
-
-      expect(res.status).toBe(200);
-      await expect(res.text()).resolves.toContain('standalone static app');
+    test('redirects an anonymous admin request through its parent loader', async () => {
+      const response = await app.request('/admin');
+      expect(response.status).toBe(302);
+      expect(response.headers.get('location')).toBe('/login');
     });
   });
 
-  describe('admin frontend route', () => {
-    let publicPath = '';
-    let cleanup = async () => {};
-    let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
-
-    beforeAll(async () => {
-      publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'issuary-public-app-'),
-      );
-      await fs.promises.writeFile(
-        path.join(publicPath, 'index.html'),
-        '<!doctype html><html><body>public app</body></html>',
-        'utf-8',
-      );
-
-      const server = await createStandaloneApp({
-        config: {
-          ...BASE_CONFIG,
-          admin: { enabled: true },
-          frontend: {
-            enabled: true,
-            mode: 'static',
-            path: publicPath,
+  test('forwards an injected React Router runtime to the server', async () => {
+    let buildLoadCount = 0;
+    const server = await createStandaloneApp({
+      config: BASE_CONFIG,
+      runtimeOptions: {
+        reactRouter: {
+          loadServerBuild: async () => {
+            buildLoadCount += 1;
+            throw new Error('development build unavailable');
           },
         },
-      });
-      app = server.app;
-      cleanup = server.cleanup;
+      },
     });
 
-    afterAll(async () => {
-      await cleanup();
-      await fs.promises.rm(publicPath, { recursive: true, force: true });
-    });
+    const response = await server.app.request('/login/password');
 
-    test('serves the normal frontend app for /admin', async () => {
-      const res = await app.request('/admin');
-
-      expect(res.status).toBe(200);
-      await expect(res.text()).resolves.toContain('public app');
-    });
-  });
-
-  describe('admin API disabled with frontend fallback', () => {
-    let publicPath = '';
-    let cleanup = async () => {};
-    let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
-
-    beforeAll(async () => {
-      publicPath = await fs.promises.mkdtemp(
-        path.join(os.tmpdir(), 'issuary-disabled-admin-app-'),
-      );
-      await fs.promises.writeFile(
-        path.join(publicPath, 'index.html'),
-        '<!doctype html><html><body>public app</body></html>',
-        'utf-8',
-      );
-
-      const server = await createStandaloneApp({
-        config: {
-          ...BASE_CONFIG,
-          admin: { enabled: false },
-          frontend: {
-            enabled: true,
-            mode: 'static',
-            path: publicPath,
-          },
-        },
-      });
-      app = server.app;
-      cleanup = server.cleanup;
-    });
-
-    afterAll(async () => {
-      await cleanup();
-      await fs.promises.rm(publicPath, { recursive: true, force: true });
-    });
-
-    test('returns JSON 404 for disabled admin API instead of frontend HTML', async () => {
-      const res = await app.request('/api/admin/me');
-
-      expect(res.status).toBe(404);
-      expect(res.headers.get('content-type')).toContain('application/json');
-      await expect(res.json()).resolves.toEqual({ error: 'Not Found' });
-    });
-  });
-
-  describe('proxy frontend mode', () => {
-    let cleanup = async () => {};
-    let app: Awaited<ReturnType<typeof createStandaloneApp>>['app'];
-    let fetchSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeAll(async () => {
-      fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
-        return new Response('<html><body>{{APP_NAME}}</body></html>', {
-          headers: {
-            'content-type': 'text/html',
-          },
-        });
-      });
-
-      const server = await createStandaloneApp({
-        config: {
-          ...BASE_CONFIG,
-          frontend: {
-            enabled: true,
-            mode: 'proxy',
-            path: 'https://frontend.example.test',
-            html_variables: {
-              APP_NAME: 'standalone proxy app',
-            },
-          },
-        },
-      });
-      app = server.app;
-      cleanup = server.cleanup;
-    });
-
-    afterAll(async () => {
-      await cleanup();
-      fetchSpy.mockRestore();
-    });
-
-    test('proxies frontend requests through the standalone app', async () => {
-      const res = await app.request('/register');
-
-      expect(res.status).toBe(200);
-      await expect(res.text()).resolves.toContain('standalone proxy app');
-    });
-
-    test('proxies requests to the configured upstream URL', async () => {
-      await app.request('/register');
-
-      const firstInput = fetchSpy.mock.calls[0]?.[0];
-
-      if (!firstInput) {
-        throw new Error('Expected fetch to be called');
-      }
-
-      const upstreamUrl =
-        typeof firstInput === 'string'
-          ? firstInput
-          : firstInput instanceof URL
-            ? firstInput.toString()
-            : firstInput.url;
-
-      expect(upstreamUrl).toBe('https://frontend.example.test/register');
-    });
+    expect(response.status).toBe(500);
+    expect(buildLoadCount).toBe(1);
+    await server.cleanup();
   });
 });

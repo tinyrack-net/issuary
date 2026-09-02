@@ -1,11 +1,17 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   detectBrowserLanguage,
   getAvailableLanguages,
   LANGUAGE_STORAGE_KEY,
 } from '#frontend/i18n/index.ts';
+import {
+  migrateStoredPreference,
+  readPreferenceCookie,
+  removePreferenceCookie,
+  writePreferenceCookie,
+} from '#frontend/libs/preferences.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 
 /**
@@ -29,7 +35,15 @@ function subscribeToLanguageStorage(callback: () => void) {
 }
 
 function getLanguageStorageSnapshot() {
-  return localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (typeof window === 'undefined') return null;
+  return (
+    readPreferenceCookie(LANGUAGE_STORAGE_KEY) ??
+    localStorage.getItem(LANGUAGE_STORAGE_KEY)
+  );
+}
+
+function getLanguageServerSnapshot() {
+  return null;
 }
 
 function dispatchLanguageStorageChange() {
@@ -50,7 +64,7 @@ export function useLanguage() {
   const storedLanguage = useSyncExternalStore(
     subscribeToLanguageStorage,
     getLanguageStorageSnapshot,
-    getLanguageStorageSnapshot,
+    getLanguageServerSnapshot,
   );
 
   // Check if user is in auto mode (no localStorage preference)
@@ -62,27 +76,32 @@ export function useLanguage() {
     config.i18n.fallback_language,
   );
 
+  useEffect(() => {
+    const migrated = migrateStoredPreference(LANGUAGE_STORAGE_KEY, (value) =>
+      availableLanguages.some((language) => language === value),
+    );
+    if (migrated !== undefined) dispatchLanguageStorageChange();
+  }, [availableLanguages]);
+
   const setLanguage = useCallback(
     (lang: string) => {
-      if (
-        !availableLanguages.includes(
-          lang as (typeof availableLanguages)[number],
-        )
-      ) {
+      if (!availableLanguages.some((language) => language === lang)) {
         return;
       }
-      i18n.changeLanguage(lang);
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+      void i18n.changeLanguage(lang);
+      writePreferenceCookie(LANGUAGE_STORAGE_KEY, lang);
+      localStorage.removeItem(LANGUAGE_STORAGE_KEY);
       dispatchLanguageStorageChange();
     },
     [availableLanguages, i18n],
   );
 
   const setAutoLanguage = useCallback(() => {
+    removePreferenceCookie(LANGUAGE_STORAGE_KEY);
     localStorage.removeItem(LANGUAGE_STORAGE_KEY);
     dispatchLanguageStorageChange();
     // Immediately switch to detected browser language
-    i18n.changeLanguage(detectedLanguage);
+    void i18n.changeLanguage(detectedLanguage);
   }, [detectedLanguage, i18n]);
 
   return {

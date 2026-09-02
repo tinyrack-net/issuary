@@ -4,6 +4,7 @@ import {
   appConfigQueryData,
   renderRoute,
 } from '#frontend/test-utils/route-test-utils.tsx';
+import { getRouteScreenDefinition } from '#frontend/test-utils/screen-route-definitions.ts';
 import { screenScenarioDefinitions } from '#frontend/test-utils/screen-scenario-catalog.ts';
 
 const routeScenarios = screenScenarioDefinitions.filter(
@@ -22,16 +23,19 @@ test('declares unique scenario and variant IDs', () => {
 
 for (const scenario of routeScenarios) {
   test(`renders the ${scenario.id} Screen Lab route state`, async () => {
-    const { screen } = await renderRoute({
-      initialLocation: scenario.entryPath,
-      queryData: [
-        appConfigQueryData(),
-        {
-          queryKey: getTermsQueryOptions('en').queryKey,
-          data: { terms: [] },
-        },
-      ],
-    });
+    const { screen } = await renderRoute(
+      getRouteScreenDefinition(scenario.id),
+      {
+        initialLocation: scenario.entryPath,
+        queryData: [
+          appConfigQueryData(),
+          {
+            queryKey: getTermsQueryOptions('en').queryKey,
+            data: { terms: [] },
+          },
+        ],
+      },
+    );
 
     await expect
       .element(screen.getByText(scenario.expectedText, { exact: true }).first())

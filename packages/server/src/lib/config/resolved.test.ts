@@ -122,7 +122,22 @@ describe('IssuaryRuntimeConfigSchema', () => {
       IDENTITY_PROVIDER_CONFIGS_DEFAULT,
     );
     expect(parsed.email).toBeUndefined();
-    expect(parsed.frontend).toBeUndefined();
+  });
+
+  test('rejects the removed frontend configuration', () => {
+    const result = IssuaryRuntimeConfigSchema.safeParse({
+      ...MINIMAL_INPUT_CONFIG,
+      frontend: { enabled: false },
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues).toContainEqual(
+      expect.objectContaining({
+        code: 'unrecognized_keys',
+        keys: ['frontend'],
+      }),
+    );
   });
 
   test('allows issuer-safe HTTPS origins and local HTTP origins', () => {

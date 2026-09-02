@@ -1,7 +1,10 @@
 import { expect, test, vi } from 'vitest';
 import type { RenderResult } from 'vitest-browser-react';
 import { render } from 'vitest-browser-react';
+import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 import { PinInput } from './pin-input';
+
+initTestI18n();
 
 function getAllInputs(screen: RenderResult) {
   return screen.getByRole('textbox').all();

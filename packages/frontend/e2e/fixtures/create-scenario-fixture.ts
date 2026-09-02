@@ -7,7 +7,6 @@ import {
 
 type ConfigFactory = (
   backendPort: number,
-  frontendPort: number,
   auxiliaryPort: number,
 ) => E2EConfigResult;
 

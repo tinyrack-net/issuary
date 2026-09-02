@@ -7,6 +7,10 @@ import {
   OAuthSearchSchema,
 } from './oauth-search.ts';
 
+function parseAuthorizeUrl(url: string): URL {
+  return new URL(url, globalThis.location.origin);
+}
+
 describe('oauth-search helpers', () => {
   beforeEach(() => {
     window.history.replaceState({}, '', '/login');
@@ -46,7 +50,7 @@ describe('oauth-search helpers', () => {
       prompt: 'login',
       max_age: '300',
     });
-    const parsed = new URL(url);
+    const parsed = parseAuthorizeUrl(url);
 
     expect(parsed.origin).toBe(window.location.origin);
     expect(parsed.pathname).toBe('/oauth/authorize');
@@ -59,7 +63,7 @@ describe('oauth-search helpers', () => {
   });
 
   test('builds a post-login authorize URL with a fresh authentication marker', () => {
-    const parsed = new URL(
+    const parsed = parseAuthorizeUrl(
       buildAuthenticatedAuthorizeUrl({
         client_id: 'web-client',
         redirect_uri: 'https://client.example.com/callback',
@@ -79,7 +83,7 @@ describe('oauth-search helpers', () => {
   });
 
   test('does not mark account selected after login when prompt explicitly requests account selection', () => {
-    const parsed = new URL(
+    const parsed = parseAuthorizeUrl(
       buildAuthenticatedAuthorizeUrl({
         client_id: 'web-client',
         redirect_uri: 'https://client.example.com/callback',
@@ -100,7 +104,7 @@ describe('oauth-search helpers', () => {
       prompt: 'login consent',
     });
 
-    const parsed = new URL(buildAuthorizeUrl(search));
+    const parsed = parseAuthorizeUrl(buildAuthorizeUrl(search));
 
     expect(parsed.searchParams.get('prompt')).toBe('login consent');
   });
@@ -158,7 +162,7 @@ describe('oauth-search helpers', () => {
       account_selection_state: 'chooser-state-123',
     });
 
-    const parsed = new URL(buildAuthorizeUrl(search));
+    const parsed = parseAuthorizeUrl(buildAuthorizeUrl(search));
 
     expect(parsed.searchParams.get('response_mode')).toBe('form_post');
     expect(parsed.searchParams.get('login_hint')).toBe('user@example.com');

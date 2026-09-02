@@ -1,6 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
 
 export type AccountsResponse = InferResponseType<
@@ -9,16 +9,23 @@ export type AccountsResponse = InferResponseType<
 >;
 export type RememberedAccount = AccountsResponse['accounts'][number];
 
-export function accountsQueryOptions(clientId?: string) {
+export function createAccountsQueryOptions(
+  apiClient: ApiClient,
+  clientId?: string,
+) {
   return queryOptions({
     queryKey: queryKeys.accounts(clientId),
     queryFn: async () => {
-      const res = await client.api.auth.accounts.$get({
+      const res = await apiClient.api.auth.accounts.$get({
         query: clientId ? { client_id: clientId } : {},
       });
       return jsonOk(res);
     },
   });
+}
+
+export function accountsQueryOptions(clientId?: string) {
+  return createAccountsQueryOptions(client, clientId);
 }
 
 export type SelectAccountParams = InferRequestType<

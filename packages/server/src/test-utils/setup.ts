@@ -1,4 +1,4 @@
-import { createApp } from '../entrypoints/app.ts';
+import { type CreateAppRuntimeOptions, createApp } from '../entrypoints/app.ts';
 import { sqlite } from '../entrypoints/database/sqlite/sqlite.ts';
 import type {
   EmailConfig,
@@ -88,9 +88,12 @@ export async function createTestEmailConfig(options?: {
   };
 }
 
-export async function createTestApp(config?: IssuaryRuntimeConfigInput) {
+export async function createTestApp(
+  config?: IssuaryRuntimeConfigInput,
+  runtimeOptions?: CreateAppRuntimeOptions,
+) {
   const resolvedConfig = IssuaryRuntimeConfigSchema.parse(
     config ?? MINIMAL_TEST_CONFIG,
   );
-  return createApp(resolvedConfig);
+  return createApp(resolvedConfig, runtimeOptions);
 }

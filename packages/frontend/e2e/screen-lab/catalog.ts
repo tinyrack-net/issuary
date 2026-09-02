@@ -1,5 +1,4 @@
 import type { Page } from '@playwright/test';
-import { createProxyHandler } from '@tinyrack/issuary-server/frontend/proxy';
 import {
   type ServerScreenScenarioId,
   screenScenarioDefinitions,
@@ -36,14 +35,11 @@ const SCREEN_TOTP_EMAIL = 'screen-lab-totp@example.com';
 function createScreenConfig(
   overrides: Partial<E2EConfigInput> = {},
 ): ScreenScenarioConfigFactory {
-  return (backendPort, frontendPort) => {
+  return (backendPort) => {
     return {
       ...E2E_BASE_CONFIG,
       ...createTestConfig(backendPort, {
         ...overrides,
-      }),
-      frontend: createProxyHandler({
-        upstream: `http://127.0.0.1:${frontendPort}`,
       }),
     };
   };
@@ -58,8 +54,8 @@ function createScreenConfigWithRecords(
   } = {},
 ): ScreenScenarioConfigFactory {
   const configFactory = createScreenConfig(options.overrides);
-  return (backendPort, frontendPort, auxiliaryPort) => ({
-    ...configFactory(backendPort, frontendPort, auxiliaryPort),
+  return (backendPort, auxiliaryPort) => ({
+    ...configFactory(backendPort, auxiliaryPort),
     ...(options.users ? { users: options.users } : {}),
     ...(options.clients ? { clients: options.clients } : {}),
     ...(options.terms ? { terms: options.terms } : {}),

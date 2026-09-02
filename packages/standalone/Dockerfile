@@ -30,16 +30,14 @@ RUN pnpm --filter @tinyrack/issuary-standalone deploy --prod --legacy /app/deplo
 FROM node:24-slim AS runner
 
 RUN groupadd --gid 1001 issuary && \
-    useradd --uid 1001 --gid 1001 --create-home issuary && \
-    mkdir -p /opt/issuary/frontend && \
-    chown -R issuary:issuary /opt/issuary
+    useradd --uid 1001 --gid 1001 --create-home issuary
 
 WORKDIR /app
 
 COPY --from=build --chown=issuary:issuary /app/packages/standalone/dist/ ./dist/
 COPY --from=build --chown=issuary:issuary /app/deploy/node_modules/ ./node_modules/
 COPY --from=build --chown=issuary:issuary /app/deploy/package.json ./package.json
-COPY --from=build --chown=issuary:issuary /app/packages/server/public/ /opt/issuary/frontend/
+COPY --from=build --chown=issuary:issuary /app/packages/server/frontend/ ./node_modules/@tinyrack/issuary-server/frontend/
 
 USER issuary
 

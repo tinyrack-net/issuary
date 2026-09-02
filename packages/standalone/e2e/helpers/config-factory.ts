@@ -139,9 +139,6 @@ export async function createTestConfigFile(
     email: {
       transport: 'test',
     },
-    frontend: {
-      enabled: false,
-    },
     server: {
       public_origin: `http://localhost:${port}`,
       listen_port: port,

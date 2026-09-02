@@ -1,39 +1,30 @@
 import path from 'node:path';
+import { reactRouter } from '@react-router/dev/vite';
 import tailwindcss from '@tailwindcss/vite';
-import tanstackRouter from '@tanstack/router-plugin/vite';
-import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
-  plugins: [
-    tanstackRouter({
-      routesDirectory: './src/routes',
-      generatedRouteTree: './src/routeTree.gen.ts',
-      autoCodeSplitting: true,
-    }),
-    react(),
-    tailwindcss(),
-  ],
-  build: {
-    outDir: path.resolve(import.meta.dirname, '../server/public'),
-    emptyOutDir: true,
-    sourcemap: true,
-  },
-  server: {
-    port: 8081,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/docs': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/oauth': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+const SERVER_CONTEXT_MODULE =
+  '@tinyrack/issuary-server/internal/frontend-runtime-context';
+
+export default defineConfig(({ command }) => {
+  return {
+    plugins: [reactRouter(), tailwindcss()],
+    build: {
+      emptyOutDir: true,
+      sourcemap: false,
+    },
+    ssr: {
+      external: [SERVER_CONTEXT_MODULE],
+      ...(command === 'build' ? { noExternal: true } : {}),
+      resolve: {
+        externalConditions: ['node', 'module-sync'],
       },
     },
-  },
+    resolve: {
+      alias: {
+        '#frontend': path.resolve(import.meta.dirname, 'src'),
+        '#frontend-e2e': path.resolve(import.meta.dirname, 'e2e'),
+      },
+    },
+  };
 });

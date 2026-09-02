@@ -38,7 +38,8 @@
     "issuary": "./bin/index.js"
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--conditions=@issuary/source tsx watch --include './src/**/*' --include ./config.dev.yaml src/cli.ts serve --config-path='./config.dev.yaml'",
+    "predev": "pnpm --filter @tinyrack/issuary-frontend sync:brand-assets",
+    "dev": "node --watch --watch-path=src --watch-path=../server/src --watch-path=config.dev.yaml --watch-kill-signal=SIGTERM --conditions=@issuary/source --import tsx src/dev-server.ts",
     "dev:cli": "cross-env CONFIG_PATH=./config.dev.yaml NODE_OPTIONS=--conditions=@issuary/source tsx src/cli.ts",
     "docker:build": "docker build -f ./Dockerfile ../.. -t issuary:local",
     "test": "node --conditions=@issuary/source node_modules/vitest/vitest.mjs --exclude e2e/dist-cli.e2e.test.ts",
@@ -61,6 +62,7 @@
     "execa": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:",
     "cross-env": "catalog:"
   },

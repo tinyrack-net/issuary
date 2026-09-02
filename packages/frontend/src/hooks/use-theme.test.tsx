@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { render } from 'vitest-browser-react';
+import { removePreferenceCookie } from '#frontend/libs/preferences.ts';
 
 const colorSchemeMocks = vi.hoisted(() => ({
   prefersDark: false,
 }));
 
 import { useColorScheme } from './use-theme.ts';
+
+const COLOR_SCHEME_COOKIE = 'issuary-color-scheme';
 
 function ColorSchemeProbe() {
   const { colorScheme, toggleColorScheme } = useColorScheme();
@@ -23,6 +26,7 @@ function ColorSchemeProbe() {
 describe('useColorScheme', () => {
   beforeEach(() => {
     localStorage.clear();
+    removePreferenceCookie(COLOR_SCHEME_COOKIE);
     document.documentElement.removeAttribute('data-theme');
     colorSchemeMocks.prefersDark = false;
 
@@ -79,7 +83,7 @@ describe('useColorScheme', () => {
     );
   });
 
-  test('toggles from light to dark and saves to localStorage', async () => {
+  test('toggles from light to dark and saves an SSR-visible cookie', async () => {
     colorSchemeMocks.prefersDark = false;
 
     const screen = await render(<ColorSchemeProbe />);
@@ -93,13 +97,14 @@ describe('useColorScheme', () => {
     await expect
       .element(screen.getByTestId('color-scheme'))
       .toHaveTextContent('dark');
-    expect(localStorage.getItem('issuary-color-scheme')).toBe('dark');
+    expect(document.cookie).toContain(`${COLOR_SCHEME_COOKIE}=dark`);
+    expect(localStorage.getItem(COLOR_SCHEME_COOKIE)).toBeNull();
     expect(document.documentElement.getAttribute('data-theme')).toBe(
       'tinyrack-dark',
     );
   });
 
-  test('toggles from dark to light and saves to localStorage', async () => {
+  test('toggles from dark to light and saves an SSR-visible cookie', async () => {
     localStorage.setItem('issuary-color-scheme', 'dark');
 
     const screen = await render(<ColorSchemeProbe />);
@@ -113,7 +118,8 @@ describe('useColorScheme', () => {
     await expect
       .element(screen.getByTestId('color-scheme'))
       .toHaveTextContent('light');
-    expect(localStorage.getItem('issuary-color-scheme')).toBe('light');
+    expect(document.cookie).toContain(`${COLOR_SCHEME_COOKIE}=light`);
+    expect(localStorage.getItem(COLOR_SCHEME_COOKIE)).toBeNull();
     expect(document.documentElement.getAttribute('data-theme')).toBe(
       'tinyrack-light',
     );

@@ -1,5 +1,6 @@
-import i18n from 'i18next';
+import { createInstance, type i18n as I18nInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { readPreferenceCookie } from '#frontend/libs/preferences.ts';
 import en from './locales/en.json';
 import ja from './locales/ja.json';
 import ko from './locales/ko.json';
@@ -11,7 +12,7 @@ const ALL_TRANSLATIONS = {
   ko: { translation: ko, label: '한국어' },
   en: { translation: en, label: 'English' },
   ja: { translation: ja, label: '日本語' },
-} as const;
+};
 
 export type AvailableLanguage = keyof typeof ALL_TRANSLATIONS;
 
@@ -70,7 +71,11 @@ function getInitialLanguage(
   fallbackLanguage: string,
 ): string {
   // 1. Check localStorage
-  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  const stored =
+    readPreferenceCookie(LANGUAGE_STORAGE_KEY) ??
+    (typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(LANGUAGE_STORAGE_KEY));
   if (
     stored &&
     isAvailableLanguage(stored) &&
@@ -99,11 +104,13 @@ function getInitialLanguage(
  * Initialize i18n with server config.
  * Call this after loading app config from backend.
  */
-export function initI18n(config: {
+export type I18nConfig = {
   supportedLanguages: string[];
   defaultLanguage: string;
   fallbackLanguage: string;
-}) {
+};
+
+function buildI18nOptions(config: I18nConfig, requestedLanguage?: string) {
   const { supportedLanguages, defaultLanguage, fallbackLanguage } = config;
 
   // Filter to only languages we have translations for
@@ -127,26 +134,53 @@ export function initI18n(config: {
     };
   }
 
-  const initialLanguage = getInitialLanguage(
-    availableLanguages,
-    defaultLanguage,
-    safeFallback,
-  );
+  const initialLanguage =
+    requestedLanguage ??
+    getInitialLanguage(availableLanguages, defaultLanguage, safeFallback);
 
-  i18n.use(initReactI18next).init({
+  return {
     resources,
     lng: initialLanguage,
     fallbackLng: safeFallback,
     supportedLngs: availableLanguages,
-    interpolation: {
-      escapeValue: false, // React handles XSS protection
-    },
-    react: {
-      useSuspense: false, // Already using Suspense at app level
-    },
-  });
-
-  return i18n;
+    interpolation: { escapeValue: false },
+    react: { useSuspense: false },
+    initImmediate: false,
+  };
 }
 
-export default i18n;
+export function createI18n(
+  config: I18nConfig,
+  requestedLanguage?: string,
+): I18nInstance {
+  const instance = createInstance();
+  instance.use(initReactI18next);
+  void instance.init(buildI18nOptions(config, requestedLanguage));
+  return instance;
+}
+
+let browserI18n: I18nInstance | undefined;
+
+export function getBrowserI18n(
+  config: I18nConfig,
+  requestedLanguage?: string,
+): I18nInstance {
+  if (browserI18n === undefined) {
+    browserI18n = createI18n(config, requestedLanguage);
+  } else if (
+    requestedLanguage !== undefined &&
+    browserI18n.language !== requestedLanguage
+  ) {
+    void browserI18n.changeLanguage(requestedLanguage);
+  }
+  return browserI18n;
+}
+
+export function getAppI18n(
+  config: I18nConfig,
+  requestedLanguage: string,
+): I18nInstance {
+  return typeof document === 'undefined'
+    ? createI18n(config, requestedLanguage)
+    : getBrowserI18n(config, requestedLanguage);
+}

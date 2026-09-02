@@ -25,9 +25,6 @@ The current config model is organized by top-level groups:
 - `scheduler`
 - `cleanup`
 - `openapi`
-- `frontend` (standalone only)
-
-`frontend` and `frontend.html_variables` are standalone-only settings. They are parsed by `@tinyrack/issuary-standalone` and are not part of the server's declarative config contract.
 
 ## `branding`
 
@@ -102,12 +99,3 @@ Within each localized `content` item, `type` must be `link` or `text`.
 | `background_max_attempts` | `integer` | `3` | Database scheduler maximum attempts before a background job is marked failed. |
 | `background_retention_ms` | `number` | `604800000` | Retention for terminal background jobs (`succeeded`/`failed`) in milliseconds. Pending/running jobs are not deleted by this cleanup. |
 | `instance_id` | `string` | generated | Database scheduler lease owner id. Leave empty to generate a unique per-process id. |
-
-## `frontend`
-
-| Field | Type | Default | Description |
-|------|------|--------|------|
-| `enabled` | `boolean` | `true` | Enables frontend serving. Set to `false` for API-only deployments. |
-| `mode` | `'proxy' \| 'static'` | `'static'` | `proxy` forwards non-API requests to an upstream URL. `static` serves built files from disk. |
-| `path` | `string` | runtime default | Optional in standalone config. Standalone applies a runtime default based on the selected mode. |
-| `html_variables` | `Record<string, string>` | `{}` | Standalone-only HTML template variables used to replace `{{KEY}}` placeholders in served HTML. |

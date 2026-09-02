@@ -1,6 +1,6 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
-import { client, jsonOk } from '#frontend/libs/api.ts';
+import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
 import { queryKeys } from './keys';
 
 export type OAuthAccountsResponse = InferResponseType<
@@ -16,13 +16,17 @@ export type OAuthProviderWithStatus =
 /**
  * Query options for fetching user's linked OAuth accounts
  */
-export const oauthAccountsQueryOptions = queryOptions({
-  queryKey: queryKeys.oauth.accounts(),
-  queryFn: async () => {
-    const res = await client.api.user['oauth-accounts'].$get();
-    return jsonOk(res);
-  },
-});
+export const createOAuthAccountsQueryOptions = (apiClient: ApiClient) =>
+  queryOptions({
+    queryKey: queryKeys.oauth.accounts(),
+    queryFn: async () => {
+      const res = await apiClient.api.user['oauth-accounts'].$get();
+      return jsonOk(res);
+    },
+  });
+
+export const oauthAccountsQueryOptions =
+  createOAuthAccountsQueryOptions(client);
 
 /**
  * Mutation options for unlinking an OAuth account
@@ -44,13 +48,9 @@ export function getOAuthAuthorizeUrl(
   mode: 'login' | 'register' | 'link' = 'login',
   returnUrl?: string,
 ): string {
-  const url = new URL(
-    `/api/oauth/${providerId}/authorize`,
-    window.location.origin,
-  );
-  url.searchParams.set('mode', mode);
+  const search = new URLSearchParams({ mode });
   if (returnUrl) {
-    url.searchParams.set('return_url', returnUrl);
+    search.set('return_url', returnUrl);
   }
-  return url.toString();
+  return `/api/oauth/${encodeURIComponent(providerId)}/authorize?${search.toString()}`;
 }

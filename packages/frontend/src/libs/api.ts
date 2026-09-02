@@ -2,8 +2,14 @@ import type { AppType } from '@tinyrack/issuary-server';
 import type { ClientResponse } from 'hono/client';
 import { hc } from 'hono/client';
 import type { StatusCode, SuccessStatusCode } from 'hono/utils/http-status';
-import i18n from '#frontend/i18n/index.ts';
-import { IssuaryError } from './error';
+import { IssuaryError } from './error.js';
+
+export type ApiClientOptions = {
+  baseUrl: string;
+  cookie?: string | undefined;
+  fetch: typeof fetch;
+  language: () => string;
+};
 
 /**
  * Custom fetch that adds Accept-Language header
@@ -12,21 +18,32 @@ import { IssuaryError } from './error';
  * This replaces the old `etch()` wrapper, preserving
  * the same behavior within the Hono RPC client.
  */
-const customFetch: typeof fetch = async (input, init) => {
-  const headers = new Headers(init?.headers);
+function createApiFetch(options: ApiClientOptions): typeof fetch {
+  return async (input, init) => {
+    const headers = new Headers(init?.headers);
+    if (!headers.has('Accept-Language')) {
+      headers.set('Accept-Language', options.language());
+    }
+    if (options.cookie && !headers.has('Cookie')) {
+      headers.set('Cookie', options.cookie);
+    }
 
-  if (!headers.has('Accept-Language')) {
-    headers.set('Accept-Language', i18n.language);
-  }
-
-  const res = await fetch(input, { ...init, headers });
-
-  if (!res.ok) {
-    throw await IssuaryError.fromResponse(res);
-  }
-
-  return res;
-};
+    const inputUrl =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+    const target =
+      options.baseUrl === '/' ? input : new URL(inputUrl, options.baseUrl);
+    const response = await options.fetch(target, {
+      ...init,
+      headers,
+    });
+    if (!response.ok) throw await IssuaryError.fromResponse(response);
+    return response;
+  };
+}
 
 /**
  * Type-safe Hono RPC client.
@@ -36,8 +53,22 @@ const customFetch: typeof fetch = async (input, init) => {
  * All API calls should use this client instead of
  * raw fetch or the old etch() wrapper.
  */
-export const client = hc<AppType>('/', {
-  fetch: customFetch,
+export function createApiClient(options: ApiClientOptions) {
+  return hc<AppType>(options.baseUrl, { fetch: createApiFetch(options) });
+}
+
+export type ApiClient = ReturnType<typeof createApiClient>;
+
+let browserLanguage = 'en';
+
+export function setBrowserApiLanguage(language: string): void {
+  browserLanguage = language;
+}
+
+export const client = createApiClient({
+  baseUrl: '/',
+  fetch: (input, init) => globalThis.fetch(input, init),
+  language: () => browserLanguage,
 });
 
 /**

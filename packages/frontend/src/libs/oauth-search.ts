@@ -96,34 +96,29 @@ export function hasAuthorizationContext(
  * 로그인/회원가입 성공 후 OAuth 플로우를 재개할 때 사용
  */
 export function buildAuthorizeUrl(search: OAuthSearch): string {
-  const authUrl = new URL('/oauth/authorize', window.location.origin);
+  const params = new URLSearchParams();
 
-  if (search.client_id) authUrl.searchParams.set('client_id', search.client_id);
-  if (search.redirect_uri)
-    authUrl.searchParams.set('redirect_uri', search.redirect_uri);
-  if (search.response_type)
-    authUrl.searchParams.set('response_type', search.response_type);
-  if (search.scope) authUrl.searchParams.set('scope', search.scope);
-  if (search.state) authUrl.searchParams.set('state', search.state);
-  if (search.nonce) authUrl.searchParams.set('nonce', search.nonce);
+  if (search.client_id) params.set('client_id', search.client_id);
+  if (search.redirect_uri) params.set('redirect_uri', search.redirect_uri);
+  if (search.response_type) params.set('response_type', search.response_type);
+  if (search.scope) params.set('scope', search.scope);
+  if (search.state) params.set('state', search.state);
+  if (search.nonce) params.set('nonce', search.nonce);
   if (search.code_challenge)
-    authUrl.searchParams.set('code_challenge', search.code_challenge);
+    params.set('code_challenge', search.code_challenge);
   if (search.code_challenge_method)
-    authUrl.searchParams.set(
-      'code_challenge_method',
-      search.code_challenge_method,
-    );
-  if (search.prompt) authUrl.searchParams.set('prompt', search.prompt);
-  if (search.max_age) authUrl.searchParams.set('max_age', search.max_age);
+    params.set('code_challenge_method', search.code_challenge_method);
+  if (search.prompt) params.set('prompt', search.prompt);
+  if (search.max_age) params.set('max_age', search.max_age);
   if (
     search.reauthenticated ||
     search.prompt?.split(' ').includes('login') ||
     search.max_age === '0'
   ) {
-    authUrl.searchParams.set('reauthenticated', '1');
+    params.set('reauthenticated', '1');
   }
   if (search.account_selected) {
-    authUrl.searchParams.set(
+    params.set(
       'account_selected',
       decodeURIComponent(String(search.account_selected))
         .replaceAll('"', '')
@@ -131,23 +126,16 @@ export function buildAuthorizeUrl(search: OAuthSearch): string {
     );
   }
   if (search.account_selection_state)
-    authUrl.searchParams.set(
-      'account_selection_state',
-      search.account_selection_state,
-    );
-  if (search.display) authUrl.searchParams.set('display', search.display);
-  if (search.response_mode)
-    authUrl.searchParams.set('response_mode', search.response_mode);
-  if (search.login_hint)
-    authUrl.searchParams.set('login_hint', search.login_hint);
-  if (search.ui_locales)
-    authUrl.searchParams.set('ui_locales', search.ui_locales);
-  if (search.id_token_hint)
-    authUrl.searchParams.set('id_token_hint', search.id_token_hint);
-  if (search.acr_values)
-    authUrl.searchParams.set('acr_values', search.acr_values);
+    params.set('account_selection_state', search.account_selection_state);
+  if (search.display) params.set('display', search.display);
+  if (search.response_mode) params.set('response_mode', search.response_mode);
+  if (search.login_hint) params.set('login_hint', search.login_hint);
+  if (search.ui_locales) params.set('ui_locales', search.ui_locales);
+  if (search.id_token_hint) params.set('id_token_hint', search.id_token_hint);
+  if (search.acr_values) params.set('acr_values', search.acr_values);
 
-  return authUrl.toString();
+  const query = params.toString();
+  return query ? `/oauth/authorize?${query}` : '/oauth/authorize';
 }
 
 /**

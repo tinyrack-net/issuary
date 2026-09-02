@@ -28,40 +28,38 @@ function getMockClientOrigin(port: number): string {
   return `http://${MOCK_CLIENT_HOST}:${port}`;
 }
 
-const test = createScenarioFixture(
-  (backendPort, _frontendPort, mockClientPort) => {
-    const mockClientOrigin = getMockClientOrigin(mockClientPort);
-    return {
-      ...E2E_BASE_CONFIG,
-      ...createTestConfig(backendPort, {
-        registration: {
-          enabled: true,
-          allowed_email_patterns: ['*'],
-        },
-      }),
-      clients: [
-        {
-          id: 'mock-e2e-oauth-client-config',
-          name: MOCK_CLIENT.name,
-          client_id: MOCK_CLIENT.clientId,
-          client_secret: MOCK_CLIENT.clientSecret,
-          redirect_uris: [`${mockClientOrigin}/callback`],
-          post_logout_redirect_uris: [`${mockClientOrigin}/logged-out`],
-          web_origins: [mockClientOrigin],
-          response_types: ['code', 'id_token'],
-          grant_types: [
-            'authorization_code',
-            'implicit',
-            'refresh_token',
-            'client_credentials',
-            'urn:ietf:params:oauth:grant-type:device_code',
-          ],
-          scope: 'openid profile email offline_access service.read',
-        },
-      ],
-    };
-  },
-);
+const test = createScenarioFixture((backendPort, mockClientPort) => {
+  const mockClientOrigin = getMockClientOrigin(mockClientPort);
+  return {
+    ...E2E_BASE_CONFIG,
+    ...createTestConfig(backendPort, {
+      registration: {
+        enabled: true,
+        allowed_email_patterns: ['*'],
+      },
+    }),
+    clients: [
+      {
+        id: 'mock-e2e-oauth-client-config',
+        name: MOCK_CLIENT.name,
+        client_id: MOCK_CLIENT.clientId,
+        client_secret: MOCK_CLIENT.clientSecret,
+        redirect_uris: [`${mockClientOrigin}/callback`],
+        post_logout_redirect_uris: [`${mockClientOrigin}/logged-out`],
+        web_origins: [mockClientOrigin],
+        response_types: ['code', 'id_token'],
+        grant_types: [
+          'authorization_code',
+          'implicit',
+          'refresh_token',
+          'client_credentials',
+          'urn:ietf:params:oauth:grant-type:device_code',
+        ],
+        scope: 'openid profile email offline_access service.read',
+      },
+    ],
+  };
+});
 
 function uniqueEmail(suffix: string): string {
   return createUniqueEmail(test.info(), `mock-oauth-client-${suffix}`);

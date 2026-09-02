@@ -40,7 +40,6 @@ try {
   const frontendHtml = await frontendResponse.text();
   assert.match(frontendHtml, /Issuary Hono Example/);
   assert.match(frontendHtml, /Issuary running in library mode/);
-  assert.ok(!frontendHtml.includes('{{TITLE}}'));
 
   const discoveryResponse = await fetch(
     `${baseUrl}/oauth/.well-known/openid-configuration`,

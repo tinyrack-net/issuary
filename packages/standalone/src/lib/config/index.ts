@@ -17,11 +17,6 @@ export {
 } from './database.ts';
 export type { StandaloneEmailConfig } from './email.ts';
 export { StandaloneEmailConfigSchema } from './email.ts';
-export type {
-  StandaloneFrontendConfig,
-  StandaloneFrontendConfigInput,
-} from './frontend.ts';
-export { StandaloneFrontendConfigSchema } from './frontend.ts';
 export type { StandaloneIdentityProviderConfig } from './identity-providers.ts';
 export {
   StandaloneIdentityProviderConfigSchema,

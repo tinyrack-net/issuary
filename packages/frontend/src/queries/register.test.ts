@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import { setBrowserApiLanguage } from '#frontend/libs/api.ts';
 import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   type CapturedFetchRequest,
@@ -67,6 +68,7 @@ function jsonBody(request: CapturedFetchRequest) {
 
 describe('registerMutationOptions', () => {
   afterEach(() => {
+    setBrowserApiLanguage('en');
     resetFetchMock();
   });
 
@@ -84,6 +86,17 @@ describe('registerMutationOptions', () => {
     expect(request.headers.get('content-type')).toContain('application/json');
     expect(request.headers.has('Accept-Language')).toBe(true);
     expect(jsonBody(request)).toEqual(registerValues);
+  });
+
+  test('uses the language selected after the API client was created', async () => {
+    setBrowserApiLanguage('ko');
+    const fetchMock = mockJsonSuccess(registerResponse);
+
+    await runRegisterMutation(registerValues);
+
+    expect(
+      firstRequest(fetchMock.requests).headers.get('Accept-Language'),
+    ).toBe('ko');
   });
 
   test('preserves duplicate registration API errors as IssuaryError', async () => {

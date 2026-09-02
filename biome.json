@@ -20,7 +20,7 @@
       "!**/dist",
       "!**/build",
       "!**/coverage",
-      "!packages/server/public",
+      "!packages/server/frontend",
       "!packages/standalone/public",
       "!**/routeTree.gen.ts",
       "!**/next-env.d.ts",

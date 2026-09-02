@@ -3,13 +3,14 @@
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "useDefineForClassFields": true,
     "sourceMap": true,
+    "rootDirs": [".", ".react-router/types"],
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.app.tsbuildinfo",
     "paths": {
       "#frontend/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", ".react-router/types", "*.ts"]
 }

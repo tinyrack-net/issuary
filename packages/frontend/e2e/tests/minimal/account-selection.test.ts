@@ -10,6 +10,7 @@ import {
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
+import { waitForAppHydration } from '#frontend-e2e/helpers/hydration.ts';
 import { openPasswordLoginFromCurrentPage } from '#frontend-e2e/helpers/login.ts';
 import {
   buildAuthorizePath,
@@ -174,6 +175,7 @@ async function authorizeSelectedAccount(params: {
   );
 
   await expect(params.page).toHaveURL(/\/account\/select/);
+  await waitForAppHydration(params.page);
   const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
   const callbackRouteHandler = async (
     route: import('@playwright/test').Route,
@@ -209,6 +211,7 @@ async function authorizeSelectedAccount(params: {
 
     let redirectRequest: import('@playwright/test').Request;
     if (redirectOutcome.kind === 'consent') {
+      await waitForAppHydration(params.page);
       await params.page.locator(consentPage.allowButton).click({
         noWaitAfter: true,
       });

@@ -22,6 +22,15 @@ export default defineConfig({
         ),
       },
       {
+        find: /^@tinyrack\/issuary-server\/internal\/frontend-runtime-context$/,
+        replacement: fileURLToPath(
+          new URL(
+            '../server/src/lib/frontend/runtime-context.ts',
+            import.meta.url,
+          ),
+        ),
+      },
+      {
         find: /^@tinyrack\/issuary-server\/services$/,
         replacement: fileURLToPath(
           new URL('../server/src/entrypoints/services.ts', import.meta.url),
@@ -104,33 +113,6 @@ export default defineConfig({
         replacement: fileURLToPath(
           new URL(
             '../server/src/entrypoints/scheduler/database.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/index.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend\/proxy$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/proxy.ts',
-            import.meta.url,
-          ),
-        ),
-      },
-      {
-        find: /^@tinyrack\/issuary-server\/frontend\/static$/,
-        replacement: fileURLToPath(
-          new URL(
-            '../server/src/entrypoints/frontend/static.ts',
             import.meta.url,
           ),
         ),

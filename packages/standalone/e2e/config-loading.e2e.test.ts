@@ -148,7 +148,6 @@ describe('config loading priority', { timeout: 180_000 }, () => {
       },
       logging: { level: 'error', format: 'json' },
       email: { transport: 'test' },
-      frontend: { enabled: false },
       scheduler: { enabled: false },
       server: { listen_port: port },
       ...extra,

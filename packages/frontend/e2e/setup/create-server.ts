@@ -3,20 +3,14 @@ import { once } from 'node:events';
 import { Server as HttpServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { createServer as createNetServer } from 'node:net';
-import { fileURLToPath } from 'node:url';
 import { serve } from '@hono/node-server';
 import { createApp } from '@tinyrack/issuary-server';
 import type { IssuaryRuntimeConfig } from '@tinyrack/issuary-server/config';
-import { createStaticHandler } from '@tinyrack/issuary-server/frontend/static';
 import type { E2EConfigInput } from '#frontend-e2e/fixtures/index.ts';
 import { resolveTestEmailConfig } from '#frontend-e2e/setup/resolve-test-email.ts';
 
-const SHARED_FRONTEND_PORT_ENV = 'E2E_SHARED_FRONTEND_PORT';
 const APPLE_STUB_KEY_ID = 'issuary-e2e-apple-stub-key';
 const BACKEND_BIND_ATTEMPTS = 5;
-const FRONTEND_PUBLIC_PATH = fileURLToPath(
-  new URL('../../../server/public', import.meta.url),
-);
 
 export type TestHonoApp = Awaited<ReturnType<typeof createE2EServer>>['app'];
 
@@ -296,28 +290,8 @@ export type E2EConfigResult = E2EConfigInput;
 
 type ConfigFactory = (
   backendPort: number,
-  frontendPort: number,
   auxiliaryPort: number,
 ) => E2EConfigResult;
-
-function getSharedFrontendPort(): number {
-  const rawPort = process.env[SHARED_FRONTEND_PORT_ENV];
-  if (!rawPort) {
-    throw new Error(
-      `${SHARED_FRONTEND_PORT_ENV} is not set. ` +
-        'Ensure Playwright global setup started the shared frontend server.',
-    );
-  }
-
-  const frontendPort = Number(rawPort);
-  if (!Number.isInteger(frontendPort) || frontendPort <= 0) {
-    throw new Error(
-      `${SHARED_FRONTEND_PORT_ENV} must be a positive integer. Received: ${rawPort}`,
-    );
-  }
-
-  return frontendPort;
-}
 
 function isTestEmailConfig(
   email: E2EConfigResult['email'],
@@ -339,7 +313,7 @@ function isResolvedEmailConfig(
 
 /**
  * Creates and starts the backend server for an e2e test config
- * using a per-server backend port and shared frontend port.
+ * using a per-server integrated Hono port.
  *
  * Registers test-only endpoints on the backend for accessing
  * email verification tokens and TOTP secrets during e2e tests.
@@ -352,13 +326,11 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
   for (let attempt = 0; attempt < BACKEND_BIND_ATTEMPTS; attempt++) {
     const backendPort = await getFreePort();
-    const frontendPort = getSharedFrontendPort();
     const auxiliaryPortReservation = await reserveFreePort();
     const auxiliaryPort = auxiliaryPortReservation.port;
 
     const { email: rawEmail, ...restConfig } = configFactory(
       backendPort,
-      frontendPort,
       auxiliaryPort,
     );
 
@@ -370,14 +342,9 @@ export async function createE2EServer(configFactory: ConfigFactory) {
       resolvedEmail = rawEmail;
     }
 
-    const defaultFrontend = createStaticHandler({
-      publicPath: FRONTEND_PUBLIC_PATH,
-    });
-
     const config = {
       ...restConfig,
       ...(resolvedEmail ? { email: resolvedEmail } : {}),
-      frontend: restConfig.frontend ?? defaultFrontend,
     };
 
     // 1. Start backend

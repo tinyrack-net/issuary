@@ -7,10 +7,6 @@ order: 32
 
 이 문서는 현재 `issuary`의 `config.yaml` 구조를 top-level 그룹 기준으로 정리한 레퍼런스예요.
 
-:::note
-`frontend`와 `frontend.html_variables`는 standalone 전용 설정이에요. `@tinyrack/issuary-standalone`만 이 값을 해석하고, `@tinyrack/issuary-server`의 직접 구성에서는 사용하지 않아요.
-:::
-
 ## `server`
 
 | 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
@@ -235,15 +231,6 @@ order: 32
 | `title` | `string` | `'Issuary API'` | - | OpenAPI 문서 제목 |
 | `description` | `string` | `'OpenID Connect Provider API'` | - | OpenAPI 문서 설명 |
 | `ui_title` | `string` | `'Issuary API Reference'` | - | 라이브 Scalar API 레퍼런스 UI의 브라우저 페이지 제목 |
-
-## `frontend` (standalone only)
-
-| 항목 | 유형 | 기본값 | 환경 변수 | 설명 |
-|------|------|--------|-----------|------|
-| `enabled` | `boolean` | `true` | `FRONTEND_ENABLED` | 프론트엔드 서빙 활성화 여부 |
-| `mode` | `'proxy' \| 'static'` | `'static'` | `FRONTEND_MODE` | `proxy`는 업스트림 전달, `static`은 디스크 서빙 |
-| `path` | `string` | 런타임 기본값 | `FRONTEND_PATH` | 프론트엔드 경로 |
-| `html_variables` | `Record<string, string>` | `{}` | - | HTML 템플릿 치환 변수 |
 
 :::note
 `DurationString` 형식: `"0"` (즉시), `"30s"` (초), `"30m"` (분), `"24h"` (시간), `"7d"` (일), `"1y"` (년)

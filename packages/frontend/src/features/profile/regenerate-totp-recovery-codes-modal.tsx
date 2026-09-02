@@ -3,10 +3,10 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
 import { ShieldCheckIcon } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 import { RecoveryCodesStep } from '#frontend/components/totp/recovery-codes-step.tsx';
 import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
@@ -32,7 +32,7 @@ export function RegenerateTotpRecoveryCodesModal({
   onClose,
 }: RegenerateTotpRecoveryCodesModalProps) {
   const { t } = useTranslation();
-  const router = useRouter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: appConfig } = useSuspenseQuery(appConfigQueryOptions);
   const [step, setStep] = useState<RegenerateStep>('verify');
@@ -80,7 +80,7 @@ export function RegenerateTotpRecoveryCodesModal({
               user: null,
             });
             await tick();
-            router.navigate({ to: '/login' });
+            navigate('/login');
             return;
           }
 
@@ -99,7 +99,7 @@ export function RegenerateTotpRecoveryCodesModal({
         setErrorMessage(t('profile.totp.regenerateModal.unexpectedError'));
       }
     },
-    [handleClose, mutation, queryClient, router, t],
+    [handleClose, mutation, navigate, queryClient, t],
   );
 
   if (!appConfig.auth.password.totp.enabled) {

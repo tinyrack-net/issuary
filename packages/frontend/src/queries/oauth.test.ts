@@ -151,6 +151,7 @@ describe('getOAuthAuthorizeUrl', () => {
   test('builds a login authorize URL with the provider, mode, and return URL', () => {
     const url = new URL(
       getOAuthAuthorizeUrl('google', 'login', '/login?client_id=web-client'),
+      globalThis.location.origin,
     );
 
     expect(url.origin).toBe(globalThis.location.origin);
@@ -162,7 +163,10 @@ describe('getOAuthAuthorizeUrl', () => {
   });
 
   test('builds a link authorize URL for profile provider linking', () => {
-    const url = new URL(getOAuthAuthorizeUrl('github', 'link', '/profile'));
+    const url = new URL(
+      getOAuthAuthorizeUrl('github', 'link', '/profile'),
+      globalThis.location.origin,
+    );
 
     expect(url.origin).toBe(globalThis.location.origin);
     expect(url.pathname).toBe('/api/oauth/github/authorize');

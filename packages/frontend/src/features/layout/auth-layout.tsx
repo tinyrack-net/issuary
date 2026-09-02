@@ -33,23 +33,27 @@ export function AuthLayout({
   showBrandSubtitle = false,
 }: AuthLayoutProps) {
   return (
-    // tinyrack-check-ignore-next-line components/no-native-text -- Structural authentication shell; page content owns descendant typography.
-    <div className="flex min-h-dvh flex-col bg-tinyrack-surface">
+    // tinyrack-check-ignore-next-line components/no-native-text -- Structural auth stack; visible descendants use design-system typography.
+    <div
+      className={`m-auto flex w-full flex-col gap-tinyrack-xl ${widthClasses[width]}`}
+    >
+      <AuthBrandHeader showSubtitle={showBrandSubtitle} />
+      {children}
+    </div>
+  );
+}
+
+export function AuthShell({ children }: { children: React.ReactNode }) {
+  return (
+    // tinyrack-check-ignore-next-line components/no-native-text -- Persistent authentication shell; route content owns descendant typography.
+    <div
+      className="flex min-h-dvh flex-col bg-tinyrack-surface"
+      data-testid="auth-shell"
+    >
       <Toaster />
       <ShellHeaderBar />
       <main className="flex flex-1 px-tinyrack-lg py-tinyrack-xl">
-        {/*
-          The stack owns vertical rhythm so screens compose as a flat list of
-          brand, header, alerts, form, and footer blocks. `m-auto` centres both
-          axes only when space is available and collapses safely for tall flows.
-        */}
-        {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural auth stack; visible descendants use design-system typography. */}
-        <div
-          className={`auth-enter m-auto flex w-full flex-col gap-tinyrack-xl ${widthClasses[width]}`}
-        >
-          <AuthBrandHeader showSubtitle={showBrandSubtitle} />
-          {children}
-        </div>
+        {children}
       </main>
       <ShellFooter />
     </div>
