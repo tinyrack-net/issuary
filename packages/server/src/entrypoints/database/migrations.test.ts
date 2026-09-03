@@ -11,6 +11,7 @@ import { Migration20260626103000_allow_revoked_token_without_user as PostgresRev
 import { Migration20260825110000_add_password_reset_required as PostgresPasswordResetRequiredMigration } from '../../migrations/postgres/Migration20260825110000_add_password_reset_required.js';
 import { Migration20260825140000_drop_password_reset_required as PostgresDropPasswordResetRequiredMigration } from '../../migrations/postgres/Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms as PostgresArchiveTermsMigration } from '../../migrations/postgres/Migration20260827090000_archive_terms.js';
+import { Migration20260904090000_add_oauth_client_lifecycle as PostgresOAuthClientLifecycleMigration } from '../../migrations/postgres/Migration20260904090000_add_oauth_client_lifecycle.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -23,6 +24,7 @@ import { Migration20260626103000_allow_revoked_token_without_user as SqliteRevok
 import { Migration20260825110000_add_password_reset_required as SqlitePasswordResetRequiredMigration } from '../../migrations/sqlite/Migration20260825110000_add_password_reset_required.js';
 import { Migration20260825140000_drop_password_reset_required as SqliteDropPasswordResetRequiredMigration } from '../../migrations/sqlite/Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms as SqliteArchiveTermsMigration } from '../../migrations/sqlite/Migration20260827090000_archive_terms.js';
+import { Migration20260904090000_add_oauth_client_lifecycle as SqliteOAuthClientLifecycleMigration } from '../../migrations/sqlite/Migration20260904090000_add_oauth_client_lifecycle.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -38,6 +40,7 @@ type MigrationClass =
   | typeof PostgresPasswordResetRequiredMigration
   | typeof PostgresDropPasswordResetRequiredMigration
   | typeof PostgresArchiveTermsMigration
+  | typeof PostgresOAuthClientLifecycleMigration
   | typeof SqliteInitialMigration
   | typeof SqliteSchedulerJobsMigration
   | typeof SqliteDeviceAuthorizationMigration
@@ -48,7 +51,8 @@ type MigrationClass =
   | typeof SqliteRevokedTokenNullableUserMigration
   | typeof SqlitePasswordResetRequiredMigration
   | typeof SqliteDropPasswordResetRequiredMigration
-  | typeof SqliteArchiveTermsMigration;
+  | typeof SqliteArchiveTermsMigration
+  | typeof SqliteOAuthClientLifecycleMigration;
 
 interface MigrationLike {
   up(): void | Promise<void>;
@@ -85,6 +89,7 @@ describe('database migrations', () => {
       PostgresPasswordResetRequiredMigration,
       PostgresDropPasswordResetRequiredMigration,
       PostgresArchiveTermsMigration,
+      PostgresOAuthClientLifecycleMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -128,6 +133,7 @@ describe('database migrations', () => {
       SqlitePasswordResetRequiredMigration,
       SqliteDropPasswordResetRequiredMigration,
       SqliteArchiveTermsMigration,
+      SqliteOAuthClientLifecycleMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -245,6 +251,31 @@ describe('database migrations', () => {
     );
     expect(sqliteQueries).toContain(
       `alter table \`oauth_client\` add column \`skip_consent\` integer not null default false;`,
+    );
+  });
+
+  test('oauth client lifecycle migrations add soft-delete and token epoch columns', async () => {
+    const postgresQueries = await collectMigrationQueries(
+      PostgresOAuthClientLifecycleMigration,
+    );
+    const sqliteQueries = await collectMigrationQueries(
+      SqliteOAuthClientLifecycleMigration,
+    );
+
+    expect(postgresQueries).toContain(
+      `alter table "oauth_client" add column "deleted_at" timestamptz null, add column "token_epoch" varchar(255) null;`,
+    );
+    expect(postgresQueries).toContain(
+      `create index "oauth_client_deleted_at_idx" on "oauth_client" ("deleted_at");`,
+    );
+    expect(sqliteQueries).toContain(
+      `alter table \`oauth_client\` add column \`deleted_at\` datetime null;`,
+    );
+    expect(sqliteQueries).toContain(
+      `alter table \`oauth_client\` add column \`token_epoch\` text null;`,
+    );
+    expect(sqliteQueries).toContain(
+      `create index \`oauth_client_deleted_at_idx\` on \`oauth_client\` (\`deleted_at\`);`,
     );
   });
 

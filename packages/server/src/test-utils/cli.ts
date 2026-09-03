@@ -421,6 +421,7 @@ export async function countEntities(
   services: ServiceContainer,
   entityName:
     | 'revokedToken'
+    | 'oauthClient'
     | 'oauthCode'
     | 'emailVerification'
     | 'passwordReset'
@@ -435,6 +436,9 @@ export async function countEntities(
     const em = services.mikro.em.fork();
 
     switch (entityName) {
+      case 'oauthClient':
+        count = await em.count(OAuthClientEntitySchema, filter);
+        break;
       case 'revokedToken':
         count = await em.count(RevokedTokenEntitySchema, filter);
         break;

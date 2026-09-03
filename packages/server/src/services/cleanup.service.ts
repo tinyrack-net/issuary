@@ -1,6 +1,8 @@
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
@@ -82,6 +84,7 @@ export interface CleanupSummary {
  * Handles cleanup of:
  * - Revoked tokens (expired JWT revocations)
  * - OAuth authorization codes (expired/consumed)
+ * - Soft-deleted OAuth clients (past retention period)
  * - Email verification tokens (expired)
  * - Password reset tokens (expired)
  * - Deleted users (past retention period)
@@ -240,6 +243,67 @@ export class CleanupService {
       deletedCount: totalCount,
       skipped: false,
       message: `${expiredCount} expired, ${consumedCount} consumed`,
+    };
+  }
+
+  async cleanupDeletedOAuthClients(
+    options: CleanupOptions,
+  ): Promise<CleanupResult> {
+    const config = this.config.cleanup.oauth_clients;
+    if (!config.enabled) {
+      return { deletedCount: 0, skipped: true, message: 'Disabled in config' };
+    }
+
+    const em = this.mikro.orm.em.fork();
+    const retentionMs = parseDurationToMs(config.retention);
+    const cutoffDate = calculateCutoffDate(config.retention);
+    const clients = await em.find(OAuthClientEntitySchema, {
+      deletedAt: { $ne: null, $lt: cutoffDate },
+    });
+
+    if (clients.length === 0) {
+      return {
+        deletedCount: 0,
+        skipped: false,
+        message: 'No OAuth clients ready for permanent deletion',
+      };
+    }
+
+    if (options.dryRun) {
+      return {
+        deletedCount: clients.length,
+        skipped: false,
+        message: `Would delete ${clients.length} OAuth clients (retention: ${formatDuration(retentionMs)})`,
+      };
+    }
+
+    let deletedCount = 0;
+    for (const client of clients) {
+      const deleted = await em.transactional(async (transaction) => {
+        await transaction.nativeDelete(OAuthCodeEntitySchema, {
+          client: client.id,
+        });
+        await transaction.nativeDelete(OAuthDeviceCodeEntitySchema, {
+          client: client.id,
+        });
+        await transaction.nativeDelete(UserConsentEntity, {
+          client: client.id,
+        });
+        await transaction.nativeDelete(RevokedTokenEntitySchema, {
+          client: client.id,
+        });
+        return transaction.nativeDelete(OAuthClientEntitySchema, {
+          id: client.id,
+          deletedAt: { $ne: null, $lt: cutoffDate },
+        });
+      });
+      deletedCount += deleted;
+    }
+
+    return {
+      deletedCount,
+      skipped: false,
+      message: `Retention: ${formatDuration(retentionMs)}`,
     };
   }
 
@@ -686,6 +750,11 @@ export class CleanupService {
         name: 'oauth-codes',
         description: 'Remove expired and consumed OAuth authorization codes',
         run: () => this.cleanupOAuthCodes({ dryRun }),
+      },
+      {
+        name: 'deleted-oauth-clients',
+        description: 'Permanently delete OAuth clients after retention period',
+        run: () => this.cleanupDeletedOAuthClients({ dryRun }),
       },
       {
         name: 'email-verifications',

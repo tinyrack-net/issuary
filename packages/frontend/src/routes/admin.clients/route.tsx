@@ -14,6 +14,7 @@ import { TRSelect } from '@tinyrack/ui/components/select';
 import { TRTable } from '@tinyrack/ui/components/table';
 import { TRText } from '@tinyrack/ui/components/text';
 import { TRToolbar } from '@tinyrack/ui/components/toolbar';
+import { TriangleAlertIcon } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
@@ -32,6 +33,8 @@ import {
   AdminTableFrame,
 } from '#frontend/features/admin/admin-data-table.tsx';
 import { useAdminSelection } from '#frontend/features/admin/use-admin-selection.ts';
+import type { NoticeState } from '#frontend/features/admin/users/admin-users-filters.ts';
+import { AdminUsersNotice } from '#frontend/features/admin/users/admin-users-notice.tsx';
 import {
   createRouteLoaderData,
   RouteHydrationBoundary,
@@ -46,6 +49,8 @@ import {
   bulkSetAdminClientsActive,
   createAdminClient,
   createAdminClientsQueryOptions,
+  deleteAdminClient,
+  restoreAdminClient,
   rotateAdminClientSecret,
   updateAdminClient,
 } from '#frontend/queries/admin-console.ts';
@@ -61,9 +66,17 @@ function AdminClientsPage() {
   });
   const [editing, setEditing] = useState<AdminClient | 'create' | null>(null);
   const [bulkActive, setBulkActive] = useState<boolean | null>(null);
+  const [deleting, setDeleting] = useState<AdminClient | null>(null);
+  const [notice, setNotice] = useState<NoticeState>(null);
   const [secret, setSecret] = useState<string | null>(null);
   const { data } = useSuspenseQuery(adminClientsQueryOptions(filters));
-  const selection = useAdminSelection(data.clients.map((client) => client.id));
+  const selection = useAdminSelection(
+    data.clients
+      .filter(
+        (client) => client.managed_by === 'database' && !client.deleted_at,
+      )
+      .map((client) => client.id),
+  );
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['admin'] });
   const createMutation = useMutation({
@@ -102,6 +115,38 @@ function AdminClientsPage() {
       setBulkActive(null);
     },
   });
+  const deleteMutation = useMutation({
+    mutationFn: deleteAdminClient,
+    onSuccess: ({ client }) => {
+      void invalidate();
+      selection.clear();
+      setDeleting(null);
+      setNotice({
+        tone: 'success',
+        message: t('admin.clients.deletedNotice', { name: client.name }),
+      });
+    },
+    onError: () =>
+      setNotice({
+        tone: 'error',
+        message: t('admin.clients.operationFailed'),
+      }),
+  });
+  const restoreMutation = useMutation({
+    mutationFn: restoreAdminClient,
+    onSuccess: ({ client }) => {
+      void invalidate();
+      setNotice({
+        tone: 'success',
+        message: t('admin.clients.restoredNotice', { name: client.name }),
+      });
+    },
+    onError: () =>
+      setNotice({
+        tone: 'error',
+        message: t('admin.clients.operationFailed'),
+      }),
+  });
   const page = filters.page ?? 1;
   const pageSize = filters.pageSize ?? 20;
   const selected =
@@ -115,7 +160,12 @@ function AdminClientsPage() {
           filter: {
             query: filters.query,
             managed_by: filters.managedBy,
-            enabled: filters.enabled,
+            enabled:
+              filters.lifecycleStatus === 'active'
+                ? true
+                : filters.lifecycleStatus === 'inactive'
+                  ? false
+                  : undefined,
           },
         }
       : { kind: 'ids', ids: [...selection.selection.ids] };
@@ -126,6 +176,9 @@ function AdminClientsPage() {
 
   return (
     <>
+      {notice ? (
+        <AdminUsersNotice notice={notice} onDismiss={() => setNotice(null)} />
+      ) : null}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <AdminListToolbar
           onCreate={() => setEditing('create')}
@@ -163,7 +216,12 @@ function AdminClientsPage() {
             onChange={(value) =>
               setFilter({
                 ...filters,
-                enabled: value === 'all' ? undefined : value === 'active',
+                lifecycleStatus:
+                  value === 'active' ||
+                  value === 'inactive' ||
+                  value === 'deleted'
+                    ? value
+                    : undefined,
                 page: 1,
               })
             }
@@ -171,14 +229,9 @@ function AdminClientsPage() {
               ['all', t('admin.filter.allStatuses')],
               ['active', t('admin.status.active')],
               ['inactive', t('admin.status.inactive')],
+              ['deleted', t('admin.status.deleted')],
             ]}
-            value={
-              filters.enabled === undefined
-                ? 'all'
-                : filters.enabled
-                  ? 'active'
-                  : 'inactive'
-            }
+            value={filters.lifecycleStatus ?? 'all'}
           />
         </AdminListToolbar>
         <AdminTableFrame>
@@ -243,13 +296,18 @@ function AdminClientsPage() {
                     <AdminStickySelectCell
                       selected={selection.isSelected(client.id)}
                     >
-                      <AdminRowCheckbox
-                        checked={selection.isSelected(client.id)}
-                        label={t('admin.selection.row', { name: client.name })}
-                        onChange={(checked) =>
-                          selection.toggleOne(client.id, checked)
-                        }
-                      />
+                      {client.managed_by === 'database' &&
+                      !client.deleted_at ? (
+                        <AdminRowCheckbox
+                          checked={selection.isSelected(client.id)}
+                          label={t('admin.selection.row', {
+                            name: client.name,
+                          })}
+                          onChange={(checked) =>
+                            selection.toggleOne(client.id, checked)
+                          }
+                        />
+                      ) : null}
                     </AdminStickySelectCell>
                     <AdminStickyIdentityCell
                       selected={selection.isSelected(client.id)}
@@ -270,12 +328,20 @@ function AdminClientsPage() {
                     <TRTable.Cell>
                       <TRBadge
                         className="whitespace-nowrap"
-                        variant={client.enabled ? 'success' : 'neutral'}
+                        variant={
+                          client.deleted_at
+                            ? 'danger'
+                            : client.enabled
+                              ? 'success'
+                              : 'neutral'
+                        }
                       >
                         {t(
-                          client.enabled
-                            ? 'admin.status.active'
-                            : 'admin.status.inactive',
+                          client.deleted_at
+                            ? 'admin.status.deleted'
+                            : client.enabled
+                              ? 'admin.status.active'
+                              : 'admin.status.inactive',
                         )}
                       </TRBadge>
                     </TRTable.Cell>
@@ -284,46 +350,73 @@ function AdminClientsPage() {
                     <AdminStickyActionCell
                       selected={selection.isSelected(client.id)}
                     >
-                      <TRToolbar.Root className="flex justify-end gap-tinyrack-xs">
-                        <TRButton
-                          appearance="ghost"
-                          disabled={client.managed_by === 'config'}
-                          onClick={() => setEditing(client)}
-                          type="button"
-                          uiSize="sm"
-                        >
-                          {t('admin.actions.edit')}
-                        </TRButton>
-                        {client.type === 'confidential' ? (
+                      {client.deleted_at ? (
+                        client.managed_by === 'database' ? (
                           <TRButton
-                            appearance="ghost"
-                            disabled={client.managed_by === 'config'}
-                            onClick={() => rotateMutation.mutate(client.id)}
+                            disabled={restoreMutation.isPending}
+                            onClick={() => restoreMutation.mutate(client.id)}
                             type="button"
                             uiSize="sm"
                           >
-                            {t('admin.clients.rotateSecret')}
+                            {t('admin.actions.restore')}
                           </TRButton>
-                        ) : null}
-                        <TRButton
-                          appearance="ghost"
-                          disabled={client.managed_by === 'config'}
-                          onClick={() =>
-                            bulkMutation.mutate({
-                              target: { kind: 'ids', ids: [client.id] },
-                              active: !client.enabled,
-                            })
-                          }
-                          type="button"
-                          uiSize="sm"
-                        >
-                          {t(
-                            client.enabled
-                              ? 'admin.actions.deactivate'
-                              : 'admin.actions.restore',
-                          )}
-                        </TRButton>
-                      </TRToolbar.Root>
+                        ) : (
+                          <TRText color="muted" variant="caption">
+                            {t('admin.clients.restoreViaConfig')}
+                          </TRText>
+                        )
+                      ) : (
+                        <TRToolbar.Root className="flex justify-end gap-tinyrack-xs">
+                          <TRButton
+                            appearance="ghost"
+                            disabled={client.managed_by === 'config'}
+                            onClick={() => setEditing(client)}
+                            type="button"
+                            uiSize="sm"
+                          >
+                            {t('admin.actions.edit')}
+                          </TRButton>
+                          {client.type === 'confidential' ? (
+                            <TRButton
+                              appearance="ghost"
+                              disabled={client.managed_by === 'config'}
+                              onClick={() => rotateMutation.mutate(client.id)}
+                              type="button"
+                              uiSize="sm"
+                            >
+                              {t('admin.clients.rotateSecret')}
+                            </TRButton>
+                          ) : null}
+                          <TRButton
+                            appearance="ghost"
+                            disabled={client.managed_by === 'config'}
+                            onClick={() =>
+                              bulkMutation.mutate({
+                                target: { kind: 'ids', ids: [client.id] },
+                                active: !client.enabled,
+                              })
+                            }
+                            type="button"
+                            uiSize="sm"
+                          >
+                            {t(
+                              client.enabled
+                                ? 'admin.actions.deactivate'
+                                : 'admin.actions.activate',
+                            )}
+                          </TRButton>
+                          <TRButton
+                            appearance="ghost"
+                            disabled={client.managed_by === 'config'}
+                            intent="danger"
+                            onClick={() => setDeleting(client)}
+                            type="button"
+                            uiSize="sm"
+                          >
+                            {t('admin.actions.delete')}
+                          </TRButton>
+                        </TRToolbar.Root>
+                      )}
                     </AdminStickyActionCell>
                   </TRTable.Row>
                 ))
@@ -383,6 +476,43 @@ function AdminClientsPage() {
         }}
         pending={createMutation.isPending || updateMutation.isPending}
       />
+      <Modal
+        isOpen={deleting !== null}
+        onClose={() => setDeleting(null)}
+        title={t('admin.clients.deleteTitle', { name: deleting?.name ?? '' })}
+        variant="destructive"
+      >
+        <div className="flex flex-col gap-tinyrack-xs rounded-tinyrack-md border border-tinyrack-danger-border bg-tinyrack-danger-surface p-tinyrack-lg text-tinyrack-danger-foreground">
+          <div className="flex items-center gap-tinyrack-sm">
+            <TriangleAlertIcon aria-hidden className="size-tinyrack-lg" />
+            <TRText as="p" weight="medium">
+              {t('admin.clients.deleteWarning')}
+            </TRText>
+          </div>
+          <TRText as="p" variant="bodySm">
+            {t('admin.clients.deleteDescription')}
+          </TRText>
+        </div>
+        <ModalActions>
+          <TRButton
+            disabled={deleteMutation.isPending}
+            onClick={() => setDeleting(null)}
+            type="button"
+          >
+            {t('common.dismiss')}
+          </TRButton>
+          <TRButton
+            disabled={deleteMutation.isPending || !deleting}
+            intent="danger"
+            onClick={() => {
+              if (deleting) deleteMutation.mutate(deleting.id);
+            }}
+            type="button"
+          >
+            {t('admin.actions.delete')}
+          </TRButton>
+        </ModalActions>
+      </Modal>
       <Modal
         description={t('admin.clients.secretDescription')}
         isOpen={secret !== null}

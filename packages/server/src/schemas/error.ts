@@ -144,6 +144,21 @@ export const e = {
     'OAUTH_CLIENT_DISABLED',
     'The OAuth client is disabled.',
   ),
+  OAuthClientNotEditable: createError(
+    403,
+    'OAUTH_CLIENT_NOT_EDITABLE',
+    'This OAuth client cannot be modified.',
+  ),
+  OAuthClientDeleted: createError(
+    409,
+    'OAUTH_CLIENT_DELETED',
+    'This OAuth client is deleted and must be restored first.',
+  ),
+  OAuthClientAlreadyExists: createError(
+    409,
+    'OAUTH_CLIENT_ALREADY_EXISTS',
+    'An OAuth client with this client_id already exists. Restore it if it was deleted.',
+  ),
   InvalidRedirectUri: createError(
     400,
     'INVALID_REDIRECT_URI',

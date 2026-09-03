@@ -20,7 +20,7 @@ export class OAuthClientService {
     clientId: string,
   ): Promise<z.infer<typeof r.OAuthClient>> {
     const client = await this.mikro.oauthClient.findOneOrFail(
-      { clientId },
+      { clientId, deletedAt: null },
       {
         failHandler: () => new e.OAuthClientNotFound.Error(),
       },
@@ -32,6 +32,7 @@ export class OAuthClientService {
       name: client.name,
       managed_by: client.managed_by,
       enabled: client.enabled,
+      tokenEpoch: client.tokenEpoch ?? null,
       skipConsent: client.skipConsent,
       redirectUris: client.redirectUris,
       postLogoutRedirectUris: client.postLogoutRedirectUris,
@@ -110,7 +111,10 @@ export class OAuthClientService {
   }
 
   public async isAllowedWebOrigin(origin: string): Promise<boolean> {
-    const clients = await this.mikro.oauthClient.find({ enabled: true });
+    const clients = await this.mikro.oauthClient.find({
+      enabled: true,
+      deletedAt: null,
+    });
     return clients.some((client) => client.webOrigins.includes(origin));
   }
 
@@ -125,7 +129,7 @@ export class OAuthClientService {
     clientSecret: string,
   ): Promise<boolean> {
     const client = await this.mikro.oauthClient.findOne(
-      { clientId },
+      { clientId, deletedAt: null },
       { populate: ['clientSecretHash'] },
     );
 
@@ -149,7 +153,7 @@ export class OAuthClientService {
     clientSecret: string | undefined,
   ): Promise<void> {
     const client = await this.mikro.oauthClient.findOne(
-      { clientId },
+      { clientId, deletedAt: null },
       { populate: ['clientSecretHash'] },
     );
 
@@ -180,7 +184,7 @@ export class OAuthClientService {
 
   public async isPublicClient(clientId: string): Promise<boolean> {
     const client = await this.mikro.oauthClient.findOneOrFail(
-      { clientId },
+      { clientId, deletedAt: null },
       {
         failHandler: () => new e.OAuthClientNotFound.Error(),
         populate: ['clientSecretHash'],

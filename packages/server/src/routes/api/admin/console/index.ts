@@ -21,7 +21,7 @@ const PaginationQuery = z.object({
 });
 
 const ClientQuery = PaginationQuery.extend({
-  enabled: QueryBoolean.optional(),
+  lifecycle_status: z.enum(['active', 'inactive', 'deleted']).optional(),
   type: z.enum(['public', 'confidential']).optional(),
 });
 
@@ -179,7 +179,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
           page: query.page,
           pageSize: query.page_size,
           managedBy: query.managed_by,
-          enabled: query.enabled,
+          lifecycleStatus: query.lifecycle_status,
           type: query.type,
           direction: query.direction,
         }),
@@ -240,6 +240,18 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .post('/admin/clients/:id/rotate-secret', requireAdmin(), async (c) => {
     const result = await c.var.services.adminConsoleService.rotateClientSecret(
+      c.req.param('id'),
+    );
+    return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
+  })
+  .delete('/admin/clients/:id', requireAdmin(), async (c) => {
+    const result = await c.var.services.adminConsoleService.deleteClient(
+      c.req.param('id'),
+    );
+    return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
+  })
+  .post('/admin/clients/:id/restore', requireAdmin(), async (c) => {
+    const result = await c.var.services.adminConsoleService.restoreClient(
       c.req.param('id'),
     );
     return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);

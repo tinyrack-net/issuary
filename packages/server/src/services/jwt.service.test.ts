@@ -506,6 +506,105 @@ describe('JwtService', () => {
         ).rejects.toThrow();
       });
     });
+
+    test('keeps pre-deletion access and refresh tokens invalid after client restoration', async () => {
+      const userSub = await createTestUser(services);
+      const clientId = 'jwt-restored-client-epoch';
+      const clientPrimaryKey = await createTestOAuthClient(services, {
+        clientId,
+      });
+
+      await withMikroContext(services, async () => {
+        const client = await services.mikro.oauthClient.findOneOrFail({
+          id: clientPrimaryKey,
+        });
+        const originalEpoch = crypto.randomUUID();
+        client.tokenEpoch = originalEpoch;
+        await services.mikro.em.flush();
+
+        const accessToken = await services.jwtService.signAccessToken({
+          typ: 'access_token',
+          sub: userSub,
+          client_id: clientId,
+          client_epoch: originalEpoch,
+          scope: 'openid',
+        });
+        const refreshToken = await services.jwtService.signRefreshToken({
+          typ: 'refresh_token',
+          sub: userSub,
+          client_id: clientId,
+          client_epoch: originalEpoch,
+          scope: 'openid',
+        });
+
+        client.deletedAt = new Date();
+        client.tokenEpoch = crypto.randomUUID();
+        await services.mikro.em.flush();
+        await expect(
+          services.jwtService.verifyAccessToken(accessToken),
+        ).rejects.toThrow();
+        await expect(
+          services.jwtService.verifyRefreshToken(refreshToken),
+        ).rejects.toThrow();
+
+        client.deletedAt = null;
+        await services.mikro.em.flush();
+        await expect(
+          services.jwtService.verifyAccessToken(accessToken),
+        ).rejects.toThrow();
+        await expect(
+          services.jwtService.verifyRefreshToken(refreshToken),
+        ).rejects.toThrow();
+
+        const restoredAccessToken = await services.jwtService.signAccessToken({
+          typ: 'access_token',
+          sub: userSub,
+          client_id: clientId,
+          client_epoch: client.tokenEpoch,
+          scope: 'openid',
+        });
+        await expect(
+          services.jwtService.verifyAccessToken(restoredAccessToken),
+        ).resolves.toMatchObject({ client_id: clientId });
+      });
+    });
+
+    test('does not rotate the client epoch when disabling and re-enabling a client', async () => {
+      const userSub = await createTestUser(services);
+      const clientId = 'jwt-disabled-client-epoch';
+      const clientPrimaryKey = await createTestOAuthClient(services, {
+        clientId,
+      });
+
+      await withMikroContext(services, async () => {
+        const client = await services.mikro.oauthClient.findOneOrFail({
+          id: clientPrimaryKey,
+        });
+        client.tokenEpoch = crypto.randomUUID();
+        await services.mikro.em.flush();
+        const originalEpoch = client.tokenEpoch;
+        const accessToken = await services.jwtService.signAccessToken({
+          typ: 'access_token',
+          sub: userSub,
+          client_id: clientId,
+          client_epoch: originalEpoch,
+          scope: 'openid',
+        });
+
+        client.enabled = false;
+        await services.mikro.em.flush();
+        await expect(
+          services.jwtService.verifyAccessToken(accessToken),
+        ).rejects.toThrow();
+
+        client.enabled = true;
+        await services.mikro.em.flush();
+        expect(client.tokenEpoch).toBe(originalEpoch);
+        await expect(
+          services.jwtService.verifyAccessToken(accessToken),
+        ).resolves.toMatchObject({ client_id: clientId });
+      });
+    });
   });
 
   describe('convertToJWK and getJWKS', () => {

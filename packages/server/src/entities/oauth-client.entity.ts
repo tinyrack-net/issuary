@@ -53,6 +53,16 @@ export const OAuthClientEntitySchema = defineEntity({
       .boolean()
       .comment('Whether the OAuth client is enabled')
       .default(true),
+    deletedAt: p
+      .datetime()
+      .comment('Timestamp when the OAuth client was soft-deleted')
+      .nullable(),
+    tokenEpoch: p
+      .string()
+      .comment(
+        'Opaque token generation used to invalidate previously issued tokens',
+      )
+      .nullable(),
     skipConsent: p
       .boolean()
       .comment(
@@ -77,6 +87,10 @@ export const OAuthClientEntitySchema = defineEntity({
       p.oneToMany(RevokedTokenEntitySchema).mappedBy('client'),
   }),
   indexes: [
+    {
+      name: 'oauth_client_deleted_at_idx',
+      properties: ['deletedAt'],
+    },
     {
       name: 'client_client_id_unique',
       properties: ['clientId'],
