@@ -117,10 +117,29 @@ const CleanupPendingOAuthRegistrationsConfigSchema = z
   })
   .describe('Pending OAuth registrations cleanup settings');
 
+const CLEANUP_OAUTH_CLIENTS_CONFIG_DEFAULT = {
+  enabled: true,
+  retention: '30d',
+};
+
+const CleanupOAuthClientsConfigSchema = z
+  .object({
+    enabled: z
+      .union([z.boolean(), z.string()])
+      .pipe(zz.COERCE_BOOLEAN)
+      .default(CLEANUP_OAUTH_CLIENTS_CONFIG_DEFAULT.enabled)
+      .describe('Enable permanent deletion of soft-deleted OAuth clients'),
+    retention: DurationString.default(
+      CLEANUP_OAUTH_CLIENTS_CONFIG_DEFAULT.retention,
+    ).describe('How long to retain soft-deleted OAuth clients and their data.'),
+  })
+  .describe('Soft-deleted OAuth client cleanup settings');
+
 /**
  * Default cleanup configuration
  */
 export const CLEANUP_CONFIG_DEFAULT = {
+  oauth_clients: CLEANUP_OAUTH_CLIENTS_CONFIG_DEFAULT,
   revoked_tokens: CLEANUP_REVOKED_TOKENS_CONFIG_DEFAULT,
   oauth_codes: CLEANUP_OAUTH_CODES_CONFIG_DEFAULT,
   email_verifications: CLEANUP_EMAIL_VERIFICATIONS_CONFIG_DEFAULT,
@@ -140,6 +159,9 @@ export const CLEANUP_CONFIG_DEFAULT = {
  */
 export const CleanupConfigSchema = z
   .object({
+    oauth_clients: CleanupOAuthClientsConfigSchema.default(
+      CLEANUP_CONFIG_DEFAULT.oauth_clients,
+    ),
     revoked_tokens: CleanupRevokedTokensConfigSchema.default(
       CLEANUP_CONFIG_DEFAULT.revoked_tokens,
     ),

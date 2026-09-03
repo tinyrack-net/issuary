@@ -203,6 +203,7 @@ export class OAuthTokenService {
       userEmail: user.email,
       userEmailVerified: user.email_verified,
       clientId: client.clientId,
+      clientEpoch: client.tokenEpoch,
       scope: codeEntity.scope,
       issueRefreshToken:
         client.grantTypes.includes('refresh_token') &&
@@ -254,6 +255,9 @@ export class OAuthTokenService {
     clientId: string;
     scope: string[];
   }): Promise<TokenResponse> {
+    const client = await this.oauthClientService.findByClientId(
+      params.clientId,
+    );
     const scopeString = params.scope.join(' ');
     const accessToken = await this.jwtService.signAccessToken({
       typ: 'access_token',
@@ -263,6 +267,7 @@ export class OAuthTokenService {
       scope: scopeString,
       aud: this.config.server.public_origin,
       grant_id: crypto.randomUUID(),
+      ...(client.tokenEpoch && { client_epoch: client.tokenEpoch }),
     });
 
     return {
@@ -335,6 +340,7 @@ export class OAuthTokenService {
       userEmail: user.email,
       userEmailVerified: user.email_verified,
       clientId: client.clientId,
+      clientEpoch: client.tokenEpoch,
       scope: deviceCode.scope,
       issueRefreshToken:
         client.grantTypes.includes('refresh_token') &&
@@ -409,6 +415,7 @@ export class OAuthTokenService {
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
+      clientEpoch: client.tokenEpoch,
       scope: requestedScopes,
       issueRefreshToken: true,
       grantId: refreshPayload.grant_id,
@@ -741,6 +748,7 @@ export class OAuthTokenService {
     userEmail: string;
     userEmailVerified: boolean;
     clientId: string;
+    clientEpoch: string | null;
     scope: string[];
     issueRefreshToken: boolean;
     grantId?: string | undefined;
@@ -753,6 +761,7 @@ export class OAuthTokenService {
       userEmail,
       userEmailVerified,
       clientId,
+      clientEpoch,
       scope,
       issueRefreshToken,
       grantId = crypto.randomUUID(),
@@ -770,6 +779,7 @@ export class OAuthTokenService {
       scope: scopeString,
       aud: this.config.server.public_origin,
       grant_id: grantId,
+      ...(clientEpoch && { client_epoch: clientEpoch }),
     });
 
     const response: TokenResponse = {
@@ -786,6 +796,7 @@ export class OAuthTokenService {
         client_id: clientId,
         scope: scopeString,
         grant_id: grantId,
+        ...(clientEpoch && { client_epoch: clientEpoch }),
       });
     }
 

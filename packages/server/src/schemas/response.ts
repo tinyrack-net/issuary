@@ -73,6 +73,10 @@ const OAuthClient = z
       .enum(['config', 'database'])
       .describe('Whether the client is managed by config or database'),
     enabled: z.boolean().describe('Whether the client is enabled'),
+    tokenEpoch: z
+      .string()
+      .nullable()
+      .describe('Internal token generation for the OAuth client'),
     skipConsent: z
       .boolean()
       .describe('Whether the client can skip the OAuth consent screen'),

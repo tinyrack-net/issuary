@@ -109,6 +109,10 @@ export const STANDALONE_CONFIG_DEFAULTS = {
   },
 
   cleanup: {
+    oauth_clients: {
+      enabled: envDefault('ISSUARY_CLEANUP_OAUTH_CLIENTS_ENABLED', 'true'),
+      retention: envDefault('ISSUARY_CLEANUP_OAUTH_CLIENTS_RETENTION', '30d'),
+    },
     revoked_tokens: {
       enabled: envDefault('ISSUARY_CLEANUP_REVOKED_TOKENS_ENABLED', 'true'),
       retention: envDefault('ISSUARY_CLEANUP_REVOKED_TOKENS_RETENTION', '0'),

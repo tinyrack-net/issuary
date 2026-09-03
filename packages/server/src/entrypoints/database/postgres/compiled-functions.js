@@ -7136,7 +7136,7 @@ export default {
       return getPrimaryKeyHash(val_12);
     }
   },
-  'hydrator-oauth_client_14000-full-false': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_grantTypes, convertToDatabaseValue_grantTypes, convertToJSValue_responseTypes, convertToDatabaseValue_responseTypes, convertToJSValue_scopes, convertToDatabaseValue_scopes, convertToJSValue_redirectUris, convertToDatabaseValue_redirectUris, convertToJSValue_postLogoutRedirectUris, convertToDatabaseValue_postLogoutRedirectUris, convertToJSValue_webOrigins, convertToDatabaseValue_webOrigins, oauth_code_388, oauth_device_code_389, user_consent_390, revoked_tokens_391) {
+  'hydrator-oauth_client_14000-full-false': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_grantTypes, convertToDatabaseValue_grantTypes, convertToJSValue_responseTypes, convertToDatabaseValue_responseTypes, convertToJSValue_scopes, convertToDatabaseValue_scopes, convertToJSValue_redirectUris, convertToDatabaseValue_redirectUris, convertToJSValue_postLogoutRedirectUris, convertToDatabaseValue_postLogoutRedirectUris, convertToJSValue_webOrigins, convertToDatabaseValue_webOrigins, oauth_code_390, oauth_device_code_391, user_consent_392, revoked_tokens_393) {
     // compiled hydrator for entity OAuthClientEntity ( normalized)
     return function(entity, data, factory, newEntity, convertCustomTypes, schema, parentSchema, normalizeAccessors) {
       if (data.id === null) {
@@ -7252,6 +7252,22 @@ export default {
       } else if (typeof data.enabled !== 'undefined') {
         entity.enabled = !!data.enabled;
       }
+      if (data.deletedAt === null) {
+        entity.deletedAt = null;
+      } else if (typeof data.deletedAt !== 'undefined') {
+        if (data.deletedAt instanceof Date) {
+          entity.deletedAt = data.deletedAt;
+        } else if (typeof data.deletedAt === 'number' || data.deletedAt.includes('+') || data.deletedAt.lastIndexOf('-') > 10 || data.deletedAt.endsWith('Z')) {
+          entity.deletedAt = new Date(data.deletedAt);
+        } else {
+          entity.deletedAt = new Date(data.deletedAt + 'Z');
+        }
+      }
+      if (data.tokenEpoch === null) {
+        entity.tokenEpoch = null;
+      } else if (typeof data.tokenEpoch !== 'undefined') {
+        entity.tokenEpoch = data.tokenEpoch;
+      }
       if (data.skipConsent === null) {
         entity.skipConsent = null;
       } else if (typeof data.skipConsent !== 'undefined') {
@@ -7268,9 +7284,9 @@ export default {
         entity.logoUri = data.logoUri;
       }
       const createCollectionItem_codes = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(oauth_code_388, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(oauth_code_390, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(oauth_code_388, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(oauth_code_390, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.codes && !Array.isArray(data.codes) && typeof data.codes === 'object') {
         data.codes = [data.codes];
@@ -7290,9 +7306,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_deviceCodes = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(oauth_device_code_389, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(oauth_device_code_391, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(oauth_device_code_389, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(oauth_device_code_391, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.deviceCodes && !Array.isArray(data.deviceCodes) && typeof data.deviceCodes === 'object') {
         data.deviceCodes = [data.deviceCodes];
@@ -7312,9 +7328,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_consents = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(user_consent_390, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(user_consent_392, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(user_consent_390, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(user_consent_392, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.consents && !Array.isArray(data.consents) && typeof data.consents === 'object') {
         data.consents = [data.consents];
@@ -7334,9 +7350,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_revokedTokens = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(revoked_tokens_391, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(revoked_tokens_393, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(revoked_tokens_391, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(revoked_tokens_393, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.revokedTokens && !Array.isArray(data.revokedTokens) && typeof data.revokedTokens === 'object') {
         data.revokedTokens = [data.revokedTokens];
@@ -7357,7 +7373,7 @@ export default {
       }
     }
   },
-  'hydrator-oauth_client_14000-full-true': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_grantTypes, convertToDatabaseValue_grantTypes, convertToJSValue_responseTypes, convertToDatabaseValue_responseTypes, convertToJSValue_scopes, convertToDatabaseValue_scopes, convertToJSValue_redirectUris, convertToDatabaseValue_redirectUris, convertToJSValue_postLogoutRedirectUris, convertToDatabaseValue_postLogoutRedirectUris, convertToJSValue_webOrigins, convertToDatabaseValue_webOrigins, oauth_code_408, oauth_device_code_409, user_consent_410, revoked_tokens_411) {
+  'hydrator-oauth_client_14000-full-true': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_grantTypes, convertToDatabaseValue_grantTypes, convertToJSValue_responseTypes, convertToDatabaseValue_responseTypes, convertToJSValue_scopes, convertToDatabaseValue_scopes, convertToJSValue_redirectUris, convertToDatabaseValue_redirectUris, convertToJSValue_postLogoutRedirectUris, convertToDatabaseValue_postLogoutRedirectUris, convertToJSValue_webOrigins, convertToDatabaseValue_webOrigins, oauth_code_412, oauth_device_code_413, user_consent_414, revoked_tokens_415) {
     // compiled hydrator for entity OAuthClientEntity ( normalized)
     return function(entity, data, factory, newEntity, convertCustomTypes, schema, parentSchema, normalizeAccessors) {
       if (data.id === null) {
@@ -7473,6 +7489,22 @@ export default {
       } else if (typeof data.enabled !== 'undefined') {
         entity.enabled = !!data.enabled;
       }
+      if (data.deletedAt === null) {
+        entity.deletedAt = null;
+      } else if (typeof data.deletedAt !== 'undefined') {
+        if (data.deletedAt instanceof Date) {
+          entity.deletedAt = data.deletedAt;
+        } else if (typeof data.deletedAt === 'number' || data.deletedAt.includes('+') || data.deletedAt.lastIndexOf('-') > 10 || data.deletedAt.endsWith('Z')) {
+          entity.deletedAt = new Date(data.deletedAt);
+        } else {
+          entity.deletedAt = new Date(data.deletedAt + 'Z');
+        }
+      }
+      if (data.tokenEpoch === null) {
+        entity.tokenEpoch = null;
+      } else if (typeof data.tokenEpoch !== 'undefined') {
+        entity.tokenEpoch = data.tokenEpoch;
+      }
       if (data.skipConsent === null) {
         entity.skipConsent = null;
       } else if (typeof data.skipConsent !== 'undefined') {
@@ -7489,9 +7521,9 @@ export default {
         entity.logoUri = data.logoUri;
       }
       const createCollectionItem_codes = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(oauth_code_408, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(oauth_code_412, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(oauth_code_408, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(oauth_code_412, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.codes && !Array.isArray(data.codes) && typeof data.codes === 'object') {
         data.codes = [data.codes];
@@ -7511,9 +7543,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_deviceCodes = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(oauth_device_code_409, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(oauth_device_code_413, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(oauth_device_code_409, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(oauth_device_code_413, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.deviceCodes && !Array.isArray(data.deviceCodes) && typeof data.deviceCodes === 'object') {
         data.deviceCodes = [data.deviceCodes];
@@ -7533,9 +7565,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_consents = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(user_consent_410, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(user_consent_414, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(user_consent_410, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(user_consent_414, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.consents && !Array.isArray(data.consents) && typeof data.consents === 'object') {
         data.consents = [data.consents];
@@ -7555,9 +7587,9 @@ export default {
         coll.setDirty(false);
       }
       const createCollectionItem_revokedTokens = (value, entity) => {
-        if (isPrimaryKey(value, false)) return factory.createReference(revoked_tokens_411, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
+        if (isPrimaryKey(value, false)) return factory.createReference(revoked_tokens_415, value, { convertCustomTypes, schema, normalizeAccessors, merge: true });
         if (value && isEntity(value)) return value;
-        return factory.create(revoked_tokens_411, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
+        return factory.create(revoked_tokens_415, value, { newEntity, convertCustomTypes, schema, normalizeAccessors, merge: true });
       }
       if (data.revokedTokens && !Array.isArray(data.revokedTokens) && typeof data.revokedTokens === 'object') {
         data.revokedTokens = [data.revokedTokens];
@@ -7712,6 +7744,26 @@ export default {
         diff.enabled = current.enabled;
       }
 
+      if (current.deletedAt === null && last.deletedAt === undefined) {
+        diff.deletedAt = current.deletedAt;
+      } else if (current.deletedAt == null && last.deletedAt == null) {
+
+      } else if ((current.deletedAt != null && last.deletedAt == null) || (current.deletedAt == null && last.deletedAt != null)) {
+        diff.deletedAt = current.deletedAt;
+      } else if (last.deletedAt.valueOf() !== current.deletedAt.valueOf()) {
+        diff.deletedAt = current.deletedAt;
+      }
+
+      if (current.tokenEpoch === null && last.tokenEpoch === undefined) {
+        diff.tokenEpoch = current.tokenEpoch;
+      } else if (current.tokenEpoch == null && last.tokenEpoch == null) {
+
+      } else if ((current.tokenEpoch != null && last.tokenEpoch == null) || (current.tokenEpoch == null && last.tokenEpoch != null)) {
+        diff.tokenEpoch = current.tokenEpoch;
+      } else if (last.tokenEpoch !== current.tokenEpoch) {
+        diff.tokenEpoch = current.tokenEpoch;
+      }
+
       if (current.skipConsent === null && last.skipConsent === undefined) {
         diff.skipConsent = current.skipConsent;
       } else if (current.skipConsent == null && last.skipConsent == null) {
@@ -7802,6 +7854,14 @@ export default {
         ret.enabled = entity.enabled;
       }
 
+      if (typeof entity.deletedAt !== 'undefined') {
+        ret.deletedAt = clone(processDateProperty(entity.deletedAt));
+      }
+
+      if (typeof entity.tokenEpoch !== 'undefined') {
+        ret.tokenEpoch = entity.tokenEpoch;
+      }
+
       if (typeof entity.skipConsent !== 'undefined') {
         ret.skipConsent = entity.skipConsent;
       }
@@ -7889,6 +7949,22 @@ export default {
       if (typeof result.enabled !== 'undefined') {
         ret.enabled = result.enabled == null ? result.enabled : !!result.enabled;
         mapped.enabled = true;
+      }
+      if (typeof result.deleted_at !== 'undefined') {
+        if (result.deleted_at == null || result.deleted_at instanceof Date) {
+          ret.deletedAt = result.deleted_at;
+        } else if (typeof result.deleted_at === 'bigint') {
+          ret.deletedAt = parseDate(Number(result.deleted_at));
+        } else if (typeof result.deleted_at === 'number' || result.deleted_at.includes('+') || result.deleted_at.lastIndexOf('-') > 10 || result.deleted_at.endsWith('Z')) {
+          ret.deletedAt = parseDate(result.deleted_at);
+        } else {
+          ret.deletedAt = parseDate(result.deleted_at + 'Z');
+        }
+        mapped.deleted_at = true;
+      }
+      if (typeof result.token_epoch !== 'undefined') {
+        ret.tokenEpoch = result.token_epoch;
+        mapped.token_epoch = true;
       }
       if (typeof result.skip_consent !== 'undefined') {
         ret.skipConsent = result.skip_consent == null ? result.skip_consent : !!result.skip_consent;
@@ -8444,7 +8520,7 @@ export default {
       return '' + entity.kid;
     }
   },
-  'hydrator-email_verification_8000-full-false': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_id, convertToDatabaseValue_id, user_441, user_442) {
+  'hydrator-email_verification_8000-full-false': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_id, convertToDatabaseValue_id, user_445, user_446) {
     // compiled hydrator for entity EmailVerificationEntity ( normalized)
     return function(entity, data, factory, newEntity, convertCustomTypes, schema, parentSchema, normalizeAccessors) {
       if (data.id === null) {
@@ -8483,9 +8559,9 @@ export default {
         entity.user = null;
       } else if (typeof data.user !== 'undefined') {
         if (isPrimaryKey(data.user, true)) {
-          entity.user = Reference.create(factory.createReference(user_441, data.user, { merge: true, convertCustomTypes, normalizeAccessors, schema }));
+          entity.user = Reference.create(factory.createReference(user_445, data.user, { merge: true, convertCustomTypes, normalizeAccessors, schema }));
         } else if (data.user && typeof data.user === 'object') {
-          entity.user = Reference.create(factory.create(user_442, data.user, { initialized: true, merge: true, newEntity, convertCustomTypes, normalizeAccessors, schema }));
+          entity.user = Reference.create(factory.create(user_446, data.user, { initialized: true, merge: true, newEntity, convertCustomTypes, normalizeAccessors, schema }));
         }
       }
       if (data.token === null) {
@@ -8522,7 +8598,7 @@ export default {
       }
     }
   },
-  'hydrator-email_verification_8000-full-true': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_id, convertToDatabaseValue_id, user_450, user_451) {
+  'hydrator-email_verification_8000-full-true': function(isPrimaryKey, isEntity, isScalarReference, Collection, Reference, PolymorphicRef, ValidationError, convertToJSValue_id, convertToDatabaseValue_id, user_454, user_455) {
     // compiled hydrator for entity EmailVerificationEntity ( normalized)
     return function(entity, data, factory, newEntity, convertCustomTypes, schema, parentSchema, normalizeAccessors) {
       if (data.id === null) {
@@ -8561,9 +8637,9 @@ export default {
         entity.user = null;
       } else if (typeof data.user !== 'undefined') {
         if (isPrimaryKey(data.user, true)) {
-          entity.user = Reference.create(factory.createReference(user_450, data.user, { merge: true, convertCustomTypes, normalizeAccessors, schema }));
+          entity.user = Reference.create(factory.createReference(user_454, data.user, { merge: true, convertCustomTypes, normalizeAccessors, schema }));
         } else if (data.user && typeof data.user === 'object') {
-          entity.user = Reference.create(factory.create(user_451, data.user, { initialized: true, merge: true, newEntity, convertCustomTypes, normalizeAccessors, schema }));
+          entity.user = Reference.create(factory.create(user_455, data.user, { initialized: true, merge: true, newEntity, convertCustomTypes, normalizeAccessors, schema }));
         }
       }
       if (data.token === null) {

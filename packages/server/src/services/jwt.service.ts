@@ -82,6 +82,8 @@ interface BaseJWTPayload {
   iss?: string | undefined;
   /** Authorization grant/family identifier shared by related tokens */
   grant_id?: string | undefined;
+  /** Opaque OAuth client token generation. */
+  client_epoch?: string | undefined;
 }
 
 /**
@@ -491,6 +493,7 @@ export class JwtService {
       ...(payload.grant_type ? { grant_type: payload.grant_type } : {}),
       scope: payload.scope,
       ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
+      ...(payload.client_epoch ? { client_epoch: payload.client_epoch } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
@@ -522,6 +525,7 @@ export class JwtService {
       client_id: payload.client_id,
       scope: payload.scope,
       ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
+      ...(payload.client_epoch ? { client_epoch: payload.client_epoch } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
@@ -708,9 +712,13 @@ export class JwtService {
   ): Promise<void> {
     const client = await this.mikro.oauthClient.findOne({
       clientId: payload.client_id,
+      deletedAt: null,
     });
     if (!client?.enabled) {
       throw new Error('Token client is not active');
+    }
+    if ((client.tokenEpoch ?? undefined) !== payload.client_epoch) {
+      throw new Error('Token was issued for an obsolete client epoch');
     }
 
     if (

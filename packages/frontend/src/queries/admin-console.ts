@@ -10,7 +10,7 @@ export type AdminListQuery = {
 };
 
 export type AdminClientsQuery = AdminListQuery & {
-  enabled?: boolean;
+  lifecycleStatus?: 'active' | 'inactive' | 'deleted';
   type?: 'public' | 'confidential';
 };
 
@@ -43,8 +43,7 @@ async function fetchClients(apiClient: ApiClient, query: AdminClientsQuery) {
     await apiClient.api.admin.clients.$get({
       query: {
         ...commonQuery(query),
-        enabled:
-          query.enabled === undefined ? undefined : String(query.enabled),
+        lifecycle_status: query.lifecycleStatus,
         type: query.type,
       },
     }),
@@ -145,6 +144,18 @@ export async function rotateAdminClientSecret(id: string) {
     await client.api.admin.clients[':id']['rotate-secret'].$post({
       param: { id },
     }),
+  );
+}
+
+export async function deleteAdminClient(id: string) {
+  return jsonOk(
+    await client.api.admin.clients[':id'].$delete({ param: { id } }),
+  );
+}
+
+export async function restoreAdminClient(id: string) {
+  return jsonOk(
+    await client.api.admin.clients[':id'].restore.$post({ param: { id } }),
   );
 }
 

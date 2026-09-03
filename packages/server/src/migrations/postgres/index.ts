@@ -9,6 +9,7 @@ import { Migration20260626103000_allow_revoked_token_without_user } from './Migr
 import { Migration20260825110000_add_password_reset_required } from './Migration20260825110000_add_password_reset_required.js';
 import { Migration20260825140000_drop_password_reset_required } from './Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms } from './Migration20260827090000_archive_terms.js';
+import { Migration20260904090000_add_oauth_client_lifecycle } from './Migration20260904090000_add_oauth_client_lifecycle.js';
 
 export const POSTGRES_MIGRATIONS = [
   Migration20260509171036_initial,
@@ -22,4 +23,5 @@ export const POSTGRES_MIGRATIONS = [
   Migration20260825110000_add_password_reset_required,
   Migration20260825140000_drop_password_reset_required,
   Migration20260827090000_archive_terms,
+  Migration20260904090000_add_oauth_client_lifecycle,
 ];

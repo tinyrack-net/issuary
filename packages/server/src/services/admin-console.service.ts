@@ -2,6 +2,7 @@ import type { EntityManager } from '@mikro-orm/core';
 import type { ITermsEntity } from '../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
+import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
 
@@ -13,6 +14,8 @@ export type AdminListQuery = {
   enabled?: boolean | undefined;
   direction?: 'asc' | 'desc' | undefined;
 };
+
+export type AdminClientLifecycleStatus = 'active' | 'inactive' | 'deleted';
 
 export type AdminClientInput = {
   clientId: string;
@@ -54,6 +57,7 @@ function clientResponse(client: {
   postLogoutRedirectUris: string[];
   webOrigins: string[];
   enabled: boolean;
+  deletedAt?: Date | null | undefined;
   skipConsent: boolean;
   managed_by: 'database' | 'config';
   created_at: Date;
@@ -74,6 +78,7 @@ function clientResponse(client: {
     post_logout_redirect_uris: client.postLogoutRedirectUris,
     web_origins: client.webOrigins,
     enabled: client.enabled,
+    deleted_at: client.deletedAt?.toISOString() ?? null,
     skip_consent: client.skipConsent,
     managed_by: client.managed_by,
     created_at: client.created_at.toISOString(),
@@ -143,7 +148,7 @@ export class AdminConsoleService {
     ] = await Promise.all([
       this.mikro.user.count({ deleted_at: null }),
       this.mikro.user.count({ deleted_at: null, role: 'admin' }),
-      this.mikro.oauthClient.count({ enabled: true }),
+      this.mikro.oauthClient.count({ enabled: true, deletedAt: null }),
       this.mikro.terms.count({ archivedAt: null, required: true }),
       this.mikro.user.count({ managed_by: 'config', deleted_at: null }),
       this.mikro.user.count({ managed_by: 'database', deleted_at: null }),
@@ -182,9 +187,17 @@ export class AdminConsoleService {
   }
 
   public async listClients(
-    params: AdminListQuery & { type?: 'public' | 'confidential' | undefined },
+    params: AdminListQuery & {
+      type?: 'public' | 'confidential' | undefined;
+      lifecycleStatus?: AdminClientLifecycleStatus | undefined;
+    },
   ) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> =
+      params.lifecycleStatus === 'deleted'
+        ? { deletedAt: { $ne: null } }
+        : { deletedAt: null };
+    if (params.lifecycleStatus === 'active') where['enabled'] = true;
+    if (params.lifecycleStatus === 'inactive') where['enabled'] = false;
     if (params.managedBy) where['managed_by'] = params.managedBy;
     if (params.enabled !== undefined) where['enabled'] = params.enabled;
     if (params.type === 'public') where['clientSecretHash'] = null;
@@ -210,6 +223,12 @@ export class AdminConsoleService {
   }
 
   public async createClient(input: AdminClientInput) {
+    const existing = await this.mikro.oauthClient.findOne({
+      clientId: input.clientId,
+    });
+    if (existing) {
+      throw new e.OAuthClientAlreadyExists.Error();
+    }
     const secret =
       input.type === 'confidential'
         ? `${crypto.randomUUID()}${crypto.randomUUID()}`
@@ -227,6 +246,8 @@ export class AdminConsoleService {
       postLogoutRedirectUris: input.postLogoutRedirectUris,
       webOrigins: input.webOrigins,
       enabled: true,
+      deletedAt: null,
+      tokenEpoch: crypto.randomUUID(),
       skipConsent: input.skipConsent,
       managed_by: 'database',
     });
@@ -242,7 +263,8 @@ export class AdminConsoleService {
       { id },
       { populate: ['clientSecretHash'] },
     );
-    if (!client || client.managed_by === 'config') return null;
+    if (!client) return null;
+    this.ensureClientEditable(client);
     client.name = input.name;
     client.redirectUris = input.redirectUris;
     client.postLogoutRedirectUris = input.postLogoutRedirectUris;
@@ -260,8 +282,9 @@ export class AdminConsoleService {
       { id },
       { populate: ['clientSecretHash'] },
     );
-    if (!client || client.managed_by === 'config' || !client.clientSecretHash)
-      return null;
+    if (!client) return null;
+    this.ensureClientEditable(client);
+    if (!client.clientSecretHash) return null;
     const secret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
     client.clientSecretHash =
       await this.securityService.hashClientSecret(secret);
@@ -274,7 +297,23 @@ export class AdminConsoleService {
     filter: AdminListQuery | undefined,
     enabled: boolean,
   ) {
-    const where: Record<string, unknown> = ids ? { id: { $in: ids } } : {};
+    if (ids) {
+      const clients = await this.mikro.oauthClient.find({ id: { $in: ids } });
+      for (const client of clients) this.ensureClientEditable(client);
+      return this.applyStatus(
+        clients,
+        enabled,
+        (client) => client.enabled,
+        (client) => {
+          client.enabled = enabled;
+        },
+      );
+    }
+
+    const where: Record<string, unknown> = {
+      deletedAt: null,
+      managed_by: 'database',
+    };
     if (filter?.managedBy) where['managed_by'] = filter.managedBy;
     if (filter?.enabled !== undefined) where['enabled'] = filter.enabled;
     const query = filter?.query?.trim();
@@ -292,6 +331,39 @@ export class AdminConsoleService {
         client.enabled = enabled;
       },
     );
+  }
+
+  public async deleteClient(id: string) {
+    const client = await this.mikro.oauthClient.findOne(
+      { id },
+      { populate: ['clientSecretHash'] },
+    );
+    if (!client) return null;
+    if (client.managed_by === 'config') {
+      throw new e.OAuthClientNotEditable.Error();
+    }
+    if (!client.deletedAt) {
+      client.deletedAt = new Date();
+      client.tokenEpoch = crypto.randomUUID();
+      await this.mikro.em.flush();
+    }
+    return { client: clientResponse(client) };
+  }
+
+  public async restoreClient(id: string) {
+    const client = await this.mikro.oauthClient.findOne(
+      { id },
+      { populate: ['clientSecretHash'] },
+    );
+    if (!client) return null;
+    if (client.managed_by === 'config') {
+      throw new e.OAuthClientNotEditable.Error();
+    }
+    if (client.deletedAt) {
+      client.deletedAt = null;
+      await this.mikro.em.flush();
+    }
+    return { client: clientResponse(client) };
   }
 
   public async listTerms(
@@ -384,7 +456,10 @@ export class AdminConsoleService {
         { limit: 5 },
       ),
       this.mikro.oauthClient.find(
-        { $or: [{ name: { $like: value } }, { clientId: { $like: value } }] },
+        {
+          deletedAt: null,
+          $or: [{ name: { $like: value } }, { clientId: { $like: value } }],
+        },
         { limit: 5, populate: ['clientSecretHash'] },
       ),
       this.mikro.terms.find(
@@ -523,5 +598,17 @@ export class AdminConsoleService {
     }
     await this.mikro.em.flush();
     return { matched: items.length, changed, skipped };
+  }
+
+  private ensureClientEditable(client: {
+    managed_by: 'database' | 'config';
+    deletedAt?: Date | null | undefined;
+  }): void {
+    if (client.managed_by === 'config') {
+      throw new e.OAuthClientNotEditable.Error();
+    }
+    if (client.deletedAt) {
+      throw new e.OAuthClientDeleted.Error();
+    }
   }
 }

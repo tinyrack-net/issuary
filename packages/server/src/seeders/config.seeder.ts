@@ -328,6 +328,8 @@ async function syncOAuthClients(
         grantTypes: client.grant_types,
         scopes: client.scope.split(' '),
         enabled: true,
+        deletedAt: null,
+        tokenEpoch: crypto.randomUUID(),
         skipConsent: client.skip_consent,
         managed_by: 'config',
         created_at: now,
@@ -337,20 +339,22 @@ async function syncOAuthClients(
         onConflictFields: ['id'],
         onConflictAction: 'merge',
         // Exclude id and created_at from merge (don't update primary key or creation time)
-        onConflictExcludeFields: ['id', 'created_at'],
+        onConflictExcludeFields: ['id', 'created_at', 'tokenEpoch'],
       },
     );
   }
 
-  // Remove config-managed clients that are no longer in config
+  // Soft-delete config-managed clients that are no longer in config. Keeping
+  // the row preserves dependent grants and consents until retention cleanup.
   const configClientIds = config.clients.map((client) => client.id);
-  if (configClientIds.length > 0) {
-    await em.nativeDelete(OAuthClientEntitySchema, {
-      managed_by: 'config',
-      id: { $nin: configClientIds },
-    });
-  } else {
-    // If no config providers, remove all config-managed clients
-    await em.nativeDelete(OAuthClientEntitySchema, { managed_by: 'config' });
+  const removedClients = await em.find(OAuthClientEntitySchema, {
+    managed_by: 'config',
+    deletedAt: null,
+    ...(configClientIds.length > 0 && { id: { $nin: configClientIds } }),
+  });
+  for (const client of removedClients) {
+    client.deletedAt = now;
+    client.tokenEpoch = crypto.randomUUID();
   }
+  await em.flush();
 }

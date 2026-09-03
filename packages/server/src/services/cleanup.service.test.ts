@@ -8,11 +8,14 @@ import {
 } from 'vitest';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
+import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
 import { UserEntity } from '../entities/user.entity.ts';
+import { UserConsentEntitySchema } from '../entities/user-consent.entity.ts';
 import {
   CLI_TEST_CONFIG,
   countEntities,
@@ -34,6 +37,119 @@ import {
 import type { ServiceContainer } from './container.ts';
 
 describe('CleanupService', () => {
+  describe('cleanupDeletedOAuthClients', () => {
+    test('purges retained clients from both sources with their dependent data', async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: { oauth_clients: { enabled: true, retention: '0' } },
+      });
+      try {
+        const userSub = await createTestUser(server.services);
+        const firstClientId = await createTestOAuthClient(server.services, {
+          clientId: 'cleanup-deleted-database-client',
+        });
+        const secondClientId = await createTestOAuthClient(server.services, {
+          clientId: 'cleanup-deleted-config-client',
+        });
+        await withMikroContext(server.services, async () => {
+          const clients = await server.services.mikro.em.find(
+            OAuthClientEntitySchema,
+            { id: { $in: [firstClientId, secondClientId] } },
+          );
+          for (const client of clients) {
+            client.deletedAt = new Date(Date.now() - 1000);
+          }
+          const configClient = clients.find(
+            (client) => client.id === secondClientId,
+          );
+          if (!configClient) throw new Error('Expected config client fixture');
+          configClient.managed_by = 'config';
+          const user = await server.services.mikro.em.findOneOrFail(
+            UserEntity,
+            {
+              sub: userSub,
+            },
+          );
+          server.services.mikro.em.create(OAuthDeviceCodeEntitySchema, {
+            deviceCodeHash: 'cleanup-device-code',
+            userCodeHash: 'cleanup-user-code',
+            client: configClient,
+            scope: ['openid'],
+            expiresAt: new Date(Date.now() + 60_000),
+          });
+          server.services.mikro.em.create(UserConsentEntitySchema, {
+            user,
+            client: configClient,
+            scopes: ['openid'],
+          });
+          await server.services.mikro.em.flush();
+        });
+        await createOAuthCode(server.services, {
+          clientId: firstClientId,
+          userSub,
+        });
+        await createOAuthCode(server.services, {
+          clientId: secondClientId,
+          userSub,
+        });
+        await createRevokedToken(server.services, {
+          clientId: secondClientId,
+          userSub,
+          expiresAt: new Date(Date.now() + 60_000),
+        });
+
+        const dryRun =
+          await server.services.cleanupService.cleanupDeletedOAuthClients({
+            dryRun: true,
+          });
+        expect(dryRun.deletedCount).toBe(2);
+        expect(await countEntities(server.services, 'oauthClient')).toBe(2);
+
+        const result =
+          await server.services.cleanupService.cleanupDeletedOAuthClients({
+            dryRun: false,
+          });
+        expect(result.deletedCount).toBe(2);
+        expect(await countEntities(server.services, 'oauthClient')).toBe(0);
+        expect(await countEntities(server.services, 'oauthCode')).toBe(0);
+        await withMikroContext(server.services, async () => {
+          const em = server.services.mikro.em.fork();
+          expect(await em.count(OAuthDeviceCodeEntitySchema)).toBe(0);
+          expect(await em.count(UserConsentEntitySchema)).toBe(0);
+          expect(await em.count(RevokedTokenEntitySchema)).toBe(0);
+        });
+      } finally {
+        await server.cleanup();
+      }
+    });
+
+    test('keeps clients inside the configured retention period', async () => {
+      const server = await createTestApp({
+        ...MINIMAL_TEST_CONFIG,
+        cleanup: { oauth_clients: { enabled: true, retention: '30d' } },
+      });
+      try {
+        const clientId = await createTestOAuthClient(server.services);
+        await withMikroContext(server.services, async () => {
+          const client = await server.services.mikro.oauthClient.findOneOrFail({
+            id: clientId,
+          });
+          client.deletedAt = new Date();
+          await server.services.mikro.em.flush();
+        });
+
+        const result =
+          await server.services.cleanupService.cleanupDeletedOAuthClients({
+            dryRun: false,
+          });
+        expect(result.deletedCount).toBe(0);
+        expect(await countEntities(server.services, 'oauthClient')).toBe(1);
+      } finally {
+        await server.cleanup();
+      }
+    });
+  });
+
   describe('cleanupRevokedTokens', () => {
     let services: ServiceContainer;
     let cleanup: () => Promise<void>;
