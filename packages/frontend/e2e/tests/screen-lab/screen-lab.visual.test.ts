@@ -61,6 +61,16 @@ async function expectScreenScreenshot(
       await themeSelect.evaluate((element) => getComputedStyle(element).width),
     );
   }
+  if (scenario.id === 'account-selection') {
+    const addAccountLink = page.getByRole('link', {
+      name: /Use another account/i,
+    });
+    await expect(addAccountLink).toHaveAttribute('data-appearance', 'ghost');
+    await expect(addAccountLink).toHaveCSS(
+      'border-top-color',
+      'rgba(0, 0, 0, 0)',
+    );
+  }
   await expect(page).toHaveScreenshot(getSnapshotName(scenario.id, variant), {
     animations: 'disabled',
     caret: 'hide',
