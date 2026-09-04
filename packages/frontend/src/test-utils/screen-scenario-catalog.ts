@@ -239,7 +239,14 @@ export const screenScenarioDefinitions = defineScreenScenarios([
     runtime: 'server',
     entryPath: '/oauth/authorize',
     readySelector: '[data-testid="account-list"]',
-    variants: createVariants(true),
+    variants: createVariants(true, [
+      {
+        id: 'en-dark',
+        locale: 'en',
+        colorScheme: 'dark',
+        viewport: 'desktop',
+      },
+    ]),
   },
   {
     id: 'totp-verification',

@@ -104,9 +104,34 @@ describe('/account/select', () => {
     await expect.element(screen.getByText('bob@example.com')).toBeVisible();
     await expect.element(screen.getByText('Current account')).toBeVisible();
 
+    const currentAccountCard = screen
+      .getByTestId('remembered-account-user-b')
+      .element()
+      .querySelector('.tr-card');
+    const rememberedAccountCard = screen
+      .getByTestId('remembered-account-user-a')
+      .element()
+      .querySelector('.tr-card');
+    expect(currentAccountCard).not.toBeNull();
+    expect(rememberedAccountCard).not.toBeNull();
+    expect(
+      currentAccountCard?.contains(
+        screen.getByText('Current', { exact: true }).element(),
+      ),
+    ).toBe(true);
+    expect(
+      rememberedAccountCard?.contains(
+        screen.getByTestId('remove-account-user-a').element(),
+      ),
+    ).toBe(true);
+    await expect
+      .element(screen.getByTestId('remove-account-user-b'))
+      .not.toBeInTheDocument();
+
     const addAccountLink = screen
       .getByRole('link', { name: /Use another account/ })
       .element();
+    expect(addAccountLink).toHaveAttribute('data-appearance', 'ghost');
     const href = addAccountLink.getAttribute('href') ?? '';
     expect(href).toContain('/login?');
     expect(href).toContain('client_id=client-web');
@@ -208,6 +233,11 @@ describe('/account/select', () => {
       expect(jsonRequestBody(firstRequest(fetchMock.requests))).toEqual({
         sub: 'user-a',
       });
+      expect(
+        fetchMock.requests.some(
+          (request) => request.url === '/api/auth/accounts/select',
+        ),
+      ).toBe(false);
     });
   });
 });

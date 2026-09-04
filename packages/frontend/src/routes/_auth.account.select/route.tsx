@@ -113,19 +113,33 @@ function AccountSelect({ search }: { search: AccountSelectSearch }) {
       ) : (
         /* tinyrack-check-ignore-next-line components/no-native-text -- Structural account list; AuthChoiceRow owns visible typography. */
         <div
-          className="flex flex-col gap-tinyrack-xs"
+          className="flex flex-col gap-tinyrack-sm"
           data-testid="account-list"
         >
           {data.accounts.map((account) => (
-            <div data-testid="remembered-account" key={account.sub}>
+            <div
+              data-testid={`remembered-account-${account.sub}`}
+              key={account.sub}
+            >
               <AuthChoiceRow
                 description={
                   account.current
                     ? t('accountSelect.currentAccount')
                     : t('accountSelect.rememberedAccount')
                 }
+                indicator={
+                  account.current ? (
+                    <TRBadge
+                      className="shrink-0 whitespace-nowrap"
+                      uiSize="md"
+                      variant="info"
+                    >
+                      {t('accountSelect.current')}
+                    </TRBadge>
+                  ) : null
+                }
                 label={account.email}
-                leading={<InitialAvatar email={account.email} size="sm" />}
+                leading={<InitialAvatar email={account.email} size="md" />}
                 /*
                   Picking an account is a mutation, not navigation, so this
                   one is a button. No children — the row supplies them.
@@ -139,32 +153,27 @@ function AccountSelect({ search }: { search: AccountSelectSearch }) {
                     uiSize="lg"
                   />
                 }
+                selected={account.current}
+                surface="card"
                 trailing={
-                  <>
-                    {account.current ? (
-                      <TRBadge uiSize="md" variant="info">
-                        {t('accountSelect.current')}
-                      </TRBadge>
-                    ) : null}
-                    {data.allow_remove_account && !account.current ? (
-                      <TRIconButton
-                        appearance="ghost"
-                        aria-label={t('accountSelect.removeAccount', {
-                          email: account.email,
-                        })}
-                        data-testid={`remove-account-${account.sub}`}
-                        disabled={removeMutation.isPending}
-                        intent="neutral"
-                        onClick={() =>
-                          removeMutation.mutate({ sub: account.sub })
-                        }
-                        type="button"
-                        uiSize="sm"
-                      >
-                        <Trash2Icon aria-hidden className="size-tinyrack-lg" />
-                      </TRIconButton>
-                    ) : null}
-                  </>
+                  data.allow_remove_account && !account.current ? (
+                    <TRIconButton
+                      appearance="ghost"
+                      aria-label={t('accountSelect.removeAccount', {
+                        email: account.email,
+                      })}
+                      data-testid={`remove-account-${account.sub}`}
+                      disabled={removeMutation.isPending}
+                      intent="neutral"
+                      onClick={() =>
+                        removeMutation.mutate({ sub: account.sub })
+                      }
+                      type="button"
+                      uiSize="sm"
+                    >
+                      <Trash2Icon aria-hidden className="size-tinyrack-lg" />
+                    </TRIconButton>
+                  ) : null
                 }
               />
             </div>
@@ -174,7 +183,7 @@ function AccountSelect({ search }: { search: AccountSelectSearch }) {
 
       {data.allow_add_account ? (
         <TRLinkButton
-          appearance="outline"
+          appearance="ghost"
           className="w-full justify-between"
           intent="neutral"
           render={<Link to={buildLoginHref(search)} />}
