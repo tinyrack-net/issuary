@@ -4,6 +4,7 @@ import z from 'zod';
 import { createStandaloneApp } from '../../app.ts';
 import { parseWithZod } from '../../lib/cli/parse-with-zod.ts';
 import { loadConfig } from '../../lib/load-config.ts';
+import { shutdownTelemetry } from '../../telemetry.js';
 
 /**
  * Serve command
@@ -42,6 +43,7 @@ export async function runServeCommand(flags: ServeFlags): Promise<void> {
     logger.info({ signal }, `Received ${signal}, shutting down...`);
     server.close();
     await cleanup();
+    await shutdownTelemetry();
     process.exit(0);
   };
 

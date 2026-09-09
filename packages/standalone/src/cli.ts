@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import './telemetry.js';
 import { run } from '@stricli/core';
 import { app } from './cli/app.ts';
 

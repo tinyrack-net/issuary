@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const cliUrl = new URL('../dist/cli.js', import.meta.url);
+const telemetryUrl = new URL('../dist/telemetry.js', import.meta.url);
 
 if (!existsSync(fileURLToPath(cliUrl))) {
   console.error(
@@ -11,5 +12,6 @@ if (!existsSync(fileURLToPath(cliUrl))) {
   );
   process.exitCode = 1;
 } else {
+  await import(telemetryUrl.href);
   await import(cliUrl.href);
 }

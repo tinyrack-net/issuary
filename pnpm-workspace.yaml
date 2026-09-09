@@ -5,6 +5,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+  protobufjs: true
   sharp: true
   vue-demi: true
   workerd: true
@@ -21,6 +22,13 @@ catalog:
   "@mikro-orm/postgresql": ^7.1.14
   "@mikro-orm/seeder": ^7.1.14
   "@mikro-orm/sql": ^7.1.14
+  "@opentelemetry/api": ^1.9.1
+  "@opentelemetry/exporter-trace-otlp-http": ^0.222.0
+  "@opentelemetry/instrumentation-http": ^0.222.0
+  "@opentelemetry/instrumentation-pg": ^0.74.0
+  "@opentelemetry/instrumentation-pino": ^0.68.0
+  "@opentelemetry/instrumentation-undici": ^0.32.0
+  "@opentelemetry/sdk-node": ^0.222.0
   "@playwright/test": ^1.62.1
   "@react-router/dev": 8.3.1
   "@react-router/fs-routes": 8.3.1
