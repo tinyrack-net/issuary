@@ -2,7 +2,7 @@
   "name": "@tinyrack/issuary-base",
   "private": true,
   "version": "1.0.0",
-  "packageManager": "pnpm@11.25.0",
+  "packageManager": "pnpm@12.3.4",
   "scripts": {
     "dev": "pnpm --filter @tinyrack/issuary-standalone dev",
     "dev:docs": "pnpm --filter @tinyrack/issuary-homepage dev",

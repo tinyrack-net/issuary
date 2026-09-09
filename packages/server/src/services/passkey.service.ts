@@ -1,6 +1,6 @@
 import type {
   AuthenticationResponseJSON,
-  AuthenticatorTransportFuture,
+  AuthenticatorTransport,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
@@ -20,6 +20,18 @@ import {
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
+
+function isAuthenticatorTransport(
+  transport: string,
+): transport is AuthenticatorTransport {
+  return (
+    transport === 'ble' ||
+    transport === 'hybrid' ||
+    transport === 'internal' ||
+    transport === 'nfc' ||
+    transport === 'usb'
+  );
+}
 
 /**
  * Passkey information for user passkey list
@@ -145,7 +157,8 @@ export class PasskeyService {
       counter: Number(credential.counter),
       device_type: credentialDeviceType,
       backed_up: credentialBackedUp,
-      transports: response.response.transports ?? null,
+      transports:
+        response.response.transports?.filter(isAuthenticatorTransport) ?? null,
       name: passkeyName ?? null,
       aaguid: verification.registrationInfo.aaguid ?? null,
     });
@@ -165,7 +178,7 @@ export class PasskeyService {
     userSub?: string,
   ): Promise<PublicKeyCredentialRequestOptionsJSON> {
     let allowCredentials:
-      | { id: string; transports?: AuthenticatorTransportFuture[] }[]
+      | { id: string; transports?: AuthenticatorTransport[] }[]
       | undefined;
 
     if (userSub) {

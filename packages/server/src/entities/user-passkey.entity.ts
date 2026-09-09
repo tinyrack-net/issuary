@@ -1,5 +1,5 @@
 import { defineEntity, type InferEntity } from '@mikro-orm/core';
-import type { AuthenticatorTransportFuture } from '@simplewebauthn/server';
+import type { AuthenticatorTransport } from '@simplewebauthn/server';
 import { UserPasskeyRepository } from '../repositories/user-passkey.repository.ts';
 import { BaseSchema } from './base.entity.ts';
 import { UserEntity } from './user.entity.ts';
@@ -41,7 +41,7 @@ export const UserPasskeyEntitySchema = defineEntity({
       .comment('Whether the credential is backed up (synced passkey)')
       .default(false),
     transports: p
-      .json<AuthenticatorTransportFuture[] | null>()
+      .json<AuthenticatorTransport[] | null>()
       .comment(
         'Supported authenticator transports (usb, ble, nfc, internal, etc)',
       )

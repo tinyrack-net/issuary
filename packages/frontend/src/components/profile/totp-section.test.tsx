@@ -17,7 +17,9 @@ test('renders enabled status with Regenerate and Disable buttons when totpEnable
     />,
   );
 
-  await expect.element(screen.getByText('Enabled')).toBeVisible();
+  await expect
+    .element(screen.getByText('Two-factor authentication is enabled'))
+    .toBeVisible();
   await expect
     .element(screen.getByTestId('profile-totp-regenerate'))
     .toBeVisible();

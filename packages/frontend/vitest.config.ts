@@ -14,8 +14,8 @@ const BROWSER_API_PORT = Number(
 );
 const browserApiPort =
   Number.isInteger(BROWSER_API_PORT) && BROWSER_API_PORT > 0
-    ? { port: BROWSER_API_PORT }
-    : {};
+    ? BROWSER_API_PORT
+    : 63315;
 export default defineConfig({
   optimizeDeps: {
     include: [
@@ -32,6 +32,10 @@ export default defineConfig({
     allowedHosts: ['desktop.server.lan'],
   },
   test: {
+    api: {
+      host: HOST,
+      port: browserApiPort,
+    },
     coverage: {
       provider: 'v8',
       clean: true,
@@ -62,10 +66,6 @@ export default defineConfig({
           maxWorkers: getBrowserTestMaxWorkers(IS_COVERAGE, IS_CHROMIUM_ONLY),
           browser: {
             enabled: true,
-            api: {
-              host: HOST,
-              ...browserApiPort,
-            },
             provider: MODE === 'preview' ? preview() : playwright(),
             headless: MODE !== 'preview',
             instances:

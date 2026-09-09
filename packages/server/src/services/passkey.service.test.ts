@@ -174,6 +174,45 @@ describe('PasskeyService security policy', () => {
     );
   });
 
+  test('stores only supported authenticator transports after registration', async () => {
+    webauthn.verifyRegistrationResponse.mockResolvedValue({
+      verified: true,
+      registrationInfo: {
+        aaguid: 'test-aaguid',
+        credential: {
+          id: 'registration-transport-credential',
+          publicKey: new Uint8Array([1, 2, 3, 4]),
+          counter: 0,
+        },
+        credentialDeviceType: 'multiDevice',
+        credentialBackedUp: true,
+      },
+    });
+    const userSub = await createTestUser(services, {
+      email: generateUniqueEmail('passkey-transports'),
+    });
+    const response: RegistrationResponseJSON = {
+      ...REGISTRATION_RESPONSE,
+      id: 'registration-transport-credential',
+      rawId: 'registration-transport-credential',
+      response: {
+        ...REGISTRATION_RESPONSE.response,
+        transports: ['internal', 'future-transport'],
+      },
+    };
+
+    const passkey = await withMikroContext(services, async () => {
+      const user = await services.mikro.user.verifyBySub(userSub);
+      return services.passkeyService.verifyRegistration(
+        user,
+        response,
+        'expected-challenge',
+      );
+    });
+
+    expect(passkey.transports).toEqual(['internal']);
+  });
+
   test('rejects authentication when the verifier reports cloned credential counter rollback', async () => {
     webauthn.verifyAuthenticationResponse.mockResolvedValue({
       verified: true,
