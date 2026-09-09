@@ -196,6 +196,7 @@
   },
   "dependencies": {
     "@hono/standard-validator": "catalog:",
+    "@opentelemetry/api": "catalog:",
     "@mikro-orm/cli": "catalog:",
     "@mikro-orm/core": "catalog:",
     "@mikro-orm/decorators": "catalog:",
