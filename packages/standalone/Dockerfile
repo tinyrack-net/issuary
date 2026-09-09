@@ -43,4 +43,4 @@ USER issuary
 
 EXPOSE 8080
 
-CMD ["node", "dist/cli.js", "serve"]
+CMD ["node", "--import", "./dist/telemetry.js", "dist/cli.js", "serve"]
