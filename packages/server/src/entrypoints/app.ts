@@ -18,6 +18,7 @@ import { loggerMiddleware } from '../middleware/logger.ts';
 import { mikroOrmMiddleware } from '../middleware/mikro-orm.ts';
 import { servicesMiddleware } from '../middleware/services.ts';
 import { sessionMiddleware } from '../middleware/session.ts';
+import { tracingMiddleware } from '../middleware/tracing.ts';
 import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
 import { routes } from '../routes/index.ts';
 import { e, IssuaryError } from '../schemas/error.ts';
@@ -79,6 +80,7 @@ export async function createApp(
 
   const app = new Hono()
     .onError(handleError)
+    .use('*', tracingMiddleware())
     .use('*', loggerMiddleware(logger))
     .use('*', firstPartyCors(config.server.public_origin))
     .use(
