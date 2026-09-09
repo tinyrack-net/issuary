@@ -46,7 +46,7 @@ export const registerPasskeyMutationOptions = mutationOptions({
 
     // Step 2: Start WebAuthn registration in browser
     const registrationResponse = await startRegistration({
-      optionsJSON: options,
+      optionsJSON: { ...options, extensions: undefined },
     });
 
     // Step 3: Send registration response to server
@@ -112,7 +112,7 @@ export const authenticateWithPasskeyMutationOptions = mutationOptions({
 
     // Step 2: Start WebAuthn authentication in browser
     const authenticationResponse = await startAuthentication({
-      optionsJSON: options,
+      optionsJSON: { ...options, extensions: undefined },
     });
 
     // Step 3: Send authentication response to server
@@ -163,7 +163,7 @@ export const startConditionalPasskeyAuth = async (
 
     // Step 2: Start WebAuthn with conditional mediation
     const authenticationResponse = await startAuthentication({
-      optionsJSON: options,
+      optionsJSON: { ...options, extensions: undefined },
       useBrowserAutofill: true,
     });
 
