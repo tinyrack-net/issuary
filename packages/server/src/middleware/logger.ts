@@ -1,3 +1,8 @@
+import {
+  isSpanContextValid,
+  context as otelContext,
+  trace,
+} from '@opentelemetry/api';
 import { createMiddleware } from 'hono/factory';
 import type pino from 'pino';
 
@@ -29,7 +34,16 @@ function levelForStatus(status: number): pino.Level {
 export function loggerMiddleware(rootLogger: pino.Logger) {
   return createMiddleware<LoggerEnv>(async (c, next) => {
     const reqId = crypto.randomUUID();
-    const child = rootLogger.child({ reqId });
+    const spanContext = trace.getSpan(otelContext.active())?.spanContext();
+    const child = rootLogger.child(
+      spanContext && isSpanContextValid(spanContext)
+        ? {
+            reqId,
+            trace_id: spanContext.traceId,
+            span_id: spanContext.spanId,
+          }
+        : { reqId },
+    );
     c.set('logger', child);
 
     const start = performance.now();
