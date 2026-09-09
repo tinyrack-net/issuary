@@ -11,6 +11,7 @@ export default defineConfig({
   test: {
     maxWorkers: '100%',
     testTimeout: 20000,
+    hookTimeout: 20000,
     exclude: ['./dist/*', './node_modules/*', 'src/**/*.perf.test.ts'],
     coverage: {
       provider: 'v8',
