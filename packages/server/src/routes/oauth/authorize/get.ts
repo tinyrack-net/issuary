@@ -22,7 +22,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
     security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Authorize',
     description:
-      'OAuth2 Authorization Endpoint. Grant issuance and browser session persistence commit atomically; revoked browser authentication returns 401 without authorization credentials.',
+      'OAuth2 Authorization Endpoint. Grant issuance and browser session persistence commit atomically; revoked browser authentication returns 401 without authorization credentials. Final issuance rechecks current scope consent, consent exemption and mandatory terms under policy locks. Newly required consent or terms returns to the corresponding screen, or an OAuth interaction error for prompt=none, without issuing authorization credentials.',
     responses: {
       302: {
         description: 'Redirect',

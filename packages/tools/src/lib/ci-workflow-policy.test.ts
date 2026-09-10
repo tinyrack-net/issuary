@@ -35,6 +35,15 @@ function needsOf(workflow: z.infer<typeof workflowSchema>, jobName: string) {
 }
 
 describe('CI workflow policy', () => {
+  test('focused browser jobs do not start the unused Screen Lab dev server', async () => {
+    const { workflow } = await readWorkflow();
+    for (const jobName of ['frontend-smoke', 'security-browser']) {
+      expect(workflow.jobs[jobName]).toMatchObject({
+        env: { ISSUARY_E2E_EXCLUDE_SCREEN_LAB: '1' },
+      });
+    }
+  });
+
   test('runs PR and merge-group validation without a duplicate main push', async () => {
     const { source, workflow } = await readWorkflow();
 

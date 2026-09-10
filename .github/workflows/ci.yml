@@ -158,6 +158,8 @@ jobs:
 
   security-browser:
     name: Security / Chromium
+    env:
+      ISSUARY_E2E_EXCLUDE_SCREEN_LAB: '1'
     needs: [changes, build]
     if: >-
       always() && needs.build.result == 'success' &&
@@ -263,6 +265,8 @@ jobs:
 
   frontend-smoke:
     name: Linux / Frontend smoke (${{ matrix.shard }}/2)
+    env:
+      ISSUARY_E2E_EXCLUDE_SCREEN_LAB: '1'
     needs: [changes, build]
     if: >-
       always() && github.event_name == 'pull_request' && needs.build.result == 'success' &&

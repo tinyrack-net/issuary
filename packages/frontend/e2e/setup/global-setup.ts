@@ -2,9 +2,6 @@ import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FullConfig } from '@playwright/test';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import { createServer as createViteDevServer } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendRoot = path.resolve(__dirname, '../..');
@@ -22,36 +19,46 @@ export default async function globalSetup(config: FullConfig) {
   const screenLabEnabled = config.projects.some(
     (project) => project.name === 'screen-lab:chromium',
   );
-  const routeHostServer = screenLabEnabled
-    ? await createViteDevServer({
-        configFile: false,
-        root: frontendRoot,
-        plugins: [react(), tailwindcss()],
-        resolve: {
-          alias: {
-            '#frontend': path.resolve(frontendRoot, 'src'),
-            '#frontend-e2e': path.resolve(frontendRoot, 'e2e'),
-          },
-        },
-        server: {
-          host: '127.0.0.1',
-          port: 0,
-          strictPort: false,
-        },
-      })
-    : undefined;
-
-  if (routeHostServer) {
-    await routeHostServer.listen();
-    const routeHostPort = getListeningPort(
-      routeHostServer.httpServer?.address() ?? null,
-    );
-    process.env[SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV] =
-      `http://127.0.0.1:${routeHostPort}`;
+  // The CLI's --project filter does not remove other projects from FullConfig.
+  // Dedicated CI jobs exclude Screen Lab from config; avoid loading its native
+  // compiler plugins or starting a process-owned dev server in those jobs.
+  if (!screenLabEnabled) {
+    return async () => {
+      delete process.env[SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV];
+    };
   }
+  const [{ default: tailwindcss }, { default: react }, { createServer }] =
+    await Promise.all([
+      import('@tailwindcss/vite'),
+      import('@vitejs/plugin-react'),
+      import('vite'),
+    ]);
+  const routeHostServer = await createServer({
+    configFile: false,
+    root: frontendRoot,
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        '#frontend': path.resolve(frontendRoot, 'src'),
+        '#frontend-e2e': path.resolve(frontendRoot, 'e2e'),
+      },
+    },
+    server: {
+      host: '127.0.0.1',
+      port: 0,
+      strictPort: false,
+    },
+  });
+
+  await routeHostServer.listen();
+  const routeHostPort = getListeningPort(
+    routeHostServer.httpServer?.address() ?? null,
+  );
+  process.env[SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV] =
+    `http://127.0.0.1:${routeHostPort}`;
 
   return async () => {
     delete process.env[SCREEN_LAB_ROUTE_HOST_ORIGIN_ENV];
-    await routeHostServer?.close();
+    await routeHostServer.close();
   };
 }

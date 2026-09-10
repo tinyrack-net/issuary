@@ -330,3 +330,5 @@ Client 수정·secret 회전·삭제·복원·설정 동기화는 같은 client 
 - 공개 성공 형식과 기존 401/409 및 한·영·일 안내를 유지한다. 추가 스키마 마이그레이션이나 일괄 인증 폐기는 없다. 수정본을 모든 서버에 배포해야 정책 경합 차단이 보장된다. 정책 변경 전에 발급된 토큰을 소급 폐기하지 않는다.
 
 `consent-policy-security.test.ts`에는 최초 세 재현, 동의 저장 롤백, 사용자/client 세대 변경, 약관 버전/복원, scope 철회, offline scope 재계산, 응답 모드와 두 커밋 순서를 포함한다. 기존 OAuth 동의/authorization 64개와 집중 회귀를 로컬에서 검증한다. PostgreSQL 보안 작업에 새 파일을 포함하고, 독립 서버 두 개에서 동의 폐기 및 정책 변경을 먼저 커밋하는 검증과 PostgreSQL 공유 정책 읽기를 추가했다. Chromium에는 동의 화면 승인 → code 교환 → userinfo 흐름을 추가하며 기존 device 약관 복귀 검증을 유지한다. 최신 검증 실행과 확정 결과는 [PR #83 최종 HEAD 체크](https://github.com/tinyrack-net/issuary/pull/83/checks) 및 PR 설명에 기록한다. 무거운 로컬 검증은 사용자 자원 제한에 따라 생략하며 실행 전 CI 결과를 통과로 간주하지 않는다.
+
+CI 종료 경로도 정리했다. 한 smoke 실행은 38개 테스트와 HTML/blob 보고서를 모두 완료했지만 runner가 종료되지 않아 시간 제한으로 취소됐다. `--project` 선택이 `FullConfig.projects`에서 다른 프로젝트를 제거하지 않아, 해당 작업에서도 사용하지 않는 Screen Lab 개발 서버를 시작하던 경로를 확인했다. 전용 smoke/보안 작업은 기존 Screen Lab 제외 설정을 적용하고, global setup은 해당 프로젝트가 없으면 Vite·네이티브 플러그인을 import하지 않는다. 종료 정지의 네이티브 스택은 확보하지 못했으므로 정확한 정지 지점까지 확인한 것으로 간주하지 않는다. 불필요한 서버 import 차단의 수정 전 실패/수정 후 통과와 Screen Lab 정상 시작·정리, workflow 설정을 별도 검사하며 실제 smoke·보안 테스트 수는 유지한다.
