@@ -21,14 +21,10 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
     // Invalidate all previous unused tokens for this user
-    const previousTokens = await this.find({
-      user: ref(UserEntity, params.userSub),
-      used: false,
-    });
-
-    for (const prevToken of previousTokens) {
-      prevToken.expiresAt = new Date(); // Expire immediately
-    }
+    await this.nativeUpdate(
+      { user: ref(UserEntity, params.userSub), used: false, revoked_at: null },
+      { revoked_at: new Date() },
+    );
 
     // Create the entity
     const entity = this.create({
@@ -51,7 +47,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
   async verifyToken(token: string): Promise<IPasswordResetEntity | null> {
     const now = new Date();
     const changed = await this.nativeUpdate(
-      { token, used: false, expiresAt: { $gt: now } },
+      { token, used: false, revoked_at: null, expiresAt: { $gt: now } },
       { used: true, usedAt: now },
     );
     if (changed !== 1) return null;

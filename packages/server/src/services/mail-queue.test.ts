@@ -392,6 +392,7 @@ test('an epoch change between mail attempts prevents delivery and replacement to
       await server.services.mikro.passwordReset.count({
         user: existing.sub,
         expiresAt: { $gt: new Date() },
+        revoked_at: null,
       }),
     ).toBe(0);
   });
@@ -405,3 +406,61 @@ test('an epoch change between mail attempts prevents delivery and replacement to
     ).payload,
   ).toBe('null');
 });
+
+test.each(['verification', 'reset'])(
+  'a superseded %s token is not sent again by a clock-behind worker',
+  async (kind) => {
+    const existing = await user();
+    await withMikroContext(server.services, () =>
+      server.services.mailQueue.enqueue(
+        kind === 'verification' ? 'verification' : 'password-reset',
+        existing.email,
+        'en',
+        existing.sub,
+      ),
+    );
+    const count = sent.length;
+    failure = true;
+    try {
+      await server.services.mailQueue.runPending();
+    } finally {
+      failure = false;
+    }
+    expect(sent).toHaveLength(count + 1);
+    const em = server.services.mikro.em.fork();
+    const job = await em.findOneOrFail(BackgroundJobEntitySchema, {
+      status: 'pending',
+    });
+    const now = Date.now();
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(now + 30000);
+    try {
+      await withMikroContext(server.services, () =>
+        kind === 'verification'
+          ? server.services.emailService.generateToken({
+              userSub: existing.sub,
+            })
+          : server.services.passwordResetService.generateToken({
+              userSub: existing.sub,
+            }),
+      );
+    } finally {
+      vi.useRealTimers();
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    }
+    await em.nativeUpdate(
+      BackgroundJobEntitySchema,
+      { id: job.id },
+      { availableAt: new Date(0) },
+    );
+    await server.services.mailQueue.runPending();
+    expect(sent).toHaveLength(count + 1);
+    const completed = await em.findOneOrFail(
+      BackgroundJobEntitySchema,
+      { id: job.id },
+      { refresh: true },
+    );
+    expect(completed.status).toBe('succeeded');
+    expect(completed.payload).toBe('null');
+  },
+);

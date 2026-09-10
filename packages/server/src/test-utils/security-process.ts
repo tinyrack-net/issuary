@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { mock } from 'node:test';
+import { RequestContext } from '@mikro-orm/core';
 import { z } from 'zod';
 import { createApp } from '../entrypoints/app.js';
 import { DatabaseBackgroundJobStore } from '../entrypoints/scheduler/database.js';
@@ -190,7 +191,11 @@ process.on('message', (message) => {
 });
 
 const LoginRaceControl = z.object({
-  command: z.enum(['pause-password-login', 'pause-login-proof']),
+  command: z.enum([
+    'pause-password-login',
+    'pause-login-proof',
+    'pause-auto-link-proof',
+  ]),
   providerId: z.string().optional(),
   email: z.string().optional(),
 });
@@ -217,6 +222,20 @@ process.on('message', (input) => {
       await pause();
       return original(...args);
     };
+  } else if (control.command === 'pause-auto-link-proof') {
+    const provider = services.config.identity_providers.find(
+      (value) => value.id === 'google',
+    );
+    if (provider) provider.email_conflict_strategy = 'auto_link';
+    const original = services.oauthConnectService.prepareAuthentication.bind(
+      services.oauthConnectService,
+    );
+    services.oauthConnectService.prepareAuthentication = async (...args) => {
+      services.oauthConnectService.prepareAuthentication = original;
+      const proof = await original(...args);
+      await pause();
+      return proof;
+    };
   } else {
     const original =
       services.oauthConnectService.prepareExistingAuthentication.bind(
@@ -230,6 +249,8 @@ process.on('message', (input) => {
       await pause();
       return proof;
     };
+  }
+  if (control.command !== 'pause-password-login') {
     services.oauthConnectService.exchangeCodeForTokens = async () => ({
       access_token: 'login-race-token',
       token_type: 'Bearer',
@@ -241,4 +262,36 @@ process.on('message', (input) => {
     });
   }
   process.send?.({ event: 'configured' });
+});
+
+const IssueTokenControl = z.object({
+  command: z.literal('issue-token'),
+  kind: z.enum(['email', 'reset']),
+  sub: z.string(),
+  barrier: z.boolean().optional(),
+});
+process.on('message', (input) => {
+  const parsed = IssueTokenControl.safeParse(input);
+  if (!parsed.success) return;
+  const issue = async () => {
+    if (parsed.data.barrier) {
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      process.send?.({ event: 'arrived' });
+      await gate;
+    }
+    await RequestContext.create(services.mikro.orm.em.fork(), async () => {
+      const token =
+        parsed.data.kind === 'email'
+          ? await services.emailService.generateToken({
+              userSub: parsed.data.sub,
+            })
+          : await services.passwordResetService.generateToken({
+              userSub: parsed.data.sub,
+            });
+      process.send?.({ event: 'issued', token: token.token });
+    });
+  };
+  void issue().catch(() => process.exit(1));
 });

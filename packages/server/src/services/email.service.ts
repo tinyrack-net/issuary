@@ -154,6 +154,7 @@ export class EmailService {
     const candidate = await this.mikro.emailVerification.findOne({
       token,
       verified: false,
+      revoked_at: null,
       expiresAt: { $gt: new Date() },
     });
     if (!candidate) throw new e.InvalidVerificationToken.Error();
@@ -219,6 +220,7 @@ export class EmailService {
     const count = await this.mikro.emailVerification.count({
       user: { sub: userSub },
       verified: false,
+      revoked_at: null,
       expiresAt: { $gt: new Date() },
     });
     return count > 0;

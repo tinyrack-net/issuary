@@ -93,12 +93,30 @@ const OAuthTokensSchema = z.object({
 export type OAuthTokens = z.infer<typeof OAuthTokensSchema>;
 
 export interface OAuthLoginProof {
+  kind: 'linked';
   linkId: IUserOAuthEntity['id'];
   providerId: string;
   providerUserId: string;
   userSub: string;
   userEpoch: string;
 }
+
+export type OAuthAuthenticationProof =
+  | OAuthLoginProof
+  | {
+      kind: 'auto_link';
+      providerId: string;
+      providerUserId: string;
+      userSub: string;
+      userEpoch: string;
+      email: string;
+    }
+  | {
+      kind: 'registration';
+      providerId: string;
+      providerUserId: string;
+      email: string;
+    };
 
 const GitHubEmailResponseSchema = z.array(
   z.object({
@@ -185,7 +203,7 @@ export class OAuthConnectService {
   /**
    * Process an OAuth callback: validate session, exchange tokens, and
    * determine the appropriate next action (redirect, login, link, terms).
-   * Pure business logic — no session writes or HTTP responses.
+   * The caller completes database mutations and browser state in one transaction.
    */
   public async processOAuthCallback(params: {
     provider: string;
@@ -196,7 +214,7 @@ export class OAuthConnectService {
     requestUrl: string;
     completeLink?: (operation: () => Promise<void>) => Promise<void>;
     completeAuthentication: (
-      proof: OAuthLoginProof,
+      proof: OAuthAuthenticationProof,
       operation: () => Promise<OAuthCallbackResult>,
     ) => Promise<OAuthCallbackResult>;
   }): Promise<OAuthCallbackResult> {
@@ -253,13 +271,9 @@ export class OAuthConnectService {
     }
 
     // Capture the linked identity and its authentication epoch in one joined read.
-    const loginProof = await this.prepareExistingAuthentication(
-      provider,
-      userInfo.id,
-    );
+    const loginProof = await this.prepareAuthentication(provider, userInfo);
     // Check if this would be a new user
-    const isNewUser =
-      !loginProof && (await this.isNewOAuthUser(provider, userInfo));
+    const isNewUser = loginProof.kind === 'registration';
 
     // For new users, check registration enabled and email allowlist
     if (isNewUser) {
@@ -285,37 +299,41 @@ export class OAuthConnectService {
     const allTerms = await this.termsService.getGlobalTerms();
     const explicitTerms = await this.termsService.getExplicitTerms(allTerms);
 
-    if (isNewUser && explicitTerms.length > 0) {
-      // New user with explicit terms: persist to DB
-      const pendingToken =
-        await this.mikro.pendingOAuthRegistration.createPendingRegistration({
-          providerId: provider,
-          accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
-          expiresIn: tokens.expires_in,
-          tokenType: tokens.token_type,
-          userInfo: {
-            id: userInfo.id,
-            email: userInfo.email,
-            email_verified: userInfo.email_verified,
-            name: userInfo.name,
-            picture: userInfo.picture,
-          },
-          returnUrl: oauthSession.returnUrl,
-          expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-        });
-
-      const termsUrl = new URL('/terms', `${this.config.server.public_origin}`);
-      termsUrl.searchParams.set('mode', 'complete_registration');
-      termsUrl.searchParams.set('registration_token', pendingToken);
-      if (oauthSession.returnUrl) {
-        termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
-      }
-      return { action: 'terms_redirect', url: termsUrl.toString() };
-    }
-
-    // Keep result construction and session issuance inside the caller's transaction.
     const authenticate = async (): Promise<OAuthCallbackResult> => {
+      if (isNewUser && explicitTerms.length > 0) {
+        await this.assertNewIdentity(provider, userInfo);
+        // New user with explicit terms: persist to DB
+        const pendingToken =
+          await this.mikro.pendingOAuthRegistration.createPendingRegistration({
+            providerId: provider,
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+            expiresIn: tokens.expires_in,
+            tokenType: tokens.token_type,
+            userInfo: {
+              id: userInfo.id,
+              email: userInfo.email,
+              email_verified: userInfo.email_verified,
+              name: userInfo.name,
+              picture: userInfo.picture,
+            },
+            returnUrl: oauthSession.returnUrl,
+            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          });
+
+        const termsUrl = new URL(
+          '/terms',
+          `${this.config.server.public_origin}`,
+        );
+        termsUrl.searchParams.set('mode', 'complete_registration');
+        termsUrl.searchParams.set('registration_token', pendingToken);
+        if (oauthSession.returnUrl) {
+          termsUrl.searchParams.set('redirect', oauthSession.returnUrl);
+        }
+        return { action: 'terms_redirect', url: termsUrl.toString() };
+      }
+
+      // Result construction and session issuance share the caller's transaction.
       try {
         const result = await this.authenticateWithOAuth(
           provider,
@@ -372,9 +390,7 @@ export class OAuthConnectService {
         throw err;
       }
     };
-    return loginProof
-      ? params.completeAuthentication(loginProof, authenticate)
-      : authenticate();
+    return params.completeAuthentication(loginProof, authenticate);
   }
 
   /**
@@ -738,12 +754,54 @@ export class OAuthConnectService {
     if (!link) return null;
     const user = link.user.getEntity();
     return {
+      kind: 'linked',
       linkId: link.id,
       providerId,
       providerUserId,
       userSub: user.sub,
       userEpoch: user.token_epoch,
     };
+  }
+
+  public async prepareAuthentication(
+    providerId: string,
+    userInfo: OAuthUserInfo,
+  ): Promise<OAuthAuthenticationProof> {
+    const linked = await this.prepareExistingAuthentication(
+      providerId,
+      userInfo.id,
+    );
+    if (linked) return linked;
+    const user = await this.mikro.user.findOne(
+      { email: userInfo.email },
+      { refresh: true },
+    );
+    if (user)
+      return {
+        kind: 'auto_link',
+        providerId,
+        providerUserId: userInfo.id,
+        userSub: user.sub,
+        userEpoch: user.token_epoch,
+        email: userInfo.email,
+      };
+    return {
+      kind: 'registration',
+      providerId,
+      providerUserId: userInfo.id,
+      email: userInfo.email,
+    };
+  }
+
+  private async assertNewIdentity(
+    providerId: string,
+    userInfo: OAuthUserInfo,
+  ): Promise<void> {
+    if (
+      (await this.mikro.user.findOne({ email: userInfo.email })) ||
+      (await this.mikro.userOAuth.findByProviderUserId(providerId, userInfo.id))
+    )
+      throw new e.OAuthSessionExpired.Error();
   }
 
   /**
@@ -753,7 +811,7 @@ export class OAuthConnectService {
     providerId: string,
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
-    preparedProof?: OAuthLoginProof | null,
+    preparedProof?: OAuthAuthenticationProof,
   ): Promise<OAuthAuthResult> {
     const provider = this.getProvider(providerId);
 
@@ -763,10 +821,10 @@ export class OAuthConnectService {
     }
 
     const proof =
-      preparedProof === undefined
-        ? await this.prepareExistingAuthentication(providerId, userInfo.id)
-        : preparedProof;
-    if (proof) {
+      preparedProof ?? (await this.prepareAuthentication(providerId, userInfo));
+    if (proof.providerId !== providerId || proof.providerUserId !== userInfo.id)
+      throw new e.OAuthSessionExpired.Error();
+    if (proof.kind === 'linked') {
       return withUserSecurity(
         this.mikro,
         proof.userSub,
@@ -804,34 +862,39 @@ export class OAuthConnectService {
       );
     }
 
-    // Check if user with same email exists in database
-    // Config users are now synced to DB, so we only need to check the database
-    const existingUser = await this.mikro.user.findOne({
-      email: userInfo.email,
-    });
-
-    if (existingUser) {
-      // Handle email conflict based on strategy
-      if (provider.email_conflict_strategy === 'require_link') {
+    if (proof.email !== userInfo.email) throw new e.OAuthSessionExpired.Error();
+    if (proof.kind === 'auto_link') {
+      if (provider.email_conflict_strategy === 'require_link')
         throw new e.OAuthEmailConflict.Error();
-      }
-
-      // auto_link strategy - link to existing user if email is verified
-      await withUserSecurity(this.mikro, existingUser.sub, async (fresh) => {
-        if (fresh.email !== userInfo.email)
-          throw new e.OAuthEmailConflict.Error();
-        fresh.email_verified = true;
-        await this.linkOAuthAccount(fresh.sub, providerId, tokens, userInfo);
-        await this.mikro.em.flush();
-      });
-
-      await this.mikro.em.flush();
-
-      return {
-        isNewUser: false,
-        user: await this.authenticationResultUser(existingUser),
-      };
+      return withUserSecurity(
+        this.mikro,
+        proof.userSub,
+        async (fresh) => {
+          if (
+            fresh.deleted_at ||
+            fresh.token_epoch !== proof.userEpoch ||
+            fresh.email !== proof.email
+          )
+            throw new e.OAuthSessionExpired.Error();
+          if (
+            await this.mikro.userOAuth.findByProviderUserId(
+              providerId,
+              userInfo.id,
+            )
+          )
+            throw new e.OAuthSessionExpired.Error();
+          fresh.email_verified = true;
+          await this.linkOAuthAccount(fresh.sub, providerId, tokens, userInfo);
+          await this.mikro.em.flush();
+          return {
+            isNewUser: false,
+            user: await this.authenticationResultUser(fresh),
+          };
+        },
+        { includeDeleted: true },
+      );
     }
+    await this.assertNewIdentity(providerId, userInfo);
 
     // Check if registration is enabled and email is allowed
     if (!this.config.registration.enabled) {

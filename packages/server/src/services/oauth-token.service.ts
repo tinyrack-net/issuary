@@ -5,6 +5,7 @@ import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { validatePKCE } from '../lib/pkce.ts';
 import { IssuaryError } from '../schemas/error.js';
 import { e } from '../schemas/error.ts';
+import { lockOAuthClient } from './client-security.js';
 import type {
   AccessTokenPayload,
   JwtService,
@@ -144,14 +145,12 @@ export class OAuthTokenService {
       code,
     );
     const result = await this.mikro.em.transactional(async () => {
-      await this.mikro.oauthClient.nativeUpdate(
-        { id: client.id },
-        { updated_at: new Date() },
-      );
-      const currentClient =
-        await this.oauthClientService.findByClientId(clientId);
+      const currentClient = await lockOAuthClient(this.mikro.em, client.id);
       if (
+        !currentClient ||
+        currentClient.deletedAt ||
         !currentClient.enabled ||
+        !currentClient.tokenEpoch ||
         currentClient.tokenEpoch !== client.tokenEpoch
       )
         throw new e.InvalidAuthorizationCode.Error();
@@ -161,6 +160,7 @@ export class OAuthTokenService {
       );
       if (
         !codeEntity ||
+        codeEntity.client_epoch !== currentClient.tokenEpoch ||
         (!codeEntity.consumedAt && codeEntity.expiredAt <= new Date())
       )
         throw new e.InvalidAuthorizationCode.Error();
@@ -346,37 +346,46 @@ export class OAuthTokenService {
       'oauth-device-code',
       params.deviceCode,
     );
-    const deviceCode =
-      await this.mikro.oauthDeviceCode.findByClientAndDeviceCodeHash(
-        client.id,
-        deviceCodeHash,
-      );
+    const result = await this.mikro.em.transactional(async () => {
+      const currentClient = await lockOAuthClient(this.mikro.em, client.id);
+      if (
+        !currentClient ||
+        currentClient.deletedAt ||
+        !currentClient.enabled ||
+        !currentClient.tokenEpoch ||
+        currentClient.tokenEpoch !== client.tokenEpoch
+      )
+        throw new e.InvalidDeviceCode.Error();
+      const deviceCode =
+        await this.mikro.oauthDeviceCode.findByClientAndDeviceCodeHash(
+          client.id,
+          deviceCodeHash,
+        );
 
-    if (!deviceCode) {
-      throw new e.InvalidDeviceCode.Error();
-    }
-    if (deviceCode.expiresAt <= new Date()) {
-      throw new e.ExpiredToken.Error();
-    }
-    if (deviceCode.deniedAt) {
-      throw new e.AccessDenied.Error();
-    }
-    if (!deviceCode.authorizedUser) {
-      const pollResult = await this.mikro.oauthDeviceCode.recordPendingPoll({
-        id: deviceCode.id,
-        polledAt: new Date(),
-      });
-
-      if (pollResult === 'slow_down') {
-        throw new e.SlowDown.Error();
+      if (!deviceCode || deviceCode.client_epoch !== currentClient.tokenEpoch) {
+        throw new e.InvalidDeviceCode.Error();
       }
-      if (pollResult === 'authorization_pending') {
-        throw new e.AuthorizationPending.Error();
+      if (deviceCode.expiresAt <= new Date()) {
+        throw new e.ExpiredToken.Error();
       }
-      throw new e.InvalidDeviceCode.Error();
-    }
+      if (deviceCode.deniedAt) {
+        throw new e.AccessDenied.Error();
+      }
+      if (!deviceCode.authorizedUser) {
+        const pollResult = await this.mikro.oauthDeviceCode.recordPendingPoll({
+          id: deviceCode.id,
+          polledAt: new Date(),
+        });
 
-    return this.mikro.em.transactional(async () => {
+        if (pollResult === 'slow_down') {
+          return new e.SlowDown.Error();
+        }
+        if (pollResult === 'authorization_pending') {
+          return new e.AuthorizationPending.Error();
+        }
+        throw new e.InvalidDeviceCode.Error();
+      }
+
       const consumedAt = new Date();
       const consumed =
         await this.mikro.oauthDeviceCode.consumeAuthorizedDeviceCode(
@@ -417,6 +426,8 @@ export class OAuthTokenService {
         ),
       });
     });
+    if (result instanceof Error) throw result;
+    return result;
   }
 
   private async refreshAccessTokenLocked(params: RefreshTokenGrantParams) {

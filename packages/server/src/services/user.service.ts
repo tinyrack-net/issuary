@@ -222,14 +222,6 @@ export class UserService {
           throw new e.EmailAlreadyExists.Error();
         }
         await invalidateUserAuthentication(this.mikro.em, user);
-        await this.mikro.passwordReset.nativeUpdate(
-          { user: user.sub, used: false },
-          { expiresAt: new Date() },
-        );
-        await this.mikro.emailVerification.nativeUpdate(
-          { user: user.sub, verified: false },
-          { expiresAt: new Date() },
-        );
         user.email = params.email;
         user.email_verified = false;
       }

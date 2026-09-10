@@ -1,18 +1,18 @@
-import { raw } from '@mikro-orm/core';
+import { raw, UniqueConstraintViolationException } from '@mikro-orm/core';
 import { BrowserSessionEntitySchema } from '../entities/browser-session.entity.js';
 import { UserEntity } from '../entities/user.entity.js';
 import type { AppEnv } from '../lib/app-env.js';
 import { e } from '../schemas/error.js';
 import type {
+  OAuthAuthenticationProof,
   OAuthCallbackResult,
-  OAuthLoginProof,
 } from './oauth-connect.service.js';
 import { isSecurityConflict } from './user-security.service.js';
 
 /** External proof preparation happens before acquiring either database lock. */
 export async function completeOAuthAuthentication(
   c: { var: AppEnv['Variables'] },
-  proof: OAuthLoginProof,
+  proof: OAuthAuthenticationProof,
   operation: () => Promise<OAuthCallbackResult>,
 ): Promise<OAuthCallbackResult> {
   const { session, services } = c.var;
@@ -22,21 +22,26 @@ export async function completeOAuthAuthentication(
   try {
     return await session.atomic(async () => {
       const em = services.mikro.em;
-      const changed = await em.nativeUpdate(
-        UserEntity,
-        { sub: proof.userSub },
-        {
-          security_revision: raw<number>('security_revision + 1'),
-        },
-      );
-      if (changed !== 1) throw new e.OAuthSessionExpired.Error();
-      const user = await em.findOneOrFail(
-        UserEntity,
-        { sub: proof.userSub },
-        { refresh: true },
-      );
-      if (user.deleted_at || user.token_epoch !== proof.userEpoch)
-        throw new e.OAuthSessionExpired.Error();
+      if (proof.kind !== 'registration') {
+        const changed = await em.nativeUpdate(
+          UserEntity,
+          { sub: proof.userSub },
+          {
+            security_revision: raw<number>('security_revision + 1'),
+          },
+        );
+        if (changed !== 1) throw new e.OAuthSessionExpired.Error();
+        const user = await em.findOneOrFail(
+          UserEntity,
+          { sub: proof.userSub },
+          { refresh: true },
+        );
+        if (user.deleted_at || user.token_epoch !== proof.userEpoch)
+          throw new e.OAuthSessionExpired.Error();
+      }
+      // A newly created user is written before the browser session is locked.
+      const preparedResult =
+        proof.kind === 'registration' ? await operation() : undefined;
       const locked = await em.nativeUpdate(
         BrowserSessionEntitySchema,
         {
@@ -63,15 +68,16 @@ export async function completeOAuthAuthentication(
         (record.data.security?.oauthExpiresAt ?? 0) <= Date.now()
       )
         throw new e.OAuthSessionExpired.Error();
-      const result = await operation();
+      const result = preparedResult ?? (await operation());
       session.set('oauth', undefined);
       if (
         result.action === 'login_complete' ||
         result.action === 'login_terms_redirect'
       ) {
         if (
-          result.userSub !== proof.userSub ||
-          result.userEpoch !== proof.userEpoch
+          proof.kind !== 'registration' &&
+          (result.userSub !== proof.userSub ||
+            result.userEpoch !== proof.userEpoch)
         )
           throw new e.OAuthSessionExpired.Error();
         session.setUserSession(result.userSub, result.userEpoch);
@@ -79,6 +85,8 @@ export async function completeOAuthAuthentication(
       return result;
     });
   } catch (error) {
+    if (error instanceof UniqueConstraintViolationException)
+      throw new e.OAuthSessionExpired.Error();
     if (isSecurityConflict(error)) throw new e.ConcurrentSecurityChange.Error();
     throw error;
   }

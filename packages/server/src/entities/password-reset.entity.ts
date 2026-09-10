@@ -11,6 +11,7 @@ export const PasswordResetEntitySchema = defineEntity({
   repository: () => PasswordResetRepository,
   properties: (p) => ({
     user_epoch: p.string(),
+    revoked_at: p.datetime().nullable().default(null),
     id: p
       .uuid()
       .primary()

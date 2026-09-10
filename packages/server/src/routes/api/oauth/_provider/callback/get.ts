@@ -17,7 +17,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
     tags: [TAGS.OAUTH_CONNECT],
     summary: 'OAuth Callback',
     description:
-      'Handles the callback from OAuth provider after user authorization',
+      'Completes provider login, automatic account linking or registration atomically with browser state',
     responses: {
       302: {
         description: 'Redirect',
@@ -43,7 +43,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
           },
         },
         description:
-          'State mismatch, expired or revoked OAuth authentication, or invalid request',
+          'State mismatch, expired or revoked OAuth authentication, an identity changed during linking or registration, or invalid request',
       },
       401: {
         content: {

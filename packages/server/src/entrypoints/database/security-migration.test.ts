@@ -101,7 +101,9 @@ test('authentication epoch migration rolls down and up and invalidates old authe
         maxAttempts: 3,
       });
     });
-    await server.services.mikro.orm.migrator.down();
+    await server.services.mikro.orm.migrator.down({
+      to: 'Migration20260910160000_security_followup',
+    });
     await server.services.mikro.orm.migrator.up();
     const after = await server.services.mikro.em
       .fork()
@@ -162,6 +164,106 @@ test('authentication epoch migration rolls down and up and invalidates old authe
     ).not.toMatch(
       /oauth_grant|security_revision|grant_id|user_epoch|token_epoch|consumed_at/,
     );
+  } finally {
+    await server.cleanup();
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 30000);
+
+test('flow revocation migration retires pending flows and mail without revoking browser sessions', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'issuary-flow-migration-'));
+  const server = await createTestApp(
+    securityProcessConfig(join(directory, 'migration.sqlite')),
+  );
+  try {
+    const mikro = server.services.mikro;
+    const user = await mikro.em
+      .fork()
+      .findOneOrFail(UserEntity, { sub: 'test-config-user' });
+    const epoch = user.token_epoch;
+    const sessionId = crypto.randomUUID();
+    await withMikroContext(server.services, async () => {
+      await mikro.em.insert(BrowserSessionEntitySchema, {
+        id: sessionId,
+        revision: 0,
+        expires_at: new Date(Date.now() + 60000),
+        data: {
+          user: {
+            sub: user.sub,
+            authenticated_at: Math.floor(Date.now() / 1000),
+          },
+          security: { grants: { [user.sub]: epoch } },
+        },
+      });
+      await mikro.emailVerification.generateToken({
+        userSub: user.sub,
+        userEpoch: epoch,
+      });
+      await mikro.passwordReset.generateToken({
+        userSub: user.sub,
+        userEpoch: epoch,
+      });
+      await mikro.oauthCode.createAuthorizationCode({
+        clientId: 'test-config-oauth-client',
+        userSub: user.sub,
+        codeHash: 'migration-code',
+        redirectUri: 'http://localhost:8080/callback',
+        scope: ['openid'],
+      });
+      await mikro.oauthDeviceCode.createDeviceAuthorization({
+        clientId: 'test-config-oauth-client',
+        userCodeHash: 'migration-user-code',
+        deviceCodeHash: 'migration-device-code',
+        scope: ['openid'],
+      });
+      await mikro.em.insert(BackgroundJobEntitySchema, {
+        id: 'flow-mail',
+        created_at: new Date(),
+        updated_at: new Date(),
+        jobId: 'security.mail',
+        status: 'running',
+        payload: 'sensitive-old-payload',
+        availableAt: new Date(),
+        lockedBy: 'old-worker',
+        lockedUntil: new Date(Date.now() + 60000),
+      });
+    });
+    await mikro.orm.migrator.down();
+    await mikro.orm.migrator.up();
+    await withMikroContext(server.services, async () => {
+      const fresh = await mikro.user.findOneOrFail(
+        { sub: user.sub },
+        { refresh: true },
+      );
+      expect(fresh.token_epoch).toBe(epoch);
+      expect(
+        await mikro.em.count(BrowserSessionEntitySchema, { id: sessionId }),
+      ).toBe(1);
+      expect(await mikro.emailVerification.count({ revoked_at: null })).toBe(0);
+      expect(await mikro.passwordReset.count({ revoked_at: null })).toBe(0);
+      expect(await mikro.oauthCode.count({ client_epoch: '' })).toBe(1);
+      expect(await mikro.oauthDeviceCode.count({ client_epoch: '' })).toBe(1);
+      const job = await mikro.em.findOneOrFail(
+        BackgroundJobEntitySchema,
+        { id: 'flow-mail' },
+        { refresh: true },
+      );
+      expect(job).toMatchObject({
+        status: 'failed',
+        payload: 'null',
+        lockedBy: null,
+        lockedUntil: null,
+      });
+      const drift = (await mikro.orm.schema.getUpdateSchemaSQL())
+        .split('\n')
+        .filter((line) =>
+          /email_verification|password_reset|oauth_code|oauth_device_code/.test(
+            line,
+          ),
+        )
+        .join('\n');
+      expect(drift).not.toMatch(/revoked_at|client_epoch/);
+    });
   } finally {
     await server.cleanup();
     await rm(directory, { recursive: true, force: true });

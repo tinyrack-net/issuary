@@ -25,6 +25,7 @@ const Message = z.object({
   event: z.string(),
   port: z.number().optional(),
   jobId: z.string().optional(),
+  token: z.string().optional(),
 });
 const Tokens = z.object({
   access_token: z.string(),
@@ -1137,3 +1138,258 @@ test('a mail job claimed by a terminated process is recovered by the worker', as
   expect(complete.attemptCount).toBe(2);
   expect(complete.payload).toBe('null');
 });
+
+test.each(['email', 'reset'])(
+  'a token superseded by a clock-ahead process cannot be consumed by a clock-behind process (%s)',
+  async (kind) => {
+    const issuer = children[0];
+    const consumer = children[1];
+    if (!issuer || !consumer) throw new Error('Missing processes');
+    const user = await loginRaceUser();
+    const issue = async () => {
+      const issued = message(issuer.child, 'issued');
+      issuer.child.send({ command: 'issue-token', kind, sub: user.sub });
+      const result = await issued;
+      if (!result.token) throw new Error('Expected token');
+      return result.token;
+    };
+    const old = await issue();
+    const configured = message(issuer.child, 'clock-set');
+    issuer.child.send('clock-ahead');
+    await configured;
+    let replacement: string;
+    try {
+      replacement = await issue();
+    } finally {
+      const restored = message(issuer.child, 'clock-set');
+      issuer.child.send('clock-reset');
+      await restored;
+    }
+    for (const [token, status] of [
+      [old, 400],
+      [replacement, 200],
+    ]) {
+      const response = await fetch(
+        `${consumer.origin}/api/auth/${kind === 'email' ? 'email/verify' : 'password/reset'}`,
+        {
+          method: 'POST',
+          headers: {
+            origin: app.services.config.server.public_origin,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ token, password: 'replacement-password-123' }),
+        },
+      );
+      expect(response.status).toBe(status);
+    }
+  },
+);
+
+test.each(['logout', 'reset'])(
+  'an auto-link callback leaves no connection after %s in another process',
+  async (change) => {
+    const issuer = children[0];
+    const revoker = children[1];
+    if (!issuer || !revoker) throw new Error('Missing processes');
+    const user = await loginRaceUser();
+    const state = crypto.randomUUID();
+    const cookie = await raceSession({
+      oauth: {
+        state,
+        codeVerifier: 'fixture',
+        providerId: 'google',
+        mode: 'login',
+      },
+      security: { grants: {}, oauthExpiresAt: Date.now() + 60000 },
+    });
+    const configured = message(issuer.child, 'configured');
+    issuer.child.send({
+      command: 'pause-auto-link-proof',
+      providerId: crypto.randomUUID(),
+      email: user.email,
+    });
+    await configured;
+    const arrived = message(issuer.child, 'arrived');
+    const pending = fetch(
+      `${issuer.origin}/api/oauth/google/callback?code=fixture&state=${state}`,
+      { headers: { cookie }, redirect: 'manual' },
+    );
+    await Promise.race([
+      arrived,
+      pending.then((response) => {
+        throw new Error(`Callback ended before barrier: ${response.status}`);
+      }),
+    ]);
+    try {
+      if (change === 'logout')
+        expect(
+          (
+            await fetch(`${revoker.origin}/api/auth/logout`, {
+              method: 'POST',
+              headers: {
+                cookie,
+                origin: app.services.config.server.public_origin,
+              },
+            })
+          ).status,
+        ).toBe(200);
+      else await resetOnProcess(revoker.origin, user.sub);
+    } finally {
+      issuer.child.send('go');
+    }
+    expect((await pending).status).toBe(change === 'logout' ? 401 : 400);
+    await withMikroContext(app.services, async () => {
+      expect(await app.services.mikro.userOAuth.count({ user: user.sub })).toBe(
+        0,
+      );
+    });
+  },
+);
+
+async function cycleClientOnProcess(origin: string, cookie: string) {
+  await withMikroContext(app.services, () =>
+    app.services.mikro.oauthClient.nativeUpdate(
+      { clientId: TEST_OAUTH_CLIENT.clientId },
+      { managed_by: 'database' },
+    ),
+  );
+  const headers = { cookie, origin: app.services.config.server.public_origin };
+  const path = `${origin}/api/admin/clients/test-config-oauth-client`;
+  expect((await fetch(path, { method: 'DELETE', headers })).status).toBe(200);
+  expect(
+    (await fetch(`${path}/restore`, { method: 'POST', headers })).status,
+  ).toBe(200);
+}
+
+test.each(['revoke-first', 'exchange-first'])(
+  'client deletion and code exchange respect the %s commit order across processes',
+  async (order) => {
+    const issuer = children[0];
+    const revoker = children[1];
+    if (!issuer || !revoker) throw new Error('Missing processes');
+    const value = await code();
+    const adminCookie = `session=${await createAuthenticatedSession(app.app)}`;
+    const exchange = () =>
+      fetch(`${issuer.origin}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          ...(order === 'revoke-first' ? { 'x-test-barrier': '1' } : {}),
+        },
+        body: new URLSearchParams({
+          ...codeForm(value),
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
+        }),
+      });
+    if (order === 'revoke-first') {
+      const arrived = message(issuer.child, 'arrived');
+      const pending = exchange();
+      await arrived;
+      try {
+        await cycleClientOnProcess(revoker.origin, adminCookie);
+      } finally {
+        issuer.child.send('go');
+      }
+      expect((await pending).status).toBe(400);
+    } else {
+      const response = await exchange();
+      expect(response.status).toBe(200);
+      const tokens = Tokens.parse(await response.json());
+      await cycleClientOnProcess(revoker.origin, adminCookie);
+      await assertRevoked(tokens.access_token);
+    }
+  },
+);
+
+test.each(['email', 'reset'])(
+  'concurrent %s reissuance leaves exactly one active token across processes',
+  async (kind) => {
+    const user = await loginRaceUser();
+    const arrived = children.map(({ child }) => message(child, 'arrived'));
+    const issued = children.map(({ child }) => message(child, 'issued'));
+    for (const { child } of children)
+      child.send({
+        command: 'issue-token',
+        kind,
+        sub: user.sub,
+        barrier: true,
+      });
+    await Promise.all(arrived);
+    for (const { child } of children) child.send('go');
+    const tokens = await Promise.all(issued);
+    expect(tokens.every((result) => Boolean(result.token))).toBe(true);
+    await withMikroContext(app.services, async () => {
+      const repository =
+        kind === 'email'
+          ? app.services.mikro.emailVerification
+          : app.services.mikro.passwordReset;
+      expect(await repository.count({ user: user.sub, revoked_at: null })).toBe(
+        1,
+      );
+      expect(
+        await repository.count({ user: user.sub, revoked_at: { $ne: null } }),
+      ).toBe(1);
+    });
+  },
+);
+
+test.each(['pending', 'approved'])(
+  'device flow in %s state stays revoked after restoration on another process',
+  async (state) => {
+    const issuer = children[0];
+    const revoker = children[1];
+    if (!issuer || !revoker) throw new Error('Missing processes');
+    const cookie = `session=${await createAuthenticatedSession(app.app)}`;
+    const credentials = {
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      client_secret: TEST_OAUTH_CLIENT.clientSecret,
+    };
+    const issue = async () => {
+      const response = await fetch(
+        `${issuer.origin}/oauth/device_authorization`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ ...credentials, scope: 'openid' }),
+        },
+      );
+      expect(response.status).toBe(200);
+      return z
+        .object({ device_code: z.string(), user_code: z.string() })
+        .parse(await response.json());
+    };
+    const decide = (userCode: string, decision = 'approve') =>
+      fetch(`${issuer.origin}/oauth/device`, {
+        method: 'POST',
+        headers: {
+          cookie,
+          origin: app.services.config.server.public_origin,
+          'content-type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ user_code: userCode, decision }),
+      });
+    const exchange = (deviceCode: string) =>
+      fetch(`${issuer.origin}/oauth/token`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          ...credentials,
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          device_code: deviceCode,
+        }),
+      });
+    const old = await issue();
+    if (state === 'approved')
+      expect((await decide(old.user_code)).status).toBe(200);
+    await cycleClientOnProcess(revoker.origin, cookie);
+    expect((await decide(old.user_code)).status).toBe(400);
+    expect((await decide(old.user_code, 'deny')).status).toBe(400);
+    const stale = await exchange(old.device_code);
+    expect(stale.status).toBe(400);
+    expect(await stale.json()).toMatchObject({ error: 'invalid_grant' });
+    const fresh = await issue();
+    expect((await decide(fresh.user_code)).status).toBe(200);
+    expect((await exchange(fresh.device_code)).status).toBe(200);
+  },
+);

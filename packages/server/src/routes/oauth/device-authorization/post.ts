@@ -96,6 +96,7 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
 
     await mikro.oauthDeviceCode.createDeviceAuthorization({
       clientId: client.id,
+      clientEpoch: client.tokenEpoch ?? '',
       deviceCodeHash,
       userCodeHash,
       scope: requestedScopes,

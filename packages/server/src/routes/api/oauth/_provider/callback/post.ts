@@ -53,7 +53,7 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
           },
         },
         description:
-          'State mismatch, expired or revoked OAuth authentication, or invalid request',
+          'State mismatch, expired or revoked OAuth authentication, an identity changed during linking or registration, or invalid request',
       },
       401: {
         content: {

@@ -11,6 +11,7 @@ export const EmailVerificationEntitySchema = defineEntity({
   repository: () => EmailVerificationRepository,
   properties: (p) => ({
     user_epoch: p.string(),
+    revoked_at: p.datetime().nullable().default(null),
     id: p
       .uuid()
       .primary()

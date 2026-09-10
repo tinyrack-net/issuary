@@ -66,7 +66,7 @@ export const tokenPost = new Hono<AppEnv>().post(
           },
         },
         description:
-          'Bad request, unsupported grant type, missing parameters, or disabled client',
+          'Bad request, unsupported grant type, missing parameters, disabled client, or a code/device grant invalidated by a client generation change',
       },
       401: {
         content: {

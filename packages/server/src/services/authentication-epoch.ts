@@ -25,11 +25,11 @@ export async function invalidateUserAuthentication(
   await em.nativeUpdate(
     EmailVerificationEntitySchema,
     { user: user.sub, verified: false },
-    { expiresAt: new Date(0) },
+    { revoked_at: new Date() },
   );
   await em.nativeUpdate(
     PasswordResetEntitySchema,
     { user: user.sub, used: false },
-    { expiresAt: new Date(0) },
+    { revoked_at: new Date() },
   );
 }

@@ -3,6 +3,7 @@ import type { ITermsEntity } from '../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
+import { lockOAuthClient } from './client-security.js';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
 
@@ -334,36 +335,36 @@ export class AdminConsoleService {
   }
 
   public async deleteClient(id: string) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    if (client.managed_by === 'config') {
-      throw new e.OAuthClientNotEditable.Error();
-    }
-    if (!client.deletedAt) {
-      client.deletedAt = new Date();
-      client.tokenEpoch = crypto.randomUUID();
-      await this.mikro.em.flush();
-    }
-    return { client: clientResponse(client) };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      if (client.managed_by === 'config') {
+        throw new e.OAuthClientNotEditable.Error();
+      }
+      if (!client.deletedAt) {
+        client.deletedAt = new Date();
+        client.tokenEpoch = crypto.randomUUID();
+        await this.mikro.em.flush();
+      }
+      return { client: clientResponse(client) };
+    });
   }
 
   public async restoreClient(id: string) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    if (client.managed_by === 'config') {
-      throw new e.OAuthClientNotEditable.Error();
-    }
-    if (client.deletedAt) {
-      client.deletedAt = null;
-      await this.mikro.em.flush();
-    }
-    return { client: clientResponse(client) };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      if (client.managed_by === 'config') {
+        throw new e.OAuthClientNotEditable.Error();
+      }
+      if (client.deletedAt) {
+        client.deletedAt = null;
+        await this.mikro.em.flush();
+      }
+      return { client: clientResponse(client) };
+    });
   }
 
   public async listTerms(

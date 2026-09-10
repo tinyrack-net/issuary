@@ -70,6 +70,7 @@ export class PasswordResetService {
     const candidate = await this.mikro.passwordReset.findOne({
       token: params.token,
       used: false,
+      revoked_at: null,
       expiresAt: { $gt: new Date() },
     });
     if (!candidate) throw new e.InvalidPasswordResetToken.Error();

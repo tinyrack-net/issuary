@@ -448,6 +448,7 @@ export class OAuthAuthorizeService {
 
     const codeParams: {
       clientId: string;
+      clientEpoch: string;
       userSub: string;
       userEpoch: string;
       redirectUri: string;
@@ -458,6 +459,7 @@ export class OAuthAuthorizeService {
       authTime?: number;
     } = {
       clientId: client.id,
+      clientEpoch: client.tokenEpoch ?? '',
       userSub: selectedSession.sub,
       userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
       redirectUri: query.redirect_uri,
@@ -1235,6 +1237,7 @@ export class OAuthAuthorizeService {
    */
   private async generateAuthorizationCode(params: {
     clientId: string;
+    clientEpoch: string;
     userSub: string;
     userEpoch: string;
     redirectUri: string;
@@ -1246,6 +1249,7 @@ export class OAuthAuthorizeService {
   }): Promise<string> {
     const codeParams: {
       clientId: string;
+      clientEpoch: string;
       userSub: string;
       userEpoch: string;
       redirectUri: string;
@@ -1256,6 +1260,7 @@ export class OAuthAuthorizeService {
       authTime?: number;
     } = {
       clientId: params.clientId,
+      clientEpoch: params.clientEpoch,
       userSub: params.userSub,
       userEpoch: params.userEpoch,
       redirectUri: params.redirectUri,

@@ -210,6 +210,7 @@ export class MailQueueService {
                   user_epoch: user.token_epoch,
                   token,
                   verified: false,
+                  revoked_at: null,
                   expiresAt: { $gt: new Date() },
                 })
               : await this.mikro.passwordReset.count({
@@ -217,6 +218,7 @@ export class MailQueueService {
                   user_epoch: user.token_epoch,
                   token,
                   used: false,
+                  revoked_at: null,
                   expiresAt: { $gt: new Date() },
                 });
           return active === 1
