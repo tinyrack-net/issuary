@@ -95,7 +95,7 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
         const recoveryCodes = await totpService.verifySetup(userSub, body.code);
 
         const totp = await mikro.userTotp.findByUserSub(userSub);
-        if (!totp || totp.last_used_step === null)
+        if (!totp || typeof totp.last_used_step !== 'number')
           throw new e.TotpNotSetup.Error();
         c.var.session.set('totpSetupVerification', {
           sub: userSub,

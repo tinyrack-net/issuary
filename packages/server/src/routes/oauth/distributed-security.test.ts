@@ -71,7 +71,7 @@ beforeAll(async () => {
       new URL('../../test-utils/security-process.ts', import.meta.url),
       [],
       {
-        execArgv: ['--import', 'tsx'],
+        execArgv: ['--conditions=@issuary/source', '--import', 'tsx'],
         env: { ...process.env, SECURITY_SQLITE_PATH: path },
         stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
       },

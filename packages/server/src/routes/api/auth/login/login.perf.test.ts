@@ -20,6 +20,8 @@ import {
   runHttpPerf,
 } from '../../../../test-utils/perf/index.js';
 
+import { createStoredSessionCookie } from '../../../../test-utils/stored-session.js';
+
 const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
 const DB_LOGIN_WARMUP_REQUESTS = 4;
@@ -126,7 +128,16 @@ describe('POST /api/auth/logout perf', () => {
   test('handles pre-created authenticated logout sessions through the real route', async () => {
     const sessionCookies = await Promise.all(
       Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, async () =>
-        createAuthenticatedSession(app),
+        createStoredSessionCookie(
+          services,
+          JSON.stringify({
+            user: {
+              sub: TEST_USER_CONFIG.sub,
+              authenticated_at: Math.floor(Date.now() / 1000),
+            },
+          }),
+          services.config.security.session_secret,
+        ),
       ),
     );
     await runHttpPerf({
