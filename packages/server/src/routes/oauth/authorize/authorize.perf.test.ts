@@ -18,8 +18,10 @@ import {
 } from '../../../test-utils/index.js';
 import {
   deferPerfResponseValidation,
+  perfFixture,
   runHttpPerf,
 } from '../../../test-utils/perf/index.js';
+import { createAuthenticatedSessionCookie } from '../../../test-utils/stored-session.js';
 
 const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
@@ -122,6 +124,14 @@ describe('GET /oauth/authorize perf', () => {
       code_challenge: TEST_PKCE.codeChallenge,
       code_challenge_method: TEST_PKCE.codeChallengeMethod,
     });
+    // Each measured request runs on its own seeded session: the browser-security
+    // gate bumps the acting session revision, so a shared cookie would trip the
+    // optimistic lock under concurrency.
+    const sessionCookies = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, () =>
+        createAuthenticatedSessionCookie(services, TEST_USER_CONFIG.sub),
+      ),
+    );
 
     await runHttpPerf({
       name: 'GET /oauth/authorize authorization-code redirect smoke',
@@ -129,7 +139,10 @@ describe('GET /oauth/authorize perf', () => {
       requests: MEASURED_REQUESTS,
       concurrency: 5,
       expectedStatuses: [302],
-      request: async () => requestAuthorizeRedirect(sessionCookie),
+      request: async (context) =>
+        requestAuthorizeRedirect(
+          perfFixture(sessionCookies, context, WARMUP_REQUESTS),
+        ),
     });
   });
 

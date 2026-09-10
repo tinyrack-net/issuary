@@ -9,7 +9,6 @@ import {
   extractCookie,
   generateUniqueEmail,
   MINIMAL_TEST_CONFIG,
-  TEST_USER,
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.js';
@@ -18,6 +17,7 @@ import {
   perfFixture,
   runHttpPerf,
 } from '../../../../test-utils/perf/index.js';
+import { createAuthenticatedSessionCookie } from '../../../../test-utils/stored-session.js';
 
 const WARMUP_REQUESTS = 4;
 const MEASURED_REQUESTS = 30;
@@ -83,53 +83,52 @@ async function createPasswordUser(prefix = 'accounts-mutation-perf') {
   return { email, password, sub };
 }
 
-async function loginWithOptionalCookie(
-  email: string,
-  password: string,
-  sessionCookie?: string,
+/**
+ * Seed a remembered-account session without replaying repeated logins, which
+ * would exhaust the per-email sign-in budget before the workload starts.
+ */
+async function createRememberedSession(
+  activeSub: string,
+  rememberedSubs: readonly string[],
 ): Promise<string> {
-  const response = await client.api.auth.login.$post(
-    { json: { email, password } },
-    sessionCookie === undefined
-      ? undefined
-      : { headers: { Cookie: `session=${sessionCookie}` } },
-  );
+  const authenticatedAt = Math.floor(Date.now() / 1000);
 
-  expect(response.status).toBe(200);
-  return extractCookie(response, 'session');
+  return createAuthenticatedSessionCookie(services, activeSub, {
+    accounts: rememberedSubs.map((sub) => ({
+      sub,
+      authenticated_at: authenticatedAt,
+      last_used_at: authenticatedAt,
+    })),
+  });
 }
 
 async function createRememberedAccountSession(rosterSize: number) {
-  let sessionCookie = await loginWithOptionalCookie(
-    TEST_USER.email,
-    TEST_USER.password,
-  );
   const rememberedSubs: string[] = [TEST_USER_CONFIG.sub];
 
   for (let index = 1; index < rosterSize; index += 1) {
     const user = await createPasswordUser();
-    sessionCookie = await loginWithOptionalCookie(
-      user.email,
-      user.password,
-      sessionCookie,
-    );
     rememberedSubs.push(user.sub);
   }
+
+  const activeSub = rememberedSubs[rememberedSubs.length - 1];
+  if (activeSub === undefined) {
+    throw new Error('Missing active remembered account');
+  }
+
+  const sessionCookie = await createRememberedSession(
+    activeSub,
+    rememberedSubs,
+  );
 
   return { sessionCookie, rememberedSubs };
 }
 
 async function createTwoAccountSession() {
   const secondUser = await createPasswordUser('accounts-remove-perf');
-  const firstCookie = await loginWithOptionalCookie(
-    TEST_USER.email,
-    TEST_USER.password,
-  );
-  const sessionCookie = await loginWithOptionalCookie(
-    secondUser.email,
-    secondUser.password,
-    firstCookie,
-  );
+  const sessionCookie = await createRememberedSession(secondUser.sub, [
+    TEST_USER_CONFIG.sub,
+    secondUser.sub,
+  ]);
 
   return { sessionCookie, secondUser };
 }

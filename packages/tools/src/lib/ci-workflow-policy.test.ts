@@ -95,10 +95,10 @@ describe('CI workflow policy', () => {
     );
   });
 
-  test('keeps exhaustive coverage, performance, and Firefox E2E off merge groups', async () => {
+  test('keeps exhaustive coverage and Firefox E2E off merge groups', async () => {
     const { workflow } = await readWorkflow();
 
-    for (const jobName of ['coverage', 'performance', 'firefox-e2e']) {
+    for (const jobName of ['coverage', 'firefox-e2e']) {
       const condition = workflow.jobs[jobName]?.if;
       expect(condition, `${jobName} must have an event condition`).toContain(
         "github.event_name == 'schedule'",
@@ -107,6 +107,28 @@ describe('CI workflow policy', () => {
       expect(condition).not.toContain("github.event_name == 'merge_group'");
       expect(condition).not.toContain("github.event_name == 'pull_request'");
     }
+  });
+
+  test('runs exhaustive performance tests before merging server changes', async () => {
+    const { workflow } = await readWorkflow();
+    const performanceCondition = workflow.jobs['performance']?.if;
+    const smokeCondition = workflow.jobs['performance-smoke']?.if;
+
+    expect(performanceCondition).toContain("github.event_name == 'schedule'");
+    expect(performanceCondition).toContain(
+      "startsWith(github.ref, 'refs/tags/v')",
+    );
+    expect(performanceCondition).toContain(
+      "github.event_name == 'merge_group'",
+    );
+    expect(performanceCondition).toContain(
+      "needs.changes.outputs.server == 'true'",
+    );
+    expect(performanceCondition).not.toContain(
+      "github.event_name == 'pull_request'",
+    );
+    expect(smokeCondition).toContain("github.event_name == 'pull_request'");
+    expect(smokeCondition).not.toContain("github.event_name == 'merge_group'");
   });
 
   test('uses Linux build artifacts for Windows browser suites', async () => {

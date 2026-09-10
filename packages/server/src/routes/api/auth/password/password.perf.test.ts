@@ -98,12 +98,12 @@ async function createPasswordResetFixture(index: number) {
 async function seedPasswordResetTokenBacklog(userSub: string, count: number) {
   await withMikroContext(services, async () => {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const { token_epoch } = await services.mikro.user.verifyBySub(userSub);
 
     for (let index = 0; index < count; index += 1) {
       const reset = services.mikro.passwordReset.create({
         user: userSub,
-        user_epoch: (await services.mikro.user.verifyBySub(userSub))
-          .token_epoch,
+        user_epoch: token_epoch,
         token: `password-reset-backlog-${crypto.randomUUID()}`,
         expiresAt,
       });
@@ -114,17 +114,32 @@ async function seedPasswordResetTokenBacklog(userSub: string, count: number) {
   });
 }
 
-async function createPasswordResetBacklogEmail(prefix: string) {
-  const email = generateUniqueEmail(prefix);
-  const { userSub } = await createDbUserWithSession(
-    app,
-    services,
-    email,
-    'Password123!',
-  );
-  await seedPasswordResetTokenBacklog(userSub, TOKEN_BACKLOG_SIZE);
+/**
+ * Seed one password account per measured request.
+ *
+ * Password reset requests are budgeted per email address, so a single address
+ * cannot be reused across the workload without tripping the rate limit.
+ */
+async function createForgotUsers(prefix: string, count: number) {
+  const passwordHash =
+    await services.securityService.hashPassword('Password123!');
+  const users: Array<{ email: string; userSub: string }> = [];
 
-  return email;
+  await withMikroContext(services, async () => {
+    for (let index = 0; index < count; index += 1) {
+      const user = services.mikro.user.create({
+        email: generateUniqueEmail(`${prefix}-${index}`),
+        password_hash: passwordHash,
+      });
+      user.email_verified = true;
+      services.mikro.em.persist(user);
+      users.push({ email: user.email, userSub: user.sub });
+    }
+
+    await services.mikro.em.flush();
+  });
+
+  return users;
 }
 
 async function requestReset(token: string, password: string) {
@@ -139,29 +154,37 @@ async function requestReset(token: string, password: string) {
 
 describe('POST /api/auth/password/forgot perf', () => {
   test('handles repeated password-reset requests through the real route', async () => {
-    const email = generateUniqueEmail('password-forgot-perf');
-    await createDbUserWithSession(app, services, email, 'Password123!');
+    const users = await createForgotUsers(
+      'password-forgot-perf',
+      WARMUP_REQUESTS + MEASURED_REQUESTS,
+    );
 
     await runHttpPerf({
       name: 'POST /api/auth/password/forgot smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => requestForgot(email),
+      request: async (context) =>
+        requestForgot(perfFixture(users, context, WARMUP_REQUESTS).email),
     });
   });
 
   test('handles password-reset requests with an existing token backlog through the real route', async () => {
-    const email = await createPasswordResetBacklogEmail(
+    const users = await createForgotUsers(
       'password-forgot-backlog-perf',
+      WARMUP_REQUESTS + MEASURED_REQUESTS,
     );
+    for (const user of users) {
+      await seedPasswordResetTokenBacklog(user.userSub, TOKEN_BACKLOG_SIZE);
+    }
 
     await runHttpPerf({
       name: 'POST /api/auth/password/forgot token backlog smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 2,
-      request: async () => requestForgot(email),
+      request: async (context) =>
+        requestForgot(perfFixture(users, context, WARMUP_REQUESTS).email),
     });
   });
 });

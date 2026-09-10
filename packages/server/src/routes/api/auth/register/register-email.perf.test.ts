@@ -102,12 +102,12 @@ async function seedEmailVerificationTokenBacklog(
 ) {
   await withMikroContext(services, async () => {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const { token_epoch } = await services.mikro.user.verifyBySub(userSub);
 
     for (let index = 0; index < count; index += 1) {
       const verification = services.mikro.emailVerification.create({
         user: userSub,
-        user_epoch: (await services.mikro.user.verifyBySub(userSub))
-          .token_epoch,
+        user_epoch: token_epoch,
         token: `email-verification-backlog-${crypto.randomUUID()}`,
         expiresAt,
       });
@@ -163,7 +163,9 @@ async function requestEmailResend(email: string) {
   });
   return deferPerfResponseValidation(response, async () => {
     const body = await assertJsonBody(response);
-    expect(body.message).toContain('Verification email has been resent');
+    expect(body.message).toContain(
+      'If this address needs verification, an email will be sent',
+    );
   });
 }
 
@@ -209,20 +211,29 @@ describe('POST /api/auth/email/verify perf', () => {
 
 describe('POST /api/auth/email/resend perf', () => {
   test('handles repeated resend requests for an unverified user through the real route', async () => {
-    const fixture = await createUnverifiedUser('email-resend-perf');
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createUnverifiedUser(`email-resend-perf-${index}`),
+      ),
+    );
 
     await runHttpPerf({
       name: 'POST /api/auth/email/resend smoke',
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
-      request: async () => requestEmailResend(fixture.email),
+      request: async (context) =>
+        requestEmailResend(
+          perfFixture(fixtures, context, WARMUP_REQUESTS).email,
+        ),
     });
   });
 
   test('handles resend requests with an existing verification token backlog through the real route', async () => {
-    const fixture = await createUnverifiedUserWithBacklog(
-      'email-resend-backlog-perf',
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createUnverifiedUserWithBacklog(`email-resend-backlog-perf-${index}`),
+      ),
     );
 
     await runHttpPerf({
@@ -230,7 +241,10 @@ describe('POST /api/auth/email/resend perf', () => {
       warmupRequests: WARMUP_REQUESTS,
       requests: MEASURED_REQUESTS,
       concurrency: 3,
-      request: async () => requestEmailResend(fixture.email),
+      request: async (context) =>
+        requestEmailResend(
+          perfFixture(fixtures, context, WARMUP_REQUESTS).email,
+        ),
     });
   });
 });

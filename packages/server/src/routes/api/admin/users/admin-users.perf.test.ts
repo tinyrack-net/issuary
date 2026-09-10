@@ -17,6 +17,7 @@ import {
   perfFixture,
   runHttpPerf,
 } from '../../../../test-utils/perf/index.js';
+import { createAuthenticatedSessionCookie } from '../../../../test-utils/stored-session.js';
 
 const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
@@ -81,6 +82,21 @@ async function loginAdmin(): Promise<string> {
 
   expect(response.status).toBe(200);
   return extractCookie(response, 'session');
+}
+
+/**
+ * Seed one admin session per mutation request.
+ *
+ * Browser-security mutations bump the acting session's revision, so a single
+ * cookie cannot issue concurrent requests without tripping the optimistic lock.
+ * Seeding authoritative sessions also avoids spending the sign-in budget.
+ */
+async function seedAdminSessions(count: number): Promise<string[]> {
+  return Promise.all(
+    Array.from({ length: count }, () =>
+      createAuthenticatedSessionCookie(services, TEST_USER_CONFIG.sub),
+    ),
+  );
 }
 
 async function createDatabaseUser(
@@ -163,7 +179,7 @@ async function requestAdminUsers(
   });
 }
 
-async function requestCreateAdminUser(email: string) {
+async function requestCreateAdminUser(sessionCookie: string, email: string) {
   const response = await client.api.admin.users.$post(
     {
       json: {
@@ -173,7 +189,7 @@ async function requestCreateAdminUser(email: string) {
         email_verified: true,
       },
     },
-    { headers: { Cookie: `session=${adminSession}` } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
   );
   return deferPerfResponseValidation(response, async () => {
     const body = await assertJsonBody(response, 201);
@@ -199,13 +215,17 @@ async function requestGetAdminUser(sub: string, email: string) {
   });
 }
 
-async function requestPatchAdminUser(sub: string, email: string) {
+async function requestPatchAdminUser(
+  sessionCookie: string,
+  sub: string,
+  email: string,
+) {
   const response = await client.api.admin.users[':sub'].$patch(
     {
       param: { sub },
       json: { email, role: 'admin', email_verified: true },
     },
-    { headers: { Cookie: `session=${adminSession}` } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
   );
   return deferPerfResponseValidation(response, async () => {
     const body = await assertJsonBody(response);
@@ -219,10 +239,10 @@ async function requestPatchAdminUser(sub: string, email: string) {
   });
 }
 
-async function requestDeleteAdminUser(sub: string) {
+async function requestDeleteAdminUser(sessionCookie: string, sub: string) {
   const response = await client.api.admin.users[':sub'].$delete(
     { param: { sub } },
-    { headers: { Cookie: `session=${adminSession}` } },
+    { headers: { Cookie: `session=${sessionCookie}` } },
   );
   return deferPerfResponseValidation(response, async () => {
     const body = await assertJsonBody(response);
@@ -307,6 +327,7 @@ describe('admin user management API perf', () => {
     const emails = Array.from({ length: TOTAL_REQUESTS }, () =>
       uniqueEmail('admin-create-perf'),
     );
+    const sessions = await seedAdminSessions(TOTAL_REQUESTS);
 
     await runHttpPerf({
       name: 'POST /api/admin/users create smoke',
@@ -315,7 +336,10 @@ describe('admin user management API perf', () => {
       concurrency: CONCURRENCY,
       expectedStatuses: [201],
       request: async (context) =>
-        requestCreateAdminUser(perfFixture(emails, context, WARMUP_REQUESTS)),
+        requestCreateAdminUser(
+          perfFixture(sessions, context, WARMUP_REQUESTS),
+          perfFixture(emails, context, WARMUP_REQUESTS),
+        ),
     });
   });
 
@@ -341,6 +365,7 @@ describe('admin user management API perf', () => {
         };
       }),
     );
+    const sessions = await seedAdminSessions(TOTAL_REQUESTS);
 
     await runHttpPerf({
       name: 'PATCH /api/admin/users/:sub update smoke',
@@ -349,7 +374,11 @@ describe('admin user management API perf', () => {
       concurrency: CONCURRENCY,
       request: async (context) => {
         const target = perfFixture(targets, context, WARMUP_REQUESTS);
-        return requestPatchAdminUser(target.sub, target.email);
+        return requestPatchAdminUser(
+          perfFixture(sessions, context, WARMUP_REQUESTS),
+          target.sub,
+          target.email,
+        );
       },
     });
   });
@@ -360,6 +389,7 @@ describe('admin user management API perf', () => {
         createDatabaseUser('admin-delete-perf'),
       ),
     );
+    const sessions = await seedAdminSessions(TOTAL_REQUESTS);
 
     await runHttpPerf({
       name: 'DELETE /api/admin/users/:sub delete smoke',
@@ -368,6 +398,7 @@ describe('admin user management API perf', () => {
       concurrency: CONCURRENCY,
       request: async (context) =>
         requestDeleteAdminUser(
+          perfFixture(sessions, context, WARMUP_REQUESTS),
           perfFixture(targets, context, WARMUP_REQUESTS).sub,
         ),
     });

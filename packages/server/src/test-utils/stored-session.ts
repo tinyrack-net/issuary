@@ -39,3 +39,28 @@ export async function createStoredSessionCookie(
   });
   return encrypt(JSON.stringify({ sid: id, kind: 'session' }), secret);
 }
+
+/**
+ * Seed a fully authenticated browser session for an existing user.
+ *
+ * Performance fixtures must not authenticate through the real login route:
+ * repeated logins would consume the per-email and per-source authentication
+ * budgets that production traffic relies on. Seeding authoritative session
+ * state keeps the measured requests realistic without exhausting those budgets.
+ */
+export async function createAuthenticatedSessionCookie(
+  services: ServiceContainer,
+  sub: string,
+  extra: Omit<SessionData, 'user'> = {},
+): Promise<string> {
+  const authenticatedAt = Math.floor(Date.now() / 1000);
+
+  return createStoredSessionCookie(
+    services,
+    JSON.stringify({
+      user: { sub, authenticated_at: authenticatedAt },
+      ...extra,
+    }),
+    services.config.security.session_secret,
+  );
+}

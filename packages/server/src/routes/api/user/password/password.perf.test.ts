@@ -2,6 +2,7 @@ import { testClient } from 'hono/testing';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../../entrypoints/app.js';
+import { google } from '../../../../entrypoints/identity-providers/google.js';
 import type { ServiceContainer } from '../../../../services/container.js';
 import {
   assertJsonBody,
@@ -27,7 +28,20 @@ let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeEach(async () => {
-  const server = await createTestApp(MINIMAL_TEST_CONFIG);
+  const server = await createTestApp({
+    ...MINIMAL_TEST_CONFIG,
+    // Removing a password requires another usable authentication method, and
+    // linked OAuth accounts only count while their provider is enabled.
+    identity_providers: [
+      google({
+        id: 'google',
+        client_id: 'fixture',
+        client_secret: 'fixture',
+        email_conflict_strategy: 'require_link',
+        enabled: true,
+      }),
+    ],
+  });
   app = server.app;
   client = testClient(app);
   services = server.services;
