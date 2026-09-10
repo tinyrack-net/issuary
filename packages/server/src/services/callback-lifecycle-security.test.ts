@@ -246,36 +246,60 @@ function sessionCookie(response: Response) {
 test.each(['GET', 'POST'])(
   'new OAuth registration rolls back its user, link, consent and state on %s session failure',
   async (method) => {
-    const email = `${crypto.randomUUID()}@new.test`;
-    const flow = await callbackFixture(email, method);
-    vi.spyOn(BrowserSessionService.prototype, 'save').mockResolvedValueOnce(
-      false,
-    );
-    const response = await flow.request();
-    expect(response.status).toBe(401);
-    expect(sessionCookie(response)).toBe('');
+    const termId = crypto.randomUUID();
     await withMikroContext(server.services, async () => {
-      expect(await server.services.mikro.user.count({ email })).toBe(0);
-      expect(
-        await server.services.mikro.userOAuth.count({
-          provider_user_id: flow.providerUserId,
-        }),
-      ).toBe(0);
-      expect(
-        await server.services.mikro.em.count(BrowserSessionEntitySchema, {
-          data: { oauth: { state: flow.state } },
-        }),
-      ).toBe(1);
+      const term = server.services.mikro.terms.create({
+        id: termId,
+        version: '1',
+        consentMode: 'implicit',
+        required: true,
+      });
+      await server.services.mikro.em.persist(term).flush();
     });
-    const retry = await flow.request();
-    expect(retry.status).toBe(302);
-    expect(
-      (
-        await server.app.request('/api/user/oauth-accounts', {
-          headers: { Cookie: sessionCookie(retry) },
-        })
-      ).status,
-    ).toBe(200);
+    try {
+      const email = `${crypto.randomUUID()}@new.test`;
+      const flow = await callbackFixture(email, method);
+      vi.spyOn(BrowserSessionService.prototype, 'save').mockResolvedValueOnce(
+        false,
+      );
+      const response = await flow.request();
+      expect(response.status).toBe(401);
+      expect(sessionCookie(response)).toBe('');
+      await withMikroContext(server.services, async () => {
+        expect(await server.services.mikro.user.count({ email })).toBe(0);
+        expect(
+          await server.services.mikro.userTermsConsent.count({ terms: termId }),
+        ).toBe(0);
+        expect(
+          await server.services.mikro.userOAuth.count({
+            provider_user_id: flow.providerUserId,
+          }),
+        ).toBe(0);
+        expect(
+          await server.services.mikro.em.count(BrowserSessionEntitySchema, {
+            data: { oauth: { state: flow.state } },
+          }),
+        ).toBe(1);
+      });
+      const retry = await flow.request();
+      expect(retry.status).toBe(302);
+      expect(
+        (
+          await server.app.request('/api/user/oauth-accounts', {
+            headers: { Cookie: sessionCookie(retry) },
+          })
+        ).status,
+      ).toBe(200);
+      await withMikroContext(server.services, async () => {
+        expect(
+          await server.services.mikro.userTermsConsent.count({ terms: termId }),
+        ).toBe(1);
+      });
+    } finally {
+      await withMikroContext(server.services, () =>
+        server.services.mikro.terms.nativeDelete({ id: termId }),
+      );
+    }
   },
 );
 

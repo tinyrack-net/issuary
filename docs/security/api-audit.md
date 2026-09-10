@@ -299,4 +299,4 @@ SQLite/PostgreSQL의 새 `Migration20260910220000_flow_revocation`을 추가했�
 - 수정 전 보관 재현 4개가 모두 실패했다. 수정 후 정식 `callback-lifecycle-security.test.ts` 15개, `mail-queue.test.ts` 14개, 기존 `authentication-race.test.ts` 12개와 SQLite 마이그레이션 2개가 통과했다. 동일 테스트의 반복 실행은 합산하지 않았다.
 - workflow 정책 검사 8개를 통과했다. 로컬은 집중 테스트와 변경 파일 검사에 한정했다. PostgreSQL·분산 서버·Chromium 및 전체 정적 검사는 PR CI에서 실행한다.
 - 분산 테스트에는 시계가 앞선 발급자의 재발급, 동시 재발급, 자동 연결 조회 후 다른 프로세스의 폐기, client 삭제/교환의 커밋 순서와 device 복원 검사를 추가했다. 동기화 지점을 사용하며 sleep이나 재실행으로 통과시키지 않는다.
-- 최종 커밋의 CI 결과와 실행 링크는 PR 설명에 기록한다. CI 완료 전에는 PostgreSQL·분산·브라우저 검증을 통과로 판정하지 않는다.
+- 최종 커밋의 집계 결과는 [PR #83 CI 검사](https://github.com/tinyrack-net/issuary/pull/83/checks)에서 확인하고, 해당 실행 URL과 커밋은 PR 설명에 기록한다. [PostgreSQL 검증 실행](https://github.com/tinyrack-net/issuary/actions/runs/34451622133/job/102789362152)에서는 8개 파일 106개 테스트가 통과했으며 독립 서버 프로세스 회귀 38개를 포함한다. 최신 커밋의 Quality Gate 완료 전에는 개선 완료로 판정하지 않는다.
