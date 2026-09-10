@@ -7,6 +7,7 @@ import type {
   OAuthAuthenticationProof,
   OAuthCallbackResult,
 } from './oauth-connect.service.js';
+import { lockTermsPolicy } from './terms-policy.service.js';
 import { isSecurityConflict } from './user-security.service.js';
 
 /** External proof preparation happens before acquiring either database lock. */
@@ -22,6 +23,7 @@ export async function completeOAuthAuthentication(
   try {
     return await session.atomic(async () => {
       const em = services.mikro.em;
+      await lockTermsPolicy(em, 'read');
       if (proof.kind !== 'registration') {
         const changed = await em.nativeUpdate(
           UserEntity,

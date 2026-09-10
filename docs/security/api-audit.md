@@ -318,3 +318,15 @@ Client 수정·secret 회전·삭제·복원·설정 동기화는 같은 client 
 추가 DB 스키마 변경이나 마이그레이션은 없다. Secret 회전만으로 기존 발급 토큰을 일괄 폐기하거나 약관 변경을 기존 grant에 소급 적용하지 않는다. 배포 시 모든 서버에 수정본이 적용되어야 경쟁 차단을 보장한다. 기존 마이그레이션의 전환 요구는 앞 절을 따른다.
 
 정식 회귀 파일은 34개 시나리오를 포함한다. 로컬에서는 집중 회귀·변경 파일 검사·workflow 정책·actionlint·diff 검사를 수행한다. PostgreSQL 목록에 새 회귀 파일을 추가했고, 기존 독립 서버 fixture에 인증 완료/secret 검증/관리자 검사의 동기화 지점을 추가했다. Chromium `oauth-providers-terms`에 실제 약관 화면을 거쳐 device 승인으로 복귀하는 검증을 추가했다. 무거운 검증은 [PR #83의 최종 HEAD CI](https://github.com/tinyrack-net/issuary/pull/83/checks)에서 실행하며, 확정 run 링크와 결과는 PR 설명에 기록한다.
+
+### OAuth 동의 저장과 발급 직전 정책 변경의 경합
+
+`d938794e`에서 세 가지 재현을 확인했다. 로그아웃이 먼저 완료된 `/api/consent` 요청이 200으로 `offline_access` 동의를 남겼으며, authorization 최종 발급 직전에 동의 면제 해제 또는 필수 약관 추가가 완료돼도 code와 refresh token을 발급했다. 해당 access token으로 userinfo가 200이었다. 변경 후 시작한 대조 요청은 정상적으로 동의/약관 화면으로 이동했다.
+
+- OAuth 동의 허용은 사용자 → 브라우저 세션 → client 잠금 안에서 원래 인증 세대와 세션 revision/만료, 현재 client 세대·상태·요청 정책을 재검사한다. 동의와 재인증 continuation·세션 저장을 함께 커밋하고 그 뒤 JSON을 반환한다. 실패 시 기존 동의 scope와 폐기 상태도 복원한다. 거절 요청은 동의를 저장하지 않는다.
+- Authorization의 화면 이동 사전 검사와 최종 발급 정책 검사를 분리했다. 최종 트랜잭션에서 현재 client의 skipConsent, 사용자 scope 동의, 필수 약관과 동의 버전을 다시 읽고 원래 scope/prompt로 발급 scope를 재계산한다. 정책이 바뀌면 동의/약관 화면 또는 prompt=none 프로토콜 오류로 전환하며 code/ID token/grant를 발급하지 않는다.
+- 기존 `bootstrap_state`의 `terms-policy-lock` 행을 설정 seed 생략 여부와 무관하게 서버 초기화에서 멱등 생성한다. PostgreSQL은 정책 소비에 공유 행 잠금, 변경에 배타 행 잠금을 사용한다. SQLite는 no-op UPDATE로 쓰기 잠금을 확보한다. 신규 약관 추가도 같은 행을 잠그므로 기존 약관 행만 잠그는 방식의 누락을 피한다.
+- 잠금 순서는 설정 동기화 bootstrap → 약관 정책 → 사용자 sub 순서 → 브라우저 세션 → client ID 순서다. 관리자 약관 생성/수정/일괄 보관/복원과 설정 동기화가 쓰기 잠금에 참여한다. 최종 authorization, device 승인, 일반 약관 동의, 비밀번호 가입, OAuth 가입/완료는 정책 잠금을 사용자 변경보다 먼저 획득한다. 외부 인증 통신과 비밀번호 해시는 잠금 밖에서 수행한다. Device 거절에는 약관 동의를 요구하지 않는다.
+- 공개 성공 형식과 기존 401/409 및 한·영·일 안내를 유지한다. 추가 스키마 마이그레이션이나 일괄 인증 폐기는 없다. 수정본을 모든 서버에 배포해야 정책 경합 차단이 보장된다. 정책 변경 전에 발급된 토큰을 소급 폐기하지 않는다.
+
+`consent-policy-security.test.ts`에는 최초 세 재현, 동의 저장 롤백, 사용자/client 세대 변경, 약관 버전/복원, scope 철회, offline scope 재계산, 응답 모드와 두 커밋 순서를 포함한다. 기존 OAuth 동의/authorization 64개와 집중 회귀를 로컬에서 검증한다. PostgreSQL 보안 작업에 새 파일을 포함하고, 독립 서버 두 개에서 동의 폐기 및 정책 변경을 먼저 커밋하는 검증과 PostgreSQL 공유 정책 읽기를 추가했다. Chromium에는 동의 화면 승인 → code 교환 → userinfo 흐름을 추가하며 기존 device 약관 복귀 검증을 유지한다. 최신 검증 실행과 확정 결과는 [PR #83 최종 HEAD 체크](https://github.com/tinyrack-net/issuary/pull/83/checks) 및 PR 설명에 기록한다. 무거운 로컬 검증은 사용자 자원 제한에 따라 생략하며 실행 전 CI 결과를 통과로 간주하지 않는다.

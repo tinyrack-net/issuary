@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { createApp } from '../entrypoints/app.js';
 import { DatabaseBackgroundJobStore } from '../entrypoints/scheduler/database.js';
 import { seedConfigIfNeeded } from '../seeders/config.seeder.js';
+import { lockTermsPolicy } from '../services/terms-policy.service.js';
 import { securityProcessConfig } from './security-process-config.js';
 
 const path = process.env['SECURITY_SQLITE_PATH'];
@@ -302,6 +303,8 @@ process.on('message', (input) => {
       'pause-authorization',
       'pause-client-authentication',
       'pause-admin-check',
+      'pause-consent',
+      'pause-authorization-policy',
     ].includes(String(input))
   )
     return;
@@ -312,7 +315,33 @@ process.on('message', (input) => {
     process.send?.({ event: 'arrived' });
     await gate;
   };
-  if (input === 'pause-authorization') {
+  if (input === 'pause-consent') {
+    const original = services.oauthClientService.findByClientId.bind(
+      services.oauthClientService,
+    );
+    services.oauthClientService.findByClientId = async (...args) => {
+      services.oauthClientService.findByClientId = original;
+      const client = await original(...args);
+      await pause();
+      return client;
+    };
+  } else if (input === 'pause-authorization-policy') {
+    const original = services.oauthAuthorizeService.authorize.bind(
+      services.oauthAuthorizeService,
+    );
+    services.oauthAuthorizeService.authorize = async (input) => {
+      services.oauthAuthorizeService.authorize = original;
+      const complete = input.completeAuthorization;
+      if (!complete) throw new Error('Missing authorization completion');
+      return original({
+        ...input,
+        completeAuthorization: async (proof, operation) => {
+          await pause();
+          return complete(proof, operation);
+        },
+      });
+    };
+  } else if (input === 'pause-authorization') {
     const original = services.oauthAuthorizeService.authorize.bind(
       services.oauthAuthorizeService,
     );
@@ -344,4 +373,19 @@ process.on('message', (input) => {
     };
   }
   process.send?.({ event: 'configured' });
+});
+
+process.on('message', (input) => {
+  if (input !== 'hold-terms-read') return;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  void RequestContext.create(services.mikro.orm.em.fork(), async () => {
+    await services.mikro.em.transactional(async () => {
+      await lockTermsPolicy(services.mikro.em, 'read');
+      process.send?.({ event: 'policy-acquired' });
+      await gate;
+    });
+    process.send?.({ event: 'policy-committed' });
+  }).catch(() => process.exit(1));
 });

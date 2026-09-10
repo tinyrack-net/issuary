@@ -357,83 +357,92 @@ export class OAuthAuthorizeService {
       }
     }
 
-    // Complete required terms for the selected account before any grant.
-    const pendingTerms = await this.termsService.getPendingRequiredTerms(
-      selectedSession.sub,
-    );
-    if (pendingTerms.length > 0) {
-      if (prompts.includes('none')) {
-        return this.buildErrorAuthorizationResult({
-          redirectUri: query.redirect_uri,
-          error: 'interaction_required',
-          errorDescription: 'The End-User must accept the required terms.',
-          state: query.state,
-          responseType: query.response_type,
-          responseMode: query.response_mode,
-        });
-      }
-      const continuation = new URL(
-        '/oauth/authorize',
-        this.config.server.public_origin,
+    let grantedScopes: string[] = [];
+    const checkPolicy = async (
+      current: typeof client,
+    ): Promise<AuthorizeResult | undefined> => {
+      // Complete required terms for the selected account before any grant.
+      const pendingTerms = await this.termsService.getPendingRequiredTerms(
+        selectedSession.sub,
       );
-      this.copyAuthorizeParams(continuation, query);
-      const termsUrl = new URL('/terms', this.config.server.public_origin);
-      termsUrl.searchParams.set(
-        'redirect',
-        `${continuation.pathname}${continuation.search}`,
-      );
-      return { type: 'redirect', url: termsUrl.toString() };
-    }
-
-    const grantedScopes = await this.userConsentService.resolveScopes({
-      userSub: selectedSession.sub,
-      clientId: client.id,
-      requestedScopes,
-      responseType: query.response_type,
-      prompt: query.prompt,
-      skipConsent: client.skipConsent,
-    });
-
-    // 9. Check if consent is required (using IDs, not entities)
-    const requiresConsent = await this.userConsentService.requiresConsent({
-      userSub: selectedSession.sub,
-      clientId: client.id,
-      requestedScopes: grantedScopes,
-      prompt: prompts.includes('consent') ? 'consent' : undefined,
-      skipConsent: client.skipConsent,
-    });
-
-    if (requiresConsent) {
-      // Handle prompt=none - must return error if consent is required
-      if (prompts.includes('none')) {
-        return this.buildErrorAuthorizationResult({
-          redirectUri: query.redirect_uri,
-          error: 'consent_required',
-          errorDescription:
-            'The Authorization Server requires End-User consent.',
-          state: query.state,
-          responseType: query.response_type,
-          responseMode: query.response_mode,
-        });
-      }
-
-      // Redirect to consent page
-      if (hasFreshReauthentication) {
-        const consentReauthentication = this.createReauthenticationSession(
-          this.buildConsentReauthenticationQuery(query),
+      if (pendingTerms.length > 0) {
+        if (prompts.includes('none')) {
+          return this.buildErrorAuthorizationResult({
+            redirectUri: query.redirect_uri,
+            error: 'interaction_required',
+            errorDescription: 'The End-User must accept the required terms.',
+            state: query.state,
+            responseType: query.response_type,
+            responseMode: query.response_mode,
+          });
+        }
+        const continuation = new URL(
+          '/oauth/authorize',
+          this.config.server.public_origin,
         );
-        params.setReauthenticationSession?.({
-          ...consentReauthentication,
-          sub: userSession.sub,
-          authenticated_at: userSession.authenticated_at,
-        });
+        this.copyAuthorizeParams(continuation, query);
+        const termsUrl = new URL('/terms', this.config.server.public_origin);
+        termsUrl.searchParams.set(
+          'redirect',
+          `${continuation.pathname}${continuation.search}`,
+        );
+        return { type: 'redirect', url: termsUrl.toString() };
       }
-      const consentUrl = this.buildConsentRedirectUrl(query);
-      return {
-        type: 'redirect',
-        url: consentUrl,
-      };
-    }
+
+      grantedScopes = await this.userConsentService.resolveScopes({
+        userSub: selectedSession.sub,
+        clientId: current.id,
+        requestedScopes,
+        responseType: query.response_type,
+        prompt: query.prompt,
+        skipConsent: current.skipConsent,
+      });
+
+      // 9. Check if consent is required (using IDs, not entities)
+      const requiresConsent = await this.userConsentService.requiresConsent({
+        userSub: selectedSession.sub,
+        clientId: current.id,
+        requestedScopes: grantedScopes,
+        prompt: prompts.includes('consent') ? 'consent' : undefined,
+        skipConsent: current.skipConsent,
+      });
+
+      if (requiresConsent) {
+        // Handle prompt=none - must return error if consent is required
+        if (prompts.includes('none')) {
+          return this.buildErrorAuthorizationResult({
+            redirectUri: query.redirect_uri,
+            error: 'consent_required',
+            errorDescription:
+              'The Authorization Server requires End-User consent.',
+            state: query.state,
+            responseType: query.response_type,
+            responseMode: query.response_mode,
+          });
+        }
+
+        // Redirect to consent page
+        if (hasFreshReauthentication) {
+          const consentReauthentication = this.createReauthenticationSession(
+            this.buildConsentReauthenticationQuery(query),
+          );
+          params.setReauthenticationSession?.({
+            ...consentReauthentication,
+            sub: userSession.sub,
+            authenticated_at: userSession.authenticated_at,
+          });
+        }
+        const consentUrl = this.buildConsentRedirectUrl(query);
+        return {
+          type: 'redirect',
+          url: consentUrl,
+        };
+      }
+
+      return undefined;
+    };
+    const preflight = await checkPolicy(client);
+    if (preflight) return preflight;
 
     if (!params.completeAuthorization) throw new e.Unauthorized.Error();
     return params.completeAuthorization(
@@ -447,6 +456,11 @@ export class OAuthAuthorizeService {
         scopes: grantedScopes,
       },
       async () => {
+        const current = await this.oauthClientService.findByClientId(
+          client.clientId,
+        );
+        const pendingPolicy = await checkPolicy(current);
+        if (pendingPolicy) return pendingPolicy;
         if (isImplicitIdToken) {
           if (!query.nonce) {
             throw new e.InvalidAuthorizationRequest.Error();

@@ -12,6 +12,7 @@ import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { termsSchema } from '../../../../schemas/terms.ts';
 import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
+import { lockTermsPolicy } from '../../../../services/terms-policy.service.js';
 
 /**
  * POST /api/terms/consent
@@ -78,6 +79,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     if (registrationToken) {
       try {
         return await session.atomic(async () => {
+          await lockTermsPolicy(mikro.em, 'read');
           const pendingRegistration =
             await mikro.pendingOAuthRegistration.claim(registrationToken);
 
@@ -139,27 +141,31 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       throw new e.Unauthorized.Error();
     }
 
-    return withBrowserSecurity(c, async () => {
-      // Validate and record consents
-      const { validation, records } =
-        await termsService.validateAndRecordConsents({
-          userSub: verifiedAuth.user.sub,
-          consents,
-        });
+    return withBrowserSecurity(
+      c,
+      async () => {
+        // Validate and record consents
+        const { validation, records } =
+          await termsService.validateAndRecordConsents({
+            userSub: verifiedAuth.user.sub,
+            consents,
+          });
 
-      if (!validation.valid) {
-        throw new e.ValidationError.Error(
-          `Missing required terms: ${validation.missingTerms.join(', ')}`,
+        if (!validation.valid) {
+          throw new e.ValidationError.Error(
+            `Missing required terms: ${validation.missingTerms.join(', ')}`,
+          );
+        }
+
+        return c.json(
+          {
+            ok: true as const,
+            recorded: records.length,
+          },
+          200,
         );
-      }
-
-      return c.json(
-        {
-          ok: true as const,
-          recorded: records.length,
-        },
-        200,
-      );
-    });
+      },
+      { termsPolicy: 'read' },
+    );
   },
 );

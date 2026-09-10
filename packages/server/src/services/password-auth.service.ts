@@ -66,15 +66,16 @@ export class PasswordAuthService {
     return user;
   }
 
+  public async prepareDatabasePassword(password: string): Promise<string> {
+    assertPasswordPolicy(password, this.passwordPolicy);
+    return this.securityService.hashPassword(password);
+  }
+
   public async createDatabaseUser(params: {
     email: string;
     password: string;
   }): Promise<UserEntity> {
-    assertPasswordPolicy(params.password, this.passwordPolicy);
-
-    const passwordHash = await this.securityService.hashPassword(
-      params.password,
-    );
+    const passwordHash = await this.prepareDatabasePassword(params.password);
 
     return this.mikro.user.register({
       email: params.email,

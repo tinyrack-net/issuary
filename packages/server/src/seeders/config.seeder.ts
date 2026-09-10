@@ -14,6 +14,10 @@ import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { invalidateUserAuthentication } from '../services/authentication-epoch.js';
 import { lockOAuthClient } from '../services/client-security.js';
 import type { SecurityService } from '../services/security.service.ts';
+import {
+  initializeTermsPolicy,
+  lockTermsPolicy,
+} from '../services/terms-policy.service.js';
 
 const CONFIG_SEED_STATE_ID = 'config-seed';
 const CONFIG_SEED_FINGERPRINT_VERSION = 4;
@@ -195,6 +199,8 @@ export async function seedConfig(
 ): Promise<void> {
   await em.transactional(async (transaction) => {
     await lockBootstrap(transaction);
+    await initializeTermsPolicy(transaction);
+    await lockTermsPolicy(transaction, 'write');
     await syncTerms(transaction, config);
     await syncUsers(transaction, config, securityService);
     await syncOAuthClients(transaction, config, securityService);

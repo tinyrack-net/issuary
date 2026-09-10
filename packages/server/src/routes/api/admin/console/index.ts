@@ -157,11 +157,19 @@ function termInput(body: z.infer<typeof TermBody>) {
 }
 
 const secureMutation = createMiddleware<AppEnv>(async (c, next) => {
-  await withBrowserSecurity(c, async () => {
-    await next();
-    // Hono catches downstream exceptions; do not commit a handled failure.
-    if (c.error) throw c.error;
-  });
+  await withBrowserSecurity(
+    c,
+    async () => {
+      await next();
+      // Hono catches downstream exceptions; do not commit a handled failure.
+      if (c.error) throw c.error;
+    },
+    {
+      ...(c.req.path.startsWith('/api/admin/terms') && {
+        termsPolicy: 'write',
+      }),
+    },
+  );
 });
 
 export const adminConsoleRoutes = new Hono<AppEnv>()

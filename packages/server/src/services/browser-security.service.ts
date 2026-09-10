@@ -3,13 +3,21 @@ import { BrowserSessionEntitySchema } from '../entities/browser-session.entity.j
 import { UserEntity } from '../entities/user.entity.js';
 import type { AppEnv } from '../lib/app-env.js';
 import { e } from '../schemas/error.js';
+import {
+  lockTermsPolicy,
+  type TermsPolicyAccess,
+} from './terms-policy.service.js';
 import { isSecurityConflict } from './user-security.service.js';
 
 /** Credential preparation must finish before entering this transaction. */
 export async function withBrowserSecurity<T>(
   c: { var: AppEnv['Variables']; req: { path: string } },
   operation: () => Promise<T>,
-  options: { stage?: 'setup' | 'mfa'; targets?: string[] } = {},
+  options: {
+    stage?: 'setup' | 'mfa';
+    targets?: string[];
+    termsPolicy?: TermsPolicyAccess;
+  } = {},
 ): Promise<T> {
   const { session, services } = c.var;
   const original = session.authorization;
@@ -25,6 +33,7 @@ export async function withBrowserSecurity<T>(
   try {
     return await session.atomic(async () => {
       const em = services.mikro.em;
+      if (options.termsPolicy) await lockTermsPolicy(em, options.termsPolicy);
       for (const sub of [
         ...new Set([subject.sub, ...(options.targets ?? [])]),
       ].sort()) {

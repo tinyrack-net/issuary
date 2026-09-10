@@ -99,50 +99,60 @@ export const deviceGetPost = new Hono<AppEnv>()
     verifyAuth(),
     securityMutationDocumentation,
     async (c) =>
-      withBrowserSecurity(c, async () => {
-        const { decision, user_code: userCode } = c.req.valid('form');
-        const { mikro, securityService } = c.var.services;
-        const userCodeHash = await securityService.hashOpaqueToken(
-          'oauth-device-user-code',
-          userCode.toUpperCase(),
-        );
-        if (decision === 'approve') {
-          const pending =
-            await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHash);
-          if (!pending) throw new e.InvalidDeviceCode.Error();
-          if (
-            (
-              await c.var.services.termsService.getPendingRequiredTerms(
-                c.var.verifiedUser.user.sub,
-              )
-            ).length > 0
-          )
-            return c.redirect(deviceTermsLocation(userCode), 303);
-        }
-        const now = new Date();
-        const deviceCode =
-          decision === 'deny'
-            ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
+      withBrowserSecurity(
+        c,
+        async () => {
+          const { decision, user_code: userCode } = c.req.valid('form');
+          const { mikro, securityService } = c.var.services;
+          const userCodeHash = await securityService.hashOpaqueToken(
+            'oauth-device-user-code',
+            userCode.toUpperCase(),
+          );
+          if (decision === 'approve') {
+            const pending =
+              await mikro.oauthDeviceCode.findPendingByUserCodeHash(
                 userCodeHash,
-                deniedAt: now,
-              })
-            : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
-                userCodeHash,
-                userSub: c.var.verifiedUser.user.sub,
-                approvedAt: now,
-                userEpoch:
-                  c.var.session.authorization.security?.grants[
-                    c.var.verifiedUser.user.sub
-                  ] ?? '',
-              });
+              );
+            if (!pending) throw new e.InvalidDeviceCode.Error();
+            if (
+              (
+                await c.var.services.termsService.getPendingRequiredTerms(
+                  c.var.verifiedUser.user.sub,
+                )
+              ).length > 0
+            )
+              return c.redirect(deviceTermsLocation(userCode), 303);
+          }
+          const now = new Date();
+          const deviceCode =
+            decision === 'deny'
+              ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
+                  userCodeHash,
+                  deniedAt: now,
+                })
+              : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
+                  userCodeHash,
+                  userSub: c.var.verifiedUser.user.sub,
+                  approvedAt: now,
+                  userEpoch:
+                    c.var.session.authorization.security?.grants[
+                      c.var.verifiedUser.user.sub
+                    ] ?? '',
+                });
 
-        if (!deviceCode) {
-          throw new e.InvalidDeviceCode.Error();
-        }
+          if (!deviceCode) {
+            throw new e.InvalidDeviceCode.Error();
+          }
 
-        return c.json({
-          status: decision === 'deny' ? 'denied' : 'approved',
-          client_id: deviceCode.client.clientId,
-        });
-      }),
+          return c.json({
+            status: decision === 'deny' ? 'denied' : 'approved',
+            client_id: deviceCode.client.clientId,
+          });
+        },
+        {
+          ...(c.req.valid('form').decision === 'approve' && {
+            termsPolicy: 'read',
+          }),
+        },
+      ),
   );

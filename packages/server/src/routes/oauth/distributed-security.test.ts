@@ -1465,6 +1465,183 @@ test.each(['auto_link', 'registration'])(
   },
 );
 
+test('OAuth consent rejects logout committed by a different server', async () => {
+  const cookie = `session=${await createAuthenticatedSession(app.app)}`;
+  const clientId = `consent-${crypto.randomUUID()}`;
+  const id = crypto.randomUUID();
+  await withMikroContext(app.services, async () => {
+    app.services.mikro.oauthClient.create({
+      id,
+      clientId,
+      name: 'Consent race',
+      tokenEpoch: crypto.randomUUID(),
+      clientSecretHash: null,
+      redirectUris: ['https://consent.example/cb'],
+      grantTypes: ['authorization_code'],
+      responseTypes: ['code'],
+      scopes: ['openid'],
+      enabled: true,
+      managed_by: 'database',
+    });
+    await app.services.mikro.em.flush();
+  });
+  const { issuer, revoker } = await configureCompletionPause('pause-consent');
+  const arrived = message(issuer.child, 'arrived');
+  const pending = fetch(`${issuer.origin}/api/consent`, {
+    method: 'POST',
+    headers: {
+      cookie,
+      origin: app.services.config.server.public_origin,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      redirect_uri: 'https://consent.example/cb',
+      response_type: 'code',
+      scope: 'openid',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: 'S256',
+      decision: 'allow',
+    }),
+  });
+  await arrived;
+  try {
+    expect(
+      (
+        await fetch(`${revoker.origin}/api/auth/logout`, {
+          method: 'POST',
+          headers: { cookie, origin: app.services.config.server.public_origin },
+        })
+      ).status,
+    ).toBe(200);
+  } finally {
+    issuer.child.send('go');
+  }
+  expect((await pending).status).toBe(401);
+  expect(
+    await withMikroContext(app.services, () =>
+      app.services.mikro.userConsent.count({ client: id }),
+    ),
+  ).toBe(0);
+});
+
+test.each(['consent', 'terms'])(
+  'authorization observes %s policy committed on a different server',
+  async (kind) => {
+    const cookie = `session=${await createAuthenticatedSession(app.app)}`;
+    const adminCookie = `session=${await createAuthenticatedSession(app.app)}`;
+    const clientId = `policy-${crypto.randomUUID()}`;
+    const termId = `policy-${crypto.randomUUID()}`;
+    const created = await app.app.request('/api/admin/clients', {
+      method: 'POST',
+      headers: { Cookie: adminCookie, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: clientId,
+        name: 'Policy race',
+        type: 'public',
+        redirect_uris: ['https://policy.example/cb'],
+        grant_types: ['authorization_code'],
+        response_types: ['code'],
+        scopes: ['openid'],
+        skip_consent: true,
+      }),
+    });
+    expect(created.status).toBe(201);
+    const client = z
+      .object({ client: z.object({ id: z.string() }) })
+      .parse(await created.json()).client;
+    const { issuer, revoker } = await configureCompletionPause(
+      'pause-authorization-policy',
+    );
+    const arrived = message(issuer.child, 'arrived');
+    const pending = fetch(
+      `${issuer.origin}/oauth/authorize?${new URLSearchParams({ client_id: clientId, redirect_uri: 'https://policy.example/cb', response_type: 'code', scope: 'openid', code_challenge: TEST_PKCE.codeChallenge, code_challenge_method: 'S256' })}`,
+      { headers: { cookie }, redirect: 'manual' },
+    );
+    await arrived;
+    try {
+      const changed = await fetch(
+        `${revoker.origin}${kind === 'consent' ? `/api/admin/clients/${client.id}` : '/api/admin/terms'}`,
+        {
+          method: kind === 'consent' ? 'PATCH' : 'POST',
+          headers: {
+            cookie: adminCookie,
+            origin: app.services.config.server.public_origin,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(
+            kind === 'consent'
+              ? {
+                  name: 'Policy race',
+                  redirect_uris: ['https://policy.example/cb'],
+                  grant_types: ['authorization_code'],
+                  response_types: ['code'],
+                  scopes: ['openid'],
+                  skip_consent: false,
+                }
+              : {
+                  id: termId,
+                  required: true,
+                  consent_mode: 'explicit',
+                  version: '1',
+                  contents: [
+                    {
+                      lang: 'en',
+                      title: 'Policy',
+                      type: 'text',
+                      content: 'Required',
+                    },
+                  ],
+                },
+          ),
+        },
+      );
+      expect(changed.status).toBe(kind === 'consent' ? 200 : 201);
+    } finally {
+      issuer.child.send('go');
+    }
+    try {
+      const response = await pending;
+      expect(response.status).toBe(302);
+      const target = new URL(
+        response.headers.get('location') ?? '',
+        issuer.origin,
+      );
+      expect(target.pathname).toBe(kind === 'consent' ? '/consent' : '/terms');
+      expect(target.searchParams.has('code')).toBe(false);
+      expect(
+        await withMikroContext(app.services, () =>
+          app.services.mikro.oauthCode.count({ client: client.id }),
+        ),
+      ).toBe(0);
+    } finally {
+      if (kind === 'terms')
+        await withMikroContext(app.services, () =>
+          app.services.mikro.terms.nativeDelete({ id: termId }),
+        );
+    }
+  },
+);
+
+test.runIf(Boolean(process.env['SECURITY_POSTGRES_PORT']))(
+  'PostgreSQL permits two independent policy readers at the same time',
+  async () => {
+    const acquired = children.map(({ child }) =>
+      message(child, 'policy-acquired'),
+    );
+    const committed = children.map(({ child }) =>
+      message(child, 'policy-committed'),
+    );
+    for (const { child } of children) child.send('hold-terms-read');
+    try {
+      await Promise.all(acquired);
+    } finally {
+      for (const { child } of children) child.send('go');
+    }
+    await Promise.all(committed);
+  },
+);
+
 async function configureCompletionPause(command: string) {
   const issuer = children[0];
   const revoker = children[1];

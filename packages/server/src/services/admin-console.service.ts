@@ -6,6 +6,7 @@ import { e } from '../schemas/error.ts';
 import { lockOAuthClient } from './client-security.js';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
+import { lockTermsPolicy } from './terms-policy.service.js';
 
 export type AdminListQuery = {
   query?: string | undefined;
@@ -409,34 +410,40 @@ export class AdminConsoleService {
   }
 
   public async createTerm(input: AdminTermInput) {
-    const term = this.mikro.terms.create({
-      id: input.id,
-      required: input.required,
-      consentMode: input.consentMode,
-      version: input.version,
-      managed_by: 'database',
-      archivedAt: null,
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const term = this.mikro.terms.create({
+        id: input.id,
+        required: input.required,
+        consentMode: input.consentMode,
+        version: input.version,
+        managed_by: 'database',
+        archivedAt: null,
+      });
+      this.replaceTermContents(this.mikro.em, term, input.contents);
+      await this.mikro.em.persist(term).flush();
+      return { term: termResponse(term) };
     });
-    this.replaceTermContents(this.mikro.em, term, input.contents);
-    await this.mikro.em.persist(term).flush();
-    return { term: termResponse(term) };
   }
 
   public async updateTerm(id: string, input: Omit<AdminTermInput, 'id'>) {
-    const term = await this.mikro.terms.findOne(
-      { id },
-      { populate: ['contents'] },
-    );
-    if (!term || term.managed_by === 'config') return null;
-    term.required = input.required;
-    term.consentMode = input.consentMode;
-    term.version = input.version;
-    for (const content of term.contents.getItems())
-      this.mikro.em.remove(content);
-    term.contents.removeAll();
-    this.replaceTermContents(this.mikro.em, term, input.contents);
-    await this.mikro.em.flush();
-    return { term: termResponse(term) };
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const term = await this.mikro.terms.findOne(
+        { id },
+        { populate: ['contents'] },
+      );
+      if (!term || term.managed_by === 'config') return null;
+      term.required = input.required;
+      term.consentMode = input.consentMode;
+      term.version = input.version;
+      for (const content of term.contents.getItems())
+        this.mikro.em.remove(content);
+      term.contents.removeAll();
+      this.replaceTermContents(this.mikro.em, term, input.contents);
+      await this.mikro.em.flush();
+      return { term: termResponse(term) };
+    });
   }
 
   public async setTermsArchived(
@@ -444,19 +451,22 @@ export class AdminConsoleService {
     filter: AdminListQuery | undefined,
     archived: boolean,
   ) {
-    const where: Record<string, unknown> = ids ? { id: { $in: ids } } : {};
-    if (filter?.managedBy) where['managed_by'] = filter.managedBy;
-    const query = filter?.query?.trim();
-    if (query) where['id'] = { $like: `%${query}%` };
-    const terms = await this.mikro.terms.find(where);
-    return this.applyStatus(
-      terms,
-      archived,
-      (term) => Boolean(term.archivedAt),
-      (term) => {
-        term.archivedAt = archived ? new Date() : null;
-      },
-    );
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const where: Record<string, unknown> = ids ? { id: { $in: ids } } : {};
+      if (filter?.managedBy) where['managed_by'] = filter.managedBy;
+      const query = filter?.query?.trim();
+      if (query) where['id'] = { $like: `%${query}%` };
+      const terms = await this.mikro.terms.find(where);
+      return this.applyStatus(
+        terms,
+        archived,
+        (term) => Boolean(term.archivedAt),
+        (term) => {
+          term.archivedAt = archived ? new Date() : null;
+        },
+      );
+    });
   }
 
   public async search(query: string) {

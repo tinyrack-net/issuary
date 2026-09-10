@@ -17,6 +17,7 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
       },
       {
         orderBy: { agreedAt: 'DESC' },
+        refresh: true,
       },
     );
   }
@@ -31,6 +32,7 @@ export class UserTermsConsentRepository extends EntityRepository<UserTermsConsen
       },
       {
         orderBy: { agreedAt: 'DESC' },
+        refresh: true,
       },
     );
   }

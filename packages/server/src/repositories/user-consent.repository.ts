@@ -10,11 +10,14 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
     userSub: string,
     clientId: string,
   ): Promise<UserConsentEntity | null> {
-    return this.findOne({
-      user: ref(UserEntity, userSub),
-      client: clientId,
-      revoked_at: null,
-    });
+    return this.findOne(
+      {
+        user: ref(UserEntity, userSub),
+        client: clientId,
+        revoked_at: null,
+      },
+      { refresh: true },
+    );
   }
 
   /**

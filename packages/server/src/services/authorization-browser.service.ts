@@ -54,6 +54,6 @@ export async function completeBrowserAuthorization(
       oauthClientService.validateScopes(current, proof.scopes);
       return operation();
     },
-    { targets: [proof.userSub] },
+    { targets: [proof.userSub], termsPolicy: 'read' },
   );
 }

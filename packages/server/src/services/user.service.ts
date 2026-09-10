@@ -10,6 +10,7 @@ import type { MailQueueService } from './mail-queue.service.js';
 import type { MikroService } from './mikro.service.ts';
 import type { PasswordAuthService } from './password-auth.service.ts';
 import type { TermsService } from './terms.service.ts';
+import { lockTermsPolicy } from './terms-policy.service.js';
 import { withUserSecurity } from './user-security.service.js';
 
 export class UserService {
@@ -360,7 +361,11 @@ export class UserService {
     consents?: Array<{ termsId: string; agreed: boolean }>;
     locale?: Locale | undefined;
   }): Promise<z.infer<typeof r.UserSession> & { token_epoch: string }> {
+    const passwordHash = await this.passwordAuthService.prepareDatabasePassword(
+      params.password,
+    );
     return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'read');
       // 1. Validate explicit terms consent before user creation
       // Load terms once and reuse across validation and recording
       const terms = this.termsService
@@ -391,9 +396,9 @@ export class UserService {
       }
 
       // 2. Register the user
-      const user = await this.passwordAuthService.createDatabaseUser({
+      const user = await this.mikro.user.register({
         email: params.email,
-        password: params.password,
+        passwordHash,
       });
 
       // 3. Generate email verification token and send email
