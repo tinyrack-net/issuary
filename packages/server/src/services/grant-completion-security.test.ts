@@ -11,7 +11,9 @@ import {
 import { securityProcessConfig } from '../test-utils/security-process-config.js';
 import { createTestApp, MINIMAL_TEST_CONFIG } from '../test-utils/setup.js';
 
-async function createSecurityApp(config: Parameters<typeof createTestApp>[0]) {
+async function createSecurityApp(
+  config: NonNullable<Parameters<typeof createTestApp>[0]>,
+) {
   return createTestApp({
     ...config,
     database: process.env['SECURITY_POSTGRES_PORT']
@@ -474,7 +476,7 @@ test.each(ALL_GRANTS)(
           code_verifier: TEST_PKCE.codeVerifier,
         };
       } else if (grantType === 'refresh_token')
-        values.refresh_token = (await refreshable(server)).refresh_token;
+        values['refresh_token'] = (await refreshable(server)).refresh_token;
       else if (grantType.includes('device_code')) {
         const issued = await oauthForm(server, '/oauth/device_authorization', {
           scope: 'openid email',
@@ -495,7 +497,7 @@ test.each(ALL_GRANTS)(
             })
           ).status,
         ).toBe(200);
-        values.device_code = device.device_code;
+        values['device_code'] = device.device_code;
       }
       const original =
         server.services.oauthClientService.validateClientSecretIfRequired.bind(
@@ -568,7 +570,7 @@ test.each(['grant', 'scope'])(
   },
 );
 
-test.each([2, 3, 4])(
+test.each([3, 4, 5])(
   'revocation rolls back all writes when storage stage %s fails',
   async (stage) => {
     const server = await tokenFixture();
@@ -578,18 +580,19 @@ test.each([2, 3, 4])(
         tokens.refresh_token,
       );
       if (!decoded?.jti) throw new Error('Missing JTI');
+      const jti = decoded.jti;
       const original = server.services.mikro.em.nativeUpdate.bind(
         server.services.mikro.em,
       );
       const fail =
-        stage === 4
+        stage === 5
           ? vi
               .spyOn(server.services.mikro.revokedToken, 'revokeGrant')
               .mockRejectedValueOnce(
                 new Error('injected family storage failure'),
               )
           : vi.spyOn(server.services.mikro.em, 'nativeUpdate');
-      if (stage !== 4) {
+      if (stage !== 5) {
         const update = vi.mocked(server.services.mikro.em.nativeUpdate);
         for (let i = 1; i < stage; i++) update.mockImplementationOnce(original);
         update.mockRejectedValueOnce(
@@ -604,9 +607,7 @@ test.each([2, 3, 4])(
       expect((await request()).status).toBe(500);
       fail.mockRestore();
       await withMikroContext(server.services, async () => {
-        expect(
-          await server.services.mikro.revokedToken.count({ jti: decoded.jti }),
-        ).toBe(0);
+        expect(await server.services.mikro.revokedToken.count({ jti })).toBe(0);
         await expect(
           server.services.jwtService.verifyRefreshToken(tokens.refresh_token),
         ).resolves.toBeDefined();
@@ -831,6 +832,79 @@ test('device terms acceptance requires a separate approval and rejects a newer r
         })
       ).status,
     ).toBe(200);
+  } finally {
+    await server.cleanup();
+  }
+});
+
+test('revocation also rejects a credential proof invalidated by secret rotation', async () => {
+  const server = await tokenFixture();
+  const reached = gate();
+  const resume = gate();
+  try {
+    const tokens = await refreshable(server);
+    await withMikroContext(server.services, () =>
+      server.services.mikro.oauthClient.nativeUpdate(
+        { id: TEST_OAUTH_CLIENT_CONFIG.id },
+        { managed_by: 'database' },
+      ),
+    );
+    const original =
+      server.services.oauthClientService.validateClientSecretIfRequired.bind(
+        server.services.oauthClientService,
+      );
+    vi.spyOn(
+      server.services.oauthClientService,
+      'validateClientSecretIfRequired',
+    ).mockImplementationOnce(async (...args) => {
+      const proof = await original(...args);
+      reached.release();
+      await resume.promise;
+      return proof;
+    });
+    const pending = oauthForm(server, '/oauth/revoke', {
+      token: tokens.refresh_token,
+      token_type_hint: 'refresh_token',
+    });
+    await reached.promise;
+    await withMikroContext(server.services, () =>
+      server.services.adminConsoleService.rotateClientSecret(
+        TEST_OAUTH_CLIENT_CONFIG.id,
+      ),
+    );
+    resume.release();
+    expect((await pending).status).toBe(401);
+    expect(
+      (
+        await server.app.request('/oauth/userinfo', {
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
+        })
+      ).status,
+    ).toBe(200);
+  } finally {
+    resume.release();
+    await server.cleanup();
+  }
+});
+
+test('an error replacing a prepared redirect discards Location', async () => {
+  const { BrowserSessionService } = await import(
+    './browser-session.service.js'
+  );
+  const { TEST_PKCE } = await import('../test-utils/fixtures.js');
+  const server = await tokenFixture();
+  try {
+    const cookie = `session=${await createAuthenticatedSession(server.app)}`;
+    vi.spyOn(BrowserSessionService.prototype, 'save').mockResolvedValueOnce(
+      false,
+    );
+    const response = await server.app.request(
+      `/oauth/authorize?${new URLSearchParams({ response_type: 'code', prompt: 'login', client_id: TEST_OAUTH_CLIENT_CONFIG.client_id, redirect_uri: TEST_OAUTH_CLIENT_CONFIG.redirect_uris[0] ?? '', scope: 'openid email', code_challenge: TEST_PKCE.codeChallenge, code_challenge_method: 'S256' })}`,
+      { headers: { Cookie: cookie } },
+    );
+    expect(response.status).toBe(401);
+    expect(response.headers.has('location')).toBe(false);
+    expect(response.headers.get('cache-control')).toContain('no-store');
   } finally {
     await server.cleanup();
   }

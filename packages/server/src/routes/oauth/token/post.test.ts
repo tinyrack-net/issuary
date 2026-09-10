@@ -90,6 +90,7 @@ beforeAll(async () => {
       );
     const refreshOnlyClient = services.mikro.oauthClient.create({
       clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+      tokenEpoch: crypto.randomUUID(),
       clientSecretHash: refreshOnlySecretHash,
       name: 'Refresh Only Client',
       grantTypes: ['refresh_token'],
@@ -1376,6 +1377,12 @@ describe('POST /oauth/token', () => {
     });
 
     test('should reject authorization_code grant when client is not allowed to use it', async () => {
+      await withMikroContext(services, () =>
+        services.mikro.oauthClient.nativeUpdate(
+          { clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId },
+          { grantTypes: ['authorization_code', 'refresh_token'] },
+        ),
+      );
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
@@ -1383,6 +1390,12 @@ describe('POST /oauth/token', () => {
         redirectUri: REFRESH_ONLY_OAUTH_CLIENT.redirectUri,
       });
 
+      await withMikroContext(services, () =>
+        services.mikro.oauthClient.nativeUpdate(
+          { clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId },
+          { grantTypes: ['refresh_token'] },
+        ),
+      );
       const res = await exchangeCode({
         code,
         clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,

@@ -614,6 +614,7 @@ export class OAuthTokenService {
     token: string,
     tokenTypeHint?: string,
     requestingClientId?: string,
+    authentication?: ClientAuthenticationProof,
   ): Promise<void> {
     const verification = await this.verifyTokenForRevocation(
       token,
@@ -625,6 +626,11 @@ export class OAuthTokenService {
     }
 
     return this.mikro.em.transactional(async () => {
+      if (authentication)
+        await this.oauthClientService.lockAuthenticatedClient(
+          authentication,
+          requestingClientId ?? authentication.clientId,
+        );
       const owner = await this.mikro.oauthClient.findOne({
         clientId: verification.payload.client_id,
       });

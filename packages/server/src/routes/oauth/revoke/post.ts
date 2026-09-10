@@ -5,6 +5,7 @@ import type { AppEnv } from '../../../lib/app-env.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
+import type { ClientAuthenticationProof } from '../../../services/oauth-client.service.js';
 import {
   parseBasicClientCredentials,
   setBasicClientAuthChallengeIfInvalidClientCredentials,
@@ -112,8 +113,9 @@ export const revokePost = new Hono<AppEnv>().post(
 
     const clientSecret = basicCredentials?.clientSecret ?? body.client_secret;
 
+    let authentication: ClientAuthenticationProof;
     try {
-      await oauthClientService.validateClientSecretIfRequired(
+      authentication = await oauthClientService.validateClientSecretIfRequired(
         clientId,
         clientSecret,
       );
@@ -124,11 +126,18 @@ export const revokePost = new Hono<AppEnv>().post(
       throw err;
     }
 
-    await oauthTokenService.revokeToken(
-      body.token,
-      body.token_type_hint,
-      clientId,
-    );
+    try {
+      await oauthTokenService.revokeToken(
+        body.token,
+        body.token_type_hint,
+        clientId,
+        authentication,
+      );
+    } catch (error) {
+      if (authorizationHeader)
+        setBasicClientAuthChallengeIfInvalidClientCredentials(c, error);
+      throw error;
+    }
 
     c.header('Cache-Control', 'no-store');
     c.header('Pragma', 'no-cache');
