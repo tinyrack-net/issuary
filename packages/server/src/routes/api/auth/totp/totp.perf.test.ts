@@ -151,8 +151,11 @@ describe('POST /api/auth/totp/verify perf', () => {
   });
 
   test('handles invalid TOTP code failures through the real route', async () => {
-    const fixture = await createPendingTotpFixture(1000);
-    const invalidCode = fixture.code === '000000' ? '111111' : '000000';
+    const fixtures = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, (_, index) =>
+        createPendingTotpFixture(index + 1000),
+      ),
+    );
 
     await runHttpPerf({
       name: 'POST /api/auth/totp/verify invalid-code smoke',
@@ -160,8 +163,11 @@ describe('POST /api/auth/totp/verify perf', () => {
       requests: MEASURED_REQUESTS,
       concurrency: 2,
       expectedStatuses: [400],
-      request: async () =>
-        requestInvalidTotpVerify(fixture.sessionCookie, invalidCode),
+      request: async (context) => {
+        const fixture = perfFixture(fixtures, context, WARMUP_REQUESTS);
+        const invalidCode = fixture.code === '000000' ? '111111' : '000000';
+        return requestInvalidTotpVerify(fixture.sessionCookie, invalidCode);
+      },
     });
   });
 });

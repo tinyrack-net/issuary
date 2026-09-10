@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import type { AppType } from '../../../entrypoints/app.js';
 import type { IssuaryRuntimeConfigInput } from '../../../lib/config/index.js';
+import type { ServiceContainer } from '../../../services/container.js';
 import {
   assertJsonBody,
   createAuthenticatedSession,
@@ -15,6 +16,7 @@ import {
   perfFixture,
   runHttpPerf,
 } from '../../../test-utils/perf/index.js';
+import { createAuthenticatedSessionCookie } from '../../../test-utils/stored-session.js';
 
 const WARMUP_REQUESTS = 10;
 const MEASURED_REQUESTS = 50;
@@ -35,6 +37,7 @@ const DEVICE_CLIENT: NonNullable<IssuaryRuntimeConfigInput['clients']>[number] =
 
 let app: AppType;
 let client: ReturnType<typeof testClient<AppType>>;
+let services: ServiceContainer;
 let cleanup: () => Promise<void>;
 
 beforeEach(async () => {
@@ -46,6 +49,7 @@ beforeEach(async () => {
 
   app = server.app;
   client = testClient(app);
+  services = server.services;
   cleanup = server.cleanup;
 });
 
@@ -186,10 +190,16 @@ describe('OAuth device verification perf', () => {
   });
 
   test('POST /oauth/device approves pending device authorizations with isolated codes', async () => {
-    const sessionCookie = await createAuthenticatedSession(app);
     const userCodes = await Promise.all(
       Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, () =>
         createDeviceUserCode(),
+      ),
+    );
+    // Each approval runs on its own seeded session so the browser-security
+    // revision bump cannot collide across concurrent requests.
+    const sessionCookies = await Promise.all(
+      Array.from({ length: WARMUP_REQUESTS + MEASURED_REQUESTS }, () =>
+        createAuthenticatedSessionCookie(services, TEST_USER_CONFIG.sub),
       ),
     );
     await runHttpPerf({
@@ -200,7 +210,10 @@ describe('OAuth device verification perf', () => {
       expectedStatuses: [200],
       request: async (context) => {
         const userCode = perfFixture(userCodes, context, WARMUP_REQUESTS);
-        return requestValidDeviceApproval(sessionCookie, userCode);
+        return requestValidDeviceApproval(
+          perfFixture(sessionCookies, context, WARMUP_REQUESTS),
+          userCode,
+        );
       },
     });
   });
