@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
 import { getConsentInfoQueryOptions } from '#frontend/queries/consent.ts';
 import {
   firstRequest,
@@ -15,18 +16,16 @@ import {
 } from '#frontend/test-utils/route-test-utils.tsx';
 import * as RouteModule from './route.tsx';
 
+vi.mock('#frontend/libs/document-navigation.js', () => ({
+  navigateDocument: vi.fn(),
+}));
+
 const routeDefinition = defineRouteScreen('auth', RouteModule);
 
 const consentSearch =
   'client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid+profile+email&state=state-123&nonce=nonce-123&code_challenge=challenge-123&code_challenge_method=S256';
 const consentLocation = `/consent?${consentSearch}`;
 const consentWithCompatibilityParams = `${consentLocation}&prompt=select_account&max_age=3600&reauthenticated=1&display=popup&response_mode=fragment&login_hint=alice%40example.com&ui_locales=ko+en&id_token_hint=header.payload.signature&acr_values=urn%3Amace%3Aincommon%3Aiap%3Asilver&account_selected=1&account_selection_state=chooser-state-ui`;
-
-function testRedirectUrl(fragment: string) {
-  const [hrefWithoutHash] = globalThis.location.href.split('#');
-
-  return `${hrefWithoutHash}#${fragment}`;
-}
 
 const consentInfo = {
   client: {
@@ -73,6 +72,7 @@ function seededQueryData(prompt?: string) {
 
 afterEach(() => {
   resetFetchMock();
+  vi.clearAllMocks();
 });
 
 describe('/consent', () => {
@@ -107,7 +107,7 @@ describe('/consent', () => {
       initialLocation: consentLocation,
       queryData: seededQueryData(),
     });
-    const redirectUrl = testRedirectUrl('allow-redirected');
+    const redirectUrl = 'https://client.example/callback#allow-redirected';
     const fetchMock = mockJsonSuccess({
       redirect_url: redirectUrl,
     });
@@ -115,7 +115,7 @@ describe('/consent', () => {
     await screen.getByTestId('consent-allow').click();
 
     await vi.waitFor(() => {
-      expect(globalThis.location.href).toBe(redirectUrl);
+      expect(navigateDocument).toHaveBeenCalledWith(redirectUrl);
     });
 
     const request = firstRequest(fetchMock.requests);
@@ -140,7 +140,7 @@ describe('/consent', () => {
       queryData: seededQueryData('select_account'),
     });
     const fetchMock = mockJsonSuccess({
-      redirect_url: testRedirectUrl('account-selected'),
+      redirect_url: 'https://client.example/callback#account-selected',
     });
 
     await screen.getByTestId('consent-allow').click();
@@ -169,7 +169,7 @@ describe('/consent', () => {
       initialLocation: consentLocation,
       queryData: seededQueryData(),
     });
-    const redirectUrl = testRedirectUrl('deny-redirected');
+    const redirectUrl = 'https://client.example/callback#deny-redirected';
     const fetchMock = mockJsonSuccess({
       redirect_url: redirectUrl,
     });
@@ -177,7 +177,7 @@ describe('/consent', () => {
     await screen.getByTestId('consent-deny').click();
 
     await vi.waitFor(() => {
-      expect(globalThis.location.href).toBe(redirectUrl);
+      expect(navigateDocument).toHaveBeenCalledWith(redirectUrl);
     });
 
     const request = firstRequest(fetchMock.requests);

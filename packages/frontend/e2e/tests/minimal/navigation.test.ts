@@ -82,14 +82,14 @@ test.describe('client-side navigation', () => {
     page,
   }) => {
     await performLogin(page, E2E_TEST_USER.email, E2E_TEST_USER.password);
+    await page.waitForURL('**/profile');
     await gotoWithFirefoxRetry(page, browserName, '/admin');
     await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
     const adminShell = page.locator('.admin-app-shell');
-    await expect(
-      page.getByRole('heading', {
-        name: 'Services and authentication methods',
-      }),
-    ).toBeVisible();
+    const usersLink = page.getByRole('link', { name: 'Users' });
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(adminShell).toBeVisible();
+    await expect(usersLink).toBeVisible();
 
     let continueNavigation = () => {};
     let markRequestStarted = () => {};
@@ -112,11 +112,8 @@ test.describe('client-side navigation', () => {
     await requestStarted;
 
     await expect(page.locator('.tr-app-shell-progress')).toBeVisible();
-    await expect(
-      page.getByRole('heading', {
-        name: 'Services and authentication methods',
-      }),
-    ).toBeVisible();
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(usersLink).toBeVisible();
     await expect(adminShell).toHaveAttribute(
       'data-transition-marker',
       'persistent',
