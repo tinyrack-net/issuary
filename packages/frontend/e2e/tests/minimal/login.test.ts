@@ -6,6 +6,7 @@ import {
   E2E_TEST_USER,
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { waitForAppHydration } from '#frontend-e2e/helpers/hydration.ts';
 import {
   expectPasswordLoginForm,
   loginPasswordPage,
@@ -19,6 +20,41 @@ const test = createScenarioFixture((backendPort) => ({
 }));
 
 test.describe('Login flow', () => {
+  test('password form waits for JavaScript before accepting credentials', async ({
+    page,
+  }) => {
+    let releaseScripts = () => {};
+    const scripts = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    await page.route('**/assets/*.js', async (route) => {
+      await scripts;
+      await route.continue();
+    });
+    try {
+      await page.goto('/login/password', { waitUntil: 'commit' });
+      await expect(page.locator(loginPasswordPage.emailInput)).toBeDisabled();
+      await expect(
+        page.locator(loginPasswordPage.passwordInput),
+      ).toBeDisabled();
+      await expect(page.locator(loginPasswordPage.submitButton)).toBeDisabled();
+      await expect(page.locator('form')).toHaveAttribute('method', 'post');
+      releaseScripts();
+      await waitForAppHydration(page);
+      await page
+        .locator(loginPasswordPage.emailInput)
+        .fill(E2E_TEST_USER.email);
+      await page.locator(loginPasswordPage.submitButton).click();
+      await expect(page.locator(loginPasswordPage.fieldError)).toHaveText(
+        'Please enter your password',
+      );
+      await expect(page).toHaveURL(/\/login\/password$/);
+    } finally {
+      releaseScripts();
+      await page.unrouteAll({ behavior: 'wait' });
+    }
+  });
+
   test('redirects unauthenticated users to /login', async ({ page }) => {
     await page.goto('/');
     await page.waitForURL('**/login**');
