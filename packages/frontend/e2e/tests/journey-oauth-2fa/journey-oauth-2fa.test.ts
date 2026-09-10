@@ -26,7 +26,10 @@ import {
   loginPasswordPage,
 } from '#frontend-e2e/helpers/login.ts';
 import { registerPage } from '#frontend-e2e/helpers/register-page.ts';
-import { interceptTotpSecret } from '#frontend-e2e/helpers/totp.ts';
+import {
+  interceptTotpSecret,
+  setupTotpViaTestApi,
+} from '#frontend-e2e/helpers/totp.ts';
 import { enableVirtualAuthenticator } from '#frontend-e2e/helpers/webauthn.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
@@ -250,15 +253,14 @@ test.describe('OAuth continuation across email verification and 2FA', () => {
       await completeEmailVerification(page, String(baseURL), email);
       await page.waitForURL('**/setup/2fa**');
 
-      const totpSecretPromise = interceptTotpSecret(page);
-      await page.locator('a[href^="/setup/totp"]').click();
-      await page.waitForURL('**/setup/totp**');
-      const totpSecret = await totpSecretPromise;
-      await completeTotpSetup(page, totpSecret);
-      await page.waitForURL('**/profile');
-
+      // Enroll passkey first and seed TOTP without consuming a step. The login
+      // below must use a fresh OTP, not replay the setup verification code.
       await page.goto('/setup/passkey?passkey_name=default');
       await page.waitForURL('**/profile');
+      const { secret: totpSecret } = await setupTotpViaTestApi(
+        String(baseURL),
+        email,
+      );
 
       // Prevent conditional passkey autofill from short-circuiting
       // password login in this test path.

@@ -332,3 +332,11 @@ Client 수정·secret 회전·삭제·복원·설정 동기화는 같은 client 
 `consent-policy-security.test.ts`에는 최초 세 재현, 동의 저장 롤백, 사용자/client 세대 변경, 약관 버전/복원, scope 철회, offline scope 재계산, 응답 모드와 두 커밋 순서를 포함한다. 기존 OAuth 동의/authorization 64개와 집중 회귀를 로컬에서 검증한다. PostgreSQL 보안 작업에 새 파일을 포함하고, 독립 서버 두 개에서 동의 폐기 및 정책 변경을 먼저 커밋하는 검증과 PostgreSQL 공유 정책 읽기를 추가했다. Chromium에는 동의 화면 승인 → code 교환 → userinfo 흐름을 추가하며 기존 device 약관 복귀 검증을 유지한다. 최신 검증 실행과 확정 결과는 [PR #83 최종 HEAD 체크](https://github.com/tinyrack-net/issuary/pull/83/checks) 및 PR 설명에 기록한다. 무거운 로컬 검증은 사용자 자원 제한에 따라 생략하며 실행 전 CI 결과를 통과로 간주하지 않는다.
 
 CI 종료 경로도 정리했다. 한 smoke 실행은 38개 테스트와 HTML/blob 보고서를 모두 완료했지만 runner가 종료되지 않아 시간 제한으로 취소됐다. `--project` 선택이 `FullConfig.projects`에서 다른 프로젝트를 제거하지 않아, 해당 작업에서도 사용하지 않는 Screen Lab 개발 서버를 시작하던 경로를 확인했다. 전용 smoke/보안 작업은 기존 Screen Lab 제외 설정을 적용하고, global setup은 해당 프로젝트가 없으면 Vite·네이티브 플러그인을 import하지 않는다. 종료 정지의 네이티브 스택은 확보하지 못했으므로 정확한 정지 지점까지 확인한 것으로 간주하지 않는다. 불필요한 서버 import 차단의 수정 전 실패/수정 후 통과와 Screen Lab 정상 시작·정리, workflow 설정을 별도 검사하며 실제 smoke·보안 테스트 수는 유지한다.
+
+### 병합 큐의 전체 Chromium 검증 보완
+
+PR HEAD `542f1f51`의 필수 검사는 통과했지만, 병합 큐 실행 [34475091090](https://github.com/tinyrack-net/issuary/actions/runs/34475091090)의 전체 Chromium 4·5·6번 묶음에서 테스트 네 개가 실패했다. Trace에서 비밀번호 설정/제거는 200 이후 정상적인 세션 폐기로 로그인 화면에 이동했으며, 기존 테스트가 변경 전 세션의 profile 유지를 기대했다. 수정한 테스트는 보호 API의 401, 새 비밀번호 또는 남아 있는 OAuth 인증으로 재로그인, 변경된 비밀번호 상태를 확인한다.
+
+TOTP 해제와 두 인증수단 로그인 여정은 각각 직전 로그인/설정에서 소비한 같은 시간 구간의 OTP를 재사용해 `INVALID_TOTP_CODE` 400을 받았다. 해제 테스트는 세션을 먼저 만든 뒤 기존 테스트 전용 fixture로 인증수단을 준비하고 첫 코드를 해제에 사용한다. 두 인증수단 여정은 passkey 등록 후 미소비 TOTP를 준비하고 실제 로그인에서 TOTP 선택·검증과 OAuth continuation을 확인한다. 기존 TOTP 설정 브라우저 검증은 다른 여정에서 유지한다. 서버의 재사용 차단, 세션 폐기, DB 상태는 완화하지 않는다.
+
+실패한 세 파일을 PR의 Security Chromium 작업에서 먼저 실행한 뒤 기존 보안 브라우저 검증을 수행하도록 추가했다. 두 단계의 보고서와 trace는 서로 다른 경로로 보존한다. 재실행·sleep·동시성 축소로 통과시키지 않으며, PR 검사와 병합 큐 전체 검증의 결과는 구분해서 기록한다.

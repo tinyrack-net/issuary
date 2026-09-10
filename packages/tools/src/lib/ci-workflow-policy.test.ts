@@ -167,6 +167,27 @@ describe('CI workflow policy', () => {
     expect(source).toContain('--project totp-required:chromium');
   });
 
+  test('runs the merge-queue regression files before the broader browser security suite', async () => {
+    const { source } = await readWorkflow();
+    const focused = source.indexOf(
+      'name: Verify password revocation and TOTP regression flows',
+    );
+    const broader = source.indexOf(
+      'name: Verify OAuth registration, email and MFA flows',
+    );
+    expect(focused).toBeGreaterThanOrEqual(0);
+    expect(broader).toBeGreaterThan(focused);
+    const step = source.slice(focused, broader);
+    for (const file of [
+      'profile-oauth-modals.test.ts',
+      'profile-totp-modals.test.ts',
+      'journey-oauth-2fa.test.ts',
+    ])
+      expect(step).toContain(file);
+    expect(step).toContain('--output=regression-test-results');
+    expect(source).toContain('packages/frontend/regression-test-results');
+  });
+
   test('evaluates tag publishing after skipped quality jobs', async () => {
     const { workflow } = await readWorkflow();
 

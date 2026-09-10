@@ -175,6 +175,15 @@ jobs:
       - uses: actions/download-artifact@v8.0.1
         with: { name: dist-linux, path: packages }
       - run: pnpm --filter @tinyrack/issuary-frontend exec playwright install --with-deps chromium
+      - name: Verify password revocation and TOTP regression flows
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-regression-report
+        run: >-
+          pnpm --filter @tinyrack/issuary-frontend test:e2e
+          profile-oauth-modals.test.ts profile-totp-modals.test.ts journey-oauth-2fa.test.ts
+          --project oauth-providers-mixed:chromium --project totp-optional:chromium
+          --project journey-oauth-2fa:chromium
+          --output=regression-test-results --reporter=html,line
       - name: Verify OAuth registration, email and MFA flows
         run: >-
           pnpm --filter @tinyrack/issuary-frontend test:e2e
@@ -189,6 +198,8 @@ jobs:
           path: |
             packages/frontend/playwright-report
             packages/frontend/test-results
+            packages/frontend/playwright-regression-report
+            packages/frontend/regression-test-results
           if-no-files-found: warn
           retention-days: 14
 
