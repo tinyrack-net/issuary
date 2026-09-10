@@ -8,7 +8,7 @@ import { TRButton } from '@tinyrack/ui/components/button';
 import { TRForm } from '@tinyrack/ui/components/form';
 import { TRLink } from '@tinyrack/ui/components/link';
 import { LockIcon, MailIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
@@ -56,6 +56,10 @@ function LoginPassword({
   search: ReturnType<typeof SearchSchema.parse>;
 }) {
   const { t, i18n } = useTranslation();
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const navigateTo = useCallback(
@@ -228,10 +232,12 @@ function LoginPassword({
       {isPasswordAuthEnabled && (
         <TRForm
           className="flex flex-col gap-tinyrack-lg"
+          method="post"
           onSubmit={handleSubmit(onSubmit)}
         >
           <AuthField
             autoComplete="username webauthn"
+            disabled={!isHydrated}
             error={errors.email}
             icon={MailIcon}
             label={t('login.email.label')}
@@ -242,6 +248,7 @@ function LoginPassword({
 
           <AuthField
             autoComplete="current-password"
+            disabled={!isHydrated}
             error={errors.password}
             icon={LockIcon}
             label={t('login.password.label')}
@@ -267,6 +274,7 @@ function LoginPassword({
 
           <TRButton
             className="w-full"
+            disabled={!isHydrated}
             intent="primary"
             loading={loginMutation.isPending}
             loadingLabel={t('login.submitting')}
