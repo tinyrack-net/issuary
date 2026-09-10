@@ -15,6 +15,7 @@ import { Migration20260904090000_add_oauth_client_lifecycle as PostgresOAuthClie
 import { Migration20260910120000_api_security as PostgresApiSecurityMigration } from '../../migrations/postgres/Migration20260910120000_api_security.js';
 import { Migration20260910160000_security_followup as PostgresSecurityFollowupMigration } from '../../migrations/postgres/Migration20260910160000_security_followup.js';
 import { Migration20260910200000_authentication_epoch as PostgresAuthenticationEpochMigration } from '../../migrations/postgres/Migration20260910200000_authentication_epoch.js';
+import { Migration20260910220000_flow_revocation as PostgresFlowRevocationMigration } from '../../migrations/postgres/Migration20260910220000_flow_revocation.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -31,6 +32,7 @@ import { Migration20260904090000_add_oauth_client_lifecycle as SqliteOAuthClient
 import { Migration20260910120000_api_security as SqliteApiSecurityMigration } from '../../migrations/sqlite/Migration20260910120000_api_security.js';
 import { Migration20260910160000_security_followup as SqliteSecurityFollowupMigration } from '../../migrations/sqlite/Migration20260910160000_security_followup.js';
 import { Migration20260910200000_authentication_epoch as SqliteAuthenticationEpochMigration } from '../../migrations/sqlite/Migration20260910200000_authentication_epoch.js';
+import { Migration20260910220000_flow_revocation as SqliteFlowRevocationMigration } from '../../migrations/sqlite/Migration20260910220000_flow_revocation.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -99,6 +101,7 @@ describe('database migrations', () => {
       PostgresApiSecurityMigration,
       PostgresSecurityFollowupMigration,
       PostgresAuthenticationEpochMigration,
+      PostgresFlowRevocationMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -146,6 +149,7 @@ describe('database migrations', () => {
       SqliteApiSecurityMigration,
       SqliteSecurityFollowupMigration,
       SqliteAuthenticationEpochMigration,
+      SqliteFlowRevocationMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();

@@ -249,6 +249,7 @@ describe('POST /oauth/token', () => {
           clientId: encodedClient.clientId,
           clientSecretHash,
           name: 'Basic Encoded Client',
+          tokenEpoch: crypto.randomUUID(),
           redirectUris: [encodedClient.redirectUri],
           responseTypes: ['code'],
           grantTypes: ['authorization_code'],

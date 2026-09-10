@@ -73,6 +73,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset?.token;
@@ -137,6 +138,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOneOrFail({
         user,
         used: false,
+        revoked_at: null,
       });
       return reset.token;
     });
@@ -149,12 +151,13 @@ describe('POST /api/auth/password/forgot', () => {
       },
     });
 
-    // 5. Check that first token is now expired
+    // 5. Check that the first token is now revoked
     await services.mailQueue.runPending();
     const isFirstTokenValid = await withMikroContext(services, async () => {
       const reset = await services.mikro.passwordReset.findOne({
         token: firstToken,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset !== null;
@@ -171,6 +174,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset !== null && reset.token !== firstToken;

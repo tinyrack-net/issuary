@@ -550,30 +550,36 @@ test('registration token has exactly one winner across independent browsers and 
       },
     );
   });
-  const gates = children.map(({ child }) => message(child, 'arrived'));
-  const pending = children.map(({ origin }) =>
-    fetch(`${origin}/api/terms/consent`, {
-      method: 'POST',
-      headers: {
-        'x-test-barrier': '1',
-        origin: app.services.config.server.public_origin,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        registrationToken,
-        consents: [{ termsId: 'distributed-terms', agreed: true }],
+  try {
+    const gates = children.map(({ child }) => message(child, 'arrived'));
+    const pending = children.map(({ origin }) =>
+      fetch(`${origin}/api/terms/consent`, {
+        method: 'POST',
+        headers: {
+          'x-test-barrier': '1',
+          origin: app.services.config.server.public_origin,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          registrationToken,
+          consents: [{ termsId: 'distributed-terms', agreed: true }],
+        }),
       }),
-    }),
-  );
-  await Promise.all(gates);
-  for (const { child } of children) child.send('go');
-  const responses = await Promise.all(pending);
-  expect(responses.map((response) => response.status).sort()).toEqual([
-    200, 400,
-  ]);
-  expect(
-    responses.filter((response) => response.headers.has('set-cookie')),
-  ).toHaveLength(1);
+    );
+    await Promise.all(gates);
+    for (const { child } of children) child.send('go');
+    const responses = await Promise.all(pending);
+    expect(responses.map((response) => response.status).sort()).toEqual([
+      200, 400,
+    ]);
+    expect(
+      responses.filter((response) => response.headers.has('set-cookie')),
+    ).toHaveLength(1);
+  } finally {
+    await withMikroContext(app.services, () =>
+      app.services.mikro.terms.nativeDelete({ id: 'distributed-terms' }),
+    );
+  }
 });
 
 test.each(['clock-ahead', 'clock-behind'])(
