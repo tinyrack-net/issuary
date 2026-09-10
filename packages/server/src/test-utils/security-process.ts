@@ -295,3 +295,53 @@ process.on('message', (input) => {
   };
   void issue().catch(() => process.exit(1));
 });
+
+process.on('message', (input) => {
+  if (
+    ![
+      'pause-authorization',
+      'pause-client-authentication',
+      'pause-admin-check',
+    ].includes(String(input))
+  )
+    return;
+  const pause = async () => {
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    process.send?.({ event: 'arrived' });
+    await gate;
+  };
+  if (input === 'pause-authorization') {
+    const original = services.oauthAuthorizeService.authorize.bind(
+      services.oauthAuthorizeService,
+    );
+    services.oauthAuthorizeService.authorize = async (...args) => {
+      services.oauthAuthorizeService.authorize = original;
+      await pause();
+      return original(...args);
+    };
+  } else if (input === 'pause-client-authentication') {
+    const original =
+      services.oauthClientService.validateClientSecretIfRequired.bind(
+        services.oauthClientService,
+      );
+    services.oauthClientService.validateClientSecretIfRequired = async (
+      ...args
+    ) => {
+      services.oauthClientService.validateClientSecretIfRequired = original;
+      const proof = await original(...args);
+      await pause();
+      return proof;
+    };
+  } else {
+    const original = services.mikro.user.findBySub.bind(services.mikro.user);
+    services.mikro.user.findBySub = async (...args) => {
+      services.mikro.user.findBySub = original;
+      const user = await original(...args);
+      await pause();
+      return user;
+    };
+  }
+  process.send?.({ event: 'configured' });
+});

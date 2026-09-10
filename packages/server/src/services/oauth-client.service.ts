@@ -1,8 +1,18 @@
 import type z from 'zod';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';
 import { e } from '../schemas/error.ts';
 import type { r } from '../schemas/response.ts';
+import { lockOAuthClient } from './client-security.js';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
+
+export interface ClientAuthenticationProof {
+  readonly clientId: string;
+  readonly id: string;
+  readonly epoch: string;
+  readonly kind: 'public' | 'confidential';
+  readonly fingerprint: string;
+}
 
 export class OAuthClientService {
   private readonly mikro: MikroService;
@@ -152,35 +162,82 @@ export class OAuthClientService {
   public async validateClientSecretIfRequired(
     clientId: string,
     clientSecret: string | undefined,
-  ): Promise<void> {
+  ): Promise<ClientAuthenticationProof> {
     const client = await this.mikro.oauthClient.findOne(
       { clientId, deletedAt: null },
-      { populate: ['clientSecretHash'] },
+      { populate: ['clientSecretHash'], refresh: true },
     );
+    if (!client) throw new e.OAuthClientNotFound.Error();
+    const epoch = client.tokenEpoch ?? '';
+    const hash = client.clientSecretHash;
+    const id = client.id;
+    if (
+      hash
+        ? !clientSecret ||
+          !(await this.securityService.verifyClientSecret(hash, clientSecret))
+        : Boolean(clientSecret)
+    )
+      throw new e.InvalidClientCredentials.Error();
+    return {
+      id,
+      clientId,
+      epoch,
+      kind: hash ? 'confidential' : 'public',
+      fingerprint: await this.securityService.hashOpaqueToken(
+        'oauth-client-authentication',
+        hash ?? 'public',
+      ),
+    };
+  }
 
-    if (!client) {
-      throw new e.OAuthClientNotFound.Error();
-    }
-
-    if (!client.clientSecretHash) {
-      if (clientSecret) {
-        throw new e.InvalidClientCredentials.Error();
-      }
-      return;
-    }
-
-    if (!clientSecret) {
+  /** Requires an enclosing transaction. The proof is captured before credential verification yields. */
+  public async lockAuthenticatedClient(
+    proof: ClientAuthenticationProof,
+    clientId: string,
+    grantType?: string,
+  ) {
+    if (proof.clientId !== clientId)
+      throw new e.InvalidClientCredentials.Error();
+    const locked = await lockOAuthClient(this.mikro.em, proof.id);
+    const client = locked
+      ? await this.mikro.em.findOneOrFail(
+          OAuthClientEntitySchema,
+          { id: proof.id },
+          {
+            populate: ['clientSecretHash'],
+            refresh: true,
+          },
+        )
+      : null;
+    if (
+      !client ||
+      client.clientId !== clientId ||
+      client.deletedAt ||
+      !client.enabled
+    )
+      throw new e.InvalidClientCredentials.Error();
+    if (client.tokenEpoch !== proof.epoch) {
+      if (grantType === 'authorization_code')
+        throw new e.InvalidAuthorizationCode.Error();
+      if (grantType === 'refresh_token')
+        throw new e.InvalidRefreshToken.Error();
+      if (grantType === 'urn:ietf:params:oauth:grant-type:device_code')
+        throw new e.InvalidDeviceCode.Error();
       throw new e.InvalidClientCredentials.Error();
     }
-
-    const isValid = await this.securityService.verifyClientSecret(
-      client.clientSecretHash,
-      clientSecret,
+    const hash = client.clientSecretHash;
+    const fingerprint = await this.securityService.hashOpaqueToken(
+      'oauth-client-authentication',
+      hash ?? 'public',
     );
-
-    if (!isValid) {
+    if (
+      fingerprint !== proof.fingerprint ||
+      (hash ? 'confidential' : 'public') !== proof.kind
+    )
       throw new e.InvalidClientCredentials.Error();
-    }
+    const current = await this.findByClientId(clientId);
+    if (grantType) this.validateGrantType(current, grantType);
+    return current;
   }
 
   public async isPublicClient(clientId: string): Promise<boolean> {

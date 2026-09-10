@@ -21,6 +21,7 @@ const PBKDF2_DERIVED_KEY_BYTES = 32;
 
 type Pbkdf2Purpose = 'password' | 'client-secret';
 export type OpaquePurpose =
+  | 'oauth-client-authentication'
   | 'oauth-code'
   | 'oauth-device-code'
   | 'oauth-device-user-code'
@@ -35,6 +36,7 @@ const HASH_POLICY = {
     password: 'password-v2',
     'client-secret': 'client-secret-v2',
     'oauth-code': 'oauth-code-v2',
+    'oauth-client-authentication': 'oauth-client-authentication-v1',
     'oauth-device-code': 'oauth-device-code-v2',
     'oauth-device-user-code': 'oauth-device-user-code-v2',
     'totp-recovery': 'totp-recovery-v2',

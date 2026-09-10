@@ -5,6 +5,7 @@ import type { AppEnv } from '../../../lib/app-env.js';
 import { getRandomBytes, toBase64Url } from '../../../lib/base64url.js';
 import { TAGS } from '../../../lib/swagger-tags.js';
 import { f } from '../../../schemas/field.js';
+import type { ClientAuthenticationProof } from '../../../services/oauth-client.service.js';
 import {
   parseBasicClientCredentials,
   setBasicClientAuthChallengeIfInvalidClientCredentials,
@@ -68,8 +69,9 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
     oauthClientService.validateGrantType(client, DEVICE_CODE_GRANT_TYPE);
 
     const clientSecret = basicCredentials?.clientSecret ?? body.client_secret;
+    let authentication: ClientAuthenticationProof;
     try {
-      await oauthClientService.validateClientSecretIfRequired(
+      authentication = await oauthClientService.validateClientSecretIfRequired(
         clientId,
         clientSecret,
       );
@@ -94,13 +96,21 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
       userCode,
     );
 
-    await mikro.oauthDeviceCode.createDeviceAuthorization({
-      clientId: client.id,
-      clientEpoch: client.tokenEpoch ?? '',
-      deviceCodeHash,
-      userCodeHash,
-      scope: requestedScopes,
-      expiresInSeconds: DEVICE_CODE_EXPIRES_IN,
+    await mikro.em.transactional(async () => {
+      const current = await oauthClientService.lockAuthenticatedClient(
+        authentication,
+        clientId,
+        DEVICE_CODE_GRANT_TYPE,
+      );
+      oauthClientService.validateScopes(current, requestedScopes);
+      await mikro.oauthDeviceCode.createDeviceAuthorization({
+        clientId: client.id,
+        clientEpoch: authentication.epoch,
+        deviceCodeHash,
+        userCodeHash,
+        scope: requestedScopes,
+        expiresInSeconds: DEVICE_CODE_EXPIRES_IN,
+      });
     });
 
     const verificationUri = `${config.server.public_origin}/oauth/device`;

@@ -315,9 +315,11 @@ test('required terms gate preapproved authorization, including rejected current 
     expect(terms.pathname).toBe('/terms');
     const continuation = terms.searchParams.get('redirect');
     if (!continuation) throw new Error('Missing terms continuation');
-    expect(new URL(continuation).searchParams.get('code_challenge')).toBe(
-      TEST_PKCE.codeChallenge,
-    );
+    expect(
+      new URL(continuation, 'http://localhost').searchParams.get(
+        'code_challenge',
+      ),
+    ).toBe(TEST_PKCE.codeChallenge);
     const silent = await client.oauth.authorize.$get(
       { query: { ...query, prompt: 'none' } },
       { headers },
@@ -360,6 +362,7 @@ test('required terms gate preapproved authorization, including rejected current 
     const authenticatedAt = Math.floor(Date.now() / 1000);
     const selectedOther = await withMikroContext(server.services, () =>
       server.services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: { ...query, prompt: 'none', login_hint: otherEmail },
         userSession: { sub: userSub, authenticated_at: authenticatedAt },
         rememberedAccounts: [userSub, otherSub].map((sub) => ({

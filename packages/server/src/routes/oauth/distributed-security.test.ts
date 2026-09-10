@@ -1464,3 +1464,204 @@ test.each(['auto_link', 'registration'])(
     });
   },
 );
+
+async function configureCompletionPause(command: string) {
+  const issuer = children[0];
+  const revoker = children[1];
+  if (!issuer || !revoker) throw new Error('Missing processes');
+  const configured = message(issuer.child, 'configured');
+  issuer.child.send(command);
+  await configured;
+  return { issuer, revoker };
+}
+
+test.each(['authorize', 'admin'])(
+  '%s completion rejects browser revocation on another process',
+  async (kind) => {
+    const cookie = `session=${await createAuthenticatedSession(app.app)}`;
+    const clientId = `completion-${crypto.randomUUID()}`;
+    const { issuer, revoker } = await configureCompletionPause(
+      kind === 'authorize' ? 'pause-authorization' : 'pause-admin-check',
+    );
+    // Consent is established without using the paused server.
+    if (kind === 'authorize')
+      await grantConsent(app.app, cookie.slice('session='.length), {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        scope: 'openid email',
+        code_challenge: TEST_PKCE.codeChallenge,
+        code_challenge_method: 'S256',
+      });
+    const arrived = message(issuer.child, 'arrived');
+    const pending =
+      kind === 'authorize'
+        ? fetch(
+            `${issuer.origin}/oauth/authorize?${new URLSearchParams({ client_id: TEST_OAUTH_CLIENT.clientId, redirect_uri: TEST_OAUTH_CLIENT.redirectUri, response_type: 'code', scope: 'openid email', code_challenge: TEST_PKCE.codeChallenge, code_challenge_method: 'S256' })}`,
+            { headers: { cookie }, redirect: 'manual' },
+          )
+        : fetch(`${issuer.origin}/api/admin/clients`, {
+            method: 'POST',
+            headers: {
+              cookie,
+              origin: app.services.config.server.public_origin,
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({
+              client_id: clientId,
+              name: 'Completion',
+              type: 'public',
+              redirect_uris: ['https://completion.example/cb'],
+              grant_types: ['authorization_code'],
+              response_types: ['code'],
+              scopes: ['openid'],
+            }),
+          });
+    await arrived;
+    try {
+      expect(
+        (
+          await fetch(`${revoker.origin}/api/auth/logout`, {
+            method: 'POST',
+            headers: {
+              cookie,
+              origin: app.services.config.server.public_origin,
+            },
+          })
+        ).status,
+      ).toBe(200);
+    } finally {
+      issuer.child.send('go');
+    }
+    const response = await pending;
+    expect(response.status).toBe(401);
+    expect(response.headers.has('location')).toBe(false);
+    expect(await response.text()).not.toContain('access_token');
+    expect(
+      await withMikroContext(app.services, () =>
+        app.services.mikro.oauthClient.count({ clientId }),
+      ),
+    ).toBe(0);
+  },
+);
+
+test('client secret rotation on another process rejects an already verified secret', async () => {
+  const value = await code();
+  const cookie = `session=${await createAuthenticatedSession(app.app)}`;
+  await withMikroContext(app.services, () =>
+    app.services.mikro.oauthClient.nativeUpdate(
+      { clientId: TEST_OAUTH_CLIENT.clientId },
+      { managed_by: 'database' },
+    ),
+  );
+  const { issuer, revoker } = await configureCompletionPause(
+    'pause-client-authentication',
+  );
+  const arrived = message(issuer.child, 'arrived');
+  const pending = fetch(`${issuer.origin}/oauth/token`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      ...codeForm(value),
+      client_id: TEST_OAUTH_CLIENT.clientId,
+      client_secret: TEST_OAUTH_CLIENT.clientSecret,
+    }),
+  });
+  await arrived;
+  try {
+    const rotated = await fetch(
+      `${revoker.origin}/api/admin/clients/test-config-oauth-client/rotate-secret`,
+      {
+        method: 'POST',
+        headers: { cookie, origin: app.services.config.server.public_origin },
+      },
+    );
+    expect(rotated.status).toBe(200);
+  } finally {
+    issuer.child.send('go');
+  }
+  try {
+    expect((await pending).status).toBe(401);
+  } finally {
+    await withMikroContext(app.services, async () =>
+      app.services.mikro.oauthClient.nativeUpdate(
+        { clientId: TEST_OAUTH_CLIENT.clientId },
+        {
+          clientSecretHash: await app.services.securityService.hashClientSecret(
+            TEST_OAUTH_CLIENT.clientSecret,
+          ),
+        },
+      ),
+    );
+  }
+});
+
+test.each(['revoke-first', 'refresh-first'])(
+  'explicit family revocation respects %s across processes',
+  async (order) => {
+    const issuer = children[0];
+    const revoker = children[1];
+    if (!issuer || !revoker) throw new Error('Missing processes');
+    const original = await app.app.request('/oauth/token', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        ...codeForm(await code()),
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        client_secret: TEST_OAUTH_CLIENT.clientSecret,
+      }),
+    });
+    const tokens = Tokens.parse(await original.json());
+    const send = (
+      origin: string,
+      path: string,
+      values: Record<string, string>,
+    ) =>
+      fetch(`${origin}${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          client_secret: TEST_OAUTH_CLIENT.clientSecret,
+          ...values,
+        }),
+      });
+    if (order === 'revoke-first')
+      await configureCompletionPause('pause-client-authentication');
+    const arrived =
+      order === 'revoke-first' ? message(issuer.child, 'arrived') : undefined;
+    const pending = send(issuer.origin, '/oauth/token', {
+      grant_type: 'refresh_token',
+      refresh_token: tokens.refresh_token,
+    });
+    if (arrived) {
+      await arrived;
+      try {
+        expect(
+          (
+            await send(revoker.origin, '/oauth/revoke', {
+              token: tokens.refresh_token,
+              token_type_hint: 'refresh_token',
+            })
+          ).status,
+        ).toBe(200);
+      } finally {
+        issuer.child.send('go');
+      }
+      expect((await pending).status).toBe(400);
+    } else {
+      const response = await pending;
+      expect(response.status).toBe(200);
+      const descendant = Tokens.parse(await response.json());
+      expect(
+        (
+          await send(revoker.origin, '/oauth/revoke', {
+            token: tokens.refresh_token,
+            token_type_hint: 'refresh_token',
+          })
+        ).status,
+      ).toBe(200);
+      await assertRevoked(descendant.access_token);
+    }
+    await assertRevoked(tokens.access_token);
+  },
+);

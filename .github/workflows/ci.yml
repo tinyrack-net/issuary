@@ -148,6 +148,7 @@ jobs:
           src/services/enrollment-security.test.ts
           src/services/authentication-race.test.ts
           src/services/callback-lifecycle-security.test.ts
+          src/services/grant-completion-security.test.ts
           src/services/review-security.test.ts
           src/routes/oauth/distributed-security.test.ts
           src/services/security-mutation.test.ts

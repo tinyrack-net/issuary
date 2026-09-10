@@ -1,10 +1,15 @@
 import { Hono } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
 import { isSecureRedirectUri } from '../../../../lib/config/url-policy.ts';
-import { adminApiDocumentation } from '../../../../lib/openapi.js';
+import {
+  adminApiDocumentation,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.js';
 import { requireAdmin } from '../../../../middleware/auth.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 const QueryBoolean = z.preprocess((value) => {
   if (value === undefined) return undefined;
@@ -151,6 +156,14 @@ function termInput(body: z.infer<typeof TermBody>) {
   };
 }
 
+const secureMutation = createMiddleware<AppEnv>(async (c, next) => {
+  await withBrowserSecurity(c, async () => {
+    await next();
+    // Hono catches downstream exceptions; do not commit a handled failure.
+    if (c.error) throw c.error;
+  });
+});
+
 export const adminConsoleRoutes = new Hono<AppEnv>()
   .get('/admin/overview', adminApiDocumentation, requireAdmin(), async (c) =>
     c.json(await c.var.services.adminConsoleService.overview(), 200),
@@ -195,6 +208,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', ClientBody),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) =>
       c.json(
         await c.var.services.adminConsoleService.createClient(
@@ -208,6 +223,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', bulkBody(ClientFilter)),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const body = c.req.valid('json');
       const ids = body.target.kind === 'ids' ? body.target.ids : undefined;
@@ -236,6 +253,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', ClientUpdateBody),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const result = await c.var.services.adminConsoleService.updateClient(
         c.req.param('id'),
@@ -248,6 +267,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     '/admin/clients/:id/rotate-secret',
     adminApiDocumentation,
     requireAdmin(),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const result =
         await c.var.services.adminConsoleService.rotateClientSecret(
@@ -260,6 +281,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     '/admin/clients/:id',
     adminApiDocumentation,
     requireAdmin(),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const result = await c.var.services.adminConsoleService.deleteClient(
         c.req.param('id'),
@@ -271,6 +294,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     '/admin/clients/:id/restore',
     adminApiDocumentation,
     requireAdmin(),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const result = await c.var.services.adminConsoleService.restoreClient(
         c.req.param('id'),
@@ -305,6 +330,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', TermBody),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) =>
       c.json(
         await c.var.services.adminConsoleService.createTerm(
@@ -318,6 +345,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', bulkBody(TermFilter)),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const body = c.req.valid('json');
       const ids = body.target.kind === 'ids' ? body.target.ids : undefined;
@@ -345,6 +374,8 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
     adminApiDocumentation,
     requireAdmin(),
     validator('json', TermBody.omit({ id: true })),
+    securityMutationDocumentation,
+    secureMutation,
     async (c) => {
       const body = c.req.valid('json');
       const result = await c.var.services.adminConsoleService.updateTerm(

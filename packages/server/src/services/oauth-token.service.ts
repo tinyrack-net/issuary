@@ -12,7 +12,10 @@ import type {
   RefreshTokenPayload,
 } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
-import type { OAuthClientService } from './oauth-client.service.ts';
+import type {
+  ClientAuthenticationProof,
+  OAuthClientService,
+} from './oauth-client.service.ts';
 import type { SecurityService } from './security.service.ts';
 import type { UserService } from './user.service.ts';
 
@@ -21,6 +24,7 @@ import type { UserService } from './user.service.ts';
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
  */
 export interface AuthorizationCodeGrantParams {
+  authentication: ClientAuthenticationProof;
   /** Authorization code received from /authorize endpoint */
   code: string;
   /** Redirect URI used in authorization request (must match) */
@@ -36,6 +40,7 @@ export interface AuthorizationCodeGrantParams {
  * @see https://datatracker.ietf.org/doc/html/rfc6749#section-6
  */
 export interface RefreshTokenGrantParams {
+  authentication: ClientAuthenticationProof;
   /** Refresh token from previous token response */
   refreshToken: string;
   /** OAuth client identifier (must match original request) */
@@ -138,33 +143,28 @@ export class OAuthTokenService {
     const { code, redirectUri, clientId, codeVerifier } = params;
 
     // 1. Look up client to get primary key (clientId in request is the business key)
-    const client = await this.oauthClientService.findByClientId(clientId);
-
     const codeHash = await this.securityService.hashOpaqueToken(
       'oauth-code',
       code,
     );
     const result = await this.mikro.em.transactional(async () => {
-      const currentClient = await lockOAuthClient(this.mikro.em, client.id);
-      if (
-        !currentClient ||
-        currentClient.deletedAt ||
-        !currentClient.enabled ||
-        !currentClient.tokenEpoch ||
-        currentClient.tokenEpoch !== client.tokenEpoch
-      )
-        throw new e.InvalidAuthorizationCode.Error();
+      const client = await this.oauthClientService.lockAuthenticatedClient(
+        params.authentication,
+        clientId,
+        'authorization_code',
+      );
       const codeEntity = await this.mikro.oauthCode.findOne(
         { client: client.id, codeHash },
         { refresh: true },
       );
       if (
         !codeEntity ||
-        codeEntity.client_epoch !== currentClient.tokenEpoch ||
+        codeEntity.client_epoch !== client.tokenEpoch ||
         (!codeEntity.consumedAt && codeEntity.expiredAt <= new Date())
       )
         throw new e.InvalidAuthorizationCode.Error();
 
+      this.oauthClientService.validateScopes(client, codeEntity.scope);
       // 3. Populate user relation
       await this.mikro.em.populate(codeEntity, ['user']);
 
@@ -173,6 +173,7 @@ export class OAuthTokenService {
       if (codeEntity.redirectUri !== redirectUri) {
         throw new e.RedirectUriMismatch.Error();
       }
+      this.oauthClientService.validateRedirectUri(client, redirectUri);
 
       // 5. Validate S256 PKCE when the authorization request used PKCE.
       // Public clients are required to use PKCE at the authorization endpoint;
@@ -282,6 +283,11 @@ export class OAuthTokenService {
       throw new e.InvalidRefreshToken.Error();
     const grantId = decoded.grant_id;
     const result = await this.mikro.em.transactional(async () => {
+      await this.oauthClientService.lockAuthenticatedClient(
+        params.authentication,
+        params.clientId,
+        'refresh_token',
+      );
       const locked = await this.mikro.em.nativeUpdate(
         OAuthGrantEntitySchema,
         { id: grantId, client_id: params.clientId, user_sub: decoded.sub },
@@ -310,61 +316,64 @@ export class OAuthTokenService {
   }
 
   async issueClientCredentialsToken(params: {
+    authentication: ClientAuthenticationProof;
     clientId: string;
     scope: string[];
   }): Promise<TokenResponse> {
-    const client = await this.oauthClientService.findByClientId(
-      params.clientId,
-    );
-    const scopeString = params.scope.join(' ');
-    const accessToken = await this.jwtService.signAccessToken({
-      typ: 'access_token',
-      sub: params.clientId,
-      client_id: params.clientId,
-      grant_type: 'client_credentials',
-      scope: scopeString,
-      aud: this.config.server.public_origin,
-      ...(client.tokenEpoch && { client_epoch: client.tokenEpoch }),
-    });
+    return this.mikro.em.transactional(async () => {
+      const client = await this.oauthClientService.lockAuthenticatedClient(
+        params.authentication,
+        params.clientId,
+        'client_credentials',
+      );
+      if (params.authentication.kind !== 'confidential')
+        throw new e.InvalidClientCredentials.Error();
+      this.oauthClientService.validateScopes(client, params.scope);
+      const scopeString = params.scope.join(' ');
+      const accessToken = await this.jwtService.signAccessToken({
+        typ: 'access_token',
+        sub: params.clientId,
+        client_id: params.clientId,
+        grant_type: 'client_credentials',
+        scope: scopeString,
+        aud: this.config.server.public_origin,
+        ...(client.tokenEpoch && { client_epoch: client.tokenEpoch }),
+      });
 
-    return {
-      access_token: accessToken,
-      token_type: 'Bearer',
-      expires_in: this.config.tokens.access_token_ttl,
-      scope: scopeString,
-    };
+      return {
+        access_token: accessToken,
+        token_type: 'Bearer',
+        expires_in: this.config.tokens.access_token_ttl,
+        scope: scopeString,
+      };
+    });
   }
 
   async exchangeDeviceCode(params: {
+    authentication: ClientAuthenticationProof;
     clientId: string;
     deviceCode: string;
   }): Promise<TokenResponse> {
-    const client = await this.oauthClientService.findByClientId(
-      params.clientId,
-    );
     const deviceCodeHash = await this.securityService.hashOpaqueToken(
       'oauth-device-code',
       params.deviceCode,
     );
     const result = await this.mikro.em.transactional(async () => {
-      const currentClient = await lockOAuthClient(this.mikro.em, client.id);
-      if (
-        !currentClient ||
-        currentClient.deletedAt ||
-        !currentClient.enabled ||
-        !currentClient.tokenEpoch ||
-        currentClient.tokenEpoch !== client.tokenEpoch
-      )
-        throw new e.InvalidDeviceCode.Error();
+      const client = await this.oauthClientService.lockAuthenticatedClient(
+        params.authentication,
+        params.clientId,
+        'urn:ietf:params:oauth:grant-type:device_code',
+      );
       const deviceCode =
         await this.mikro.oauthDeviceCode.findByClientAndDeviceCodeHash(
           client.id,
           deviceCodeHash,
         );
 
-      if (!deviceCode || deviceCode.client_epoch !== currentClient.tokenEpoch) {
+      if (!deviceCode || deviceCode.client_epoch !== client.tokenEpoch) {
         throw new e.InvalidDeviceCode.Error();
       }
+      this.oauthClientService.validateScopes(client, deviceCode.scope);
       if (deviceCode.expiresAt <= new Date()) {
         throw new e.ExpiredToken.Error();
       }
@@ -457,6 +466,7 @@ export class OAuthTokenService {
 
     const refreshTokenScopes = refreshPayload.scope.split(' ');
     const requestedScopes = params.scope ?? refreshTokenScopes;
+    this.oauthClientService.validateScopes(client, requestedScopes);
     const invalidScopes = requestedScopes.filter(
       (scope) => !refreshTokenScopes.includes(scope),
     );
@@ -492,7 +502,7 @@ export class OAuthTokenService {
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
-      clientEpoch: client.tokenEpoch,
+      clientEpoch: refreshPayload.client_epoch ?? null,
       scope: requestedScopes,
       issueRefreshToken: true,
       grantId: refreshPayload.grant_id,
@@ -614,67 +624,89 @@ export class OAuthTokenService {
       return;
     }
 
-    const { payload, tokenType } = verification;
+    return this.mikro.em.transactional(async () => {
+      const owner = await this.mikro.oauthClient.findOne({
+        clientId: verification.payload.client_id,
+      });
+      if (!owner) return;
+      await lockOAuthClient(this.mikro.em, owner.id);
+      const fresh = await this.verifyTokenForRevocation(token, tokenTypeHint);
+      if (!fresh) return;
+      const { payload, tokenType } = fresh;
 
-    if (requestingClientId && payload.client_id !== requestingClientId) {
-      return;
-    }
+      if (requestingClientId && payload.client_id !== requestingClientId) {
+        return;
+      }
 
-    const { jti, exp } = payload;
-    if (!jti || !exp) {
-      return;
-    }
+      const { jti, exp } = payload;
+      if (!jti || !exp) {
+        return;
+      }
 
-    const expiresAt = new Date(exp * 1000);
+      const expiresAt = new Date(exp * 1000);
 
-    // Check if already revoked
-    const isAlreadyRevoked = await this.mikro.revokedToken.isRevoked(jti);
-    if (isAlreadyRevoked) {
-      return;
-    }
+      // Check if already revoked
+      const isAlreadyRevoked = await this.mikro.revokedToken.isRevoked(jti);
+      if (isAlreadyRevoked && tokenType !== 'refresh_token') {
+        return;
+      }
 
-    // Look up user and client entities to get primary keys
-    // Note: clientId from token is the business key, we need the entity's primary key
-    const userEntity = await this.mikro.user.findOne({ sub: payload.sub });
-    const clientEntity = await this.mikro.oauthClient.findOne({
-      clientId: payload.client_id,
+      // Look up user and client entities to get primary keys
+      // Note: clientId from token is the business key, we need the entity's primary key
+      const userEntity = await this.mikro.user.findOne({ sub: payload.sub });
+      const clientEntity = await this.mikro.oauthClient.findOne({
+        clientId: payload.client_id,
+      });
+
+      if (!clientEntity) {
+        // Client no longer exists, but we still return success per RFC 7009.
+        return;
+      }
+
+      const isClientCredentialsAccessToken =
+        tokenType === 'access_token' &&
+        'grant_type' in payload &&
+        payload.grant_type === 'client_credentials';
+      if (!userEntity && !isClientCredentialsAccessToken) {
+        // User no longer exists, but we still return success per RFC 7009.
+        return;
+      }
+
+      if (tokenType === 'refresh_token') {
+        if (!payload.grant_id) return;
+        const locked = await this.mikro.em.nativeUpdate(
+          OAuthGrantEntitySchema,
+          {
+            id: payload.grant_id,
+            client_id: payload.client_id,
+            user_sub: payload.sub,
+          },
+          { revision: raw<number>('revision + 1') },
+        );
+        if (locked !== 1) return;
+      }
+      // Revoke the token (using primary keys for FK references)
+      await this.mikro.revokedToken.revokeToken({
+        jti,
+        token_type: tokenType,
+        clientId: clientEntity.id, // Use entity's primary key
+        ...(userEntity !== null && { userSub: userEntity.sub }),
+        expires_at: expiresAt,
+      });
+
+      if (tokenType === 'refresh_token') {
+        await this.revokeRefreshTokenFamily(payload, clientEntity.id);
+      }
+
+      // RFC 7009 §2.1: "If the particular token is a refresh token and the
+      // authorization server supports the revocation of access tokens, then
+      // the authorization server SHOULD also invalidate all access tokens
+      // based on the same authorization grant."
+      //
+      // Since we can't enumerate all access tokens issued for this refresh token,
+      // the revocation check happens at token verification time via jti lookup.
+      // Access tokens will be rejected when their jti is in the revoked_tokens table.
     });
-
-    if (!clientEntity) {
-      // Client no longer exists, but we still return success per RFC 7009.
-      return;
-    }
-
-    const isClientCredentialsAccessToken =
-      tokenType === 'access_token' &&
-      'grant_type' in payload &&
-      payload.grant_type === 'client_credentials';
-    if (!userEntity && !isClientCredentialsAccessToken) {
-      // User no longer exists, but we still return success per RFC 7009.
-      return;
-    }
-
-    // Revoke the token (using primary keys for FK references)
-    await this.mikro.revokedToken.revokeToken({
-      jti,
-      token_type: tokenType,
-      clientId: clientEntity.id, // Use entity's primary key
-      ...(userEntity !== null && { userSub: userEntity.sub }),
-      expires_at: expiresAt,
-    });
-
-    if (tokenType === 'refresh_token') {
-      await this.revokeRefreshTokenFamily(payload, clientEntity.id);
-    }
-
-    // RFC 7009 §2.1: "If the particular token is a refresh token and the
-    // authorization server supports the revocation of access tokens, then
-    // the authorization server SHOULD also invalidate all access tokens
-    // based on the same authorization grant."
-    //
-    // Since we can't enumerate all access tokens issued for this refresh token,
-    // the revocation check happens at token verification time via jti lookup.
-    // Access tokens will be rejected when their jti is in the revoked_tokens table.
   }
 
   private async revokeRefreshTokenFamilyIfReused(
@@ -749,7 +781,7 @@ export class OAuthTokenService {
       payload: RefreshTokenPayload;
       tokenType: 'refresh_token';
     }> => ({
-      payload: await this.jwtService.verifyRefreshToken(token),
+      payload: await this.jwtService.verifyRefreshTokenForReuseDetection(token),
       tokenType: 'refresh_token',
     });
 

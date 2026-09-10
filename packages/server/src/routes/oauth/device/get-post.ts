@@ -14,6 +14,11 @@ const DeviceVerificationRequestBody = z.object({
   decision: z.enum(['approve', 'deny']).default('approve'),
 });
 
+function deviceTermsLocation(userCode: string): string {
+  const redirect = `/oauth/device?${new URLSearchParams({ user_code: userCode })}`;
+  return `/terms?${new URLSearchParams({ redirect })}`;
+}
+
 export const deviceGetPost = new Hono<AppEnv>()
   .get(
     '/device',
@@ -47,6 +52,14 @@ export const deviceGetPost = new Hono<AppEnv>()
         const deviceCode =
           await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHash);
         if (deviceCode) {
+          if (
+            (
+              await c.var.services.termsService.getPendingRequiredTerms(
+                verifiedUser.user.sub,
+              )
+            ).length > 0
+          )
+            return c.redirect(deviceTermsLocation(userCode), 303);
           await mikro.em.populate(deviceCode, ['client']);
           const scopes = deviceCode.scope
             .map((scope) => `<li>${escapeHtml(scope)}</li>`)
@@ -69,6 +82,10 @@ export const deviceGetPost = new Hono<AppEnv>()
       responses: {
         200: { description: 'Device authorization approved' },
         400: { description: 'Invalid device user code' },
+        303: {
+          description:
+            'Accept required terms and return to device approval; the device remains pending',
+        },
       },
     }),
     validator('form', DeviceVerificationRequestBody),
@@ -82,6 +99,19 @@ export const deviceGetPost = new Hono<AppEnv>()
           'oauth-device-user-code',
           userCode.toUpperCase(),
         );
+        if (decision === 'approve') {
+          const pending =
+            await mikro.oauthDeviceCode.findPendingByUserCodeHash(userCodeHash);
+          if (!pending) throw new e.InvalidDeviceCode.Error();
+          if (
+            (
+              await c.var.services.termsService.getPendingRequiredTerms(
+                c.var.verifiedUser.user.sub,
+              )
+            ).length > 0
+          )
+            return c.redirect(deviceTermsLocation(userCode), 303);
+        }
         const now = new Date();
         const deviceCode =
           decision === 'deny'

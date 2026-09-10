@@ -12,6 +12,7 @@ import {
 } from '../lib/base64url.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { invalidateUserAuthentication } from '../services/authentication-epoch.js';
+import { lockOAuthClient } from '../services/client-security.js';
 import type { SecurityService } from '../services/security.service.ts';
 
 const CONFIG_SEED_STATE_ID = 'config-seed';
@@ -384,10 +385,23 @@ async function syncOAuthClients(
 ): Promise<void> {
   const now = new Date();
 
-  for (const client of config.clients) {
+  for (const client of [...config.clients].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    const current = await lockOAuthClient(em, client.id);
+    if (current) await em.populate(current, ['clientSecretHash']);
     // Public clients (PKCE-only) don't have client_secret
+    const sameSecret =
+      current?.clientSecretHash && client.client_secret
+        ? await securityService.verifyClientSecret(
+            current.clientSecretHash,
+            client.client_secret,
+          )
+        : false;
     const hashedSecret = client.client_secret
-      ? await securityService.hashClientSecret(client.client_secret)
+      ? sameSecret
+        ? current?.clientSecretHash
+        : await securityService.hashClientSecret(client.client_secret)
       : null;
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
@@ -431,7 +445,10 @@ async function syncOAuthClients(
     deletedAt: null,
     ...(configClientIds.length > 0 && { id: { $nin: configClientIds } }),
   });
-  for (const client of removedClients) {
+  for (const client of removedClients.sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    await lockOAuthClient(em, client.id);
     client.deletedAt = now;
     client.tokenEpoch = crypto.randomUUID();
   }

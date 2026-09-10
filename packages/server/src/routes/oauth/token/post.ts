@@ -6,6 +6,7 @@ import { TAGS } from '../../../lib/swagger-tags.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
+import type { ClientAuthenticationProof } from '../../../services/oauth-client.service.js';
 import {
   parseBasicClientCredentials,
   setBasicClientAuthChallengeIfInvalidClientCredentials,
@@ -116,8 +117,9 @@ export const tokenPost = new Hono<AppEnv>().post(
     // 2. Confidential clients must authenticate; public clients must not.
     const clientSecret = basicCredentials?.clientSecret ?? body.client_secret;
 
+    let authentication: ClientAuthenticationProof;
     try {
-      await oauthClientService.validateClientSecretIfRequired(
+      authentication = await oauthClientService.validateClientSecretIfRequired(
         clientId,
         clientSecret,
       );
@@ -134,81 +136,91 @@ export const tokenPost = new Hono<AppEnv>().post(
     }
     oauthClientService.validateGrantType(client, grantType);
 
-    // 3. Handle grant type
-    if (grantType === 'authorization_code') {
-      if (!body.code) {
-        throw new e.MissingAuthorizationCode.Error();
-      }
-      if (!body.redirect_uri) {
-        throw new e.MissingRedirectUri.Error();
-      }
+    try {
+      // 3. Handle grant type
+      if (grantType === 'authorization_code') {
+        if (!body.code) {
+          throw new e.MissingAuthorizationCode.Error();
+        }
+        if (!body.redirect_uri) {
+          throw new e.MissingRedirectUri.Error();
+        }
 
-      const tokens = await oauthTokenService.exchangeAuthorizationCode({
-        code: body.code,
-        redirectUri: body.redirect_uri,
-        clientId,
-        codeVerifier: body.code_verifier ?? undefined,
-      });
-
-      c.header('Cache-Control', 'no-store');
-      c.header('Pragma', 'no-cache');
-      return c.json(tokens, 200);
-    }
-
-    if (grantType === 'refresh_token') {
-      if (!body.refresh_token) {
-        throw new e.MissingRefreshToken.Error();
-      }
-
-      const tokens = await oauthTokenService.refreshAccessToken({
-        refreshToken: body.refresh_token,
-        clientId,
-        scope: body.scope ? body.scope.split(' ') : undefined,
-      });
-
-      c.header('Cache-Control', 'no-store');
-      c.header('Pragma', 'no-cache');
-      return c.json(tokens, 200);
-    }
-
-    if (grantType === 'client_credentials') {
-      await oauthClientService.validateConfidentialClient(clientId);
-      const requestedScopes = body.scope ? body.scope.split(' ') : [];
-      const endUserScopes = requestedScopes.filter((scope) =>
-        END_USER_SCOPES_FOR_CLIENT_CREDENTIALS.has(scope),
-      );
-      if (endUserScopes.length > 0) {
-        throw new e.InvalidScope.Error({
-          invalidScopes: endUserScopes,
+        const tokens = await oauthTokenService.exchangeAuthorizationCode({
+          authentication,
+          code: body.code,
+          redirectUri: body.redirect_uri,
+          clientId,
+          codeVerifier: body.code_verifier ?? undefined,
         });
-      }
-      oauthClientService.validateScopes(client, requestedScopes);
 
-      const tokens = await oauthTokenService.issueClientCredentialsToken({
-        clientId,
-        scope: requestedScopes,
-      });
-
-      c.header('Cache-Control', 'no-store');
-      c.header('Pragma', 'no-cache');
-      return c.json(tokens, 200);
-    }
-
-    if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
-      if (!body.device_code) {
-        throw new e.MissingDeviceCode.Error();
+        c.header('Cache-Control', 'no-store');
+        c.header('Pragma', 'no-cache');
+        return c.json(tokens, 200);
       }
 
-      const tokens = await oauthTokenService.exchangeDeviceCode({
-        deviceCode: body.device_code,
-        clientId,
-      });
+      if (grantType === 'refresh_token') {
+        if (!body.refresh_token) {
+          throw new e.MissingRefreshToken.Error();
+        }
 
-      c.header('Cache-Control', 'no-store');
-      c.header('Pragma', 'no-cache');
-      return c.json(tokens, 200);
+        const tokens = await oauthTokenService.refreshAccessToken({
+          authentication,
+          refreshToken: body.refresh_token,
+          clientId,
+          scope: body.scope ? body.scope.split(' ') : undefined,
+        });
+
+        c.header('Cache-Control', 'no-store');
+        c.header('Pragma', 'no-cache');
+        return c.json(tokens, 200);
+      }
+
+      if (grantType === 'client_credentials') {
+        await oauthClientService.validateConfidentialClient(clientId);
+        const requestedScopes = body.scope ? body.scope.split(' ') : [];
+        const endUserScopes = requestedScopes.filter((scope) =>
+          END_USER_SCOPES_FOR_CLIENT_CREDENTIALS.has(scope),
+        );
+        if (endUserScopes.length > 0) {
+          throw new e.InvalidScope.Error({
+            invalidScopes: endUserScopes,
+          });
+        }
+        oauthClientService.validateScopes(client, requestedScopes);
+
+        const tokens = await oauthTokenService.issueClientCredentialsToken({
+          authentication,
+          clientId,
+          scope: requestedScopes,
+        });
+
+        c.header('Cache-Control', 'no-store');
+        c.header('Pragma', 'no-cache');
+        return c.json(tokens, 200);
+      }
+
+      if (grantType === 'urn:ietf:params:oauth:grant-type:device_code') {
+        if (!body.device_code) {
+          throw new e.MissingDeviceCode.Error();
+        }
+
+        const tokens = await oauthTokenService.exchangeDeviceCode({
+          authentication,
+          deviceCode: body.device_code,
+          clientId,
+        });
+
+        c.header('Cache-Control', 'no-store');
+        c.header('Pragma', 'no-cache');
+        return c.json(tokens, 200);
+      }
+
+      throw new e.UnsupportedGrantType.Error();
+    } catch (error) {
+      if (authorizationHeader)
+        setBasicClientAuthChallengeIfInvalidClientCredentials(c, error);
+      throw error;
     }
-
-    throw new e.UnsupportedGrantType.Error();
   },
 );

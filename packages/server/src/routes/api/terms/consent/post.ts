@@ -3,11 +3,15 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { termsSchema } from '../../../../schemas/terms.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 /**
  * POST /api/terms/consent
@@ -63,6 +67,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
   }),
   validator('json', termsSchema.TermsConsentRequest),
   verifyAuth({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
     const body = c.req.valid('json');
     const { consents, registrationToken } = body;
@@ -134,25 +139,27 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       throw new e.Unauthorized.Error();
     }
 
-    // Validate and record consents
-    const { validation, records } =
-      await termsService.validateAndRecordConsents({
-        userSub: verifiedAuth.user.sub,
-        consents,
-      });
+    return withBrowserSecurity(c, async () => {
+      // Validate and record consents
+      const { validation, records } =
+        await termsService.validateAndRecordConsents({
+          userSub: verifiedAuth.user.sub,
+          consents,
+        });
 
-    if (!validation.valid) {
-      throw new e.ValidationError.Error(
-        `Missing required terms: ${validation.missingTerms.join(', ')}`,
+      if (!validation.valid) {
+        throw new e.ValidationError.Error(
+          `Missing required terms: ${validation.missingTerms.join(', ')}`,
+        );
+      }
+
+      return c.json(
+        {
+          ok: true as const,
+          recorded: records.length,
+        },
+        200,
       );
-    }
-
-    return c.json(
-      {
-        ok: true as const,
-        recorded: records.length,
-      },
-      200,
-    );
+    });
   },
 );

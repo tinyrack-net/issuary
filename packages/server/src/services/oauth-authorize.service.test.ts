@@ -60,6 +60,7 @@ describe('OAuthAuthorizeService', () => {
   test('returns login_required to the client when prompt=none and no session exists', async () => {
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none',
@@ -80,6 +81,7 @@ describe('OAuthAuthorizeService', () => {
   test('redirects to the login page and preserves OIDC parameters for interactive auth', async () => {
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'login',
@@ -117,6 +119,7 @@ describe('OAuthAuthorizeService', () => {
 
     const firstResult = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -136,6 +139,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -163,6 +167,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none',
@@ -187,6 +192,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: baseQuery,
         userSession: {
           sub: userSub,
@@ -211,6 +217,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'login',
@@ -235,6 +242,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'login',
@@ -260,6 +268,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'login',
@@ -288,6 +297,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           max_age: 0,
@@ -313,6 +323,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           max_age: 0,
@@ -353,6 +364,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           max_age: 300,
@@ -376,6 +388,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -400,6 +413,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -440,6 +454,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none select_account',
@@ -465,6 +480,7 @@ describe('OAuthAuthorizeService', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none',
@@ -549,6 +565,7 @@ describe('OAuthAuthorizeService account selection', () => {
     const reauthenticationStates: ReauthenticationSession[] = [];
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query,
         userSession: {
           sub: params.userSub,
@@ -610,6 +627,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -653,6 +671,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account login',
@@ -700,6 +719,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           scope: 'openid profile email',
@@ -739,6 +759,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -773,6 +794,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -805,6 +827,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -852,6 +875,7 @@ describe('OAuthAuthorizeService account selection', () => {
     await expect(
       withMikroContext(services, async () =>
         services.oauthAuthorizeService.authorize({
+          completeAuthorization: async (_proof, operation) => operation(),
           query: {
             ...baseQuery,
             prompt: 'select_account',
@@ -898,6 +922,7 @@ describe('OAuthAuthorizeService account selection', () => {
     await expect(
       withMikroContext(services, async () =>
         services.oauthAuthorizeService.authorize({
+          completeAuthorization: async (_proof, operation) => operation(),
           query: {
             ...baseQuery,
             prompt: 'select_account',
@@ -932,6 +957,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -975,6 +1001,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'max-age-stale-selected@example.com',
@@ -1019,6 +1046,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'hint-selected@example.com',
@@ -1063,6 +1091,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'consent-selected@example.com',
@@ -1101,6 +1130,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none',
@@ -1139,6 +1169,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'none',
@@ -1168,6 +1199,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: baseQuery,
         rememberedAccounts: [
           {
@@ -1199,6 +1231,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'hint-active-route@example.com',
@@ -1242,6 +1275,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const consentResult = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'hint-consent-selected@example.com',
@@ -1276,6 +1310,7 @@ describe('OAuthAuthorizeService account selection', () => {
 
     const codeResult = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'hint-consent-selected@example.com',
@@ -1364,6 +1399,7 @@ describe('OAuthAuthorizeService account selection always mode', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: baseQuery,
         userSession: {
           sub: activeSub,
@@ -1390,6 +1426,7 @@ describe('OAuthAuthorizeService account selection always mode', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',
@@ -1456,6 +1493,7 @@ describe('OAuthAuthorizeService login_hint require_match', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'unknown-require-match@example.com',
@@ -1489,6 +1527,7 @@ describe('OAuthAuthorizeService login_hint require_match', () => {
 
     const result = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'unknown-require-match-none@example.com',
@@ -1593,6 +1632,7 @@ describe('OAuthAuthorizeService remember_accounts disabled', () => {
 
     const hintedResult = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           login_hint: 'remember-disabled-stale@example.com',
@@ -1615,6 +1655,7 @@ describe('OAuthAuthorizeService remember_accounts disabled', () => {
     const storedStates: AccountSelectionSession[] = [];
     const chooserResult = await withMikroContext(services, async () =>
       services.oauthAuthorizeService.authorize({
+        completeAuthorization: async (_proof, operation) => operation(),
         query: {
           ...baseQuery,
           prompt: 'select_account',

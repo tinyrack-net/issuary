@@ -8,6 +8,7 @@ import type {
 import { e } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import { AccountSelectionService } from './account-selection.service.ts';
+import type { AuthorizationProof } from './authorization-browser.service.js';
 import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
@@ -105,6 +106,10 @@ export class OAuthAuthorizeService {
    */
   public async authorize(params: {
     query: AuthorizeParams;
+    completeAuthorization?: (
+      proof: AuthorizationProof,
+      operation: () => Promise<AuthorizeResult>,
+    ) => Promise<AuthorizeResult>;
     authenticationEpochs?: Record<string, string>;
     userSession?: {
       sub: string;
@@ -373,7 +378,10 @@ export class OAuthAuthorizeService {
       );
       this.copyAuthorizeParams(continuation, query);
       const termsUrl = new URL('/terms', this.config.server.public_origin);
-      termsUrl.searchParams.set('redirect', continuation.toString());
+      termsUrl.searchParams.set(
+        'redirect',
+        `${continuation.pathname}${continuation.search}`,
+      );
       return { type: 'redirect', url: termsUrl.toString() };
     }
 
@@ -427,86 +435,100 @@ export class OAuthAuthorizeService {
       };
     }
 
-    if (isImplicitIdToken) {
-      if (!query.nonce) {
-        throw new e.InvalidAuthorizationRequest.Error();
-      }
-
-      params.clearAccountSelectionSession?.();
-      return this.buildImplicitIdTokenRedirect({
-        clientId: client.clientId,
+    if (!params.completeAuthorization) throw new e.Unauthorized.Error();
+    return params.completeAuthorization(
+      {
         userSub: selectedSession.sub,
         userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+        clientId: client.id,
+        clientEpoch: client.tokenEpoch ?? '',
         redirectUri: query.redirect_uri,
-        scope: grantedScopes,
-        nonce: query.nonce,
-        state: query.state,
-        authTime: selectedSession.authenticated_at,
-        responseMode: query.response_mode,
-      });
-    }
+        responseType: query.response_type,
+        scopes: grantedScopes,
+      },
+      async () => {
+        if (isImplicitIdToken) {
+          if (!query.nonce) {
+            throw new e.InvalidAuthorizationRequest.Error();
+          }
 
-    const codeParams: {
-      clientId: string;
-      clientEpoch: string;
-      userSub: string;
-      userEpoch: string;
-      redirectUri: string;
-      scope: string[];
-      nonce?: string;
-      codeChallenge?: string;
-      codeChallengeMethod?: 'S256' | 'plain';
-      authTime?: number;
-    } = {
-      clientId: client.id,
-      clientEpoch: client.tokenEpoch ?? '',
-      userSub: selectedSession.sub,
-      userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
-      redirectUri: query.redirect_uri,
-      scope: grantedScopes,
-    };
+          params.clearAccountSelectionSession?.();
+          return this.buildImplicitIdTokenRedirect({
+            clientId: client.clientId,
+            userSub: selectedSession.sub,
+            userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+            redirectUri: query.redirect_uri,
+            scope: grantedScopes,
+            nonce: query.nonce,
+            state: query.state,
+            authTime: selectedSession.authenticated_at,
+            responseMode: query.response_mode,
+          });
+        }
 
-    if (query.nonce) {
-      codeParams.nonce = query.nonce;
-    }
-    if (query.code_challenge) {
-      codeParams.codeChallenge = query.code_challenge;
-    }
-    if (query.code_challenge_method) {
-      codeParams.codeChallengeMethod = query.code_challenge_method;
-    }
-    // Include OIDC authentication metadata from session
-    if (userSession) {
-      codeParams.authTime = selectedSession.authenticated_at;
-    }
+        const codeParams: {
+          clientId: string;
+          clientEpoch: string;
+          userSub: string;
+          userEpoch: string;
+          redirectUri: string;
+          scope: string[];
+          nonce?: string;
+          codeChallenge?: string;
+          codeChallengeMethod?: 'S256' | 'plain';
+          authTime?: number;
+        } = {
+          clientId: client.id,
+          clientEpoch: client.tokenEpoch ?? '',
+          userSub: selectedSession.sub,
+          userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+          redirectUri: query.redirect_uri,
+          scope: grantedScopes,
+        };
 
-    const code = await this.generateAuthorizationCode(codeParams);
-    params.clearAccountSelectionSession?.();
+        if (query.nonce) {
+          codeParams.nonce = query.nonce;
+        }
+        if (query.code_challenge) {
+          codeParams.codeChallenge = query.code_challenge;
+        }
+        if (query.code_challenge_method) {
+          codeParams.codeChallengeMethod = query.code_challenge_method;
+        }
+        // Include OIDC authentication metadata from session
+        if (userSession) {
+          codeParams.authTime = selectedSession.authenticated_at;
+        }
 
-    // 10. Redirect back to client with authorization code
-    const callbackUrl = this.buildCallbackUrl(
-      code,
-      query.state,
-      query.redirect_uri,
-      query.response_mode,
+        const code = await this.generateAuthorizationCode(codeParams);
+        params.clearAccountSelectionSession?.();
+
+        // 10. Redirect back to client with authorization code
+        const callbackUrl = this.buildCallbackUrl(
+          code,
+          query.state,
+          query.redirect_uri,
+          query.response_mode,
+        );
+
+        if (query.response_mode === 'form_post') {
+          const params: Record<string, string> = { code };
+          if (query.state) {
+            params['state'] = query.state;
+          }
+          return {
+            type: 'form_post',
+            url: query.redirect_uri,
+            params,
+          };
+        }
+
+        return {
+          type: 'redirect',
+          url: callbackUrl,
+        };
+      },
     );
-
-    if (query.response_mode === 'form_post') {
-      const params: Record<string, string> = { code };
-      if (query.state) {
-        params['state'] = query.state;
-      }
-      return {
-        type: 'form_post',
-        url: query.redirect_uri,
-        params,
-      };
-    }
-
-    return {
-      type: 'redirect',
-      url: callbackUrl,
-    };
   }
 
   private parseResponseMode(

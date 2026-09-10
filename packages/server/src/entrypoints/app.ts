@@ -68,6 +68,8 @@ export async function createApp(
   let cachedOpenApiSpec: Awaited<ReturnType<typeof generateSpecs>> | undefined;
 
   const handleError = (err: Error, c: Context) => {
+    // Hono merges response headers even when replacing a redirect with an error.
+    c.header('Location', undefined);
     if (isSecurityConflict(err)) {
       err = new e.ConcurrentSecurityChange.Error();
     }

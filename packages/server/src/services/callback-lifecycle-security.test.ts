@@ -499,6 +499,11 @@ test.each(['pending', 'approved'])(
       ).toBeNull();
       await expect(
         server.services.oauthTokenService.exchangeDeviceCode({
+          authentication:
+            await server.services.oauthClientService.validateClientSecretIfRequired(
+              TEST_OAUTH_CLIENT_CONFIG.client_id,
+              TEST_OAUTH_CLIENT_CONFIG.client_secret,
+            ),
           clientId: TEST_OAUTH_CLIENT_CONFIG.client_id,
           deviceCode: rawCode,
         }),
