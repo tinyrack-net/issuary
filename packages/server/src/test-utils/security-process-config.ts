@@ -19,7 +19,7 @@ export function securityProcessConfig(path: string) {
         })
       : sqlite({ path, test: false }),
     logging: { level: 'silent' },
-    registration: { email_verification_required: false },
+    registration: { enabled: true, email_verification_required: false },
     auth: {
       account_selection: { enabled: true, mode: 'smart' },
       passkey: { enabled: true },

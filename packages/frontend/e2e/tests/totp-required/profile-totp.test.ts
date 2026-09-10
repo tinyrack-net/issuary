@@ -5,7 +5,7 @@ import {
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
-import { performLogin } from '#frontend-e2e/helpers/login.ts';
+import { performLogin, totpVerifyPage } from '#frontend-e2e/helpers/login.ts';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.ts';
 import {
   disableTotpModal,
@@ -13,10 +13,10 @@ import {
   profilePage,
   regenerateTotpModal,
 } from '#frontend-e2e/helpers/profile-page.ts';
+import { recoveryPage } from '#frontend-e2e/helpers/recovery.ts';
 import {
   generateTotpCode,
   interceptRegeneratedRecoveryCodes,
-  setupTotpViaTestApi,
   setupTotpWithRecoveryViaTestApi,
 } from '#frontend-e2e/helpers/totp.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
@@ -47,19 +47,23 @@ const test = createScenarioFixture((backendPort) => ({
 }));
 
 /**
- * Logs in with TOTP verification and navigates to profile.
+ * Logs in with recovery so profile mutations can use an unconsumed TOTP step.
  */
-async function loginWithTotpAndGoToProfile(
+async function loginWithRecoveryAndGoToProfile(
   page: import('@playwright/test').Page,
   email: string,
   password: string,
-  totpSecret: string,
+  recoveryCode: string | undefined,
 ): Promise<void> {
+  if (!recoveryCode) {
+    throw new Error('Missing recovery code for profile login');
+  }
   await performLogin(page, email, password);
   await page.waitForURL('**/verify/totp');
-
-  const code = await generateTotpCode(totpSecret);
-  await fillPinInput(page, code);
+  await page.locator(totpVerifyPage.recoveryCodeLink).click();
+  await page.waitForURL('**/verify/totp/recovery');
+  await page.locator(recoveryPage.codeInput).fill(recoveryCode);
+  await page.locator(recoveryPage.submitButton).click();
 
   await page.waitForURL('**/profile');
 }
@@ -139,9 +143,17 @@ test.describe('Profile TOTP management (2FA required)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
-    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
+    const { recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+      String(baseURL),
+      email,
+    );
 
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     // TOTP section should show "enabled"
     await expect(
@@ -165,9 +177,17 @@ test.describe('Profile TOTP management (2FA required)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
-    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
+    const { recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+      String(baseURL),
+      email,
+    );
 
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     await page.getByRole('button', { name: 'Disable' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -197,9 +217,17 @@ test.describe('Profile TOTP management (2FA required)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
-    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
+    const { secret, recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+      String(baseURL),
+      email,
+    );
 
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     await page.getByRole('button', { name: 'Disable' }).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -227,18 +255,23 @@ test.describe('Profile TOTP management (2FA required)', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    const { secret, recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+    const { recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
       String(baseURL),
       email,
+    );
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
     );
     await exhaustRecoveryCodes(
       String(baseURL),
       email,
       TEST_PASSWORD,
-      recoveryCodes,
+      recoveryCodes.slice(0, -1),
     );
-
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await page.reload();
 
     await expect(page.locator(profilePage.totpRecoveryWarning)).toBeVisible();
     await expect(
@@ -264,14 +297,19 @@ test.describe('Profile TOTP management (2FA required)', () => {
       String(baseURL),
       email,
     );
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
     await exhaustRecoveryCodes(
       String(baseURL),
       email,
       TEST_PASSWORD,
-      recoveryCodes,
+      recoveryCodes.slice(0, -1),
     );
-
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await page.reload();
 
     await page.locator(profilePage.totpRegenerateButton).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -302,9 +340,17 @@ test.describe('Profile TOTP management (2FA required)', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    const { secret } = await setupTotpViaTestApi(String(baseURL), email);
+    const { recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+      String(baseURL),
+      email,
+    );
 
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     await page.locator(profilePage.totpRegenerateButton).click();
     await expect(page.locator(modal.openModal)).toBeVisible();
@@ -338,7 +384,12 @@ test.describe('Profile TOTP management (2FA required)', () => {
     expect(oldCode).toBeTruthy();
 
     // Log in and regenerate recovery codes
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     const newCodesPromise = interceptRegeneratedRecoveryCodes(page);
 
@@ -370,11 +421,12 @@ test.describe('Profile TOTP management (2FA required)', () => {
       headers: {
         'Content-Type': 'application/json',
         Cookie: `session=${sessionCookie}`,
+        'Sec-Fetch-Site': 'same-origin',
       },
       body: JSON.stringify({ code: String(oldCode) }),
     });
 
-    expect(verifyRes.ok).toBe(false);
+    expect(verifyRes.status).toBe(400);
   });
 
   test('new recovery codes work after regeneration', async ({
@@ -392,10 +444,18 @@ test.describe('Profile TOTP management (2FA required)', () => {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
 
-    const { secret } = await setupTotpWithRecoveryViaTestApi(base, email);
+    const { secret, recoveryCodes } = await setupTotpWithRecoveryViaTestApi(
+      base,
+      email,
+    );
 
     // Log in and regenerate recovery codes
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await loginWithRecoveryAndGoToProfile(
+      page,
+      email,
+      TEST_PASSWORD,
+      recoveryCodes.at(-1),
+    );
 
     const newCodesPromise = interceptRegeneratedRecoveryCodes(page);
 

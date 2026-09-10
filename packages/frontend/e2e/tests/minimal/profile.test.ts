@@ -151,6 +151,12 @@ test.describe('Change password', () => {
     }
     await loginAndGoToProfile(page, email, TEST_PASSWORD);
 
+    const previousSession = (await page.context().cookies())
+      .filter((entry) => entry.name === 'session')
+      .map((entry) => `${entry.name}=${entry.value}`)
+      .join('; ');
+    expect(previousSession).not.toBe('');
+
     // Click "Change Password" button
     await page.getByRole('button', { name: 'Change Password' }).click();
 
@@ -168,8 +174,12 @@ test.describe('Change password', () => {
     // Modal should close
     await expect(page.locator(modal.openModal)).not.toBeVisible();
 
-    await page.getByRole('button', { name: 'Log out' }).click();
+    // Changing a password revokes the current session and returns to login.
     await page.waitForURL('**/login**');
+    const staleSession = await page.request.get('/api/user/oauth-accounts', {
+      headers: { Cookie: previousSession },
+    });
+    expect(staleSession.status()).toBe(401);
 
     await expectPasswordLoginRejected(page, browserName, email, TEST_PASSWORD);
     await expectPasswordLoginSucceeds(page, browserName, email, NEW_PASSWORD);
