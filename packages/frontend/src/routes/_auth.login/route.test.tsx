@@ -7,7 +7,6 @@ import {
   resetFetchMock,
 } from '#frontend/test-utils/query-test-utils.ts';
 import {
-  authorizationContextQueryData,
   defineRouteScreen,
   renderRoute,
 } from '#frontend/test-utils/route-test-utils.tsx';
@@ -82,13 +81,6 @@ const baseConfig = {
   },
 } satisfies AppConfigs;
 
-const oauthSearch = {
-  client_id: 'client-web',
-  redirect_uri: 'https://client.example/callback',
-  response_type: 'code',
-  scope: 'openid',
-};
-
 const oauthLocation =
   '/login?client_id=client-web&redirect_uri=https%3A%2F%2Fclient.example%2Fcallback&response_type=code&scope=openid&state=state-123&code_challenge=challenge&code_challenge_method=S256';
 
@@ -99,10 +91,6 @@ function seedConfig(config: AppConfigs = baseConfig) {
       data: config,
     },
   ];
-}
-
-function seedOAuthRouteData(config: AppConfigs = baseConfig) {
-  return [...seedConfig(config), authorizationContextQueryData(oauthSearch)];
 }
 
 afterEach(() => {
@@ -189,12 +177,12 @@ describe('/login', () => {
   test('shows configured OAuth, password, and passkey auth methods', async () => {
     const { screen } = await renderRoute(routeDefinition, {
       initialLocation: oauthLocation,
-      queryData: seedOAuthRouteData(),
+      queryData: seedConfig(),
     });
 
     await expect
       .element(screen.getByTestId('authorization-context'))
-      .toBeVisible();
+      .not.toBeInTheDocument();
 
     await expect
       .element(screen.getByRole('link', { name: 'GitHub' }))

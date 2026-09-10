@@ -76,6 +76,21 @@ describe('/admin/clients', () => {
       .toBeVisible();
   });
 
+  test('explains the scope and prompt exception of administrative preapproval', async () => {
+    const { screen } = await renderClients([]);
+    await screen.getByRole('button', { name: 'Create', exact: true }).click();
+    await expect
+      .element(
+        screen.getByRole('checkbox', { name: 'Preapprove client permissions' }),
+      )
+      .toBeVisible();
+    await expect
+      .element(
+        screen.getByText(/prompt=consent still requests explicit consent/),
+      )
+      .toBeVisible();
+  });
+
   test('keeps deleted config clients read-only and out of bulk selection', async () => {
     const { screen } = await renderClients([
       adminClient({

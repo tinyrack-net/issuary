@@ -59,6 +59,9 @@ function Consent({ search }: { search: z.infer<typeof ConsentSearchSchema> }) {
   const consentInfoQuery = useSuspenseQuery(
     getConsentInfoQueryOptions({
       client_id: search.client_id,
+      redirect_uri: search.redirect_uri,
+      response_type: search.response_type,
+      prompt: search.prompt,
       scope: search.scope,
     }),
   );
@@ -223,6 +226,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   await runtime.queryClient.ensureQueryData(
     createConsentInfoQueryOptions(runtime.api, {
       client_id: search.client_id,
+      redirect_uri: search.redirect_uri,
+      response_type: search.response_type,
+      prompt: search.prompt,
       scope: search.scope,
     }),
   );

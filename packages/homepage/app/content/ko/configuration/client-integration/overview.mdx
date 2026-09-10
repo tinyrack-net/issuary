@@ -111,3 +111,47 @@ clients:
 
 - [Next.js 연동](/ko/configuration/client-integration/nextjs) - 서버 사이드 앱 (기밀 클라이언트)
 - [React SPA 연동](/ko/configuration/client-integration/react-spa) - 클라이언트 사이드 앱 (공개 클라이언트)
+
+## 권한 동의와 자사 앱
+
+로그인·회원가입 화면에는 앱이나 권한 배너를 표시하지 않아요. 인증과 필수 약관 처리를 완료한 뒤, 클라이언트로 돌아가기 직전에 필요한 경우에만 OAuth 권한 동의를 받아요.
+
+일반 앱은 `skip_consent`를 생략하거나 `false`로 두고, 보통 `prompt`도 생략해요. 최초에 승인한 권한은 이후 동일하거나 더 적은 권한의 요청에서 재사용해요. 권한 추가나 동의 철회 시에는 다시 동의가 필요해요.
+
+자사 앱은 관리자가 등록된 권한을 사전 승인하도록 `skip_consent: true`를 설정할 수 있어요.
+
+```yaml
+clients:
+  - id: first-party-web
+    name: First-party Web App
+    client_id: first-party-web
+    redirect_uris:
+      - https://app.example.com/callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    skip_consent: true
+```
+
+이 예제는 공개 클라이언트이므로 S256 PKCE를 사용해야 해요. 기밀 클라이언트는 `client_secret`도 설정하세요.
+
+사전 승인은 등록된 권한에만 적용되며, 허용된 `offline_access`도 포함해요. 로그인, 이메일 인증, 필수 2단계 인증, 필수 약관, 리다이렉트 URI 및 PKCE 검증은 생략하지 않아요. Device Authorization의 기기 승인도 계속 필요해요.
+
+| 인증 요청 | 동작 |
+| --- | --- |
+| `prompt` 생략 | 세션·기존 승인·서버 정책에 따라 필요한 화면만 표시해요. |
+| `prompt=login` | 재인증해요. 권한 동의는 클라이언트 정책을 따라요. |
+| `prompt=consent` | 사전 승인된 앱도 명시적인 동의를 받아요. |
+| `prompt=none` | 화면을 표시하지 않아요. 처리가 불가능하면 `login_required`, `consent_required`, `interaction_required` 등을 반환해요. |
+
+사전 승인으로 생략한 동의는 사용자 동의 기록으로 저장하지 않아요. 설정을 끄면 다음 인증 요청부터 실제 사용자 동의 이력을 사용하며, 이력이 없으면 동의를 받아요. 사용자 동의를 철회해도 관리자의 사전 승인이 취소되지는 않아요. 설정 변경은 기존 토큰을 폐기하지 않으므로, 필요하면 토큰 폐기나 클라이언트 관리 기능을 사용하세요.
+
+## 오프라인 접근
+
+Authorization Code Flow에서 `offline_access`는 앱의 사전 승인, `prompt=consent` 요청, 또는 유효한 기존 오프라인 접근 동의가 있을 때 유지해요. Issuary는 명시적으로 승인한 오프라인 접근을 철회 전까지 지속되는 승인으로 취급해요. 동의 화면에도 사용자 부재 중 접근과 철회 전까지 권한이 유지된다는 의미를 안내해요.
+
+승인 근거가 없으면 `offline_access`를 제외하고 나머지 권한으로 진행해요. 인가 코드를 반환하지 않는 요청에서도 이 권한을 제외해요. 동의 화면·저장된 동의·인가 코드·토큰 응답은 실제 승인되는 권한을 사용해요. `offline_access`가 승인되고 클라이언트가 `refresh_token` grant를 허용해야 refresh token을 발급해요.
+
+일반 앱이 처음 오프라인 접근을 요청할 때는 `prompt=consent`를 사용하세요. 승인 후에는 `prompt`를 생략할 수 있어요. 사전 승인된 자사 앱은 최초부터 생략할 수 있어요.
+
+[OIDC 권한 동의](https://openid.net/specs/openid-connect-core-1_0.html#Consent)와 [오프라인 접근](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess) 규격을 참고하세요.

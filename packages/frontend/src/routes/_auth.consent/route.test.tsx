@@ -54,18 +54,21 @@ const consentInfo = {
   },
 };
 
-function consentInfoQueryData() {
+function consentInfoQueryData(prompt?: string) {
   return {
     queryKey: getConsentInfoQueryOptions({
       client_id: 'client-web',
+      redirect_uri: 'https://client.example/callback',
+      response_type: 'code',
+      prompt,
       scope: 'openid profile email',
     }).queryKey,
     data: consentInfo,
   };
 }
 
-function seededQueryData() {
-  return [appConfigQueryData(routeTestAppConfig), consentInfoQueryData()];
+function seededQueryData(prompt?: string) {
+  return [appConfigQueryData(routeTestAppConfig), consentInfoQueryData(prompt)];
 }
 
 afterEach(() => {
@@ -134,7 +137,7 @@ describe('/consent', () => {
   test('approves consent with account_selected marker when returning from account chooser', async () => {
     const { screen } = await renderRoute(routeDefinition, {
       initialLocation: consentWithCompatibilityParams,
-      queryData: seededQueryData(),
+      queryData: seededQueryData('select_account'),
     });
     const fetchMock = mockJsonSuccess({
       redirect_url: testRedirectUrl('account-selected'),

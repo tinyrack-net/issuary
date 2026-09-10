@@ -18,6 +18,9 @@ import {
 
 const consentInfoParams = {
   client_id: 'web-client',
+  redirect_uri: 'https://client.example.com/callback',
+  response_type: 'code',
+  prompt: 'consent',
   scope: 'openid profile email',
 } satisfies ConsentInfoParams;
 
@@ -107,8 +110,27 @@ describe('getConsentInfoQueryOptions', () => {
     expect(url.pathname).toBe('/api/consent');
     expect(url.searchParams.get('client_id')).toBe('web-client');
     expect(url.searchParams.get('scope')).toBe('openid profile email');
+    expect(url.searchParams.get('redirect_uri')).toBe(
+      consentInfoParams.redirect_uri,
+    );
+    expect(url.searchParams.get('response_type')).toBe('code');
+    expect(url.searchParams.get('prompt')).toBe('consent');
     expect(request.method).toBe('GET');
     expect(request.headers.has('Accept-Language')).toBe(true);
+  });
+
+  test('isolates consent queries by redirect, response type and prompt policy', () => {
+    const original = getConsentInfoQueryOptions(consentInfoParams).queryKey;
+    for (const change of [
+      { redirect_uri: 'https://other.example/callback' },
+      { response_type: 'id_token' },
+      { prompt: undefined },
+    ]) {
+      expect(
+        getConsentInfoQueryOptions({ ...consentInfoParams, ...change })
+          .queryKey,
+      ).not.toEqual(original);
+    }
   });
 
   test('preserves invalid OAuth session errors as IssuaryError', async () => {

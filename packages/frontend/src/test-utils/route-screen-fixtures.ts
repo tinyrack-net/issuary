@@ -1,8 +1,3 @@
-import type { AuthorizationContextSearch } from '#frontend/libs/oauth-search.ts';
-import {
-  type AuthorizationContextResponse,
-  getAuthorizationContextQueryOptions,
-} from '#frontend/queries/authorization-context.ts';
 import type { AppConfigs } from '#frontend/queries/config.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import type { SessionUser } from '#frontend/queries/session.ts';
@@ -74,37 +69,11 @@ export const routeTestUser = {
   passkey_count: 0,
 } satisfies SessionUser;
 
-export const routeTestAuthorizationContext = {
-  client: {
-    id: 'client-1',
-    clientId: 'client-web',
-    name: 'Client Web',
-  },
-  redirect_uri: 'https://client.example/callback',
-  redirect_origin: 'https://client.example',
-  scopes: [
-    {
-      name: 'openid',
-      description: 'Access your unique user identifier',
-    },
-  ],
-} satisfies AuthorizationContextResponse;
-
 export function appConfigQueryData(
   config: AppConfigs = routeTestAppConfig,
 ): RouteTestQueryData {
   return {
     queryKey: appConfigQueryOptions.queryKey,
     data: config,
-  };
-}
-
-export function authorizationContextQueryData(
-  search: AuthorizationContextSearch,
-  data: AuthorizationContextResponse = routeTestAuthorizationContext,
-): RouteTestQueryData {
-  return {
-    queryKey: getAuthorizationContextQueryOptions(search).queryKey,
-    data,
   };
 }

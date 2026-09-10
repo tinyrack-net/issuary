@@ -111,3 +111,47 @@ clients:
 
 - [Next.js 連動](/ja/configuration/client-integration/nextjs) - サーバーサイドアプリ(機密クライアント)
 - [React SPA 連動](/ja/configuration/client-integration/react-spa) - クライアントサイドアプリ(パブリッククライアント)
+
+## 権限への同意と自社アプリ
+
+ログイン・登録画面にはアプリや権限のバナーを表示しません。認証と必須規約への同意が完了した後、クライアントに戻る直前に、必要な場合だけ OAuth の権限への同意を求めます。
+
+通常のクライアントでは `skip_consent` を省略するか `false` にし、通常は `prompt` も省略します。一度承認した権限は、同じか少ないスコープの後続リクエストで再利用します。追加の権限や同意の撤回がある場合は再承認が必要です。
+
+自社アプリには、登録された権限を管理者が事前承認する `skip_consent: true` を設定できます。
+
+```yaml
+clients:
+  - id: first-party-web
+    name: First-party Web App
+    client_id: first-party-web
+    redirect_uris:
+      - https://app.example.com/callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    skip_consent: true
+```
+
+この例はパブリッククライアントなので S256 PKCE が必要です。機密クライアントには `client_secret` も設定します。
+
+事前承認は登録済みのスコープにのみ適用され、許可された `offline_access` も含みます。ログイン、メール認証、必須の二要素認証、必須規約、リダイレクト URI と PKCE の検証は省略しません。Device Authorization のデバイス承認も必要です。
+
+| 認証リクエスト | 動作 |
+| --- | --- |
+| `prompt` なし | セッション、既存の承認、サーバーポリシーに応じて必要な画面を表示します。 |
+| `prompt=login` | 再認証します。同意はクライアントポリシーに従います。 |
+| `prompt=consent` | 事前承認されたアプリでも明示的な同意を求めます。 |
+| `prompt=none` | 画面を表示せず、処理できなければ `login_required`、`consent_required`、`interaction_required` などを返します。 |
+
+事前承認ではユーザーの同意レコードを作成しません。設定を無効にすると後続の認証リクエストは実際のユーザー同意に基づいて処理され、同意がなければ画面を表示します。ユーザー同意の撤回は管理者の事前承認を解除しません。設定変更で既存のトークンは失効しないため、必要に応じてトークン失効やクライアント管理機能を使います。
+
+## オフラインアクセス
+
+Authorization Code Flow では、事前承認、`prompt=consent`、または有効な既存のオフラインアクセス同意がある場合に `offline_access` を保持します。Issuary は明示的なオフライン同意を撤回まで継続する承認として扱います。同意画面は不在時のアクセスと、撤回まで権限が継続することを説明します。
+
+承認の根拠がなければ `offline_access` を除外し、残りのスコープで処理を続けます。認可コードを返さないリクエストでも除外します。同意画面、保存する同意、認可コード、トークン応答は有効なスコープを使用します。`offline_access` が承認され、クライアントが `refresh_token` grant を許可している場合のみ refresh token を発行します。
+
+通常のアプリが初めてオフラインアクセスを求める場合は `prompt=consent` を使用します。明示的な承認後は `prompt` を省略できます。事前承認された自社アプリは初回から省略できます。
+
+[OIDC の同意と承認](https://openid.net/specs/openid-connect-core-1_0.html#Consent)と[オフラインアクセス](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess)を参照してください。

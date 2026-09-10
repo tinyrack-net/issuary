@@ -126,4 +126,107 @@ describe('UserConsentService', () => {
       ),
     ).resolves.toBe(true);
   });
+  test('reactivates revoked consent without restoring revoked scopes or inserting another row', async () => {
+    const userSub = await createTestUser(services);
+    const clientId = await createTestOAuthClient(services);
+    await withMikroContext(services, async () => {
+      const consent = await services.userConsentService.grantConsent({
+        userSub,
+        clientId,
+        scopes: ['openid', 'email', 'offline_access'],
+      });
+      consent.revoked_at = new Date();
+      await services.mikro.em.flush();
+      expect(
+        await services.userConsentService.hasConsent(userSub, clientId, [
+          'openid',
+        ]),
+      ).toBe(false);
+      const renewed = await services.userConsentService.grantConsent({
+        userSub,
+        clientId,
+        scopes: ['openid'],
+      });
+      expect(renewed.id).toBe(consent.id);
+      expect(renewed.scopes).toEqual(['openid']);
+      expect(renewed.revoked_at).toBeNull();
+      expect(
+        await services.mikro.userConsent.count({
+          user: userSub,
+          client: clientId,
+        }),
+      ).toBe(1);
+    });
+  });
+
+  test('offline grants require code flow and explicit or administrative approval, isolated by user and client', async () => {
+    const userSub = await createTestUser(services);
+    const otherUser = await createTestUser(services);
+    const clientId = await createTestOAuthClient(services);
+    const otherClient = await createTestOAuthClient(services);
+    await withMikroContext(services, async () => {
+      const request = {
+        userSub,
+        clientId,
+        requestedScopes: ['openid', 'offline_access'],
+        responseType: 'code',
+      };
+      expect(await services.userConsentService.resolveScopes(request)).toEqual([
+        'openid',
+      ]);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          prompt: 'login consent',
+        }),
+      ).toEqual(request.requestedScopes);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          skipConsent: true,
+        }),
+      ).toEqual(request.requestedScopes);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          skipConsent: true,
+          responseType: 'id_token',
+        }),
+      ).toEqual(['openid']);
+      const consent = await services.userConsentService.grantConsent({
+        userSub,
+        clientId,
+        scopes: request.requestedScopes,
+      });
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          prompt: 'none',
+        }),
+      ).toEqual(request.requestedScopes);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          userSub: otherUser,
+        }),
+      ).toEqual(['openid']);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          clientId: otherClient,
+        }),
+      ).toEqual(['openid']);
+      consent.revoked_at = new Date();
+      await services.mikro.em.flush();
+      expect(await services.userConsentService.resolveScopes(request)).toEqual([
+        'openid',
+      ]);
+      expect(
+        await services.userConsentService.resolveScopes({
+          ...request,
+          skipConsent: true,
+        }),
+      ).toEqual(request.requestedScopes);
+    });
+  });
 });
