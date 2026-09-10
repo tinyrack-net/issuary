@@ -308,13 +308,13 @@ SQLite/PostgreSQL의 새 `Migration20260910220000_flow_revocation`을 추가했�
 | 문제 | 원인과 수정 | 회귀 기준 |
 |---|---|---|
 | Authorization의 401 응답에 유효 code 노출 | code 저장과 세션 저장이 분리돼 있었고 Hono가 실패 응답에도 기존 Location을 유지했다. 발급 완료는 사용자 → 브라우저 세션 → client 잠금 아래 활성 상태·세대·revision·만료·현재 정책을 재검사하고 code/ID token·세션을 원자적으로 완료한다. 오류 응답에서는 Location을 제거한다. | 로그아웃이 먼저 완료되면 401, code 행 없음, 헤더·본문에 인증 정보 없음. query/fragment/form_post와 implicit ID token의 세션 저장 실패도 롤백. |
-| 권한 회수 후 관리자 변경 잔존 | client·약관 변경에 트랜잭션 내 관리자 권한 검사가 없었다. 생성·수정·삭제·복원·회전·일괄 변경을 공통 브라우저 보안 경계에 포함한다. Hono가 하위 오류를 처리한 경우도 감지해 롤백한다. | 로그아웃·역할 회수 후 401 및 변경 없음. 세션 저장 실패 시 client 생성도 롤백. |
+| 권한 회수 후 관리자 변경 잔존 | client·약관 변경에 트랜잭션 내 관리자 권한 검사가 없었다. 생성·수정·삭제·복원·회전·일괄 변경을 공통 브라우저 보안 경계에 포함한다. Hono가 하위 오류를 처리한 경우도 감지해 롤백한다. | 로그아웃·역할 회수 후 생성·수정·회전·일괄 변경·약관 생성에서 401 및 변경 없음. 세션 저장 실패 시 client 생성도 롤백. |
 | 이전 client 인증의 새 세대 토큰 발급 | 검증 당시 client 세대·secret을 발급까지 보존하지 않았다. 내부 인증 증명에 세대·종류·별도 용도 키로 만든 secret hash fingerprint를 저장한다. 모든 grant는 client 잠금 뒤 증명을 재검사한다. lazy secret 필드는 명시적인 재조회로 로드하며 ORM 캐시를 신뢰하지 않는다. | 삭제·복원·회전 후 이전 인증 거절, 새 secret 정상 발급. code/refresh/device/client_credentials 및 현재 grant/scope 정책 검증. |
-| 부분적인 refresh 폐기 복구 불가 | JTI 폐기 뒤 grant 갱신이 실패하면 재요청이 이미 폐기된 JTI에서 종료됐다. client → grant 잠금 아래 개별·grant 폐기 기록을 함께 커밋한다. 명시적 refresh 폐기는 검증된 회전·부분 폐기 토큰으로도 grant 철회를 완료한다. | 각 저장 단계 실패 시 롤백, 재요청과 과거 부분 기록 복구, access token 거절, refresh와 폐기의 두 완료 순서. |
-| Device의 필수 약관 우회 | device 승인에 공통 필수 약관·버전 검사가 없었다. GET 및 POST 승인에서 검사하고 약관 미완료 시 303으로 이동하며 pending 상태를 유지한다. 약관 완료 뒤 같은 device 화면에서 별도로 승인한다. 일반 약관 동의 저장도 브라우저 인증을 재검사한다. | 직접 POST 우회 차단, 약관 버전 변경 반영, 약관 동의만으로 토큰 발급 불가, 복귀 후 정상 승인. |
+| 부분적인 refresh 폐기 복구 불가 | JTI 폐기 뒤 grant 갱신이 실패하면 재요청이 이미 폐기된 JTI에서 종료됐다. client → grant 잠금 아래 개별·grant 폐기 기록을 함께 커밋한다. 명시적 refresh 폐기는 검증된 회전·부분 폐기 토큰으로도 grant 철회를 완료한다. HTTP 폐기도 잠금 안에서 client 인증 증명을 재검사해 secret 회전 이전의 진행 중 인증을 거절한다. | 각 저장 단계 실패 시 롤백, 재요청과 과거 부분 기록 복구, access token 거절, refresh와 폐기의 두 완료 순서. |
+| Device의 필수 약관 우회 | device 승인에 공통 필수 약관·버전 검사가 없었다. GET 및 POST 승인에서 검사하고 약관 미완료 시 303으로 이동하며 pending 상태를 유지한다. 약관 완료 뒤 같은 device 화면에서 별도로 승인한다. 일반 약관 동의 저장도 브라우저 인증을 재검사한다. 브라우저 승인 폼의 제출 주소를 `/oauth/device`로 지정해 user_code가 URL과 본문에 중복되어 입력 검사에서 거절되는 문제도 해결했다. | 직접 POST 우회 차단, 약관 버전 변경 반영, 약관 동의만으로 토큰 발급 불가, 복귀 후 정상 승인. |
 
 Client 수정·secret 회전·삭제·복원·설정 동기화는 같은 client 행 잠금을 사용한다. 설정 secret이 같으면 기존 hash를 유지한다. 인증 증명은 내부 값이며 공개 응답·로그에 포함하지 않는다. Refresh 발급은 원래 토큰의 client 세대를 유지한다. 약관 복귀 경로는 프런트엔드의 로컬 경로 검증을 통과하도록 서버가 상대 경로로 생성한다.
 
 추가 DB 스키마 변경이나 마이그레이션은 없다. Secret 회전만으로 기존 발급 토큰을 일괄 폐기하거나 약관 변경을 기존 grant에 소급 적용하지 않는다. 배포 시 모든 서버에 수정본이 적용되어야 경쟁 차단을 보장한다. 기존 마이그레이션의 전환 요구는 앞 절을 따른다.
 
-로컬에서는 집중 회귀·변경 파일 검사·workflow 정책·actionlint·diff 검사를 수행한다. PostgreSQL 목록에 새 회귀 파일을 추가했고, 기존 독립 서버 fixture에 인증 완료/secret 검증/관리자 검사의 동기화 지점을 추가했다. Chromium `oauth-providers-terms`에 실제 약관 화면을 거쳐 device 승인으로 복귀하는 검증을 추가했다. 무거운 검증은 [PR #83의 최종 HEAD CI](https://github.com/tinyrack-net/issuary/pull/83/checks)에서 실행하며, 확정 run 링크와 결과는 PR 설명에 기록한다.
+정식 회귀 파일은 34개 시나리오를 포함한다. 로컬에서는 집중 회귀·변경 파일 검사·workflow 정책·actionlint·diff 검사를 수행한다. PostgreSQL 목록에 새 회귀 파일을 추가했고, 기존 독립 서버 fixture에 인증 완료/secret 검증/관리자 검사의 동기화 지점을 추가했다. Chromium `oauth-providers-terms`에 실제 약관 화면을 거쳐 device 승인으로 복귀하는 검증을 추가했다. 무거운 검증은 [PR #83의 최종 HEAD CI](https://github.com/tinyrack-net/issuary/pull/83/checks)에서 실행하며, 확정 run 링크와 결과는 PR 설명에 기록한다.

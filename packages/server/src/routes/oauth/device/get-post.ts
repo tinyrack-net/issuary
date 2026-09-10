@@ -73,7 +73,7 @@ export const deviceGetPost = new Hono<AppEnv>()
       }
 
       return c.html(
-        `<!doctype html><html><body>${deviceDetails}<form method="post"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit" name="decision" value="approve">Approve</button><button type="submit" name="decision" value="deny">Deny</button></form></body></html>`,
+        `<!doctype html><html><body>${deviceDetails}<form method="post" action="/oauth/device"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit" name="decision" value="approve">Approve</button><button type="submit" name="decision" value="deny">Deny</button></form></body></html>`,
       );
     },
   )

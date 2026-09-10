@@ -51,7 +51,7 @@ test.each(
         label: 'update',
         path: `/api/admin/clients/${TEST_OAUTH_CLIENT_CONFIG.id}`,
         method: 'PATCH',
-        body: { name: 'Unauthorized update' },
+        body: { ...body, name: 'Unauthorized update' },
       },
       {
         label: 'rotate',
@@ -875,13 +875,15 @@ test('device terms acceptance requires a separate approval and rejects a newer r
     expect(await pending.json()).toMatchObject({
       error: 'authorization_pending',
     });
-    expect(
-      (
-        await server.app.request(returnTo ?? '', {
-          headers: { Cookie: cookie },
-        })
-      ).status,
-    ).toBe(200);
+    const confirmation = await server.app.request(returnTo ?? '', {
+      headers: { Cookie: cookie },
+    });
+    expect(confirmation.status).toBe(200);
+    // An omitted action repeats user_code in both query and body, which the
+    // strict request parser correctly rejects as ambiguous.
+    expect(await confirmation.text()).toContain(
+      '<form method="post" action="/oauth/device">',
+    );
     await withMikroContext(server.services, () =>
       server.services.mikro.terms.nativeUpdate(
         { required: true },
