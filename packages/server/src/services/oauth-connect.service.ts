@@ -1,6 +1,7 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
 import type { UserEntity } from '../entities/user.entity.js';
+import type { IUserOAuthEntity } from '../entities/user-oauth.entity.js';
 import type {
   IdentityProviderConfig,
   IssuaryRuntimeConfig,
@@ -92,7 +93,7 @@ const OAuthTokensSchema = z.object({
 export type OAuthTokens = z.infer<typeof OAuthTokensSchema>;
 
 export interface OAuthLoginProof {
-  linkId: string;
+  linkId: IUserOAuthEntity['id'];
   providerId: string;
   providerUserId: string;
   userSub: string;
