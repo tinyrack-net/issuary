@@ -43,12 +43,59 @@ function gate() {
 }
 afterEach(() => vi.restoreAllMocks());
 
-test.each(['logout', 'demotion'])(
-  '%s before an admin mutation must prevent the mutation',
-  async (action) => {
+test.each(
+  ['logout', 'demotion'].flatMap((action) =>
+    [
+      { label: 'create', path: '/api/admin/clients', method: 'POST', body },
+      {
+        label: 'update',
+        path: `/api/admin/clients/${TEST_OAUTH_CLIENT_CONFIG.id}`,
+        method: 'PATCH',
+        body: { name: 'Unauthorized update' },
+      },
+      {
+        label: 'rotate',
+        path: `/api/admin/clients/${TEST_OAUTH_CLIENT_CONFIG.id}/rotate-secret`,
+        method: 'POST',
+        body: {},
+      },
+      {
+        label: 'bulk',
+        path: '/api/admin/clients/bulk-status',
+        method: 'POST',
+        body: {
+          target: { kind: 'filter', filter: { managed_by: 'database' } },
+          active: false,
+        },
+      },
+      {
+        label: 'terms',
+        path: '/api/admin/terms',
+        method: 'POST',
+        body: {
+          id: 'unauthorized-term',
+          required: true,
+          consent_mode: 'explicit',
+          version: '1',
+          contents: [
+            {
+              lang: 'en',
+              title: 'Unauthorized term',
+              type: 'text',
+              content: 'Term',
+            },
+          ],
+        },
+      },
+    ].map((mutation) => ({ action, ...mutation })),
+  ),
+)(
+  '$action before admin $label must prevent the mutation',
+  async ({ action, path, method, body: mutationBody }) => {
     const server = await createSecurityApp({
       ...MINIMAL_TEST_CONFIG,
       admin: { enabled: true },
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
       users: [
         TEST_USER_CONFIG,
         {
@@ -69,6 +116,29 @@ test.each(['logout', 'demotion'])(
           { managed_by: 'database' },
         ),
       );
+      await withMikroContext(server.services, () =>
+        server.services.mikro.oauthClient.nativeUpdate(
+          { id: TEST_OAUTH_CLIENT_CONFIG.id },
+          { managed_by: 'database' },
+        ),
+      );
+      const snapshot = () =>
+        withMikroContext(server.services, async () => ({
+          clients: (
+            await server.services.mikro.oauthClient.find(
+              {},
+              { populate: ['clientSecretHash'], orderBy: { id: 'ASC' } },
+            )
+          ).map((client) => ({
+            id: client.id,
+            name: client.name,
+            enabled: client.enabled,
+            secret: client.clientSecretHash,
+            epoch: client.tokenEpoch,
+          })),
+          terms: await server.services.mikro.terms.count({}),
+        }));
+      const before = await snapshot();
       const original = server.services.mikro.user.findBySub.bind(
         server.services.mikro.user,
       );
@@ -80,10 +150,10 @@ test.each(['logout', 'demotion'])(
           return verified;
         },
       );
-      const pending = server.app.request('/api/admin/clients', {
-        method: 'POST',
+      const pending = server.app.request(path, {
+        method,
         headers: { Cookie: cookie, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(mutationBody),
       });
       await reached.promise;
       const revoke =
@@ -110,11 +180,8 @@ test.each(['logout', 'demotion'])(
       expect(protectedResponse.status).toBe(401);
       resume.release();
       const response = await pending;
-      const count = await withMikroContext(server.services, () =>
-        server.services.mikro.oauthClient.count({ clientId: body.client_id }),
-      );
       expect(response.status).toBe(401);
-      expect(count).toBe(0);
+      expect(await snapshot()).toEqual(before);
     } finally {
       resume.release();
       await server.cleanup();

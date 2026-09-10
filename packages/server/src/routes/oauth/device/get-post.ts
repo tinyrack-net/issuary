@@ -28,6 +28,10 @@ export const deviceGetPost = new Hono<AppEnv>()
       description: 'User-facing OAuth device verification page',
       responses: {
         200: { description: 'Device verification form' },
+        303: {
+          description:
+            'Accept required terms and return to this device confirmation',
+        },
       },
     }),
     verifyAuth({ optional: true }),
