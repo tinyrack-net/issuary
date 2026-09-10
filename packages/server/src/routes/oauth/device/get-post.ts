@@ -72,6 +72,9 @@ export const deviceGetPost = new Hono<AppEnv>()
         }
       }
 
+      // Native POST forms use an opaque Origin under no-referrer. Preserve
+      // the first-party Origin for CSRF without sending a cross-site referrer.
+      c.header('Referrer-Policy', 'same-origin');
       return c.html(
         `<!doctype html><html><body>${deviceDetails}<form method="post" action="/oauth/device"><input name="user_code" value="${escapeHtml(userCode)}"><button type="submit" name="decision" value="approve">Approve</button><button type="submit" name="decision" value="deny">Deny</button></form></body></html>`,
       );

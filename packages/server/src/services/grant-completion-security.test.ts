@@ -879,6 +879,7 @@ test('device terms acceptance requires a separate approval and rejects a newer r
       headers: { Cookie: cookie },
     });
     expect(confirmation.status).toBe(200);
+    expect(confirmation.headers.get('referrer-policy')).toBe('same-origin');
     // An omitted action repeats user_code in both query and body, which the
     // strict request parser correctly rejects as ambiguous.
     expect(await confirmation.text()).toContain(
