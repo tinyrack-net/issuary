@@ -84,7 +84,7 @@ test.each(['email', 'reset'])(
   async (kind) => {
     const entity = await user();
     const generate = () =>
-      withMikroContext(server.services, () =>
+      withMikroContext(server.services, async () =>
         kind === 'email'
           ? server.services.emailService.generateToken({ userSub: entity.sub })
           : server.services.passwordResetService.generateToken({
@@ -382,7 +382,7 @@ test.each(['email', 'reset'])(
   async (kind) => {
     const entity = await user();
     const generate = () =>
-      withMikroContext(server.services, () =>
+      withMikroContext(server.services, async () =>
         kind === 'email'
           ? server.services.emailService.generateToken({ userSub: entity.sub })
           : server.services.passwordResetService.generateToken({

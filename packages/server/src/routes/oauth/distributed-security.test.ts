@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 import { z } from 'zod';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.js';
+import { BrowserSessionEntitySchema } from '../../entities/browser-session.entity.js';
 import {
   TEST_OAUTH_CLIENT,
   TEST_PKCE,
@@ -53,6 +54,19 @@ function message(child: ChildProcess, event: string) {
     child.once('exit', failed);
   });
 }
+async function startProcess(path: string) {
+  const child = fork(
+    new URL('../../test-utils/security-process.ts', import.meta.url),
+    [],
+    {
+      execArgv: ['--conditions=@issuary/source', '--import', 'tsx'],
+      env: { ...process.env, SECURITY_SQLITE_PATH: path },
+      stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
+    },
+  );
+  const ready = await message(child, 'ready');
+  return { child, origin: `http://127.0.0.1:${ready.port}` };
+}
 beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), 'issuary-security-'));
   const path = join(directory, 'shared.sqlite');
@@ -68,17 +82,7 @@ beforeAll(async () => {
   });
   await app.services.mailQueue.stop();
   for (let index = 0; index < 2; index++) {
-    const child = fork(
-      new URL('../../test-utils/security-process.ts', import.meta.url),
-      [],
-      {
-        execArgv: ['--conditions=@issuary/source', '--import', 'tsx'],
-        env: { ...process.env, SECURITY_SQLITE_PATH: path },
-        stdio: ['ignore', 'ignore', 'inherit', 'ipc'],
-      },
-    );
-    const ready = await message(child, 'ready');
-    children.push({ child, origin: `http://127.0.0.1:${ready.port}` });
+    children.push(await startProcess(path));
   }
 }, 30000);
 afterAll(async () => {
@@ -1121,6 +1125,8 @@ test('a mail job claimed by a terminated process is recovered by the worker', as
   const exited = once(owner.child, 'exit');
   owner.child.kill('SIGKILL');
   await exited;
+  // Restore the fixture pool after deliberately terminating its claim owner.
+  children.push(await startProcess(join(directory, 'shared.sqlite')));
   await app.services.mikro.em
     .fork()
     .nativeUpdate(
@@ -1391,5 +1397,64 @@ test.each(['pending', 'approved'])(
     const fresh = await issue();
     expect((await decide(fresh.user_code)).status).toBe(200);
     expect((await exchange(fresh.device_code)).status).toBe(200);
+  },
+);
+
+test.each(['auto_link', 'registration'])(
+  'concurrent %s callbacks commit exactly one link and login session',
+  async (kind) => {
+    const email =
+      kind === 'auto_link'
+        ? (await loginRaceUser()).email
+        : `${crypto.randomUUID()}@registration-race.test`;
+    const providerId = crypto.randomUUID();
+    const flows = await Promise.all(
+      children.map(async ({ child, origin }) => {
+        const state = crypto.randomUUID();
+        const cookie = await raceSession({
+          oauth: {
+            state,
+            codeVerifier: 'fixture',
+            providerId: 'google',
+            mode: 'login',
+          },
+          security: { grants: {}, oauthExpiresAt: Date.now() + 60000 },
+        });
+        const configured = message(child, 'configured');
+        child.send({ command: 'pause-auto-link-proof', providerId, email });
+        await configured;
+        return { child, origin, state, cookie };
+      }),
+    );
+    const gates = flows.map(({ child }) => message(child, 'arrived'));
+    const pending = flows.map(({ origin, state, cookie }) =>
+      fetch(`${origin}/api/oauth/google/callback?code=fixture&state=${state}`, {
+        headers: { cookie },
+        redirect: 'manual',
+      }),
+    );
+    await Promise.all(gates);
+    for (const { child } of flows) child.send('go');
+    const responses = await Promise.all(pending);
+    expect(
+      responses.filter((response) => response.status === 302),
+    ).toHaveLength(1);
+    expect(
+      responses.filter((response) => [400, 409].includes(response.status)),
+    ).toHaveLength(1);
+    await withMikroContext(app.services, async () => {
+      const user = await app.services.mikro.user.findOneOrFail({ email });
+      expect(
+        await app.services.mikro.userOAuth.count({
+          user: user.sub,
+          provider_user_id: providerId,
+        }),
+      ).toBe(1);
+      expect(
+        await app.services.mikro.em.count(BrowserSessionEntitySchema, {
+          data: { user: { sub: user.sub } },
+        }),
+      ).toBe(1);
+    });
   },
 );

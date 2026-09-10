@@ -6,7 +6,7 @@ export async function lockOAuthClient(em: EntityManager, id: string) {
   const changed = await em.nativeUpdate(
     OAuthClientEntitySchema,
     { id },
-    { updated_at: raw('updated_at') },
+    { updated_at: raw<Date>('updated_at') },
   );
   if (changed !== 1) return null;
   return em.findOne(OAuthClientEntitySchema, { id }, { refresh: true });

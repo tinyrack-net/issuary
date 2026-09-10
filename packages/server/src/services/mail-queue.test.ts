@@ -435,7 +435,7 @@ test.each(['verification', 'reset'])(
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
     vi.setSystemTime(now + 30000);
     try {
-      await withMikroContext(server.services, () =>
+      await withMikroContext(server.services, async () =>
         kind === 'verification'
           ? server.services.emailService.generateToken({
               userSub: existing.sub,
