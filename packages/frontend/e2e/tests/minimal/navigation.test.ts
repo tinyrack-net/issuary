@@ -82,6 +82,7 @@ test.describe('client-side navigation', () => {
     page,
   }) => {
     await performLogin(page, E2E_TEST_USER.email, E2E_TEST_USER.password);
+    await page.waitForURL('**/profile');
     await gotoWithFirefoxRetry(page, browserName, '/admin');
     await expect(page.locator('html')).toHaveAttribute('data-hydrated', 'true');
     const adminShell = page.locator('.admin-app-shell');
