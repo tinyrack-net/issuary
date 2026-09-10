@@ -41,6 +41,8 @@ async function requestConsentInfo(sessionCookie: string) {
   const response = await client.api.consent.$get(
     {
       query: {
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid profile email',
       },

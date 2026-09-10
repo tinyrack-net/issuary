@@ -267,7 +267,14 @@ export const consentPost = new Hono<AppEnv>().post(
     await userConsentService.grantConsent({
       userSub: userEntity.sub,
       clientId: client.id,
-      scopes: requestedScopes,
+      scopes: await userConsentService.resolveScopes({
+        userSub: userEntity.sub,
+        clientId: client.id,
+        requestedScopes,
+        responseType: response_type,
+        prompt,
+        skipConsent: client.skipConsent,
+      }),
     });
 
     const reauthenticationSession = c.var.session.get('reauthentication');

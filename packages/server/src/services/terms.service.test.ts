@@ -131,4 +131,25 @@ describe('TermsService', () => {
     expect(privacyConsent?.consentType).toBe('implicit');
     expect(privacyConsent?.termsVersion).toBe('1.1.0');
   });
+  test('a rejected current-version required term remains pending in both representations', async () => {
+    const userSub = await createTestUser(services);
+    await withMikroContext(services, async () => {
+      const terms = await services.termsService.getGlobalTerms();
+      await services.termsService.recordConsents({
+        userSub,
+        terms,
+        consents: terms.map((term) => ({ termsId: term.id, agreed: false })),
+      });
+      const pending =
+        await services.termsService.getPendingRequiredTerms(userSub);
+      expect(pending).toEqual(expect.arrayContaining(['tos', 'privacy']));
+      const localized = await services.termsService.getGlobalTermsWithConsent(
+        userSub,
+        'en',
+      );
+      expect(
+        services.termsService.getPendingFromLocalizedTerms(localized),
+      ).toEqual(pending);
+    });
+  });
 });

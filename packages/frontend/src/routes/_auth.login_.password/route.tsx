@@ -8,7 +8,7 @@ import { TRButton } from '@tinyrack/ui/components/button';
 import { TRForm } from '@tinyrack/ui/components/form';
 import { TRLink } from '@tinyrack/ui/components/link';
 import { LockIcon, MailIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
@@ -18,7 +18,6 @@ import {
   AuthFooter,
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
-import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -26,7 +25,6 @@ import { navigateDocument } from '#frontend/libs/document-navigation.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
-  hasAuthorizationContext,
   isOAuthFlow,
   type OAuthSearch,
   OAuthSearchSchema,
@@ -42,7 +40,6 @@ import {
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
 import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
-import { createAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { loginMutationOptions } from '#frontend/queries/login.ts';
 import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
@@ -60,6 +57,10 @@ function LoginPassword({
   search: ReturnType<typeof SearchSchema.parse>;
 }) {
   const { t, i18n } = useTranslation();
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const navigateTo = useCallback(
@@ -229,15 +230,15 @@ function LoginPassword({
 
   return (
     <AuthLayout showBrandSubtitle>
-      <AuthorizationContextBanner search={search} />
-
       {isPasswordAuthEnabled && (
         <TRForm
           className="flex flex-col gap-tinyrack-lg"
+          method="post"
           onSubmit={handleSubmit(onSubmit)}
         >
           <AuthField
             autoComplete="username webauthn"
+            disabled={!isHydrated}
             error={errors.email}
             icon={MailIcon}
             label={t('login.email.label')}
@@ -248,6 +249,7 @@ function LoginPassword({
 
           <AuthField
             autoComplete="current-password"
+            disabled={!isHydrated}
             error={errors.password}
             icon={LockIcon}
             label={t('login.password.label')}
@@ -273,6 +275,7 @@ function LoginPassword({
 
           <TRButton
             className="w-full"
+            disabled={!isHydrated}
             intent="primary"
             loading={loginMutation.isPending}
             loadingLabel={t('login.submitting')}
@@ -321,11 +324,7 @@ function LoginPassword({
 export async function loader({ request, context }: Route.LoaderArgs) {
   const runtime = getRouteRuntime(context);
   const search = parseRequestSearch(request, SearchSchema);
-  if (hasAuthorizationContext(search)) {
-    await runtime.queryClient.ensureQueryData(
-      createAuthorizationContextQueryOptions(runtime.api, search),
-    );
-  }
+
   return createRouteLoaderData(runtime.queryClient, search);
 }
 

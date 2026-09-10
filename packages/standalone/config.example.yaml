@@ -197,6 +197,9 @@ clients:
       - authorization_code
       - refresh_token
     scope: openid profile email
+    # Set true only for clients whose registered scopes are administratively approved.
+    # Includes allowed offline_access; prompt=consent still displays consent.
+    skip_consent: false
 
 users:
   - sub: admin-user

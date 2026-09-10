@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 import { Link, replace, useNavigate } from 'react-router';
 import { z } from 'zod';
 import { AuthMethodTile } from '#frontend/components/auth/auth-method-tile.tsx';
-import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { Alert } from '#frontend/components/ui/alert.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
@@ -23,7 +22,6 @@ import {
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
-  hasAuthorizationContext,
   isOAuthFlow,
   OAuthSearchSchema,
 } from '#frontend/libs/oauth-search.ts';
@@ -37,7 +35,6 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
-import { createAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import {
   type AppConfigs,
   appConfigQueryOptions,
@@ -166,8 +163,6 @@ function Login({ search }: { search: z.infer<typeof SearchSchema> }) {
         </TRText>
       )}
 
-      <AuthorizationContextBanner search={search} />
-
       {oauthErrorMessage && (
         <Alert icon={CircleAlertIcon} type="error">
           {oauthErrorMessage}
@@ -237,11 +232,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       hrefWithSearch('/login/password', extractOAuthParams(search)),
     );
   }
-  if (hasAuthorizationContext(search)) {
-    await runtime.queryClient.ensureQueryData(
-      createAuthorizationContextQueryOptions(runtime.api, search),
-    );
-  }
+
   return createRouteLoaderData(runtime.queryClient, search);
 }
 

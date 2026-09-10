@@ -1,11 +1,14 @@
 import { mutationOptions, queryOptions } from '@tanstack/react-query';
 import type { InferRequestType, InferResponseType } from 'hono/client';
 import { type ApiClient, client, jsonOk } from '#frontend/libs/api.ts';
-import { queryKeys } from './keys';
+import { queryKeys } from './keys.js';
 
 export type ConsentInfoParams = {
   client_id: string;
-  scope?: string;
+  redirect_uri: string;
+  response_type: string;
+  scope?: string | undefined;
+  prompt?: string | undefined;
 };
 
 export type ConsentInfoResponse = InferResponseType<
@@ -20,11 +23,20 @@ export const createConsentInfoQueryOptions = (
   params: ConsentInfoParams,
 ) =>
   queryOptions({
-    queryKey: queryKeys.consent(params.client_id, params.scope),
+    queryKey: queryKeys.consent(
+      params.client_id,
+      params.redirect_uri,
+      params.response_type,
+      params.scope,
+      params.prompt,
+    ),
     queryFn: async () => {
       const res = await apiClient.api.consent.$get({
         query: {
           client_id: params.client_id,
+          redirect_uri: params.redirect_uri,
+          response_type: params.response_type,
+          prompt: params.prompt,
           scope: params.scope,
         },
       });

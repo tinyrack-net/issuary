@@ -20,24 +20,24 @@ export const queryKeys = {
   // OAuth
   oauth: {
     accounts: () => ['/api/user/oauth-accounts'] as const,
-    authorizationContext: (
-      clientId: string,
-      redirectUri: string,
-      responseType: string,
-      scope?: string,
-    ) =>
-      [
-        '/api/oauth/authorization-context',
-        clientId,
-        redirectUri,
-        responseType,
-        scope,
-      ] as const,
   },
 
   // 동의 (Consent)
-  consent: (clientId: string, scope?: string) =>
-    ['/api/consent', clientId, scope] as const,
+  consent: (
+    clientId: string,
+    redirectUri: string,
+    responseType: string,
+    scope?: string,
+    prompt?: string,
+  ) =>
+    [
+      '/api/consent',
+      clientId,
+      redirectUri,
+      responseType,
+      scope,
+      prompt,
+    ] as const,
 
   // Passkeys
   passkeys: () => ['/api/user/passkeys'] as const,

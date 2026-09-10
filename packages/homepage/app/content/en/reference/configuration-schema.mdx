@@ -99,3 +99,10 @@ Within each localized `content` item, `type` must be `link` or `text`.
 | `background_max_attempts` | `integer` | `3` | Database scheduler maximum attempts before a background job is marked failed. |
 | `background_retention_ms` | `number` | `604800000` | Retention for terminal background jobs (`succeeded`/`failed`) in milliseconds. Pending/running jobs are not deleted by this cleanup. |
 | `instance_id` | `string` | generated | Database scheduler lease owner id. Leave empty to generate a unique per-process id. |
+
+
+## Client consent policy
+
+| Field | Type | Behavior |
+| --- | --- | --- |
+| `skip_consent` | `boolean` | Default `false`. Administratively preapprove registered scopes, including allowed offline access. `prompt=consent` still requests consent. |

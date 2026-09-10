@@ -656,6 +656,7 @@ function ClientModal({
         {/* tinyrack-check-ignore-next-line components/no-native-text -- Structural checkbox row; visible label uses TRText. */}
         <div className="flex items-center gap-tinyrack-sm">
           <TRCheckbox.Root
+            aria-describedby="client-preapproval-description"
             aria-label={t('admin.clients.skipConsent')}
             defaultChecked={client?.skip_consent}
             name="skip_consent"
@@ -665,6 +666,13 @@ function ClientModal({
           </TRCheckbox.Root>
           <TRText variant="caption">{t('admin.clients.skipConsent')}</TRText>
         </div>
+        <TRText
+          color="muted"
+          id="client-preapproval-description"
+          variant="caption"
+        >
+          {t('admin.clients.skipConsentDescription')}
+        </TRText>
         <ModalActions>
           <TRButton disabled={pending} onClick={onClose} type="button">
             {t('common.dismiss')}

@@ -18,7 +18,12 @@ beforeAll(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [
+      {
+        ...TEST_OAUTH_CLIENT_CONFIG,
+        scope: 'openid profile email address phone offline_access custom_scope',
+      },
+    ],
   });
   app = server.app;
   cleanup = server.cleanup;
@@ -36,6 +41,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           scope: 'openid profile email',
         },
@@ -77,6 +84,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           scope: 'openid',
         },
@@ -100,6 +109,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
         },
       },
@@ -114,6 +125,8 @@ describe('GET /api/consent', () => {
     const client = testClient(app);
     const res = await client.api.consent.$get({
       query: {
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        response_type: 'code',
         client_id: TEST_OAUTH_CLIENT.clientId,
         scope: 'openid',
       },
@@ -129,6 +142,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           scope: 'openid',
         },
@@ -148,6 +163,8 @@ describe('GET /api/consent', () => {
       {
         // @ts-expect-error testing validation with invalid input
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           scope: 'openid',
         },
       },
@@ -164,6 +181,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: 'non-existent-client-id',
           scope: 'openid',
         },
@@ -175,6 +194,27 @@ describe('GET /api/consent', () => {
     expect(body).toHaveProperty('code');
   });
 
+  test.each([
+    { redirect_uri: 'https://unregistered.example/callback' },
+    { scope: 'unregistered_scope' },
+    { response_type: 'id_token' },
+  ])('rejects invalid consent display context: %j', async (invalid) => {
+    const sessionCookie = await createAuthenticatedSession(app);
+    const response = await testClient(app).api.consent.$get(
+      {
+        query: {
+          client_id: TEST_OAUTH_CLIENT.clientId,
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
+          scope: 'openid',
+          ...invalid,
+        },
+      },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+    expect(response.status).toBe(400);
+  });
+
   test('should handle custom scopes with generic description', async () => {
     const sessionCookie = await createAuthenticatedSession(app);
 
@@ -182,6 +222,8 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           scope: 'openid custom_scope',
         },
@@ -204,8 +246,11 @@ describe('GET /api/consent', () => {
     const res = await client.api.consent.$get(
       {
         query: {
+          redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+          response_type: 'code',
           client_id: TEST_OAUTH_CLIENT.clientId,
           scope: 'openid profile email address phone offline_access',
+          prompt: 'consent',
         },
       },
       { headers: { Cookie: `session=${sessionCookie}` } },

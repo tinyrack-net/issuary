@@ -136,7 +136,7 @@ export const ClientConfigSchema = z
       .boolean()
       .default(false)
       .describe(
-        'Skip the OAuth consent screen for this client unless prompt=consent is requested.',
+        'Administratively preapprove this client’s registered scopes (including offline_access when allowed). Skip OAuth consent unless prompt=consent is requested; authentication, required terms and device approval are not skipped.',
       ),
     account_selection: ClientAccountSelectionConfigSchema.optional(),
   })

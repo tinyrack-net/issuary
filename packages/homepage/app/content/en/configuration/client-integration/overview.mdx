@@ -4,3 +4,47 @@ description: Learn how to integrate client applications with Issuary
 section: configuration
 order: 28
 ---
+
+## Consent and first-party applications
+
+Login and registration screens contain no application or permission banner. After authentication and required terms are complete, Issuary shows OAuth consent only when needed, before returning to the client.
+
+For a regular client, omit `skip_consent` (the default is `false`) and normally omit `prompt`. Users approve the requested permissions once; later requests for the same or fewer scopes reuse that approval. Additional scopes or revoked consent require approval again.
+
+For a first-party application, an administrator can preapprove its registered scopes with `skip_consent: true`:
+
+```yaml
+clients:
+  - id: first-party-web
+    name: First-party Web App
+    client_id: first-party-web
+    redirect_uris:
+      - https://app.example.com/callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    skip_consent: true
+```
+
+This example is a public client and must use PKCE with S256. Confidential clients additionally configure a `client_secret`.
+
+Preapproval covers only registered scopes, including `offline_access` when allowed. It never bypasses login, email verification, required second-factor authentication, required terms, redirect URI or PKCE validation. Device Authorization still requires the user to approve the device.
+
+| Authorization request | Behavior |
+| --- | --- |
+| No `prompt` | Show only the interaction required by the session, prior grants and server policy. |
+| `prompt=login` | Reauthenticate; consent still follows the client policy. |
+| `prompt=consent` | Explicit consent, even for a preapproved client. |
+| `prompt=none` | No interactive screens; return `login_required`, `consent_required` or `interaction_required` when necessary. |
+
+Preapproval does not create a user-consent record. Turning it off makes subsequent authorization requests use actual user grants; without them, consent is required. Revoking a user grant does not disable administrative preapproval. Changing this setting does not revoke existing tokens; use token revocation or client lifecycle controls for that purpose.
+
+## Offline access
+
+For Authorization Code Flow, `offline_access` is retained when the client is preapproved, the request includes `prompt=consent`, or the user has an active explicit grant for offline access. Issuary treats that explicit grant as continuing approval until revoked. The consent screen explains access while the user is absent and that the permission persists until revoked.
+
+Without one of these grounds, Issuary removes `offline_access` and continues with the other scopes. Requests that do not return an authorization code also discard this scope. The consent display, stored grant, authorization code and token response use the effective scopes. A refresh token is issued only when `offline_access` is granted and the client allows the `refresh_token` grant.
+
+A regular client requesting offline access for the first time should use `prompt=consent`. Once explicitly approved, it can omit `prompt` on subsequent requests. First-party clients with preapproval can omit it from the first request.
+
+See [OIDC consent/authorization](https://openid.net/specs/openid-connect-core-1_0.html#Consent) and [offline access](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess).
