@@ -255,6 +255,31 @@ export function sessionMiddleware(
       }
     }
 
+    // A primary-authentication proof cannot renew an older MFA-completed grant.
+    const replaceSubjectEpoch = (sub: string, epoch: string): void => {
+      if (data.security?.grants[sub] !== epoch) {
+        if (data.user?.sub === sub) delete data.user;
+        if (data.pending2FAUser?.sub === sub) delete data.pending2FAUser;
+        if (data.pending2FASetup?.sub === sub) delete data.pending2FASetup;
+        if (data.reauthentication?.sub === sub) delete data.reauthentication;
+        if (data.totpSetupVerification?.sub === sub)
+          delete data.totpSetupVerification;
+        if (data.accounts)
+          data.accounts = data.accounts.filter(
+            (account) => account.sub !== sub,
+          );
+        if (data.accountSelection)
+          data.accountSelection = {
+            ...data.accountSelection,
+            allowed_subs: data.accountSelection.allowed_subs.filter(
+              (value) => value !== sub,
+            ),
+          };
+      }
+      data.security ??= { grants: {} };
+      data.security.grants[sub] = epoch;
+    };
+
     let committed = false;
     let committedRecord: StoredSession | null = null;
     const persistSession = async (): Promise<StoredSession | null> => {
@@ -339,17 +364,15 @@ export function sessionMiddleware(
         epoch: string,
         authenticatedAt?: number,
       ): void {
+        if (
+          (data.pending2FAUser?.sub === userSub ||
+            data.pending2FASetup?.sub === userSub) &&
+          data.security?.grants[userSub] !== epoch
+        )
+          throw new e.Unauthorized.Error();
+        replaceSubjectEpoch(userSub, epoch);
         elevated = data.user?.sub !== userSub;
         const authTime = authenticatedAt ?? nowSeconds();
-        if (store) {
-          data.security ??= { grants: {} };
-          if (
-            data.pending2FAUser?.sub !== userSub &&
-            data.pending2FASetup?.sub !== userSub
-          ) {
-            data.security.grants[userSub] = epoch;
-          }
-        }
         const reauthenticationRequestFingerprint =
           data.reauthentication?.request_fingerprint;
         delete data.pending2FAUser;
@@ -443,8 +466,8 @@ export function sessionMiddleware(
         authenticatedAt?: number,
       ): void {
         if (store) {
+          replaceSubjectEpoch(userSub, epoch);
           data.security ??= { grants: {} };
-          data.security.grants[userSub] = epoch;
           data.security.pendingExpiresAt = requestStartedAt + 600_000;
         }
         delete data.pending2FASetup;
@@ -458,8 +481,8 @@ export function sessionMiddleware(
       },
       setPending2FASetupSession(userSub: string, epoch: string): void {
         if (store) {
+          replaceSubjectEpoch(userSub, epoch);
           data.security ??= { grants: {} };
-          data.security.grants[userSub] = epoch;
           data.security.pendingExpiresAt = requestStartedAt + 600_000;
         }
         delete data.pending2FAUser;

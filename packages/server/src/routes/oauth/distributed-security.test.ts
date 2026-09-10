@@ -880,6 +880,220 @@ test.each([
   },
 );
 
+async function loginRaceUser() {
+  return withMikroContext(app.services, () =>
+    app.services.passwordAuthService.createDatabaseUser({
+      email: `${crypto.randomUUID()}@login-race.test`,
+      password: 'original-password-123',
+    }),
+  );
+}
+async function raceSession(data: unknown) {
+  return `session=${await createStoredSessionCookie(app.services, JSON.stringify(data), app.services.config.security.session_secret)}`;
+}
+async function resetOnProcess(origin: string, sub: string) {
+  const token = await withMikroContext(app.services, () =>
+    app.services.passwordResetService.generateToken({ userSub: sub }),
+  );
+  const response = await fetch(`${origin}/api/auth/password/reset`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      origin: app.services.config.server.public_origin,
+    },
+    body: JSON.stringify({
+      token: token.token,
+      password: 'replacement-password-123',
+    }),
+  });
+  expect(response.status).toBe(200);
+}
+
+test('two processes cannot renew an old MFA-completed session during password reset', async () => {
+  const issuer = children[0];
+  const revoker = children[1];
+  if (!issuer || !revoker) throw new Error('Missing processes');
+  const user = await loginRaceUser();
+  const secret = app.services.totpService.generateSecret();
+  await withMikroContext(app.services, async () => {
+    const factor = app.services.mikro.userTotp.create({
+      user: user.sub,
+      secret,
+      verified: true,
+      recovery_confirmed: true,
+    });
+    await app.services.mikro.em.persist(factor).flush();
+  });
+  const cookie = await raceSession({
+    user: { sub: user.sub, authenticated_at: Math.floor(Date.now() / 1000) },
+    accounts: [
+      {
+        sub: user.sub,
+        authenticated_at: Math.floor(Date.now() / 1000),
+        last_used_at: Math.floor(Date.now() / 1000),
+      },
+    ],
+  });
+  const configured = message(issuer.child, 'configured');
+  issuer.child.send({ command: 'pause-password-login' });
+  await configured;
+  const arrived = message(issuer.child, 'arrived');
+  const pending = fetch(`${issuer.origin}/api/auth/login`, {
+    method: 'POST',
+    headers: {
+      cookie,
+      origin: app.services.config.server.public_origin,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: user.email,
+      password: 'replacement-password-123',
+    }),
+  });
+  await arrived;
+  try {
+    await resetOnProcess(revoker.origin, user.sub);
+  } finally {
+    issuer.child.send('go');
+  }
+  const response = await pending;
+  expect(response.status).toBe(200);
+  const freshCookie = response.headers.get('set-cookie')?.split(';')[0] ?? '';
+  for (const { origin } of children) {
+    expect(
+      (
+        await fetch(`${origin}/api/user/oauth-accounts`, {
+          headers: { cookie: freshCookie },
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      await (
+        await fetch(`${origin}/api/auth/accounts`, {
+          headers: { cookie: freshCookie },
+        })
+      ).json(),
+    ).toMatchObject({ active_sub: null, accounts: [] });
+  }
+  const verified = await fetch(`${revoker.origin}/api/auth/totp/verify`, {
+    method: 'POST',
+    headers: {
+      cookie: freshCookie,
+      origin: app.services.config.server.public_origin,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      code: app.services.totpService.generateToken(secret),
+    }),
+  });
+  expect(verified.status).toBe(200);
+  const fullCookie = verified.headers.get('set-cookie')?.split(';')[0] ?? '';
+  expect(
+    (
+      await fetch(`${issuer.origin}/api/user/oauth-accounts`, {
+        headers: { cookie: fullCookie },
+      })
+    ).status,
+  ).toBe(200);
+});
+
+test.each(
+  ['GET', 'POST'].flatMap((method) =>
+    ['unlink', 'reset', 'both'].map((change) => ({ method, change })),
+  ),
+)(
+  'two processes reject $method OAuth login after $change commits',
+  async ({ method, change }) => {
+    const issuer = children[0];
+    const revoker = children[1];
+    if (!issuer || !revoker) throw new Error('Missing processes');
+    const user = await loginRaceUser();
+    const providerId = crypto.randomUUID();
+    await withMikroContext(app.services, () =>
+      app.services.mikro.userOAuth.linkAccount({
+        userSub: user.sub,
+        providerName: 'google',
+        providerUserId: providerId,
+        accessToken: 'original',
+        refreshToken: '',
+        expiresAt: null,
+      }),
+    );
+    const ownerCookie = await raceSession({
+      user: { sub: user.sub, authenticated_at: Math.floor(Date.now() / 1000) },
+    });
+    const state = crypto.randomUUID();
+    const cookie = await raceSession({
+      oauth: {
+        state,
+        codeVerifier: 'fixture',
+        providerId: 'google',
+        mode: 'login',
+      },
+      security: { grants: {}, oauthExpiresAt: Date.now() + 60000 },
+    });
+    const configured = message(issuer.child, 'configured');
+    issuer.child.send({
+      command: 'pause-login-proof',
+      providerId,
+      email: user.email,
+    });
+    await configured;
+    const arrived = message(issuer.child, 'arrived');
+    const params = new URLSearchParams({ state, code: 'fixture' });
+    const pending = fetch(
+      `${issuer.origin}/api/oauth/google/callback${method === 'GET' ? `?${params}` : ''}`,
+      {
+        method,
+        redirect: 'manual',
+        headers: {
+          cookie,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        ...(method === 'POST' ? { body: params } : {}),
+      },
+    );
+    await arrived;
+    try {
+      if (change !== 'reset')
+        expect(
+          (
+            await fetch(`${revoker.origin}/api/oauth/google`, {
+              method: 'DELETE',
+              headers: {
+                cookie: ownerCookie,
+                origin: app.services.config.server.public_origin,
+              },
+            })
+          ).status,
+        ).toBe(200);
+      if (change !== 'unlink') await resetOnProcess(revoker.origin, user.sub);
+    } finally {
+      issuer.child.send('go');
+    }
+    const response = await pending;
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'OAUTH_SESSION_EXPIRED',
+    });
+    const finalCookie =
+      response.headers.get('set-cookie')?.split(';')[0] ?? cookie;
+    for (const { origin } of children)
+      expect(
+        (
+          await fetch(`${origin}/api/user/oauth-accounts`, {
+            headers: { cookie: finalCookie },
+          })
+        ).status,
+      ).toBe(401);
+    const link = await withMikroContext(app.services, () =>
+      app.services.mikro.userOAuth.findByProviderUserId('google', providerId),
+    );
+    if (change === 'reset') expect(link?.access_token).toBe('original');
+    else expect(link).toBeNull();
+  },
+);
+
 test('a mail job claimed by a terminated process is recovered by the worker', async () => {
   const email = `${crypto.randomUUID()}@example.test`;
   await withMikroContext(app.services, async () => {

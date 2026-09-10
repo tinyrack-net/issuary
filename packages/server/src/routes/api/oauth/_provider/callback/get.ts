@@ -8,6 +8,7 @@ import { e, IssuaryError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
 import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
+import { completeOAuthAuthentication } from '../../../../../services/oauth-browser-security.service.js';
 import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
 
 export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
@@ -41,7 +42,15 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
             ),
           },
         },
-        description: 'State mismatch, session expired, or invalid request',
+        description:
+          'State mismatch, expired or revoked OAuth authentication, or invalid request',
+      },
+      401: {
+        content: {
+          'application/json': { schema: resolver(e.Unauthorized.Schema) },
+        },
+        description:
+          'Browser session expired, revoked, or changed during authentication',
       },
       403: {
         content: {
@@ -71,11 +80,13 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
               z.union([
                 e.OAuthEmailConflict.Schema,
                 e.OAuthAccountAlreadyLinked.Schema,
+                e.ConcurrentSecurityChange.Schema,
               ]),
             ),
           },
         },
-        description: 'Email conflict or account already linked',
+        description:
+          'Email conflict, account already linked, or concurrent security change',
       },
       502: {
         content: {
@@ -139,6 +150,8 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       throw new e.OAuthSessionExpired.Error();
     }
 
+    let authenticationTransactionStarted = false;
+    let authenticationCommitted = false;
     let result: OAuthCallbackResult;
     try {
       result = await oauthConnectService.processOAuthCallback({
@@ -148,6 +161,16 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
         oauthSession,
         userSub: c.var.verifiedUser?.user.sub,
         requestUrl: c.req.url,
+        completeAuthentication: async (proof, operation) => {
+          authenticationTransactionStarted = true;
+          const completed = await completeOAuthAuthentication(
+            c,
+            proof,
+            operation,
+          );
+          authenticationCommitted = true;
+          return completed;
+        },
         completeLink: (operation) =>
           withBrowserSecurity(c, async () => {
             await operation();
@@ -155,7 +178,7 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
           }),
       });
     } catch (err) {
-      session.set('oauth', undefined);
+      if (!authenticationTransactionStarted) session.set('oauth', undefined);
       if (err instanceof IssuaryError) {
         return c.json(err.toJson(), err.status);
       }
@@ -172,10 +195,12 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       case 'terms_redirect':
         return c.redirect(result.url);
       case 'login_terms_redirect':
-        session.setUserSession(result.userSub, result.userEpoch);
+        if (!authenticationCommitted)
+          session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.termsUrl);
       case 'login_complete':
-        session.setUserSession(result.userSub, result.userEpoch);
+        if (!authenticationCommitted)
+          session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.returnUrl || '/profile');
     }
   },

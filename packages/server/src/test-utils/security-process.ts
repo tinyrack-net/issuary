@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { mock } from 'node:test';
+import { z } from 'zod';
 import { createApp } from '../entrypoints/app.js';
 import { DatabaseBackgroundJobStore } from '../entrypoints/scheduler/database.js';
 import { seedConfigIfNeeded } from '../seeders/config.seeder.js';
@@ -186,4 +187,58 @@ process.on('message', (message) => {
     };
     process.send?.({ event: 'configured' });
   }
+});
+
+const LoginRaceControl = z.object({
+  command: z.enum(['pause-password-login', 'pause-login-proof']),
+  providerId: z.string().optional(),
+  email: z.string().optional(),
+});
+process.on('message', (input) => {
+  const parsed = LoginRaceControl.safeParse(input);
+  if (!parsed.success) return;
+  const control = parsed.data;
+  const pause = async () => {
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    process.send?.({ event: 'arrived' });
+    await gate;
+  };
+  if (control.command === 'pause-password-login') {
+    const original =
+      services.passwordAuthService.authenticateByEmailAndPassword.bind(
+        services.passwordAuthService,
+      );
+    services.passwordAuthService.authenticateByEmailAndPassword = async (
+      ...args
+    ) => {
+      services.passwordAuthService.authenticateByEmailAndPassword = original;
+      await pause();
+      return original(...args);
+    };
+  } else {
+    const original =
+      services.oauthConnectService.prepareExistingAuthentication.bind(
+        services.oauthConnectService,
+      );
+    services.oauthConnectService.prepareExistingAuthentication = async (
+      ...args
+    ) => {
+      services.oauthConnectService.prepareExistingAuthentication = original;
+      const proof = await original(...args);
+      await pause();
+      return proof;
+    };
+    services.oauthConnectService.exchangeCodeForTokens = async () => ({
+      access_token: 'login-race-token',
+      token_type: 'Bearer',
+    });
+    services.oauthConnectService.fetchUserInfo = async () => ({
+      id: control.providerId ?? '',
+      email: control.email ?? '',
+      email_verified: true,
+    });
+  }
+  process.send?.({ event: 'configured' });
 });
