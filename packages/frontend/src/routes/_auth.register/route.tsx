@@ -18,7 +18,6 @@ import {
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
-import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { PasswordStrength } from '#frontend/components/auth/password-strength.tsx';
 import { TermsCheckboxList } from '#frontend/components/terms/terms-checkbox-list.tsx';
 import { LabeledSeparator } from '#frontend/components/ui/labeled-separator.tsx';
@@ -30,7 +29,6 @@ import { IssuaryError } from '#frontend/libs/error.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
-  hasAuthorizationContext,
   isOAuthFlow,
   OAuthSearchSchema,
   type SecondFactorMethod,
@@ -44,7 +42,6 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
-import { createAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { registerMutationOptions } from '#frontend/queries/register.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -253,8 +250,6 @@ function Register({
         title={t('register.title')}
       />
 
-      <AuthorizationContextBanner search={search} />
-
       {isPasswordAuthEnabled && (
         <TRForm
           className="flex flex-col gap-tinyrack-lg"
@@ -345,19 +340,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (!runtime.config.registration.public_registration) throw replace('/');
   const search = parseRequestSearch(request, OAuthSearchSchema);
   const lang = search.lang ?? runtime.i18n.language;
-  const queries: Array<Promise<unknown>> = [
-    runtime.queryClient.ensureQueryData(
-      createTermsQueryOptions(runtime.api, lang),
-    ),
-  ];
-  if (hasAuthorizationContext(search)) {
-    queries.push(
-      runtime.queryClient.ensureQueryData(
-        createAuthorizationContextQueryOptions(runtime.api, search),
-      ),
-    );
-  }
-  await Promise.all(queries);
+  await runtime.queryClient.ensureQueryData(
+    createTermsQueryOptions(runtime.api, lang),
+  );
   return createRouteLoaderData(runtime.queryClient, search);
 }
 

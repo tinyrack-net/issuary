@@ -293,6 +293,7 @@ export async function grantConsent(
         nonce: params.nonce,
         code_challenge: params.code_challenge,
         code_challenge_method: params.code_challenge_method,
+        prompt: 'consent',
         decision: 'allow',
       },
     },

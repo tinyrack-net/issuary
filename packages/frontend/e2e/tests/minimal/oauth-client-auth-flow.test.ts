@@ -32,7 +32,15 @@ const test = createScenarioFixture((backendPort) => ({
       allowed_email_patterns: ['*'],
     },
   }),
-  clients: [E2E_TEST_CLIENT_CONFIG],
+  clients: [
+    E2E_TEST_CLIENT_CONFIG,
+    {
+      ...E2E_TEST_CLIENT_CONFIG,
+      id: 'preapproved-e2e',
+      client_id: 'preapproved-e2e',
+      skip_consent: true,
+    },
+  ],
 }));
 
 const TEST_PASSWORD = 'test-password-123';
@@ -79,7 +87,7 @@ test.describe('OAuth client authentication flow', () => {
     await page.waitForURL('**/login**');
     await expect(page).toHaveURL(/\/login/);
     await expectPasswordLoginForm(page);
-    await expect(page.getByTestId('authorization-context')).toBeVisible();
+    await expect(page.getByTestId('authorization-context')).toHaveCount(0);
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
   });
 
@@ -91,7 +99,7 @@ test.describe('OAuth client authentication flow', () => {
     const email = uniqueEmail('login');
     await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
 
-    const oauth = buildOAuthFlowInput('oauth-login');
+    const oauth = buildOAuthFlowInput('oauth-login', { prompt: undefined });
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
     await page.waitForURL('**/login**');
@@ -111,7 +119,8 @@ test.describe('OAuth client authentication flow', () => {
     });
 
     expect(tokens.id_token).toBeTruthy();
-    expect(tokens.refresh_token).toBeTruthy();
+    expect(tokens.refresh_token).toBeUndefined();
+    expect(tokens.scope).toBe('openid profile email');
   });
 
   test('new signup during OAuth flow without explicit terms exchanges tokens', async ({
@@ -120,7 +129,7 @@ test.describe('OAuth client authentication flow', () => {
     request,
   }) => {
     const email = uniqueEmail('signup');
-    const oauth = buildOAuthFlowInput('oauth-signup');
+    const oauth = buildOAuthFlowInput('oauth-signup', { prompt: undefined });
 
     await page.goto(buildAuthorizePath(oauth.authorizeParams));
 
@@ -129,7 +138,10 @@ test.describe('OAuth client authentication flow', () => {
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
 
     await page.goto(
-      `/register?${new URLSearchParams(oauth.authorizeParams).toString()}`,
+      buildAuthorizePath(oauth.authorizeParams).replace(
+        '/oauth/authorize',
+        '/register',
+      ),
     );
     await page.waitForURL('**/register**');
     expectOAuthParamsInCurrentUrl(page, oauth.authorizeParams);
@@ -180,6 +192,11 @@ test.describe('OAuth client authentication flow', () => {
 
     const secondContext = await browser.newContext();
     const secondPage = await secondContext.newPage();
+    const consentRequests: string[] = [];
+    secondPage.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/consent')
+        consentRequests.push(request.url());
+    });
     const secondFlow = buildOAuthFlowInput('oauth-skip-consent', {
       prompt: undefined,
     });
@@ -205,11 +222,7 @@ test.describe('OAuth client authentication flow', () => {
       secondFlow.authorizeParams.state,
     );
 
-    const consentReached = await secondPage
-      .waitForURL('**/consent**', { timeout: 1500 })
-      .then(() => true)
-      .catch(() => false);
-    expect(consentReached).toBe(false);
+    expect(consentRequests).toEqual([]);
 
     const secondCode = redirectUrl.searchParams.get('code');
     if (!secondCode) {
@@ -222,6 +235,53 @@ test.describe('OAuth client authentication flow', () => {
     });
 
     await secondContext.close();
+  });
+
+  test('a preapproved app completes its first login without consent or a pre-login banner request', async ({
+    page,
+    baseURL,
+    request,
+  }) => {
+    const email = uniqueEmail('preapproved');
+    await registerUserByApi(String(baseURL), email, TEST_PASSWORD);
+    const forbiddenRequests: string[] = [];
+    page.on('request', (request) => {
+      const path = new URL(request.url()).pathname;
+      if (
+        [
+          '/consent',
+          '/api/consent',
+          '/api/oauth/authorization-context',
+        ].includes(path)
+      )
+        forbiddenRequests.push(path);
+    });
+    const oauth = buildOAuthFlowInput('preapproved-first-login', {
+      client_id: 'preapproved-e2e',
+      prompt: undefined,
+    });
+    await page.goto(buildAuthorizePath(oauth.authorizeParams));
+    await expectPasswordLoginForm(page);
+    await expect(page.getByTestId('authorization-context')).toHaveCount(0);
+    await openPasswordLoginFromCurrentPage(page);
+    await page.locator(loginPasswordPage.emailInput).fill(email);
+    await page.locator(loginPasswordPage.passwordInput).fill(TEST_PASSWORD);
+    const redirect = await captureClientRedirectAfterAction(page, () =>
+      page.locator(loginPasswordPage.submitButton).click(),
+    );
+    const code = redirect.searchParams.get('code');
+    if (!code) throw new Error('Expected authorization code');
+    expect(redirect.searchParams.get('state')).toBe(
+      oauth.authorizeParams.state,
+    );
+    const tokens = await exchangeAuthorizationCode(request, String(baseURL), {
+      code,
+      codeVerifier: oauth.codeVerifier,
+      clientId: 'preapproved-e2e',
+    });
+    expect(tokens.refresh_token).toBeTruthy();
+    expect(tokens.scope).toBe(oauth.authorizeParams.scope);
+    expect(forbiddenRequests).toEqual([]);
   });
 
   test('denying consent redirects with access_denied error', async ({

@@ -41,15 +41,18 @@ export class UserConsentRepository extends EntityRepository<UserConsentEntity> {
     clientId: string;
     scopes: string[];
   }): Promise<UserConsentEntity> {
-    const existingConsent = await this.findConsent(
-      params.userSub,
-      params.clientId,
-    );
+    const existingConsent = await this.findOne({
+      user: ref(UserEntity, params.userSub),
+      client: params.clientId,
+    });
 
     if (existingConsent) {
       // Merge scopes (add new scopes to existing ones)
       const mergedScopes = [
-        ...new Set([...existingConsent.scopes, ...params.scopes]),
+        ...new Set([
+          ...(existingConsent.revoked_at ? [] : existingConsent.scopes),
+          ...params.scopes,
+        ]),
       ];
       existingConsent.scopes = mergedScopes;
       existingConsent.granted_at = new Date();

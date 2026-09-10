@@ -18,7 +18,6 @@ import {
   AuthFooter,
   AuthFooterLink,
 } from '#frontend/components/auth/auth-footer.tsx';
-import { AuthorizationContextBanner } from '#frontend/components/auth/authorization-context-banner.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
@@ -26,7 +25,6 @@ import { navigateDocument } from '#frontend/libs/document-navigation.ts';
 import {
   buildAuthenticatedAuthorizeUrl,
   extractOAuthParams,
-  hasAuthorizationContext,
   isOAuthFlow,
   type OAuthSearch,
   OAuthSearchSchema,
@@ -41,7 +39,6 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
-import { createAuthorizationContextQueryOptions } from '#frontend/queries/authorization-context.ts';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { loginMutationOptions } from '#frontend/queries/login.ts';
 import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
@@ -228,8 +225,6 @@ function LoginPassword({
 
   return (
     <AuthLayout showBrandSubtitle>
-      <AuthorizationContextBanner search={search} />
-
       {isPasswordAuthEnabled && (
         <TRForm
           className="flex flex-col gap-tinyrack-lg"
@@ -320,11 +315,7 @@ function LoginPassword({
 export async function loader({ request, context }: Route.LoaderArgs) {
   const runtime = getRouteRuntime(context);
   const search = parseRequestSearch(request, SearchSchema);
-  if (hasAuthorizationContext(search)) {
-    await runtime.queryClient.ensureQueryData(
-      createAuthorizationContextQueryOptions(runtime.api, search),
-    );
-  }
+
   return createRouteLoaderData(runtime.queryClient, search);
 }
 

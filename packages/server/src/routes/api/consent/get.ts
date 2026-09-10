@@ -36,10 +36,18 @@ export const consentGet = new Hono<AppEnv>().get(
       400: {
         content: {
           'application/json': {
-            schema: resolver(e.OAuthClientNotFound.Schema),
+            schema: resolver(
+              z.union([
+                e.OAuthClientNotFound.Schema,
+                e.OAuthClientDisabled.Schema,
+                e.InvalidRedirectUri.Schema,
+                e.UnsupportedResponseType.Schema,
+                e.InvalidScope.Schema,
+              ]),
+            ),
           },
         },
-        description: 'OAuth client not found',
+        description: 'Invalid authorization context',
       },
       401: {
         content: {
@@ -55,6 +63,9 @@ export const consentGet = new Hono<AppEnv>().get(
     'query',
     z.object({
       client_id: f.clientId,
+      redirect_uri: f.redirectUri,
+      response_type: f.responseType,
+      prompt: f.prompt.optional(),
       scope: f.scope.optional(),
     }),
   ),
@@ -63,13 +74,26 @@ export const consentGet = new Hono<AppEnv>().get(
     const query = c.req.valid('query');
     const { client_id, scope } = query;
     const { user: userEntity } = c.var.verifiedUser;
-    const { oauthClientService } = c.var.services;
+    const { oauthClientService, userConsentService } = c.var.services;
 
     // Fetch OAuth client information
     const client = await oauthClientService.findByClientId(client_id);
+    oauthClientService.validateEnabled(client);
+    oauthClientService.validateRedirectUri(client, query.redirect_uri);
+    oauthClientService.validateResponseType(client, query.response_type);
+    const requestedScopes = scope ? scope.split(' ') : [];
+    oauthClientService.validateScopes(client, requestedScopes);
+    const grantedScopes = await userConsentService.resolveScopes({
+      userSub: userEntity.sub,
+      clientId: client.id,
+      requestedScopes,
+      responseType: query.response_type,
+      prompt: query.prompt,
+      skipConsent: client.skipConsent,
+    });
 
     // Parse requested scopes with descriptions
-    const scopes = parseScopesWithDescriptions(scope);
+    const scopes = parseScopesWithDescriptions(grantedScopes.join(' '));
 
     return c.json(
       {

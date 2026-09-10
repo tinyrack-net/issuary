@@ -134,7 +134,9 @@ export class TermsService {
   public getPendingFromLocalizedTerms(terms: LocalizedTermItem[]): string[] {
     return terms
       .filter(
-        (t) => t.required && (!t.userConsent || t.userConsent.requiresUpdate),
+        (t) =>
+          t.required &&
+          (!t.userConsent?.agreed || t.userConsent.requiresUpdate),
       )
       .map((t) => t.id);
   }
@@ -156,7 +158,7 @@ export class TermsService {
       }
 
       const consent = consentsMap.get(term.id);
-      if (!consent) {
+      if (!consent?.agreed) {
         pending.push(term.id);
         continue;
       }

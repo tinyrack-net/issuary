@@ -12,6 +12,7 @@ import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
 import type { SecurityService } from './security.service.ts';
+import type { TermsService } from './terms.service.js';
 import type { UserConsentService } from './user-consent.service.ts';
 
 type PromptValue = 'none' | 'login' | 'consent' | 'select_account';
@@ -80,6 +81,7 @@ export class OAuthAuthorizeService {
   private readonly userConsentService: UserConsentService;
   private readonly securityService: SecurityService;
   private readonly jwtService: JwtService;
+  private readonly termsService: TermsService;
   public constructor(
     config: IssuaryRuntimeConfig,
     mikro: MikroService,
@@ -87,6 +89,7 @@ export class OAuthAuthorizeService {
     userConsentService: UserConsentService,
     securityService: SecurityService,
     jwtService: JwtService,
+    termsService: TermsService,
   ) {
     this.config = config;
     this.mikro = mikro;
@@ -94,6 +97,7 @@ export class OAuthAuthorizeService {
     this.userConsentService = userConsentService;
     this.securityService = securityService;
     this.jwtService = jwtService;
+    this.termsService = termsService;
   }
 
   /**
@@ -347,11 +351,45 @@ export class OAuthAuthorizeService {
       }
     }
 
+    // Complete required terms for the selected account before any grant.
+    const pendingTerms = await this.termsService.getPendingRequiredTerms(
+      selectedSession.sub,
+    );
+    if (pendingTerms.length > 0) {
+      if (prompts.includes('none')) {
+        return this.buildErrorAuthorizationResult({
+          redirectUri: query.redirect_uri,
+          error: 'interaction_required',
+          errorDescription: 'The End-User must accept the required terms.',
+          state: query.state,
+          responseType: query.response_type,
+          responseMode: query.response_mode,
+        });
+      }
+      const continuation = new URL(
+        '/oauth/authorize',
+        this.config.server.public_origin,
+      );
+      this.copyAuthorizeParams(continuation, query);
+      const termsUrl = new URL('/terms', this.config.server.public_origin);
+      termsUrl.searchParams.set('redirect', continuation.toString());
+      return { type: 'redirect', url: termsUrl.toString() };
+    }
+
+    const grantedScopes = await this.userConsentService.resolveScopes({
+      userSub: selectedSession.sub,
+      clientId: client.id,
+      requestedScopes,
+      responseType: query.response_type,
+      prompt: query.prompt,
+      skipConsent: client.skipConsent,
+    });
+
     // 9. Check if consent is required (using IDs, not entities)
     const requiresConsent = await this.userConsentService.requiresConsent({
       userSub: selectedSession.sub,
       clientId: client.id,
-      requestedScopes,
+      requestedScopes: grantedScopes,
       prompt: prompts.includes('consent') ? 'consent' : undefined,
       skipConsent: client.skipConsent,
     });
@@ -398,7 +436,7 @@ export class OAuthAuthorizeService {
         clientId: client.clientId,
         userSub: selectedSession.sub,
         redirectUri: query.redirect_uri,
-        scope: requestedScopes,
+        scope: grantedScopes,
         nonce: query.nonce,
         state: query.state,
         authTime: selectedSession.authenticated_at,
@@ -419,7 +457,7 @@ export class OAuthAuthorizeService {
       clientId: client.id,
       userSub: selectedSession.sub,
       redirectUri: query.redirect_uri,
-      scope: requestedScopes,
+      scope: grantedScopes,
     };
 
     if (query.nonce) {

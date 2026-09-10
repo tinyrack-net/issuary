@@ -24,6 +24,33 @@ export class UserConsentService {
     );
   }
 
+  /** Resolve grants before displaying, storing, or issuing requested scopes.
+   * OIDC Core §11: offline access needs explicit or preconfigured approval.
+   * An active, explicitly saved offline grant remains valid until revoked.
+   */
+  public async resolveScopes(params: {
+    userSub: string;
+    clientId: string;
+    requestedScopes: string[];
+    responseType: string;
+    prompt?: string | undefined;
+    skipConsent?: boolean | undefined;
+  }): Promise<string[]> {
+    const scopes = [...new Set(params.requestedScopes)];
+    if (!scopes.includes('offline_access')) return scopes;
+
+    const permitsOffline =
+      params.responseType === 'code' &&
+      (params.skipConsent ||
+        params.prompt?.split(' ').includes('consent') ||
+        (await this.hasConsent(params.userSub, params.clientId, [
+          'offline_access',
+        ])));
+    return permitsOffline
+      ? scopes
+      : scopes.filter((scope) => scope !== 'offline_access');
+  }
+
   /**
    * Determine if consent screen is required based on:
    * - User's existing consent
@@ -41,7 +68,7 @@ export class UserConsentService {
     const { userSub, clientId, requestedScopes, prompt, skipConsent } = params;
 
     // If prompt=consent, always show consent screen
-    if (prompt === 'consent') {
+    if (prompt?.split(' ').includes('consent')) {
       return true;
     }
 

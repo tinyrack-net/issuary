@@ -5,9 +5,7 @@ import { initTestI18n } from '#frontend/test-utils/i18n.ts';
 
 export {
   appConfigQueryData,
-  authorizationContextQueryData,
   routeTestAppConfig,
-  routeTestAuthorizationContext,
   routeTestUser,
 } from '#frontend/test-utils/route-screen-fixtures.ts';
 
