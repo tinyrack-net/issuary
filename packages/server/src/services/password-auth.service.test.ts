@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { google } from '../entrypoints/identity-providers/google.js';
 import {
   createTestApp,
   generateUniqueEmail,
@@ -12,7 +13,19 @@ describe('PasswordAuthService', () => {
   let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const server = await createTestApp(MINIMAL_TEST_CONFIG);
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: { password: { totp: { enabled: true } } },
+      identity_providers: [
+        google({
+          id: 'google',
+          client_id: 'fixture',
+          client_secret: 'fixture',
+          email_conflict_strategy: 'require_link',
+          enabled: true,
+        }),
+      ],
+    });
     services = server.services;
     cleanup = server.cleanup;
   });
@@ -86,6 +99,16 @@ describe('PasswordAuthService', () => {
       await services.mikro.em.populate(user, ['password_hash']);
     });
 
+    user.password_hash = await withMikroContext(
+      services,
+      async () =>
+        (
+          await services.mikro.user.findOneOrFail(
+            { sub: user.sub },
+            { populate: ['password_hash'] },
+          )
+        ).password_hash,
+    );
     expect(user.password_hash).not.toBe(password);
     expect(user.password_hash?.startsWith('pbkdf2-sha256$')).toBe(true);
 
@@ -204,6 +227,16 @@ describe('PasswordAuthService', () => {
       await services.passwordAuthService.removePassword(user, password);
     });
 
+    user.password_hash = await withMikroContext(
+      services,
+      async () =>
+        (
+          await services.mikro.user.findOneOrFail(
+            { sub: user.sub },
+            { populate: ['password_hash'] },
+          )
+        ).password_hash,
+    );
     expect(user.password_hash).toBeNull();
   });
 
@@ -232,6 +265,16 @@ describe('PasswordAuthService', () => {
       );
     });
 
+    user.password_hash = await withMikroContext(
+      services,
+      async () =>
+        (
+          await services.mikro.user.findOneOrFail(
+            { sub: user.sub },
+            { populate: ['password_hash'] },
+          )
+        ).password_hash,
+    );
     await expect(
       services.securityService.verifyPassword(
         user.password_hash ?? '',
@@ -265,6 +308,16 @@ describe('PasswordAuthService', () => {
       await services.passwordAuthService.setPasswordForUser(user, newPassword);
     });
 
+    user.password_hash = await withMikroContext(
+      services,
+      async () =>
+        (
+          await services.mikro.user.findOneOrFail(
+            { sub: user.sub },
+            { populate: ['password_hash'] },
+          )
+        ).password_hash,
+    );
     expect(user.password_hash).not.toBeNull();
     await expect(
       services.securityService.verifyPassword(
@@ -336,6 +389,16 @@ describe('PasswordAuthService', () => {
       );
     });
 
+    user.password_hash = await withMikroContext(
+      services,
+      async () =>
+        (
+          await services.mikro.user.findOneOrFail(
+            { sub: user.sub },
+            { populate: ['password_hash'] },
+          )
+        ).password_hash,
+    );
     expect(user.password_hash).not.toBe(previousHash);
     await expect(
       services.securityService.verifyPassword(

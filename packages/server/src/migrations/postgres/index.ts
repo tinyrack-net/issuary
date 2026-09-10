@@ -10,6 +10,10 @@ import { Migration20260825110000_add_password_reset_required } from './Migration
 import { Migration20260825140000_drop_password_reset_required } from './Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms } from './Migration20260827090000_archive_terms.js';
 import { Migration20260904090000_add_oauth_client_lifecycle } from './Migration20260904090000_add_oauth_client_lifecycle.js';
+import { Migration20260910120000_api_security } from './Migration20260910120000_api_security.js';
+import { Migration20260910160000_security_followup } from './Migration20260910160000_security_followup.js';
+import { Migration20260910200000_authentication_epoch } from './Migration20260910200000_authentication_epoch.js';
+import { Migration20260910220000_flow_revocation } from './Migration20260910220000_flow_revocation.js';
 
 export const POSTGRES_MIGRATIONS = [
   Migration20260509171036_initial,
@@ -24,4 +28,8 @@ export const POSTGRES_MIGRATIONS = [
   Migration20260825140000_drop_password_reset_required,
   Migration20260827090000_archive_terms,
   Migration20260904090000_add_oauth_client_lifecycle,
+  Migration20260910120000_api_security,
+  Migration20260910160000_security_followup,
+  Migration20260910200000_authentication_epoch,
+  Migration20260910220000_flow_revocation,
 ];

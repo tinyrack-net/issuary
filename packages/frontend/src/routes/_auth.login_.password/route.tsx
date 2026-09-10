@@ -39,6 +39,7 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { loginMutationOptions } from '#frontend/queries/login.ts';
 import { startConditionalPasskeyAuth } from '#frontend/queries/passkey.ts';
@@ -158,10 +159,10 @@ function LoginPassword({
         }
       }
     },
-    onError: (_error) => {
+    onError: (error) => {
       setError('email', {
         type: 'manual',
-        message: t('login.error.failed'),
+        message: securityErrorMessage(error, t, t('login.error.failed')),
       });
     },
   });

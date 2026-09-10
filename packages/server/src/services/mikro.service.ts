@@ -39,6 +39,7 @@ import type { UserPasskeyRepository } from '../repositories/user-passkey.reposit
 import type { UserTermsConsentRepository } from '../repositories/user-terms-consent.repository.ts';
 import type { UserTotpRepository } from '../repositories/user-totp.repository.ts';
 import type { UserTotpRecoveryCodeRepository } from '../repositories/user-totp-recovery-code.repository.ts';
+import { initializeTermsPolicy } from './terms-policy.service.js';
 
 export class MikroService {
   public readonly orm: MikroORM;
@@ -100,6 +101,7 @@ export class MikroService {
     logger.info('Initializing MikroORM...');
     const orm = await MikroORM.init(await config.database.getMikroOrmOptions());
     await config.database.initialize(orm);
+    await initializeTermsPolicy(orm.em.fork());
 
     logger.info('MikroORM initialized');
 

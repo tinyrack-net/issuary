@@ -66,6 +66,7 @@ export const authLoginPost = new Hono<AppEnv>().post(
         email: body.email,
         password: body.password,
       });
+    const authenticationEpoch = userEntity.token_epoch;
     const user = await services.userService.userEntityToSessionUser(userEntity);
 
     if (
@@ -78,11 +79,11 @@ export const authLoginPost = new Hono<AppEnv>().post(
     const registered2FAMethods =
       await services.userService.userRegistered2FAMethods(user.sub);
     if (registered2FAMethods.length > 0) {
-      session.setPending2FASession(user.sub);
+      session.setPending2FASession(user.sub, authenticationEpoch);
     } else if (user.second_factor_required) {
-      session.setPending2FASetupSession(user.sub);
+      session.setPending2FASetupSession(user.sub, authenticationEpoch);
     } else {
-      session.setUserSession(user.sub);
+      session.setUserSession(user.sub, authenticationEpoch);
     }
 
     return c.json({ user }, 200);

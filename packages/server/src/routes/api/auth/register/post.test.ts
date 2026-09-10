@@ -300,7 +300,9 @@ describe('POST /api/auth/register', () => {
     expect(body).toHaveProperty('user');
     expect(body.user.email_verification_required).toBe(true);
 
+    await services.mailQueue.runPending();
     // Check that verification token was created in database
+    await services.mailQueue.runPending();
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,

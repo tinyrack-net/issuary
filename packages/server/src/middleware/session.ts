@@ -1,6 +1,12 @@
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { createMiddleware } from 'hono/factory';
+import { z } from 'zod';
 import { decrypt, encrypt } from '../lib/crypto.ts';
+import { e } from '../schemas/error.js';
+import type {
+  SessionStore,
+  StoredSession,
+} from '../services/browser-session.service.js';
 
 export type SessionEnv = { Variables: { session: SessionHelper } };
 
@@ -69,6 +75,13 @@ export interface ReauthenticationSession {
 }
 
 export interface SessionData {
+  totpSetupVerification?: { sub: string; totpId: string; step: number };
+  security?: {
+    grants: Record<string, string>;
+    pendingExpiresAt?: number;
+    challengeExpiresAt?: number;
+    oauthExpiresAt?: number;
+  };
   /**
    * Fully authenticated user session.
    * Set after successful login (password, OAuth, passkey) and 2FA verification.
@@ -82,7 +95,7 @@ export interface SessionData {
   };
   /**
    * Browser-local remembered authenticated accounts for OIDC account selection.
-   * This is stored only in the encrypted session cookie and must never be
+   * This is stored only in the server-side session and must never be
    * treated as an authoritative user directory.
    */
   accounts?: SessionAccount[];
@@ -125,6 +138,8 @@ export interface SessionData {
     codeVerifier: string;
     providerId: string;
     mode: 'login' | 'register' | 'link';
+    linkSubject?: string;
+    linkEpoch?: string;
     returnUrl?: string | undefined;
   };
   /**
@@ -136,43 +151,85 @@ export interface SessionData {
 }
 
 export interface SessionHelper {
+  readonly id: string;
+  readonly revision: number;
+  readonly authorization: Readonly<SessionData>;
+  atomic<T>(operation: () => Promise<T>): Promise<T>;
   get<K extends keyof SessionData>(key: K): SessionData[K];
   set<K extends keyof SessionData>(key: K, value: SessionData[K]): void;
   delete(): void;
-  setUserSession(userSub: string, authenticatedAt?: number): void;
+  setUserSession(
+    userSub: string,
+    epoch: string,
+    authenticatedAt?: number,
+  ): void;
   selectUserSession(userSub: string): boolean;
   removeRememberedUserSession(userSub: string): boolean;
-  setPending2FASession(userSub: string, authenticatedAt?: number): void;
-  setPending2FASetupSession(userSub: string): void;
+  setPending2FASession(
+    userSub: string,
+    epoch: string,
+    authenticatedAt?: number,
+  ): void;
+  setPending2FASetupSession(userSub: string, epoch: string): void;
   clearAuthSessions(): void;
 }
 
 export function sessionMiddleware(
   cookieSecret: string,
   isSecure: boolean,
-  rememberedAccountsOptions?: RememberedAccountsOptions,
+  rememberedAccountsOptions: RememberedAccountsOptions | undefined,
+  store: SessionStore,
 ) {
   const rememberedOptions = resolveRememberedAccountsOptions(
     rememberedAccountsOptions,
   );
   return createMiddleware<SessionEnv>(async (c, next) => {
-    const cookieValue = getCookie(c, 'session');
-
+    const requestStartedAt = Date.now();
+    const mainCookie = getCookie(c, 'session');
+    const isFormPostCallback =
+      c.req.method === 'POST' &&
+      /^\/api\/oauth\/[^/]+\/callback$/.test(c.req.path);
+    const cookieValue =
+      mainCookie ??
+      (isFormPostCallback ? getCookie(c, 'oauth_state') : undefined);
+    let stored: StoredSession | null = null;
     let sessionData: SessionData = {};
+    let locatorId: string | undefined;
     if (cookieValue) {
       const decrypted = await decrypt(cookieValue, cookieSecret);
       if (decrypted) {
         try {
-          // Cast is acceptable: we encrypt/decrypt our own
-          // SessionData, so the parsed shape is trusted.
-          sessionData = JSON.parse(decrypted) as SessionData;
+          const locator = z
+            .object({
+              sid: z.uuid(),
+              kind: z.literal(mainCookie ? 'session' : 'oauth'),
+            })
+            .parse(JSON.parse(decrypted));
+          locatorId = locator.sid;
         } catch {
           sessionData = {};
         }
       }
     }
+    if (store && locatorId) {
+      stored = await store.load(locatorId);
+      sessionData = stored?.data ?? {};
+    }
+    const sessionId = stored?.id ?? crypto.randomUUID();
 
     let changed = false;
+    let elevated = false;
+    if (store && sessionData.security) {
+      const security = sessionData.security;
+      if ((security.pendingExpiresAt ?? 0) <= requestStartedAt) {
+        delete sessionData.pending2FAUser;
+        delete sessionData.pending2FASetup;
+      }
+      if ((security.challengeExpiresAt ?? 0) <= requestStartedAt)
+        delete sessionData.passkey_challenge;
+      if ((security.oauthExpiresAt ?? 0) <= requestStartedAt)
+        delete sessionData.oauth;
+    }
     const data: SessionData = new Proxy(sessionData, {
       set(target, prop, value) {
         changed = true;
@@ -198,19 +255,123 @@ export function sessionMiddleware(
       }
     }
 
+    // A primary-authentication proof cannot renew an older MFA-completed grant.
+    const replaceSubjectEpoch = (sub: string, epoch: string): void => {
+      if (data.security?.grants[sub] !== epoch) {
+        if (data.user?.sub === sub) delete data.user;
+        if (data.pending2FAUser?.sub === sub) delete data.pending2FAUser;
+        if (data.pending2FASetup?.sub === sub) delete data.pending2FASetup;
+        if (data.reauthentication?.sub === sub) delete data.reauthentication;
+        if (data.totpSetupVerification?.sub === sub)
+          delete data.totpSetupVerification;
+        if (data.accounts)
+          data.accounts = data.accounts.filter(
+            (account) => account.sub !== sub,
+          );
+        if (data.accountSelection)
+          data.accountSelection = {
+            ...data.accountSelection,
+            allowed_subs: data.accountSelection.allowed_subs.filter(
+              (value) => value !== sub,
+            ),
+          };
+      }
+      data.security ??= { grants: {} };
+      data.security.grants[sub] = epoch;
+    };
+
+    let committed = false;
+    let committedRecord: StoredSession | null = null;
+    const persistSession = async (): Promise<StoredSession | null> => {
+      const hasData = Object.entries(sessionData).some(
+        ([key, value]) => key !== 'security' && value !== undefined,
+      );
+      if (!hasData) {
+        if (stored) await store.remove(stored.id);
+        return null;
+      }
+      const record: StoredSession = stored
+        ? { ...stored, data: sessionData }
+        : {
+            id: sessionId,
+            data: sessionData,
+            revision: 0,
+            expires_at: new Date(requestStartedAt + 86_400_000),
+          };
+      const previous =
+        elevated && stored
+          ? { id: stored.id, revision: stored.revision }
+          : undefined;
+      if (previous) {
+        record.id = crypto.randomUUID();
+        record.revision = 0;
+      }
+      if (!(await store.save(record, !stored, previous)))
+        throw new e.Unauthorized.Error();
+      return record;
+    };
     c.set('session', {
+      id: sessionId,
+      revision: stored?.revision ?? 0,
+      authorization: structuredClone(sessionData),
+      async atomic<T>(operation: () => Promise<T>): Promise<T> {
+        const before = structuredClone(sessionData);
+        const wasChanged = changed;
+        const wasElevated = elevated;
+        try {
+          const outcome = await store.transaction(async () => {
+            const result = await operation();
+            const record = await persistSession();
+            return { result, record };
+          });
+          committed = true;
+          committedRecord = outcome.record;
+          changed = false;
+          return outcome.result;
+        } catch (error) {
+          for (const key of Object.keys(sessionData))
+            Reflect.deleteProperty(sessionData, key);
+          Object.assign(sessionData, before);
+          changed = wasChanged;
+          elevated = wasElevated;
+          throw error;
+        }
+      },
       get<K extends keyof SessionData>(key: K): SessionData[K] {
         return data[key];
       },
       set<K extends keyof SessionData>(key: K, value: SessionData[K]): void {
         data[key] = value;
+        if (
+          store &&
+          value !== undefined &&
+          (key === 'oauth' || key === 'passkey_challenge')
+        ) {
+          data.security ??= { grants: {} };
+          if (key === 'oauth')
+            data.security.oauthExpiresAt = requestStartedAt + 600_000;
+          else data.security.challengeExpiresAt = requestStartedAt + 600_000;
+        }
       },
       delete(): void {
+        changed = true;
         for (const key of Object.keys(data)) {
           Reflect.deleteProperty(data, key);
         }
       },
-      setUserSession(userSub: string, authenticatedAt?: number): void {
+      setUserSession(
+        userSub: string,
+        epoch: string,
+        authenticatedAt?: number,
+      ): void {
+        if (
+          (data.pending2FAUser?.sub === userSub ||
+            data.pending2FASetup?.sub === userSub) &&
+          data.security?.grants[userSub] !== epoch
+        )
+          throw new e.Unauthorized.Error();
+        replaceSubjectEpoch(userSub, epoch);
+        elevated = data.user?.sub !== userSub;
         const authTime = authenticatedAt ?? nowSeconds();
         const reauthenticationRequestFingerprint =
           data.reauthentication?.request_fingerprint;
@@ -218,6 +379,7 @@ export function sessionMiddleware(
         delete data.pending2FASetup;
         delete data.oauth;
         delete data.passkey_challenge;
+        delete data.totpSetupVerification;
         data.user = {
           sub: userSub,
           authenticated_at: authTime,
@@ -262,6 +424,7 @@ export function sessionMiddleware(
         delete data.pending2FASetup;
         delete data.oauth;
         delete data.passkey_challenge;
+        delete data.totpSetupVerification;
         data.user = {
           sub: account.sub,
           authenticated_at: account.authenticated_at,
@@ -297,22 +460,39 @@ export function sessionMiddleware(
         data.accounts = nextAccounts;
         return true;
       },
-      setPending2FASession(userSub: string, authenticatedAt?: number): void {
+      setPending2FASession(
+        userSub: string,
+        epoch: string,
+        authenticatedAt?: number,
+      ): void {
+        if (store) {
+          replaceSubjectEpoch(userSub, epoch);
+          data.security ??= { grants: {} };
+          data.security.pendingExpiresAt = requestStartedAt + 600_000;
+        }
         delete data.pending2FASetup;
         delete data.oauth;
         delete data.passkey_challenge;
+        delete data.totpSetupVerification;
         data.pending2FAUser = {
           sub: userSub,
           authenticated_at: authenticatedAt ?? nowSeconds(),
         };
       },
-      setPending2FASetupSession(userSub: string): void {
+      setPending2FASetupSession(userSub: string, epoch: string): void {
+        if (store) {
+          replaceSubjectEpoch(userSub, epoch);
+          data.security ??= { grants: {} };
+          data.security.pendingExpiresAt = requestStartedAt + 600_000;
+        }
         delete data.pending2FAUser;
         delete data.oauth;
         delete data.passkey_challenge;
+        delete data.totpSetupVerification;
         data.pending2FASetup = { sub: userSub };
       },
       clearAuthSessions(): void {
+        delete data.totpSetupVerification;
         delete data.user;
         delete data.reauthentication;
         delete data.pending2FAUser;
@@ -322,11 +502,11 @@ export function sessionMiddleware(
 
     await next();
 
-    if (changed) {
-      const hasData = Object.values(sessionData).some((v) => v !== undefined);
-      if (hasData) {
+    if (changed || committed) {
+      const record = committed ? committedRecord : await persistSession();
+      if (record) {
         const encrypted = await encrypt(
-          JSON.stringify(sessionData),
+          JSON.stringify({ sid: record.id, kind: 'session' }),
           cookieSecret,
         );
         setCookie(c, 'session', encrypted, {

@@ -3,6 +3,7 @@ import z from 'zod';
 export interface EmailTransport {
   sendMail(options: {
     from?: string | undefined;
+    messageId?: string | undefined;
     to: string;
     subject: string;
     text: string;

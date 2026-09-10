@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../../../middleware/auth.ts';
 import { e } from '../../../../../../schemas/error.ts';
 import { f } from '../../../../../../schemas/field.ts';
 import { r } from '../../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../../services/browser-security.service.js';
 
 export const userTotpRecoveryRegeneratePost = new Hono<AppEnv>().post(
   '/user/totp/recovery/regenerate',
@@ -54,20 +58,23 @@ export const userTotpRecoveryRegeneratePost = new Hono<AppEnv>().post(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
-    const { config, totpService } = c.var.services;
-    const { user } = c.var.verifiedUser;
-    const body = c.req.valid('json');
+    return withBrowserSecurity(c, async () => {
+      const { config, totpService } = c.var.services;
+      const { user } = c.var.verifiedUser;
+      const body = c.req.valid('json');
 
-    if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
-      throw new e.ValidationError.Error('TOTP authentication is disabled');
-    }
+      if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
+        throw new e.ValidationError.Error('TOTP authentication is disabled');
+      }
 
-    const recoveryCodes = await totpService.regenerateRecoveryCodes(
-      user.sub,
-      body.code,
-    );
+      const recoveryCodes = await totpService.regenerateRecoveryCodes(
+        user.sub,
+        body.code,
+      );
 
-    return c.json({ recovery_codes: recoveryCodes }, 200);
+      return c.json({ recovery_codes: recoveryCodes }, 200);
+    });
   },
 );

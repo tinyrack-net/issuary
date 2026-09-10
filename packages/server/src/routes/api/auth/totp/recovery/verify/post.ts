@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../../lib/swagger-tags.ts';
 import { verifyPending2FAUser } from '../../../../../../middleware/auth.ts';
 import { e } from '../../../../../../schemas/error.ts';
 import { f } from '../../../../../../schemas/field.ts';
 import { r } from '../../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../../services/browser-security.service.js';
 
 /**
  * POST /api/auth/totp/recovery/verify
@@ -61,26 +65,39 @@ export const authTotpRecoveryVerifyPost = new Hono<AppEnv>().post(
     }),
   ),
   verifyPending2FAUser(),
-  async (c) => {
-    const config = c.var.services.config;
-    if (!config.auth.password.enabled || !config.auth.password.totp.enabled) {
-      throw new e.ValidationError.Error('TOTP authentication is disabled');
-    }
+  securityMutationDocumentation,
+  async (c) =>
+    withBrowserSecurity(
+      c,
+      async () => {
+        const config = c.var.services.config;
+        if (
+          !config.auth.password.enabled ||
+          !config.auth.password.totp.enabled
+        ) {
+          throw new e.ValidationError.Error('TOTP authentication is disabled');
+        }
 
-    const body = c.req.valid('json');
-    const session = c.var.session;
-    const { user: pending2FAUser, authenticatedAt } =
-      c.var.verifiedPending2FAUser;
-    const { mikro, userService, totpService } = c.var.services;
+        const body = c.req.valid('json');
+        const session = c.var.session;
+        const { user: pending2FAUser, authenticatedAt } =
+          c.var.verifiedPending2FAUser;
+        const { mikro, userService, totpService } = c.var.services;
 
-    await totpService.verifyRecoveryCode(pending2FAUser.sub, body.code);
+        await totpService.verifyRecoveryCode(pending2FAUser.sub, body.code);
 
-    session.setUserSession(pending2FAUser.sub, authenticatedAt);
+        session.setUserSession(
+          pending2FAUser.sub,
+          pending2FAUser.token_epoch,
+          authenticatedAt,
+        );
 
-    // Load full user data with relations for response
-    const fullUser = await mikro.user.verifyBySub(pending2FAUser.sub);
-    const userSession = await userService.userEntityToSessionUser(fullUser);
+        // Load full user data with relations for response
+        const fullUser = await mikro.user.verifyBySub(pending2FAUser.sub);
+        const userSession = await userService.userEntityToSessionUser(fullUser);
 
-    return c.json({ user: userSession }, 200);
-  },
+        return c.json({ user: userSession }, 200);
+      },
+      { stage: 'mfa' },
+    ),
 );

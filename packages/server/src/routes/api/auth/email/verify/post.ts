@@ -6,6 +6,7 @@ import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { e } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withUserSecurity } from '../../../../../services/user-security.service.js';
 
 export const authEmailVerifyPost = new Hono<AppEnv>().post(
   '/auth/email/verify',
@@ -26,7 +27,8 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
             schema: resolver(e.InvalidVerificationToken.Schema),
           },
         },
-        description: 'Invalid verification token',
+        description:
+          'Invalid, expired, used, or revoked verification token. Request a new email.',
       },
       403: {
         content: {
@@ -49,24 +51,46 @@ export const authEmailVerifyPost = new Hono<AppEnv>().post(
     const session = c.var.session;
     const body = c.req.valid('json');
 
-    const user = await services.emailService.verifyEmail(body.token);
-    const userSession = await services.userService.getSessionUserBySub(
-      user.sub,
+    if (!services.config.email) throw new e.EmailNotActivated.Error();
+    const candidate = await services.mikro.emailVerification.findOne({
+      token: body.token,
+      verified: false,
+      expiresAt: { $gt: new Date() },
+    });
+    if (!candidate) throw new e.InvalidVerificationToken.Error();
+    return session.atomic(() =>
+      withUserSecurity(
+        services.mikro,
+        candidate.user.sub,
+        async () => {
+          const user = await services.emailService.verifyEmail(body.token);
+          const userSession = await services.userService.getSessionUserBySub(
+            user.sub,
+          );
+          const registeredMethods =
+            await services.userService.userRegistered2FAMethods(user.sub);
+          if (registeredMethods.length > 0) {
+            session.setPending2FASession(user.sub, user.token_epoch);
+            return c.json({ user: userSession }, 200);
+          }
+          const available2FAMethods =
+            services.userService.getAvailable2FASetupMethods();
+
+          if (
+            userSession.second_factor_required &&
+            !userSession.totp_registered &&
+            userSession.passkey_count === 0 &&
+            available2FAMethods.length > 0
+          ) {
+            session.setPending2FASetupSession(user.sub, user.token_epoch);
+            return c.json({ user: userSession }, 200);
+          }
+
+          session.setUserSession(user.sub, user.token_epoch);
+          return c.json({ user: userSession }, 200);
+        },
+        { includeDeleted: true },
+      ),
     );
-    const available2FAMethods =
-      services.userService.getAvailable2FASetupMethods();
-
-    if (
-      userSession.second_factor_required &&
-      !userSession.totp_registered &&
-      userSession.passkey_count === 0 &&
-      available2FAMethods.length > 0
-    ) {
-      session.setPending2FASetupSession(user.sub);
-      return c.json({ user: userSession }, 200);
-    }
-
-    session.setUserSession(user.sub);
-    return c.json({ user: userSession }, 200);
   },
 );

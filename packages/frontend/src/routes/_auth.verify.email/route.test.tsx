@@ -72,7 +72,11 @@ describe('/verify/email', () => {
     await screen.getByRole('button', { name: 'Verify' }).click();
 
     await expect
-      .element(screen.getByText('Invalid or expired token'))
+      .element(
+        screen.getByText(
+          'This link is invalid or expired. Please request a new email.',
+        ),
+      )
       .toBeVisible();
     expect(router.state.location.pathname).toBe('/verify/email');
   });

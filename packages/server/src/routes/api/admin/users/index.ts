@@ -2,12 +2,13 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import { adminApiDocumentation } from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { requireAdmin } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { f } from '../../../../schemas/field.ts';
 import { r } from '../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 const QueryBoolean = z.preprocess((value) => {
   if (value === undefined) return undefined;
@@ -107,7 +108,6 @@ export const adminUsersRoutes = new Hono<AppEnv>()
     '/admin/users',
     describeRoute({
       tags: [TAGS.ADMIN],
-      security: OPENAPI_SECURITY.cookieSession,
       summary: 'List admin users',
       description: 'List users for the admin console.',
       responses: {
@@ -119,6 +119,7 @@ export const adminUsersRoutes = new Hono<AppEnv>()
         },
       },
     }),
+    adminApiDocumentation,
     requireAdmin(),
     validator('query', AdminUsersQuery),
     async (c) => {
@@ -140,39 +141,60 @@ export const adminUsersRoutes = new Hono<AppEnv>()
   )
   .post(
     '/admin/users/bulk-status',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', AdminBulkUserStatusBody),
     async (c) => {
-      const body = c.req.valid('json');
-      const result = await c.var.services.userService.bulkSetAdminUserDeleted({
-        ids: body.target.kind === 'ids' ? body.target.ids : undefined,
-        filter:
-          body.target.kind === 'filter'
-            ? {
-                query: body.target.filter.query,
-                includeDeleted: body.target.filter.include_deleted,
-                managedBy: body.target.filter.managed_by,
-                role: body.target.filter.role,
-                emailVerified: body.target.filter.email_verified,
-              }
-            : undefined,
-        deleted: !body.active,
-        actorSub: c.var.verifiedUser.user.sub,
-      });
-      return c.json(result, 200);
+      const targets = (await c.var.services.mikro.user.find({})).map(
+        (user) => user.sub,
+      );
+      return withBrowserSecurity(
+        c,
+        async () => {
+          const body = c.req.valid('json');
+          const result =
+            await c.var.services.userService.bulkSetAdminUserDeleted({
+              ids: body.target.kind === 'ids' ? body.target.ids : undefined,
+              filter:
+                body.target.kind === 'filter'
+                  ? {
+                      query: body.target.filter.query,
+                      includeDeleted: body.target.filter.include_deleted,
+                      managedBy: body.target.filter.managed_by,
+                      role: body.target.filter.role,
+                      emailVerified: body.target.filter.email_verified,
+                    }
+                  : undefined,
+              deleted: !body.active,
+              actorSub: c.var.verifiedUser.user.sub,
+            });
+          return c.json(result, 200);
+        },
+        { targets },
+      );
     },
   )
-  .post('/admin/users/:sub/restore', requireAdmin(), async (c) => {
-    const user = await c.var.services.userService.restoreAdminUser(
-      c.req.param('sub'),
-    );
-    return c.json({ user }, 200);
-  })
+  .post(
+    '/admin/users/:sub/restore',
+    adminApiDocumentation,
+    requireAdmin(),
+    async (c) => {
+      return withBrowserSecurity(
+        c,
+        async () => {
+          const user = await c.var.services.userService.restoreAdminUser(
+            c.req.param('sub'),
+          );
+          return c.json({ user }, 200);
+        },
+        { targets: [c.req.param('sub')] },
+      );
+    },
+  )
   .post(
     '/admin/users',
     describeRoute({
       tags: [TAGS.ADMIN],
-      security: OPENAPI_SECURITY.cookieSession,
       summary: 'Create admin-managed user',
       description: 'Create a database-managed user from the admin console.',
       responses: {
@@ -185,28 +207,31 @@ export const adminUsersRoutes = new Hono<AppEnv>()
         ...adminUserResponses,
       },
     }),
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', AdminCreateUserBody),
     async (c) => {
-      const body = c.req.valid('json');
-      const user = await c.var.services.userService.createAdminUser({
-        email: body.email,
-        password: body.password,
-        role: body.role,
-        emailVerified: body.email_verified,
+      return withBrowserSecurity(c, async () => {
+        const body = c.req.valid('json');
+        const user = await c.var.services.userService.createAdminUser({
+          email: body.email,
+          password: body.password,
+          role: body.role,
+          emailVerified: body.email_verified,
+        });
+        return c.json({ user }, 201);
       });
-      return c.json({ user }, 201);
     },
   )
   .get(
     '/admin/users/:sub',
     describeRoute({
       tags: [TAGS.ADMIN],
-      security: OPENAPI_SECURITY.cookieSession,
       summary: 'Get admin user',
       description: 'Get a user for the admin console.',
       responses: adminUserResponses,
     }),
+    adminApiDocumentation,
     requireAdmin(),
     async (c) => {
       const user = await c.var.services.userService.getAdminUser(
@@ -219,41 +244,53 @@ export const adminUsersRoutes = new Hono<AppEnv>()
     '/admin/users/:sub',
     describeRoute({
       tags: [TAGS.ADMIN],
-      security: OPENAPI_SECURITY.cookieSession,
       summary: 'Update admin-managed user',
       description: 'Update a database-managed user from the admin console.',
       responses: adminUserResponses,
     }),
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', AdminUpdateUserBody),
     async (c) => {
-      const body = c.req.valid('json');
-      const user = await c.var.services.userService.updateAdminUser({
-        sub: c.req.param('sub'),
-        actorSub: c.var.verifiedUser.user.sub,
-        email: body.email,
-        role: body.role,
-        emailVerified: body.email_verified,
-      });
-      return c.json({ user }, 200);
+      return withBrowserSecurity(
+        c,
+        async () => {
+          const body = c.req.valid('json');
+          const user = await c.var.services.userService.updateAdminUser({
+            sub: c.req.param('sub'),
+            actorSub: c.var.verifiedUser.user.sub,
+            email: body.email,
+            role: body.role,
+            emailVerified: body.email_verified,
+          });
+          return c.json({ user }, 200);
+        },
+        { targets: [c.req.param('sub')] },
+      );
     },
   )
   .delete(
     '/admin/users/:sub',
     describeRoute({
       tags: [TAGS.ADMIN],
-      security: OPENAPI_SECURITY.cookieSession,
       summary: 'Delete admin-managed user',
       description:
         'Soft-delete a database-managed user from the admin console.',
       responses: adminUserResponses,
     }),
+    adminApiDocumentation,
     requireAdmin(),
     async (c) => {
-      const user = await c.var.services.userService.deleteAdminUser({
-        sub: c.req.param('sub'),
-        actorSub: c.var.verifiedUser.user.sub,
-      });
-      return c.json({ user }, 200);
+      return withBrowserSecurity(
+        c,
+        async () => {
+          const user = await c.var.services.userService.deleteAdminUser({
+            sub: c.req.param('sub'),
+            actorSub: c.var.verifiedUser.user.sub,
+          });
+          return c.json({ user }, 200);
+        },
+        { targets: [c.req.param('sub')] },
+      );
     },
   );

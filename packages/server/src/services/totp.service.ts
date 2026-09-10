@@ -1,11 +1,13 @@
 import { generateSecret, generateSync, generateURI, verifySync } from 'otplib';
 import qrcode from 'qrcode';
 import type { UserEntity } from '../entities/user.entity.ts';
+import type { IUserTotpEntity } from '../entities/user-totp.entity.js';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { getRandomBytes } from '../lib/crypto.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
+import { withUserSecurity } from './user-security.service.js';
 
 /**
  * TOTP setup data returned when initiating 2FA setup
@@ -82,6 +84,31 @@ export class TotpService {
     }
   }
 
+  private async consumeToken(
+    token: string,
+    totp: IUserTotpEntity,
+  ): Promise<void> {
+    const result = verifySync({
+      token,
+      secret: totp.secret,
+      epochTolerance: 1,
+    });
+    if (!result.valid || !('timeStep' in result))
+      throw new e.InvalidTotpCode.Error();
+    const changed = await this.mikro.userTotp.nativeUpdate(
+      {
+        id: totp.id,
+        secret: totp.secret,
+        $or: [
+          { last_used_step: null },
+          { last_used_step: { $lt: result.timeStep } },
+        ],
+      },
+      { last_used_step: result.timeStep },
+    );
+    if (changed !== 1) throw new e.InvalidTotpCode.Error();
+  }
+
   /**
    * Generate a TOTP token for a secret (used for testing)
    */
@@ -93,39 +120,53 @@ export class TotpService {
    * Start TOTP setup for a user
    * Creates or updates unverified TOTP record
    */
-  public async startSetup(user: UserEntity): Promise<TotpSetupData> {
-    const existingTotp = await this.mikro.userTotp.findByUserSub(user.sub);
-
-    // Only throw if TOTP is fully registered (verified AND recovery confirmed)
-    // If user verified but didn't confirm recovery codes, allow re-setup
-    if (existingTotp?.verified && existingTotp?.recovery_confirmed) {
-      throw new e.TotpAlreadyEnabled.Error();
-    }
-
+  public async prepareSetup(user: UserEntity): Promise<TotpSetupData> {
     const secret = this.generateSecret();
     const otpauthUrl = this.generateOtpAuthUrl(user.email, secret);
     const qrCodeDataUrl = await this.generateQrCode(otpauthUrl);
 
-    // If there's an existing unverified TOTP, delete it first to avoid
-    // unique constraint violation (handles race conditions and retries)
-    if (existingTotp) {
-      await this.mikro.userTotp.nativeDelete({ user: { sub: user.sub } });
-      this.mikro.em.clear();
-    }
+    return { secret, otpauthUrl, qrCodeDataUrl };
+  }
 
-    // Create new TOTP record
-    const totp = this.mikro.userTotp.create({
-      user: user.sub,
-      secret: secret,
+  public async startSetup(
+    user: UserEntity,
+    prepared?: TotpSetupData,
+  ): Promise<TotpSetupData> {
+    const { secret, otpauthUrl, qrCodeDataUrl } =
+      prepared ?? (await this.prepareSetup(user));
+    return withUserSecurity(this.mikro, user.sub, async (freshUser) => {
+      user = freshUser;
+      const existingTotp = await this.mikro.userTotp.findByUserSub(user.sub);
+
+      // Only throw if TOTP is fully registered (verified AND recovery confirmed)
+      // If user verified but didn't confirm recovery codes, allow re-setup
+      if (existingTotp?.verified && existingTotp?.recovery_confirmed) {
+        throw new e.TotpAlreadyEnabled.Error();
+      }
+
+      // If there's an existing unverified TOTP, delete it first to avoid
+      // unique constraint violation (handles race conditions and retries)
+      if (existingTotp) {
+        await this.mikro.userTotp.nativeDelete({ user: { sub: user.sub } });
+        this.mikro.em.clear();
+      }
+
+      await this.mikro.userTotpRecoveryCode.deleteByUserSub(user.sub);
+
+      // Create new TOTP record
+      const totp = this.mikro.userTotp.create({
+        user: user.sub,
+        secret: secret,
+      });
+      this.mikro.em.persist(totp);
+      await this.mikro.em.flush();
+
+      return {
+        secret,
+        otpauthUrl,
+        qrCodeDataUrl,
+      };
     });
-    this.mikro.em.persist(totp);
-    await this.mikro.em.flush();
-
-    return {
-      secret,
-      otpauthUrl,
-      qrCodeDataUrl,
-    };
   }
 
   /**
@@ -135,34 +176,34 @@ export class TotpService {
    * @returns Array of plain-text recovery codes (shown only once)
    */
   public async verifySetup(userId: string, token: string): Promise<string[]> {
-    const totp = await this.mikro.userTotp.findByUserSub(userId);
-    if (!totp) {
-      throw new e.TotpNotSetup.Error();
-    }
+    return withUserSecurity(this.mikro, userId, async () => {
+      const totp = await this.mikro.userTotp.findByUserSub(userId);
+      if (!totp) {
+        throw new e.TotpNotSetup.Error();
+      }
 
-    // Only throw if TOTP is fully registered (verified AND recovery confirmed)
-    // If user verified but didn't confirm recovery codes, allow re-verification
-    if (totp.verified && totp.recovery_confirmed) {
-      throw new e.TotpAlreadyEnabled.Error();
-    }
+      // Only throw if TOTP is fully registered (verified AND recovery confirmed)
+      // If user verified but didn't confirm recovery codes, allow re-verification
+      if (totp.verified && totp.recovery_confirmed) {
+        throw new e.TotpAlreadyEnabled.Error();
+      }
 
-    if (!this.verifyToken(token, totp.secret)) {
-      throw new e.InvalidTotpCode.Error();
-    }
+      await this.consumeToken(token, totp);
 
-    // Flush verified status before generating recovery codes,
-    // because generateRecoveryCodes calls em.clear() which
-    // would discard the pending verified change.
-    totp.verified = true;
-    await this.mikro.em.flush();
+      // Flush verified status before generating recovery codes,
+      // because generateRecoveryCodes calls em.clear() which
+      // would discard the pending verified change.
+      totp.verified = true;
+      await this.mikro.em.flush();
 
-    // Generate recovery codes on TOTP setup completion
-    const user = await this.mikro.user.findOneOrFail({
-      sub: userId,
+      // Generate recovery codes on TOTP setup completion
+      const user = await this.mikro.user.findOneOrFail({
+        sub: userId,
+      });
+      const recoveryCodes = await this.generateRecoveryCodes(user);
+
+      return recoveryCodes;
     });
-    const recoveryCodes = await this.generateRecoveryCodes(user);
-
-    return recoveryCodes;
   }
 
   /**
@@ -170,47 +211,49 @@ export class TotpService {
    * This marks the TOTP setup as fully complete.
    */
   public async confirmSetup(userId: string): Promise<void> {
-    const totp = await this.mikro.userTotp.findVerifiedByUserSub(userId);
-    if (!totp) {
-      throw new e.TotpNotSetup.Error();
-    }
+    return withUserSecurity(this.mikro, userId, async () => {
+      const totp = await this.mikro.userTotp.findVerifiedByUserSub(userId);
+      if (!totp) {
+        throw new e.TotpNotSetup.Error();
+      }
 
-    if (totp.recovery_confirmed) {
-      throw new e.TotpAlreadyEnabled.Error();
-    }
+      if (totp.recovery_confirmed) {
+        throw new e.TotpAlreadyEnabled.Error();
+      }
 
-    totp.recovery_confirmed = true;
-    await this.mikro.em.flush();
+      totp.recovery_confirmed = true;
+      await this.mikro.em.flush();
+    });
   }
 
   /**
    * Disable TOTP for a user
    * Also deletes all recovery codes
    */
-  public async disable(
-    userId: string,
-    token: string,
-    options: {
-      secondFactorRequired: boolean;
-      hasOtherSecondFactor: boolean;
-    },
-  ): Promise<void> {
-    const totp = await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
-    if (!totp) {
-      throw new e.TotpNotEnabled.Error();
-    }
+  public async disable(userId: string, token: string): Promise<void> {
+    return withUserSecurity(this.mikro, userId, async () => {
+      const totp =
+        await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
+      if (!totp) {
+        throw new e.TotpNotEnabled.Error();
+      }
 
-    if (!this.verifyToken(token, totp.secret)) {
-      throw new e.InvalidTotpCode.Error();
-    }
+      await this.consumeToken(token, totp);
 
-    // Prevent disabling TOTP when 2FA is required and no other 2FA method exists
-    if (options.secondFactorRequired && !options.hasOtherSecondFactor) {
-      throw new e.CannotRemoveLastSecondFactor.Error();
-    }
+      // Prevent disabling TOTP when 2FA is required and no other 2FA method exists
+      if (
+        this.config.auth.password.two_factor.enrollment_required &&
+        !(
+          this.config.auth.passkey.enabled &&
+          (await this.mikro.userPasskey.countByUserSub(userId)) > 0
+        )
+      ) {
+        throw new e.CannotRemoveLastSecondFactor.Error();
+      }
 
-    await this.mikro.userTotp.deleteByUserSub(userId);
-    await this.mikro.userTotpRecoveryCode.deleteByUserSub(userId);
+      await this.mikro.userTotp.deleteByUserSub(userId);
+      await this.mikro.userTotpRecoveryCode.deleteByUserSub(userId);
+    });
   }
 
   public async verifyForAuth(userId: string, token: string): Promise<void> {
@@ -218,7 +261,7 @@ export class TotpService {
     if (!totp) {
       throw new e.TotpNotEnabled.Error();
     }
-    this.verifyToken(token, totp.secret);
+    await this.consumeToken(token, totp);
   }
 
   /**
@@ -303,41 +346,36 @@ export class TotpService {
       'totp-recovery',
       normalizedCode,
     );
-    const recoveryCode =
-      await this.mikro.userTotpRecoveryCode.findUnusedByUserSubAndCodeHash(
-        userId,
-        codeHash,
-      );
-
-    if (!recoveryCode) {
-      throw new e.InvalidRecoveryCode.Error();
-    }
-
-    recoveryCode.used = true;
-    recoveryCode.used_at = new Date();
-    await this.mikro.em.flush();
+    const consumed = await this.mikro.userTotpRecoveryCode.nativeUpdate(
+      { user: userId, code_hash: codeHash, used: false },
+      { used: true, used_at: new Date() },
+    );
+    if (consumed !== 1) throw new e.InvalidRecoveryCode.Error();
   }
 
   public async regenerateRecoveryCodes(
     userId: string,
     token: string,
   ): Promise<string[]> {
-    const totp = await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
-    if (!totp) {
-      throw new e.TotpNotEnabled.Error();
-    }
+    return withUserSecurity(this.mikro, userId, async () => {
+      const totp =
+        await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
+      if (!totp) {
+        throw new e.TotpNotEnabled.Error();
+      }
 
-    this.verifyToken(token, totp.secret);
+      await this.consumeToken(token, totp);
 
-    const user = await this.mikro.user.findOneOrFail(
-      {
-        sub: userId,
-      },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-      },
-    );
+      const user = await this.mikro.user.findOneOrFail(
+        {
+          sub: userId,
+        },
+        {
+          failHandler: () => new e.UserNotFound.Error(),
+        },
+      );
 
-    return this.generateRecoveryCodes(user);
+      return this.generateRecoveryCodes(user);
+    });
   }
 }

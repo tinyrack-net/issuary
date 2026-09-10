@@ -3,8 +3,10 @@ import type { ITermsEntity } from '../entities/terms.entity.ts';
 import { TermsContentEntitySchema } from '../entities/terms-content.entity.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
+import { lockOAuthClient } from './client-security.js';
 import type { MikroService } from './mikro.service.ts';
 import type { SecurityService } from './security.service.ts';
+import { lockTermsPolicy } from './terms-policy.service.js';
 
 export type AdminListQuery = {
   query?: string | undefined;
@@ -259,37 +261,37 @@ export class AdminConsoleService {
     id: string,
     input: Omit<AdminClientInput, 'clientId' | 'type'>,
   ) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    this.ensureClientEditable(client);
-    client.name = input.name;
-    client.redirectUris = input.redirectUris;
-    client.postLogoutRedirectUris = input.postLogoutRedirectUris;
-    client.webOrigins = input.webOrigins;
-    client.grantTypes = input.grantTypes;
-    client.responseTypes = input.responseTypes;
-    client.scopes = input.scopes;
-    client.skipConsent = input.skipConsent;
-    await this.mikro.em.flush();
-    return { client: clientResponse(client) };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      this.ensureClientEditable(client);
+      client.name = input.name;
+      client.redirectUris = input.redirectUris;
+      client.postLogoutRedirectUris = input.postLogoutRedirectUris;
+      client.webOrigins = input.webOrigins;
+      client.grantTypes = input.grantTypes;
+      client.responseTypes = input.responseTypes;
+      client.scopes = input.scopes;
+      client.skipConsent = input.skipConsent;
+      await this.mikro.em.flush();
+      return { client: clientResponse(client) };
+    });
   }
 
   public async rotateClientSecret(id: string) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    this.ensureClientEditable(client);
-    if (!client.clientSecretHash) return null;
-    const secret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-    client.clientSecretHash =
-      await this.securityService.hashClientSecret(secret);
-    await this.mikro.em.flush();
-    return { client: clientResponse(client), client_secret: secret };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      this.ensureClientEditable(client);
+      if (!client.clientSecretHash) return null;
+      const secret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
+      client.clientSecretHash =
+        await this.securityService.hashClientSecret(secret);
+      await this.mikro.em.flush();
+      return { client: clientResponse(client), client_secret: secret };
+    });
   }
 
   public async setClientsEnabled(
@@ -297,9 +299,41 @@ export class AdminConsoleService {
     filter: AdminListQuery | undefined,
     enabled: boolean,
   ) {
-    if (ids) {
-      const clients = await this.mikro.oauthClient.find({ id: { $in: ids } });
-      for (const client of clients) this.ensureClientEditable(client);
+    return this.mikro.em.transactional(async () => {
+      if (ids) {
+        const clients = await this.mikro.oauthClient.find({ id: { $in: ids } });
+        for (const client of clients.sort((a, b) => a.id.localeCompare(b.id))) {
+          const fresh = await lockOAuthClient(this.mikro.em, client.id);
+          if (!fresh) throw new e.OAuthClientNotFound.Error();
+          this.ensureClientEditable(fresh);
+        }
+        return this.applyStatus(
+          clients,
+          enabled,
+          (client) => client.enabled,
+          (client) => {
+            client.enabled = enabled;
+          },
+        );
+      }
+
+      const where: Record<string, unknown> = {
+        deletedAt: null,
+        managed_by: 'database',
+      };
+      if (filter?.managedBy) where['managed_by'] = filter.managedBy;
+      if (filter?.enabled !== undefined) where['enabled'] = filter.enabled;
+      const query = filter?.query?.trim();
+      if (query)
+        where['$or'] = [
+          { name: { $like: `%${query}%` } },
+          { clientId: { $like: `%${query}%` } },
+        ];
+      const clients = await this.mikro.oauthClient.find(where, {
+        orderBy: { id: 'ASC' },
+      });
+      for (const client of clients)
+        await lockOAuthClient(this.mikro.em, client.id);
       return this.applyStatus(
         clients,
         enabled,
@@ -308,62 +342,40 @@ export class AdminConsoleService {
           client.enabled = enabled;
         },
       );
-    }
-
-    const where: Record<string, unknown> = {
-      deletedAt: null,
-      managed_by: 'database',
-    };
-    if (filter?.managedBy) where['managed_by'] = filter.managedBy;
-    if (filter?.enabled !== undefined) where['enabled'] = filter.enabled;
-    const query = filter?.query?.trim();
-    if (query)
-      where['$or'] = [
-        { name: { $like: `%${query}%` } },
-        { clientId: { $like: `%${query}%` } },
-      ];
-    const clients = await this.mikro.oauthClient.find(where);
-    return this.applyStatus(
-      clients,
-      enabled,
-      (client) => client.enabled,
-      (client) => {
-        client.enabled = enabled;
-      },
-    );
+    });
   }
 
   public async deleteClient(id: string) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    if (client.managed_by === 'config') {
-      throw new e.OAuthClientNotEditable.Error();
-    }
-    if (!client.deletedAt) {
-      client.deletedAt = new Date();
-      client.tokenEpoch = crypto.randomUUID();
-      await this.mikro.em.flush();
-    }
-    return { client: clientResponse(client) };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      if (client.managed_by === 'config') {
+        throw new e.OAuthClientNotEditable.Error();
+      }
+      if (!client.deletedAt) {
+        client.deletedAt = new Date();
+        client.tokenEpoch = crypto.randomUUID();
+        await this.mikro.em.flush();
+      }
+      return { client: clientResponse(client) };
+    });
   }
 
   public async restoreClient(id: string) {
-    const client = await this.mikro.oauthClient.findOne(
-      { id },
-      { populate: ['clientSecretHash'] },
-    );
-    if (!client) return null;
-    if (client.managed_by === 'config') {
-      throw new e.OAuthClientNotEditable.Error();
-    }
-    if (client.deletedAt) {
-      client.deletedAt = null;
-      await this.mikro.em.flush();
-    }
-    return { client: clientResponse(client) };
+    return this.mikro.em.transactional(async () => {
+      const client = await lockOAuthClient(this.mikro.em, id);
+      if (client) await this.mikro.em.populate(client, ['clientSecretHash']);
+      if (!client) return null;
+      if (client.managed_by === 'config') {
+        throw new e.OAuthClientNotEditable.Error();
+      }
+      if (client.deletedAt) {
+        client.deletedAt = null;
+        await this.mikro.em.flush();
+      }
+      return { client: clientResponse(client) };
+    });
   }
 
   public async listTerms(
@@ -398,34 +410,40 @@ export class AdminConsoleService {
   }
 
   public async createTerm(input: AdminTermInput) {
-    const term = this.mikro.terms.create({
-      id: input.id,
-      required: input.required,
-      consentMode: input.consentMode,
-      version: input.version,
-      managed_by: 'database',
-      archivedAt: null,
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const term = this.mikro.terms.create({
+        id: input.id,
+        required: input.required,
+        consentMode: input.consentMode,
+        version: input.version,
+        managed_by: 'database',
+        archivedAt: null,
+      });
+      this.replaceTermContents(this.mikro.em, term, input.contents);
+      await this.mikro.em.persist(term).flush();
+      return { term: termResponse(term) };
     });
-    this.replaceTermContents(this.mikro.em, term, input.contents);
-    await this.mikro.em.persist(term).flush();
-    return { term: termResponse(term) };
   }
 
   public async updateTerm(id: string, input: Omit<AdminTermInput, 'id'>) {
-    const term = await this.mikro.terms.findOne(
-      { id },
-      { populate: ['contents'] },
-    );
-    if (!term || term.managed_by === 'config') return null;
-    term.required = input.required;
-    term.consentMode = input.consentMode;
-    term.version = input.version;
-    for (const content of term.contents.getItems())
-      this.mikro.em.remove(content);
-    term.contents.removeAll();
-    this.replaceTermContents(this.mikro.em, term, input.contents);
-    await this.mikro.em.flush();
-    return { term: termResponse(term) };
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const term = await this.mikro.terms.findOne(
+        { id },
+        { populate: ['contents'] },
+      );
+      if (!term || term.managed_by === 'config') return null;
+      term.required = input.required;
+      term.consentMode = input.consentMode;
+      term.version = input.version;
+      for (const content of term.contents.getItems())
+        this.mikro.em.remove(content);
+      term.contents.removeAll();
+      this.replaceTermContents(this.mikro.em, term, input.contents);
+      await this.mikro.em.flush();
+      return { term: termResponse(term) };
+    });
   }
 
   public async setTermsArchived(
@@ -433,19 +451,22 @@ export class AdminConsoleService {
     filter: AdminListQuery | undefined,
     archived: boolean,
   ) {
-    const where: Record<string, unknown> = ids ? { id: { $in: ids } } : {};
-    if (filter?.managedBy) where['managed_by'] = filter.managedBy;
-    const query = filter?.query?.trim();
-    if (query) where['id'] = { $like: `%${query}%` };
-    const terms = await this.mikro.terms.find(where);
-    return this.applyStatus(
-      terms,
-      archived,
-      (term) => Boolean(term.archivedAt),
-      (term) => {
-        term.archivedAt = archived ? new Date() : null;
-      },
-    );
+    return this.mikro.em.transactional(async () => {
+      await lockTermsPolicy(this.mikro.em, 'write');
+      const where: Record<string, unknown> = ids ? { id: { $in: ids } } : {};
+      if (filter?.managedBy) where['managed_by'] = filter.managedBy;
+      const query = filter?.query?.trim();
+      if (query) where['id'] = { $like: `%${query}%` };
+      const terms = await this.mikro.terms.find(where);
+      return this.applyStatus(
+        terms,
+        archived,
+        (term) => Boolean(term.archivedAt),
+        (term) => {
+          term.archivedAt = archived ? new Date() : null;
+        },
+      );
+    });
   }
 
   public async search(query: string) {

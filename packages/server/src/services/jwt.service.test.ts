@@ -227,6 +227,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid email',
         });
@@ -251,6 +254,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid',
         });
@@ -310,6 +316,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid',
         });
@@ -326,6 +335,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid',
         });
@@ -341,6 +353,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid',
         });
@@ -393,6 +408,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: revokedTokenClientId,
           scope: 'openid',
         });
@@ -497,6 +515,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: 'missing-token-client',
           scope: 'openid',
         });
@@ -525,6 +546,9 @@ describe('JwtService', () => {
         const accessToken = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: clientId,
           client_epoch: originalEpoch,
           scope: 'openid',
@@ -532,6 +556,9 @@ describe('JwtService', () => {
         const refreshToken = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: clientId,
           client_epoch: originalEpoch,
           scope: 'openid',
@@ -559,6 +586,9 @@ describe('JwtService', () => {
         const restoredAccessToken = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: clientId,
           client_epoch: client.tokenEpoch,
           scope: 'openid',
@@ -586,6 +616,9 @@ describe('JwtService', () => {
         const accessToken = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: userSub,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: userSub })
+          ).token_epoch,
           client_id: clientId,
           client_epoch: originalEpoch,
           scope: 'openid',
@@ -703,6 +736,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid',
         });
@@ -921,6 +957,9 @@ describe('JwtService', () => {
         const token = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid email',
         });

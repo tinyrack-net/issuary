@@ -80,6 +80,8 @@ describe('croner scheduler factory', () => {
   });
 
   test('logs scheduled job failures without rejecting the cron callback', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-12T00:05:00.000Z'));
     const logger = createLogger({ logging: { level: 'silent' } });
     const errorSpy = vi.spyOn(logger, 'error');
     const handle = await croner().start({
@@ -98,14 +100,10 @@ describe('croner scheduler factory', () => {
     });
 
     try {
-      await vi.waitFor(
-        () => {
-          expect(errorSpy).toHaveBeenCalledWith(
-            { err: expect.any(Error), jobId: 'failing-job' },
-            'Scheduled job failed',
-          );
-        },
-        { timeout: 1500 },
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        { err: expect.any(Error), jobId: 'failing-job' },
+        'Scheduled job failed',
       );
     } finally {
       await handle.stop();

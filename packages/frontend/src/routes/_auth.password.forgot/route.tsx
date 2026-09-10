@@ -18,12 +18,14 @@ import { AuthOutcome } from '#frontend/components/auth/auth-outcome.tsx';
 import { AuthPageHeader } from '#frontend/components/auth/auth-page-header.tsx';
 import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
+import { IssuaryError } from '#frontend/libs/error.js';
 import {
   createRouteLoaderData,
   NativeRouteErrorBoundary,
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { forgotPasswordMutationOptions } from '#frontend/queries/password-reset.ts';
 
 import type { Route } from './+types/route.js';
@@ -82,6 +84,14 @@ function ForgotPassword() {
         setError('email', {
           type: 'manual',
           message: t('forgotPassword.error.notEditable'),
+        });
+      } else if (
+        error instanceof IssuaryError &&
+        error.code === 'TOO_MANY_REQUESTS'
+      ) {
+        setError('email', {
+          type: 'manual',
+          message: securityErrorMessage(error, t, t('error.defaultMessage')),
         });
       } else {
         setEmailSent(true);

@@ -1,13 +1,17 @@
 import { EntityRepository } from '@mikro-orm/core';
+import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.js';
 import type {
   IOAuthCodeEntity,
   OAuthCodeChallengeMethods,
 } from '../entities/oauth-code.entity.ts';
+import { UserEntity } from '../entities/user.entity.js';
 
 export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
   async createAuthorizationCode(params: {
     clientId: string;
+    clientEpoch?: string;
     userSub: string;
+    userEpoch?: string;
     codeHash: string;
     redirectUri: string;
     scope: string[];
@@ -21,9 +25,18 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
     const expiresInSeconds = params.expiresInSeconds || 600;
     const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
+    const user = await this.getEntityManager().findOneOrFail(UserEntity, {
+      sub: params.userSub,
+    });
+    const client = await this.getEntityManager().findOneOrFail(
+      OAuthClientEntitySchema,
+      { id: params.clientId },
+    );
     const entity = this.create({
       client: params.clientId,
+      client_epoch: params.clientEpoch ?? client.tokenEpoch ?? '',
       user: params.userSub,
+      user_epoch: params.userEpoch ?? user.token_epoch,
       codeHash: params.codeHash,
       redirectUri: params.redirectUri,
       scope: params.scope,

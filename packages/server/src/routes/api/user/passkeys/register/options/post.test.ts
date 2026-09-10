@@ -266,7 +266,7 @@ describe('POST /api/user/passkeys/register/options', () => {
 
     let verifyRegistrationCalled = false;
     const verifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockImplementationOnce(async (_user, _response, expectedChallenge) => {
         verifyRegistrationCalled = true;
         expect(expectedChallenge).toBe(body.options.challenge);

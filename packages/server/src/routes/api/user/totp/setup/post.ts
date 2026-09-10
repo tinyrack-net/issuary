@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import {
   verifyAuth,
@@ -9,6 +12,7 @@ import {
 } from '../../../../../middleware/auth.ts';
 import { e } from '../../../../../schemas/error.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
 
 /**
  * POST /api/user/totp/setup
@@ -70,6 +74,7 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
   }),
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
     const { config, totpService } = c.var.services;
 
@@ -89,15 +94,23 @@ export const userTotpSetupPost = new Hono<AppEnv>().post(
       throw new e.SecondFactorNotAllowedForConfigUser.Error();
     }
 
-    const setupData = await totpService.startSetup(user);
+    const prepared = await totpService.prepareSetup(user);
+    return withBrowserSecurity(
+      c,
+      async () => {
+        const setupData = await totpService.startSetup(user, prepared);
+        c.var.session.set('totpSetupVerification', undefined);
 
-    return c.json(
-      {
-        secret: setupData.secret,
-        otpauth_url: setupData.otpauthUrl,
-        qr_code: setupData.qrCodeDataUrl,
+        return c.json(
+          {
+            secret: setupData.secret,
+            otpauth_url: setupData.otpauthUrl,
+            qr_code: setupData.qrCodeDataUrl,
+          },
+          200,
+        );
       },
-      200,
+      { stage: 'setup' },
     );
   },
 );

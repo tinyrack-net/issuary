@@ -65,6 +65,7 @@ describe('POST /api/auth/password/forgot', () => {
     expect(body).toHaveProperty('ok');
 
     // 3. Check that a reset token was generated
+    await services.mailQueue.runPending();
     const token = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -72,6 +73,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset?.token;
@@ -128,6 +130,7 @@ describe('POST /api/auth/password/forgot', () => {
     });
 
     // 3. Get first token
+    await services.mailQueue.runPending();
     const firstToken = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -135,6 +138,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOneOrFail({
         user,
         used: false,
+        revoked_at: null,
       });
       return reset.token;
     });
@@ -147,11 +151,13 @@ describe('POST /api/auth/password/forgot', () => {
       },
     });
 
-    // 5. Check that first token is now expired
+    // 5. Check that the first token is now revoked
+    await services.mailQueue.runPending();
     const isFirstTokenValid = await withMikroContext(services, async () => {
       const reset = await services.mikro.passwordReset.findOne({
         token: firstToken,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset !== null;
@@ -160,6 +166,7 @@ describe('POST /api/auth/password/forgot', () => {
     expect(isFirstTokenValid).toBe(false);
 
     // 6. Check that a new valid token exists
+    await services.mailQueue.runPending();
     const hasNewToken = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -167,6 +174,7 @@ describe('POST /api/auth/password/forgot', () => {
       const reset = await services.mikro.passwordReset.findOne({
         user,
         used: false,
+        revoked_at: null,
         expiresAt: { $gt: new Date() },
       });
       return reset !== null && reset.token !== firstToken;

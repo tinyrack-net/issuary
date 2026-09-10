@@ -8,6 +8,7 @@ import type {
 import { e } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import { AccountSelectionService } from './account-selection.service.ts';
+import type { AuthorizationProof } from './authorization-browser.service.js';
 import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
@@ -105,6 +106,11 @@ export class OAuthAuthorizeService {
    */
   public async authorize(params: {
     query: AuthorizeParams;
+    completeAuthorization?: (
+      proof: AuthorizationProof,
+      operation: () => Promise<AuthorizeResult>,
+    ) => Promise<AuthorizeResult>;
+    authenticationEpochs?: Record<string, string>;
     userSession?: {
       sub: string;
       /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
@@ -351,156 +357,192 @@ export class OAuthAuthorizeService {
       }
     }
 
-    // Complete required terms for the selected account before any grant.
-    const pendingTerms = await this.termsService.getPendingRequiredTerms(
-      selectedSession.sub,
-    );
-    if (pendingTerms.length > 0) {
-      if (prompts.includes('none')) {
-        return this.buildErrorAuthorizationResult({
-          redirectUri: query.redirect_uri,
-          error: 'interaction_required',
-          errorDescription: 'The End-User must accept the required terms.',
-          state: query.state,
-          responseType: query.response_type,
-          responseMode: query.response_mode,
-        });
-      }
-      const continuation = new URL(
-        '/oauth/authorize',
-        this.config.server.public_origin,
+    let grantedScopes: string[] = [];
+    const checkPolicy = async (
+      current: typeof client,
+    ): Promise<AuthorizeResult | undefined> => {
+      // Complete required terms for the selected account before any grant.
+      const pendingTerms = await this.termsService.getPendingRequiredTerms(
+        selectedSession.sub,
       );
-      this.copyAuthorizeParams(continuation, query);
-      const termsUrl = new URL('/terms', this.config.server.public_origin);
-      termsUrl.searchParams.set('redirect', continuation.toString());
-      return { type: 'redirect', url: termsUrl.toString() };
-    }
-
-    const grantedScopes = await this.userConsentService.resolveScopes({
-      userSub: selectedSession.sub,
-      clientId: client.id,
-      requestedScopes,
-      responseType: query.response_type,
-      prompt: query.prompt,
-      skipConsent: client.skipConsent,
-    });
-
-    // 9. Check if consent is required (using IDs, not entities)
-    const requiresConsent = await this.userConsentService.requiresConsent({
-      userSub: selectedSession.sub,
-      clientId: client.id,
-      requestedScopes: grantedScopes,
-      prompt: prompts.includes('consent') ? 'consent' : undefined,
-      skipConsent: client.skipConsent,
-    });
-
-    if (requiresConsent) {
-      // Handle prompt=none - must return error if consent is required
-      if (prompts.includes('none')) {
-        return this.buildErrorAuthorizationResult({
-          redirectUri: query.redirect_uri,
-          error: 'consent_required',
-          errorDescription:
-            'The Authorization Server requires End-User consent.',
-          state: query.state,
-          responseType: query.response_type,
-          responseMode: query.response_mode,
-        });
-      }
-
-      // Redirect to consent page
-      if (hasFreshReauthentication) {
-        const consentReauthentication = this.createReauthenticationSession(
-          this.buildConsentReauthenticationQuery(query),
+      if (pendingTerms.length > 0) {
+        if (prompts.includes('none')) {
+          return this.buildErrorAuthorizationResult({
+            redirectUri: query.redirect_uri,
+            error: 'interaction_required',
+            errorDescription: 'The End-User must accept the required terms.',
+            state: query.state,
+            responseType: query.response_type,
+            responseMode: query.response_mode,
+          });
+        }
+        const continuation = new URL(
+          '/oauth/authorize',
+          this.config.server.public_origin,
         );
-        params.setReauthenticationSession?.({
-          ...consentReauthentication,
-          sub: userSession.sub,
-          authenticated_at: userSession.authenticated_at,
-        });
-      }
-      const consentUrl = this.buildConsentRedirectUrl(query);
-      return {
-        type: 'redirect',
-        url: consentUrl,
-      };
-    }
-
-    if (isImplicitIdToken) {
-      if (!query.nonce) {
-        throw new e.InvalidAuthorizationRequest.Error();
+        this.copyAuthorizeParams(continuation, query);
+        const termsUrl = new URL('/terms', this.config.server.public_origin);
+        termsUrl.searchParams.set(
+          'redirect',
+          `${continuation.pathname}${continuation.search}`,
+        );
+        return { type: 'redirect', url: termsUrl.toString() };
       }
 
-      params.clearAccountSelectionSession?.();
-      return this.buildImplicitIdTokenRedirect({
-        clientId: client.clientId,
+      grantedScopes = await this.userConsentService.resolveScopes({
         userSub: selectedSession.sub,
-        redirectUri: query.redirect_uri,
-        scope: grantedScopes,
-        nonce: query.nonce,
-        state: query.state,
-        authTime: selectedSession.authenticated_at,
-        responseMode: query.response_mode,
+        clientId: current.id,
+        requestedScopes,
+        responseType: query.response_type,
+        prompt: query.prompt,
+        skipConsent: current.skipConsent,
       });
-    }
 
-    const codeParams: {
-      clientId: string;
-      userSub: string;
-      redirectUri: string;
-      scope: string[];
-      nonce?: string;
-      codeChallenge?: string;
-      codeChallengeMethod?: 'S256' | 'plain';
-      authTime?: number;
-    } = {
-      clientId: client.id,
-      userSub: selectedSession.sub,
-      redirectUri: query.redirect_uri,
-      scope: grantedScopes,
-    };
+      // 9. Check if consent is required (using IDs, not entities)
+      const requiresConsent = await this.userConsentService.requiresConsent({
+        userSub: selectedSession.sub,
+        clientId: current.id,
+        requestedScopes: grantedScopes,
+        prompt: prompts.includes('consent') ? 'consent' : undefined,
+        skipConsent: current.skipConsent,
+      });
 
-    if (query.nonce) {
-      codeParams.nonce = query.nonce;
-    }
-    if (query.code_challenge) {
-      codeParams.codeChallenge = query.code_challenge;
-    }
-    if (query.code_challenge_method) {
-      codeParams.codeChallengeMethod = query.code_challenge_method;
-    }
-    // Include OIDC authentication metadata from session
-    if (userSession) {
-      codeParams.authTime = selectedSession.authenticated_at;
-    }
+      if (requiresConsent) {
+        // Handle prompt=none - must return error if consent is required
+        if (prompts.includes('none')) {
+          return this.buildErrorAuthorizationResult({
+            redirectUri: query.redirect_uri,
+            error: 'consent_required',
+            errorDescription:
+              'The Authorization Server requires End-User consent.',
+            state: query.state,
+            responseType: query.response_type,
+            responseMode: query.response_mode,
+          });
+        }
 
-    const code = await this.generateAuthorizationCode(codeParams);
-    params.clearAccountSelectionSession?.();
-
-    // 10. Redirect back to client with authorization code
-    const callbackUrl = this.buildCallbackUrl(
-      code,
-      query.state,
-      query.redirect_uri,
-      query.response_mode,
-    );
-
-    if (query.response_mode === 'form_post') {
-      const params: Record<string, string> = { code };
-      if (query.state) {
-        params['state'] = query.state;
+        // Redirect to consent page
+        if (hasFreshReauthentication) {
+          const consentReauthentication = this.createReauthenticationSession(
+            this.buildConsentReauthenticationQuery(query),
+          );
+          params.setReauthenticationSession?.({
+            ...consentReauthentication,
+            sub: userSession.sub,
+            authenticated_at: userSession.authenticated_at,
+          });
+        }
+        const consentUrl = this.buildConsentRedirectUrl(query);
+        return {
+          type: 'redirect',
+          url: consentUrl,
+        };
       }
-      return {
-        type: 'form_post',
-        url: query.redirect_uri,
-        params,
-      };
-    }
 
-    return {
-      type: 'redirect',
-      url: callbackUrl,
+      return undefined;
     };
+    const preflight = await checkPolicy(client);
+    if (preflight) return preflight;
+
+    if (!params.completeAuthorization) throw new e.Unauthorized.Error();
+    return params.completeAuthorization(
+      {
+        userSub: selectedSession.sub,
+        userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+        clientId: client.id,
+        clientEpoch: client.tokenEpoch ?? '',
+        redirectUri: query.redirect_uri,
+        responseType: query.response_type,
+        scopes: grantedScopes,
+      },
+      async () => {
+        const current = await this.oauthClientService.findByClientId(
+          client.clientId,
+        );
+        const pendingPolicy = await checkPolicy(current);
+        if (pendingPolicy) return pendingPolicy;
+        if (isImplicitIdToken) {
+          if (!query.nonce) {
+            throw new e.InvalidAuthorizationRequest.Error();
+          }
+
+          params.clearAccountSelectionSession?.();
+          return this.buildImplicitIdTokenRedirect({
+            clientId: client.clientId,
+            userSub: selectedSession.sub,
+            userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+            redirectUri: query.redirect_uri,
+            scope: grantedScopes,
+            nonce: query.nonce,
+            state: query.state,
+            authTime: selectedSession.authenticated_at,
+            responseMode: query.response_mode,
+          });
+        }
+
+        const codeParams: {
+          clientId: string;
+          clientEpoch: string;
+          userSub: string;
+          userEpoch: string;
+          redirectUri: string;
+          scope: string[];
+          nonce?: string;
+          codeChallenge?: string;
+          codeChallengeMethod?: 'S256' | 'plain';
+          authTime?: number;
+        } = {
+          clientId: client.id,
+          clientEpoch: client.tokenEpoch ?? '',
+          userSub: selectedSession.sub,
+          userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
+          redirectUri: query.redirect_uri,
+          scope: grantedScopes,
+        };
+
+        if (query.nonce) {
+          codeParams.nonce = query.nonce;
+        }
+        if (query.code_challenge) {
+          codeParams.codeChallenge = query.code_challenge;
+        }
+        if (query.code_challenge_method) {
+          codeParams.codeChallengeMethod = query.code_challenge_method;
+        }
+        // Include OIDC authentication metadata from session
+        if (userSession) {
+          codeParams.authTime = selectedSession.authenticated_at;
+        }
+
+        const code = await this.generateAuthorizationCode(codeParams);
+        params.clearAccountSelectionSession?.();
+
+        // 10. Redirect back to client with authorization code
+        const callbackUrl = this.buildCallbackUrl(
+          code,
+          query.state,
+          query.redirect_uri,
+          query.response_mode,
+        );
+
+        if (query.response_mode === 'form_post') {
+          const params: Record<string, string> = { code };
+          if (query.state) {
+            params['state'] = query.state;
+          }
+          return {
+            type: 'form_post',
+            url: query.redirect_uri,
+            params,
+          };
+        }
+
+        return {
+          type: 'redirect',
+          url: callbackUrl,
+        };
+      },
+    );
   }
 
   private parseResponseMode(
@@ -524,6 +566,7 @@ export class OAuthAuthorizeService {
   private createAccountSelectionSession(params: {
     clientId: string;
     query: AuthorizeParams;
+    authenticationEpochs?: Record<string, string>;
     rememberedAccounts: Array<{ sub: string }>;
   }): AccountSelectionSession {
     const clientOverride = this.config.clients.find(
@@ -672,6 +715,7 @@ export class OAuthAuthorizeService {
 
   private getTrustedAccountSelectionContinuation(params: {
     query: AuthorizeParams;
+    authenticationEpochs?: Record<string, string>;
     session: AccountSelectionSession | undefined;
     clientId: string;
     activeUserSub: string;
@@ -1119,6 +1163,7 @@ export class OAuthAuthorizeService {
   private async buildImplicitIdTokenRedirect(params: {
     clientId: string;
     userSub: string;
+    userEpoch: string;
     redirectUri: string;
     scope: string[];
     nonce: string;
@@ -1133,6 +1178,8 @@ export class OAuthAuthorizeService {
       },
     );
 
+    if (user.deleted_at || user.token_epoch !== params.userEpoch)
+      throw new e.Unauthorized.Error();
     const idTokenPayload: {
       sub: string;
       aud: string;
@@ -1226,7 +1273,9 @@ export class OAuthAuthorizeService {
    */
   private async generateAuthorizationCode(params: {
     clientId: string;
+    clientEpoch: string;
     userSub: string;
+    userEpoch: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
@@ -1236,7 +1285,9 @@ export class OAuthAuthorizeService {
   }): Promise<string> {
     const codeParams: {
       clientId: string;
+      clientEpoch: string;
       userSub: string;
+      userEpoch: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -1245,7 +1296,9 @@ export class OAuthAuthorizeService {
       authTime?: number;
     } = {
       clientId: params.clientId,
+      clientEpoch: params.clientEpoch,
       userSub: params.userSub,
+      userEpoch: params.userEpoch,
       redirectUri: params.redirectUri,
       scope: params.scope,
     };

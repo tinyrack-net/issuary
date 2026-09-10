@@ -11,6 +11,7 @@ import { AdminConsoleService } from './admin-console.service.ts';
 import { CleanupService } from './cleanup.service.ts';
 import { EmailService } from './email.service.ts';
 import { JwtService } from './jwt.service.ts';
+import { MailQueueService } from './mail-queue.service.js';
 import { MikroService } from './mikro.service.ts';
 import { OAuthAuthorizeService } from './oauth-authorize.service.ts';
 import { OAuthClientService } from './oauth-client.service.ts';
@@ -60,11 +61,19 @@ export async function initializeServices(
   // 3. Create services (respecting dependency order)
   const emailLogger = logger.child({ service: 'email' });
   const emailService = new EmailService(config, mikro, emailLogger);
+  const mailQueue = new MailQueueService(
+    config,
+    mikro,
+    emailService,
+    securityService,
+    emailLogger,
+  );
   const jwtService = new JwtService(config, mikro);
   const passwordAuthService = new PasswordAuthService(
     mikro,
     securityService,
     config.auth.password.policy,
+    config,
   );
   const passwordResetService = new PasswordResetService(
     mikro,
@@ -78,7 +87,7 @@ export async function initializeServices(
   const userService = new UserService(
     mikro,
     config,
-    emailService,
+    mailQueue,
     passwordAuthService,
     termsService,
   );
@@ -131,6 +140,7 @@ export async function initializeServices(
     mikro,
     scheduler,
     emailService,
+    mailQueue,
     jwtService,
     passwordAuthService,
     passwordResetService,
@@ -148,6 +158,7 @@ export async function initializeServices(
   };
 
   const cleanup = async () => {
+    await mailQueue.stop();
     await scheduler.stop();
     await mikro.close();
   };

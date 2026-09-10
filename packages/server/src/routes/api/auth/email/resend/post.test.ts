@@ -36,7 +36,7 @@ afterAll(async () => {
 });
 
 describe('POST /api/auth/email/resend', () => {
-  test('should return 404 for non-existent user', async () => {
+  test('returns generic success for non-existent user', async () => {
     const client = testClient(app);
     const res = await client.api.auth.email.resend.$post({
       header: { 'accept-language': 'en' },
@@ -45,11 +45,13 @@ describe('POST /api/auth/email/resend', () => {
       },
     });
 
-    const json = await assertJsonBody(res, 404);
-    expect(json.code).toBe('USER_NOT_FOUND');
+    const json = await assertJsonBody(res);
+    expect(json.message).toBe(
+      'If this address needs verification, an email will be sent.',
+    );
   });
 
-  test('should return 400 for already verified email', async () => {
+  test('returns generic success for already verified email', async () => {
     // Create a user with verified email
     const email = generateUniqueEmail('email-verified');
     const password = 'TestPassword123!';
@@ -71,8 +73,10 @@ describe('POST /api/auth/email/resend', () => {
       json: { email },
     });
 
-    const json = await assertJsonBody(res, 400);
-    expect(json.code).toBe('EMAIL_ALREADY_VERIFIED');
+    const json = await assertJsonBody(res);
+    expect(json.message).toBe(
+      'If this address needs verification, an email will be sent.',
+    );
   });
 
   test('should successfully resend verification email for unverified user', async () => {
@@ -100,7 +104,9 @@ describe('POST /api/auth/email/resend', () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.message).toBeDefined();
-    expect(json.message).toContain('Verification email has been resent');
+    expect(json.message).toBe(
+      'If this address needs verification, an email will be sent.',
+    );
   });
 
   test('should generate new verification token on resend', async () => {
@@ -132,6 +138,7 @@ describe('POST /api/auth/email/resend', () => {
 
     expect(res.status).toBe(200);
 
+    await services.mailQueue.runPending();
     // Verify new token was created
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
@@ -173,7 +180,7 @@ describe('POST /api/auth/email/resend', () => {
     expect(res.status).not.toBe(401);
   });
 
-  test('should return 404 for config user', async () => {
+  test('returns generic success for config user', async () => {
     // Config users exist but cannot have email verification resent
     // The endpoint should find the user and check email_verified status
     const client = testClient(app);
@@ -184,7 +191,10 @@ describe('POST /api/auth/email/resend', () => {
       },
     });
 
-    await expectError(res, e.EmailAlreadyVerified);
+    await expect(res.json()).resolves.toEqual({
+      message: 'If this address needs verification, an email will be sent.',
+    });
+    expect(res.status).toBe(200);
   });
 });
 

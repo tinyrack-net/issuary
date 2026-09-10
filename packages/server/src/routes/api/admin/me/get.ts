@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import { adminApiDocumentation } from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { requireAdmin } from '../../../../middleware/auth.ts';
 import { r } from '../../../../schemas/response.ts';
@@ -11,7 +11,6 @@ export const adminMeGet = new Hono<AppEnv>().get(
   '/admin/me',
   describeRoute({
     tags: [TAGS.ADMIN],
-    security: OPENAPI_SECURITY.cookieSession,
     summary: 'Get current admin',
     description: 'Get the current admin session identity.',
     responses: {
@@ -25,6 +24,7 @@ export const adminMeGet = new Hono<AppEnv>().get(
       },
     },
   }),
+  adminApiDocumentation,
   requireAdmin(),
   async (c) => {
     const { userService } = c.var.services;

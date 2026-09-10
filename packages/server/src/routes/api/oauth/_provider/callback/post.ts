@@ -1,25 +1,16 @@
 import { Hono } from 'hono';
-import { deleteCookie, getCookie } from 'hono/cookie';
+import { deleteCookie } from 'hono/cookie';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
-import { decrypt } from '../../../../../lib/crypto.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
 import { e, IssuaryError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
+import { completeOAuthAuthentication } from '../../../../../services/oauth-browser-security.service.js';
 import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
-
-const OAuthStateCookieSchema = z
-  .object({
-    state: z.string(),
-    codeVerifier: z.string(),
-    providerId: z.string(),
-    mode: f.oauthConnectMode,
-    returnUrl: z.string().optional(),
-  })
-  .strict();
 
 const OAuthProviderCallbackFormBody = z
   .object({
@@ -61,7 +52,15 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
             ),
           },
         },
-        description: 'State mismatch, session expired, or invalid request',
+        description:
+          'State mismatch, expired or revoked OAuth authentication, an identity changed during linking or registration, or invalid request',
+      },
+      401: {
+        content: {
+          'application/json': { schema: resolver(e.Unauthorized.Schema) },
+        },
+        description:
+          'Browser session expired, revoked, or changed during authentication',
       },
       403: {
         content: {
@@ -91,11 +90,13 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
               z.union([
                 e.OAuthEmailConflict.Schema,
                 e.OAuthAccountAlreadyLinked.Schema,
+                e.ConcurrentSecurityChange.Schema,
               ]),
             ),
           },
         },
-        description: 'Email conflict or account already linked',
+        description:
+          'Email conflict, account already linked, or concurrent security change',
       },
       502: {
         content: {
@@ -126,25 +127,8 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
     const { code, state, error, error_description } = c.req.valid('form');
     const { session } = c.var;
     const { config, oauthConnectService } = c.var.services;
-    let oauthSession = c.var.verifiedOAuth;
+    const oauthSession = c.var.verifiedOAuth;
     const oauthStateCookiePath = `/api/oauth/${provider}/callback`;
-
-    if (!oauthSession) {
-      const oauthStateCookie = getCookie(c, 'oauth_state');
-      if (oauthStateCookie) {
-        const decrypted = await decrypt(
-          oauthStateCookie,
-          config.security.session_secret,
-        );
-        if (decrypted) {
-          try {
-            oauthSession = OAuthStateCookieSchema.parse(JSON.parse(decrypted));
-          } catch {
-            oauthSession = undefined;
-          }
-        }
-      }
-    }
 
     // Handle OAuth error response
     if (error) {
@@ -170,6 +154,8 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       throw new e.OAuthSessionExpired.Error();
     }
 
+    let authenticationTransactionStarted = false;
+    let authenticationCommitted = false;
     let result: OAuthCallbackResult;
     try {
       result = await oauthConnectService.processOAuthCallback({
@@ -179,9 +165,24 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
         oauthSession,
         userSub: c.var.verifiedUser?.user.sub,
         requestUrl: c.req.url,
+        completeAuthentication: async (proof, operation) => {
+          authenticationTransactionStarted = true;
+          const completed = await completeOAuthAuthentication(
+            c,
+            proof,
+            operation,
+          );
+          authenticationCommitted = true;
+          return completed;
+        },
+        completeLink: (operation) =>
+          withBrowserSecurity(c, async () => {
+            await operation();
+            session.set('oauth', undefined);
+          }),
       });
     } catch (err) {
-      session.set('oauth', undefined);
+      if (!authenticationTransactionStarted) session.set('oauth', undefined);
       deleteCookie(c, 'oauth_state', { path: oauthStateCookiePath });
       if (err instanceof IssuaryError) {
         return c.json(err.toJson(), err.status);
@@ -200,10 +201,12 @@ export const oauthProviderCallbackPost = new Hono<AppEnv>().post(
       case 'terms_redirect':
         return c.redirect(result.url);
       case 'login_terms_redirect':
-        session.setUserSession(result.userSub);
+        if (!authenticationCommitted)
+          session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.termsUrl);
       case 'login_complete':
-        session.setUserSession(result.userSub);
+        if (!authenticationCommitted)
+          session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.returnUrl || '/profile');
     }
   },

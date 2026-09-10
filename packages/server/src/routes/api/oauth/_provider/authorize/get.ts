@@ -77,6 +77,10 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
       );
 
     // Store OAuth session data in secure session
+    if (mode === 'link' && c.var.verifiedUser) {
+      sessionData.linkSubject = c.var.verifiedUser.user.sub;
+      sessionData.linkEpoch = c.var.verifiedUser.user.token_epoch;
+    }
     session.set('oauth', sessionData);
 
     const providerConfig = oauthConnectService.getProvider(provider);
@@ -85,7 +89,7 @@ export const oauthProviderAuthorizeGet = new Hono<AppEnv>().get(
         c,
         'oauth_state',
         await encrypt(
-          JSON.stringify(sessionData),
+          JSON.stringify({ sid: session.id, kind: 'oauth' }),
           config.security.session_secret,
         ),
         {

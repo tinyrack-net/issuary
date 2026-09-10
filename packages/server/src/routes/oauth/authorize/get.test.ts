@@ -2,7 +2,6 @@ import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
-import { encrypt } from '../../../lib/crypto.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -18,6 +17,7 @@ import {
   TEST_PKCE,
   TEST_USER_CONFIG,
 } from '../../../test-utils/index.ts';
+import { createStoredSessionCookie } from '../../../test-utils/stored-session.js';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -254,7 +254,8 @@ async function getAuthorizationCodeWithConsent(
 async function createSessionCookieWithAuthTime(
   authenticatedAt: number,
 ): Promise<string> {
-  return encrypt(
+  return createStoredSessionCookie(
+    services,
     JSON.stringify({
       user: {
         sub: TEST_USER_CONFIG.sub,
@@ -268,7 +269,8 @@ async function createSessionCookieWithAuthTime(
 async function createSessionCookieWithGenericReauthentication(
   authenticatedAt: number,
 ): Promise<string> {
-  return encrypt(
+  return createStoredSessionCookie(
+    services,
     JSON.stringify({
       user: {
         sub: TEST_USER_CONFIG.sub,
@@ -306,7 +308,8 @@ async function createSessionCookieWithBoundReauthentication(
   authenticatedAt: number,
   params: Record<string, string>,
 ): Promise<string> {
-  return encrypt(
+  return createStoredSessionCookie(
+    services,
     JSON.stringify({
       user: {
         sub: TEST_USER_CONFIG.sub,

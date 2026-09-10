@@ -1,8 +1,11 @@
+import { AuthBudgetEntitySchema } from '../entities/auth-budget.entity.js';
+import { BrowserSessionEntitySchema } from '../entities/browser-session.entity.js';
 import { EmailVerificationEntitySchema } from '../entities/email-verification.entity.ts';
 import { JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../entities/oauth-code.entity.ts';
 import { OAuthDeviceCodeEntitySchema } from '../entities/oauth-device-code.entity.ts';
+import { OAuthGrantEntitySchema } from '../entities/oauth-grant.entity.js';
 import { PasswordResetEntitySchema } from '../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../entities/revoked-token.entity.ts';
@@ -201,13 +204,26 @@ export class CleanupService {
     const consumedRetentionMs = parseDurationToMs(config.consumed_retention);
     const consumedCutoffDate = calculateCutoffDate(config.consumed_retention);
 
+    // Preserve replay evidence until every token linked to the code expires.
+    const protectedGrants = await em.find(
+      OAuthGrantEntitySchema,
+      { expires_at: { $gt: now } },
+      { fields: ['id'] },
+    );
+    const retainedIds = protectedGrants.map((grant) => grant.id);
+    const replayEvidence = {
+      $or: [{ grant_id: null }, { grant_id: { $nin: retainedIds } }],
+    };
+
     // Find expired authorization codes
     const expiredCodes = await oauthCodeRepo.find({
+      ...replayEvidence,
       expiredAt: { $lt: now },
     });
 
     // Find consumed codes older than retention period
     const consumedCodes = await oauthCodeRepo.find({
+      ...replayEvidence,
       consumedAt: { $ne: null, $lt: consumedCutoffDate },
     });
 
@@ -739,8 +755,32 @@ export class CleanupService {
   /**
    * Build cleanup tasks
    */
+  public async cleanupSecurityState(
+    options: CleanupOptions,
+  ): Promise<CleanupResult> {
+    const em = this.mikro.em.fork();
+    const where = { expires_at: { $lte: new Date() } };
+    const sessionCount = options.dryRun
+      ? await em.count(BrowserSessionEntitySchema, where)
+      : await em.nativeDelete(BrowserSessionEntitySchema, where);
+    const budgetCount = options.dryRun
+      ? await em.count(AuthBudgetEntitySchema, where)
+      : await em.nativeDelete(AuthBudgetEntitySchema, where);
+    const grantCount = options.dryRun
+      ? await em.count(OAuthGrantEntitySchema, where)
+      : await em.nativeDelete(OAuthGrantEntitySchema, where);
+    const deletedCount = sessionCount + budgetCount + grantCount;
+    return { deletedCount, skipped: false };
+  }
+
   private buildCleanupTasks(dryRun: boolean): CleanupTask[] {
     return [
+      {
+        name: 'security-state',
+        description:
+          'Remove expired browser sessions and authentication budgets',
+        run: () => this.cleanupSecurityState({ dryRun }),
+      },
       {
         name: 'revoked-tokens',
         description: 'Remove expired revoked tokens',

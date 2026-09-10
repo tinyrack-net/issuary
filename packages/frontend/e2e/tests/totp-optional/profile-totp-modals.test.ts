@@ -277,9 +277,12 @@ test.describe('DisableTotpModal (profile, optional 2FA)', () => {
     if (!registerRes.ok) {
       throw new Error(`Failed to register user: ${registerRes.status}`);
     }
+    // This case exercises disabling an enrolled factor. Establish the browser
+    // session before seeding it so its first OTP is consumed by the disable
+    // request, not by a preceding login in the same TOTP time step.
+    await loginAndGoToProfile(page, email, TEST_PASSWORD);
     const { secret } = await setupTotpViaTestApi(String(baseURL), email);
-
-    await loginWithTotpAndGoToProfile(page, email, TEST_PASSWORD, secret);
+    await page.reload();
 
     // Verify TOTP is enabled
     await expect(

@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { f } from '../../../../schemas/field.ts';
 import { r } from '../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 /**
  * DELETE /api/user/totp
@@ -64,29 +68,21 @@ export const userTotpDelete = new Hono<AppEnv>().delete(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
-    const body = c.req.valid('json');
-    const { user: userEntity } = c.var.verifiedUser;
-    const { config, mikro, totpService } = c.var.services;
+    return withBrowserSecurity(c, async () => {
+      const body = c.req.valid('json');
+      const { user: userEntity } = c.var.verifiedUser;
+      const { totpService } = c.var.services;
 
-    // Config users cannot manage 2FA
-    if (userEntity.managed_by === 'config') {
-      throw new e.SecondFactorNotAllowedForConfigUser.Error();
-    }
+      // Config users cannot manage 2FA
+      if (userEntity.managed_by === 'config') {
+        throw new e.SecondFactorNotAllowedForConfigUser.Error();
+      }
 
-    // Check if 2FA is required
-    const secondFactorRequired =
-      config.auth.password.two_factor.enrollment_required;
+      await totpService.disable(userEntity.sub, body.code);
 
-    // Check if user has other 2FA method (passkey)
-    const passkeyCount = await mikro.userPasskey.countByUserSub(userEntity.sub);
-    const hasOtherSecondFactor = passkeyCount > 0;
-
-    await totpService.disable(userEntity.sub, body.code, {
-      secondFactorRequired,
-      hasOtherSecondFactor,
+      return c.json({ ok: true as const }, 200);
     });
-
-    return c.json({ ok: true as const }, 200);
   },
 );

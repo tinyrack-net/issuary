@@ -14,6 +14,8 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { setPasswordMutationOptions } from '#frontend/queries/password.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -68,6 +70,7 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
         queryKey: getSessionQueryOptions.queryKey,
       });
       handleClose();
+      navigateDocument('/login');
     },
   });
 
@@ -82,7 +85,11 @@ export function SetPasswordModal({ isOpen, onClose }: SetPasswordModalProps) {
     } catch (error) {
       void error;
       form.setError('root', {
-        message: t('profile.password.setModal.error'),
+        message: securityErrorMessage(
+          error,
+          t,
+          t('profile.password.setModal.error'),
+        ),
       });
     }
   });

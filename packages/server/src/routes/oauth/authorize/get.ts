@@ -3,12 +3,16 @@ import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
 import { escapeHtml } from '../../../lib/escape-html.js';
-import { OPENAPI_SECURITY } from '../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../lib/openapi.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
+import { completeBrowserAuthorization } from '../../../services/authorization-browser.service.js';
 import type { AuthorizeParams } from '../../../services/oauth-authorize.service.ts';
 
 export const authorizeGet = new Hono<AppEnv>().get(
@@ -17,7 +21,8 @@ export const authorizeGet = new Hono<AppEnv>().get(
     tags: [TAGS.OPENID],
     security: OPENAPI_SECURITY.optionalCookieSession,
     summary: 'Authorize',
-    description: 'OAuth2 Authorization Endpoint',
+    description:
+      'OAuth2 Authorization Endpoint. Grant issuance and browser session persistence commit atomically; revoked browser authentication returns 401 without authorization credentials. Final issuance rechecks current scope consent, consent exemption and mandatory terms under policy locks. Newly required consent or terms returns to the corresponding screen, or an OAuth interaction error for prompt=none, without issuing authorization credentials.',
     responses: {
       302: {
         description: 'Redirect',
@@ -73,6 +78,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
     }),
   ),
   verifyAuth({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
     const query = c.req.valid('query');
     const { oauthAuthorizeService } = c.var.services;
@@ -186,7 +192,13 @@ export const authorizeGet = new Hono<AppEnv>().get(
       authorizeParams.clearAccountSelectionSession = () =>
         c.var.session.set('accountSelection', undefined);
 
-      const result = await oauthAuthorizeService.authorize(authorizeParams);
+      const result = await oauthAuthorizeService.authorize({
+        ...authorizeParams,
+        completeAuthorization: (proof, operation) =>
+          completeBrowserAuthorization(c, proof, operation),
+        authenticationEpochs:
+          c.var.session.authorization.security?.grants ?? {},
+      });
 
       if (result.type === 'form_post') {
         return c.html(buildFormPostResponse(result.url, result.params ?? {}));
@@ -195,6 +207,11 @@ export const authorizeGet = new Hono<AppEnv>().get(
       // Redirect based on result
       return c.redirect(result.url);
     } catch (error) {
+      if (
+        error instanceof e.Unauthorized.Error ||
+        error instanceof e.ConcurrentSecurityChange.Error
+      )
+        throw error;
       // RFC 6749 §4.1.2.1: If client_id is invalid or redirect_uri validation fails,
       // do NOT redirect to the provided redirect_uri
       if (error instanceof e.OAuthClientNotFound.Error) {

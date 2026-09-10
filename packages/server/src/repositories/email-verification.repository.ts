@@ -9,6 +9,7 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
    */
   async generateToken(params: {
     userSub: string;
+    userEpoch: string;
     expiresInHours?: number;
   }): Promise<IEmailVerificationEntity> {
     const token = crypto.randomUUID();
@@ -16,17 +17,18 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
     const expiresInHours = params.expiresInHours || 24;
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
-    const previousTokens = await this.find({
-      user: ref(UserEntity, params.userSub),
-      verified: false,
-    });
-
-    for (const prevToken of previousTokens) {
-      prevToken.expiresAt = new Date(); // Expire immediately
-    }
+    await this.nativeUpdate(
+      {
+        user: ref(UserEntity, params.userSub),
+        verified: false,
+        revoked_at: null,
+      },
+      { revoked_at: new Date() },
+    );
 
     const entity = this.create({
       user: params.userSub,
+      user_epoch: params.userEpoch,
       token,
       expiresAt,
     });
@@ -41,26 +43,12 @@ export class EmailVerificationRepository extends EntityRepository<IEmailVerifica
    * @returns The verified entity with user populated, or null if invalid
    */
   async verifyToken(token: string): Promise<IEmailVerificationEntity | null> {
-    const entity = await this.findOne(
-      { token, verified: false },
-      { populate: ['user'] },
+    const now = new Date();
+    const changed = await this.nativeUpdate(
+      { token, verified: false, revoked_at: null, expiresAt: { $gt: now } },
+      { verified: true, verifiedAt: now },
     );
-
-    if (!entity) {
-      return null;
-    }
-
-    // Check if expired
-    if (entity.expiresAt < new Date()) {
-      return null;
-    }
-
-    // Mark as verified
-    entity.verified = true;
-    entity.verifiedAt = new Date();
-
-    await this.getEntityManager().flush();
-
-    return entity;
+    if (changed !== 1) return null;
+    return this.findOne({ token }, { populate: ['user'], refresh: true });
   }
 }

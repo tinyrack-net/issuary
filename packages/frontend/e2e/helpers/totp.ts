@@ -99,11 +99,9 @@ export async function setupTotpViaApi(
 /**
  * Sets up TOTP for a user via the test-only endpoint (no session required).
  *
- * Performs the full server-side TOTP setup flow, including generating
- * recovery codes and confirming the setup, while bypassing the
- * authenticated browser flow. This avoids cookie-store mismatch between
- * the Hono RPC client (used for registration) and Playwright's
- * APIRequestContext.
+ * Seeds an enrolled factor and recovery codes without consuming a TOTP
+ * step, so the subsequent login can use the current code. Use
+ * setupTotpViaApi to exercise the authenticated setup flow.
  *
  * @param baseURL - Backend base URL
  * @param email - User email
@@ -131,8 +129,8 @@ export async function setupTotpViaTestApi(
  * Sets up TOTP with recovery codes via the test-only endpoint
  * (no session required).
  *
- * Performs the full TOTP setup flow server-side (start, verify, confirm)
- * and returns both the secret and recovery codes.
+ * Seeds an enrolled factor without consuming a TOTP step and returns
+ * both the secret and recovery codes.
  *
  * @param baseURL - Backend base URL
  * @param email - User email

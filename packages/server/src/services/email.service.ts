@@ -12,6 +12,7 @@ import { DEFAULT_LOCALE, type Locale } from '../lib/locale.ts';
 import type { Logger } from '../lib/logger.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
+import { withUserSecurity } from './user-security.service.js';
 
 export class EmailService {
   private readonly transporter: Promise<EmailTransport> | null;
@@ -59,6 +60,7 @@ export class EmailService {
     email: string;
     token: string;
     locale?: Locale | undefined;
+    messageId?: string | undefined;
   }): Promise<void> {
     if (!this.config.email || !this.transporter) {
       throw new e.EmailNotActivated.Error();
@@ -77,6 +79,7 @@ export class EmailService {
     await transporter.sendMail({
       from: this.config.email.from,
       to: params.email,
+      messageId: params.messageId,
       subject,
       text,
       html,
@@ -85,20 +88,11 @@ export class EmailService {
     this.logger.info('Verification email sent');
   }
 
-  public sendVerificationEmailAsync(params: {
-    email: string;
-    token: string;
-    locale?: Locale | undefined;
-  }): void {
-    this.sendVerificationEmail(params).catch((err: unknown) => {
-      this.logger.error({ err }, 'Failed to send verification email');
-    });
-  }
-
   public async sendPasswordResetEmail(params: {
     email: string;
     token: string;
     locale?: Locale | undefined;
+    messageId?: string | undefined;
   }): Promise<void> {
     if (!this.config.email || !this.transporter) {
       throw new e.EmailNotActivated.Error();
@@ -117,26 +111,13 @@ export class EmailService {
     await transporter.sendMail({
       from: this.config.email.from,
       to: params.email,
+      messageId: params.messageId,
       subject,
       text,
       html,
     });
 
     this.logger.info('Password reset email sent');
-  }
-
-  /**
-   * Send password reset email asynchronously (fire-and-forget)
-   * Logs errors but does not throw
-   */
-  public sendPasswordResetEmailAsync(params: {
-    email: string;
-    token: string;
-    locale?: Locale | undefined;
-  }): void {
-    this.sendPasswordResetEmail(params).catch((err: unknown) => {
-      this.logger.error({ err }, 'Failed to send password reset email');
-    });
   }
 
   /**
@@ -151,11 +132,14 @@ export class EmailService {
     if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
-    const token = await this.mikro.emailVerification.generateToken({
-      userSub: params.userSub,
-      expiresInHours: params.expiresInHours || 24,
+    return withUserSecurity(this.mikro, params.userSub, async (user) => {
+      const token = await this.mikro.emailVerification.generateToken({
+        userSub: params.userSub,
+        userEpoch: user.token_epoch,
+        expiresInHours: params.expiresInHours || 24,
+      });
+      return token;
     });
-    return token;
   }
 
   /**
@@ -167,17 +151,37 @@ export class EmailService {
     if (!this.config.email) {
       throw new e.EmailNotActivated.Error();
     }
-    const verification = await this.mikro.emailVerification.verifyToken(token);
-    if (!verification) {
-      throw new e.InvalidVerificationToken.Error();
-    }
-    const user = await verification.user.load();
-    if (!user) {
-      throw new e.UserNotFound.Error();
-    }
-    user.email_verified = true;
-    await this.mikro.em.flush();
-    return user;
+    const candidate = await this.mikro.emailVerification.findOne({
+      token,
+      verified: false,
+      revoked_at: null,
+      expiresAt: { $gt: new Date() },
+    });
+    if (!candidate) throw new e.InvalidVerificationToken.Error();
+    return withUserSecurity(
+      this.mikro,
+      candidate.user.sub,
+      async (freshUser) => {
+        if (
+          freshUser.deleted_at ||
+          candidate.user_epoch !== freshUser.token_epoch
+        )
+          throw new e.InvalidVerificationToken.Error();
+        const verification =
+          await this.mikro.emailVerification.verifyToken(token);
+        if (!verification) {
+          throw new e.InvalidVerificationToken.Error();
+        }
+        const user = await verification.user.load();
+        if (!user || user.deleted_at) {
+          throw new e.UserNotFound.Error();
+        }
+        user.email_verified = true;
+        await this.mikro.em.flush();
+        return user;
+      },
+      { includeDeleted: true },
+    );
   }
 
   /**
@@ -192,7 +196,7 @@ export class EmailService {
       throw new e.EmailNotActivated.Error();
     }
     const user = await this.mikro.user.findOneOrFail(
-      { email },
+      { email, deleted_at: null },
       {
         failHandler: () => new e.UserNotFound.Error(),
       },
@@ -216,6 +220,7 @@ export class EmailService {
     const count = await this.mikro.emailVerification.count({
       user: { sub: userSub },
       verified: false,
+      revoked_at: null,
       expiresAt: { $gt: new Date() },
     });
     return count > 0;

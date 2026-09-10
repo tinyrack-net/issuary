@@ -14,7 +14,9 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
 import { IssuaryError } from '#frontend/libs/error.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { changePasswordMutationOptions } from '#frontend/queries/password.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -77,6 +79,7 @@ export function ChangePasswordModal({
         queryKey: getSessionQueryOptions.queryKey,
       });
       handleClose();
+      navigateDocument('/login');
     },
   });
 
@@ -101,7 +104,11 @@ export function ChangePasswordModal({
         });
       } else {
         form.setError('root', {
-          message: t('profile.password.changeModal.error'),
+          message: securityErrorMessage(
+            err,
+            t,
+            t('profile.password.changeModal.error'),
+          ),
         });
       }
     }

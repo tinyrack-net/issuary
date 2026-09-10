@@ -166,6 +166,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const login = await scopedClient.api.auth.login.$post({
@@ -254,6 +255,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const secondUser = await createPasswordUser(
@@ -324,6 +326,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const secondUser = await createPasswordUser(
@@ -372,6 +375,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const login = await scopedClient.api.auth.login.$post({
@@ -413,6 +417,7 @@ describe('remembered account APIs', () => {
       ],
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const login = await scopedClient.api.auth.login.$post({
@@ -467,6 +472,7 @@ describe('remembered account APIs', () => {
       users: [TEST_USER_CONFIG],
     });
 
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const secondUser = await createPasswordUser(
@@ -561,6 +567,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const login = await scopedClient.api.auth.login.$post({
@@ -598,6 +605,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const secondUser = await createPasswordUser(
@@ -678,6 +686,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const login = await scopedClient.api.auth.login.$post({
@@ -714,6 +723,7 @@ describe('remembered account APIs', () => {
       },
       users: [TEST_USER_CONFIG],
     });
+    if (vi.isFakeTimers()) vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const scopedClient = testClient(scopedServer.app);
       const secondUser = await createPasswordUser(

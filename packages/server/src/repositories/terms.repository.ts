@@ -12,6 +12,7 @@ export class TermsRepository extends EntityRepository<ITermsEntity> {
       { archivedAt: null },
       {
         populate: ['contents'],
+        refresh: true,
       },
     );
   }

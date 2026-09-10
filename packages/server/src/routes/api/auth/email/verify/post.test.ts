@@ -57,6 +57,7 @@ describe('POST /api/auth/email/verify', () => {
     expect(registerBody.user.email_verification_required).toBe(true);
 
     // 2. Get the verification token from database
+    await services.mailQueue.runPending();
     const token = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -127,6 +128,7 @@ describe('POST /api/auth/email/verify', () => {
       password: REGISTERED_USER_PASSWORD,
     });
 
+    await services.mailQueue.runPending();
     // 2. Get the verification token and expire it
     await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
@@ -145,6 +147,7 @@ describe('POST /api/auth/email/verify', () => {
     });
 
     // 3. Get the expired token
+    await services.mailQueue.runPending();
     const token = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -177,6 +180,7 @@ describe('POST /api/auth/email/verify', () => {
     });
 
     // 2. Get the token
+    await services.mailQueue.runPending();
     const token = await withMikroContext(services, async () => {
       const user = await services.mikro.user.findOneOrFail({
         email: uniqueEmail,
@@ -252,6 +256,7 @@ describe('POST /api/auth/email/verify - pending 2FA setup', () => {
       password: REGISTERED_USER_PASSWORD,
     });
 
+    await services2FA.mailQueue.runPending();
     const token = await withMikroContext(services2FA, async () => {
       const user = await services2FA.mikro.user.findOneOrFail({
         email: uniqueEmail,

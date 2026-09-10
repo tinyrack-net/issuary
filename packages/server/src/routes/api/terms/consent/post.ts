@@ -1,12 +1,18 @@
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { termsSchema } from '../../../../schemas/terms.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
+import { lockTermsPolicy } from '../../../../services/terms-policy.service.js';
 
 /**
  * POST /api/terms/consent
@@ -22,7 +28,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
     description:
       'Record user consent decisions for terms of service. ' +
       'Required terms must be agreed to. ' +
-      'For pending OAuth registration, this also completes user registration.',
+      'Pending OAuth tokens can create a new account only; if that identity or email now exists, restart OAuth login.',
     responses: {
       200: {
         content: {
@@ -62,6 +68,7 @@ export const termsConsentPost = new Hono<AppEnv>().post(
   }),
   validator('json', termsSchema.TermsConsentRequest),
   verifyAuth({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
     const body = c.req.valid('json');
     const { consents, registrationToken } = body;
@@ -70,51 +77,62 @@ export const termsConsentPost = new Hono<AppEnv>().post(
 
     // Check for pending OAuth registration (stored in DB, referenced by token)
     if (registrationToken) {
-      const pendingRegistration =
-        await mikro.pendingOAuthRegistration.findValidByToken(
-          registrationToken,
-        );
+      try {
+        return await session.atomic(async () => {
+          await lockTermsPolicy(mikro.em, 'read');
+          const pendingRegistration =
+            await mikro.pendingOAuthRegistration.claim(registrationToken);
 
-      if (!pendingRegistration) {
-        throw new e.OAuthSessionExpired.Error();
+          if (!pendingRegistration) {
+            throw new e.OAuthSessionExpired.Error();
+          }
+
+          // Validate explicit terms consent
+          const validation =
+            await termsService.validateExplicitConsents(consents);
+
+          if (!validation.valid) {
+            throw new e.ValidationError.Error(
+              `Missing required terms: ${validation.missingTerms.join(', ')}`,
+            );
+          }
+
+          // Complete OAuth registration
+          const result = await oauthConnectService.completeOAuthRegistration({
+            providerId: pendingRegistration.providerId,
+            tokens: {
+              access_token: pendingRegistration.accessToken,
+              refresh_token: pendingRegistration.refreshToken ?? undefined,
+              expires_in: pendingRegistration.expiresIn ?? undefined,
+              token_type: pendingRegistration.tokenType,
+            },
+            userInfo: pendingRegistration.userInfo,
+            consents,
+          });
+
+          // Set user session
+          session.setUserSession(result.user.sub, result.user.token_epoch);
+
+          // Clean up: remove DB record
+          await mikro.pendingOAuthRegistration.consumeByToken(
+            registrationToken,
+          );
+
+          return c.json(
+            {
+              ok: true as const,
+              recorded: consents.length,
+              registered: true,
+            },
+            200,
+          );
+        });
+      } catch (error) {
+        // Another new-account flow may win the unique identity/email insert.
+        if (error instanceof UniqueConstraintViolationException)
+          throw new e.OAuthSessionExpired.Error();
+        throw error;
       }
-
-      // Validate explicit terms consent
-      const validation = await termsService.validateExplicitConsents(consents);
-
-      if (!validation.valid) {
-        throw new e.ValidationError.Error(
-          `Missing required terms: ${validation.missingTerms.join(', ')}`,
-        );
-      }
-
-      // Complete OAuth registration
-      const result = await oauthConnectService.completeOAuthRegistration({
-        providerId: pendingRegistration.providerId,
-        tokens: {
-          access_token: pendingRegistration.accessToken,
-          refresh_token: pendingRegistration.refreshToken ?? undefined,
-          expires_in: pendingRegistration.expiresIn ?? undefined,
-          token_type: pendingRegistration.tokenType,
-        },
-        userInfo: pendingRegistration.userInfo,
-        consents,
-      });
-
-      // Set user session
-      session.setUserSession(result.user.sub);
-
-      // Clean up: remove DB record
-      await mikro.pendingOAuthRegistration.consumeByToken(registrationToken);
-
-      return c.json(
-        {
-          ok: true as const,
-          recorded: consents.length,
-          registered: true,
-        },
-        200,
-      );
     }
 
     // Standard flow: authenticated user recording consent
@@ -123,25 +141,31 @@ export const termsConsentPost = new Hono<AppEnv>().post(
       throw new e.Unauthorized.Error();
     }
 
-    // Validate and record consents
-    const { validation, records } =
-      await termsService.validateAndRecordConsents({
-        userSub: verifiedAuth.user.sub,
-        consents,
-      });
+    return withBrowserSecurity(
+      c,
+      async () => {
+        // Validate and record consents
+        const { validation, records } =
+          await termsService.validateAndRecordConsents({
+            userSub: verifiedAuth.user.sub,
+            consents,
+          });
 
-    if (!validation.valid) {
-      throw new e.ValidationError.Error(
-        `Missing required terms: ${validation.missingTerms.join(', ')}`,
-      );
-    }
+        if (!validation.valid) {
+          throw new e.ValidationError.Error(
+            `Missing required terms: ${validation.missingTerms.join(', ')}`,
+          );
+        }
 
-    return c.json(
-      {
-        ok: true as const,
-        recorded: records.length,
+        return c.json(
+          {
+            ok: true as const,
+            recorded: records.length,
+          },
+          200,
+        );
       },
-      200,
+      { termsPolicy: 'read' },
     );
   },
 );

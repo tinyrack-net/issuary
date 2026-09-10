@@ -353,6 +353,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     // 2. Register test-only API endpoints
     const testApp = app
       .get('/test/email-token/:email', async (c) => {
+        await services.mailQueue.runPending();
         const email = c.req.param('email');
         const user = await services.mikro.user.findOne({ email });
         if (!user) {
@@ -379,6 +380,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         return c.json({ secret: totp.secret });
       })
       .get('/test/password-reset-token/:email', async (c) => {
+        await services.mailQueue.runPending();
         const email = c.req.param('email');
         const user = await services.mikro.user.findOne({ email });
         if (!user) {
@@ -416,17 +418,18 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         if (!user) {
           return c.json({ error: 'User not found' }, 404);
         }
-        const setupData = await services.totpService.startSetup(user);
-        const code = services.totpService.generateToken(setupData.secret);
-        const recoveryCodes = await services.totpService.verifySetup(
-          user.sub,
-          code,
-        );
-        await services.totpService.confirmSetup(user.sub);
-        return c.json({
-          secret: setupData.secret,
-          recovery_codes: recoveryCodes,
+        // Seed an enrolled factor without consuming the code used by login tests.
+        const secret = services.totpService.generateSecret();
+        const totp = services.mikro.userTotp.create({
+          user: user.sub,
+          secret,
+          verified: true,
+          recovery_confirmed: true,
         });
+        await services.mikro.em.persist(totp).flush();
+        const recoveryCodes =
+          await services.totpService.generateRecoveryCodes(user);
+        return c.json({ secret, recovery_codes: recoveryCodes });
       })
       .post('/test/passkey/setup/:email', async (c) => {
         const email = c.req.param('email');
@@ -662,6 +665,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
     return {
       app: testApp,
+      services,
       backendPort,
       auxiliaryPort,
       releaseAuxiliaryPort: auxiliaryPortReservation.release,

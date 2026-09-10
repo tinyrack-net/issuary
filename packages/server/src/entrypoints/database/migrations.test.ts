@@ -12,6 +12,10 @@ import { Migration20260825110000_add_password_reset_required as PostgresPassword
 import { Migration20260825140000_drop_password_reset_required as PostgresDropPasswordResetRequiredMigration } from '../../migrations/postgres/Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms as PostgresArchiveTermsMigration } from '../../migrations/postgres/Migration20260827090000_archive_terms.js';
 import { Migration20260904090000_add_oauth_client_lifecycle as PostgresOAuthClientLifecycleMigration } from '../../migrations/postgres/Migration20260904090000_add_oauth_client_lifecycle.js';
+import { Migration20260910120000_api_security as PostgresApiSecurityMigration } from '../../migrations/postgres/Migration20260910120000_api_security.js';
+import { Migration20260910160000_security_followup as PostgresSecurityFollowupMigration } from '../../migrations/postgres/Migration20260910160000_security_followup.js';
+import { Migration20260910200000_authentication_epoch as PostgresAuthenticationEpochMigration } from '../../migrations/postgres/Migration20260910200000_authentication_epoch.js';
+import { Migration20260910220000_flow_revocation as PostgresFlowRevocationMigration } from '../../migrations/postgres/Migration20260910220000_flow_revocation.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -25,6 +29,10 @@ import { Migration20260825110000_add_password_reset_required as SqlitePasswordRe
 import { Migration20260825140000_drop_password_reset_required as SqliteDropPasswordResetRequiredMigration } from '../../migrations/sqlite/Migration20260825140000_drop_password_reset_required.js';
 import { Migration20260827090000_archive_terms as SqliteArchiveTermsMigration } from '../../migrations/sqlite/Migration20260827090000_archive_terms.js';
 import { Migration20260904090000_add_oauth_client_lifecycle as SqliteOAuthClientLifecycleMigration } from '../../migrations/sqlite/Migration20260904090000_add_oauth_client_lifecycle.js';
+import { Migration20260910120000_api_security as SqliteApiSecurityMigration } from '../../migrations/sqlite/Migration20260910120000_api_security.js';
+import { Migration20260910160000_security_followup as SqliteSecurityFollowupMigration } from '../../migrations/sqlite/Migration20260910160000_security_followup.js';
+import { Migration20260910200000_authentication_epoch as SqliteAuthenticationEpochMigration } from '../../migrations/sqlite/Migration20260910200000_authentication_epoch.js';
+import { Migration20260910220000_flow_revocation as SqliteFlowRevocationMigration } from '../../migrations/sqlite/Migration20260910220000_flow_revocation.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -90,6 +98,10 @@ describe('database migrations', () => {
       PostgresDropPasswordResetRequiredMigration,
       PostgresArchiveTermsMigration,
       PostgresOAuthClientLifecycleMigration,
+      PostgresApiSecurityMigration,
+      PostgresSecurityFollowupMigration,
+      PostgresAuthenticationEpochMigration,
+      PostgresFlowRevocationMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -134,6 +146,10 @@ describe('database migrations', () => {
       SqliteDropPasswordResetRequiredMigration,
       SqliteArchiveTermsMigration,
       SqliteOAuthClientLifecycleMigration,
+      SqliteApiSecurityMigration,
+      SqliteSecurityFollowupMigration,
+      SqliteAuthenticationEpochMigration,
+      SqliteFlowRevocationMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();

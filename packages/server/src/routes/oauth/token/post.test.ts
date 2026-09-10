@@ -90,6 +90,7 @@ beforeAll(async () => {
       );
     const refreshOnlyClient = services.mikro.oauthClient.create({
       clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,
+      tokenEpoch: crypto.randomUUID(),
       clientSecretHash: refreshOnlySecretHash,
       name: 'Refresh Only Client',
       grantTypes: ['refresh_token'],
@@ -249,6 +250,7 @@ describe('POST /oauth/token', () => {
           clientId: encodedClient.clientId,
           clientSecretHash,
           name: 'Basic Encoded Client',
+          tokenEpoch: crypto.randomUUID(),
           redirectUris: [encodedClient.redirectUri],
           responseTypes: ['code'],
           grantTypes: ['authorization_code'],
@@ -886,7 +888,7 @@ describe('POST /oauth/token', () => {
       expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
-    test('should consume authorization code after failed PKCE verification', async () => {
+    test('should preserve authorization code after failed PKCE verification', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
@@ -907,8 +909,8 @@ describe('POST /oauth/token', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const retryJson = await assertJsonBody(retryRes, 400);
-      expect(retryJson.code).toBe('INVALID_AUTHORIZATION_CODE');
+      const retryJson = await assertJsonBody(retryRes, 200);
+      expect(retryJson.access_token).toBeDefined();
     });
 
     test('should reject public client legacy authorization code without stored code_challenge', async () => {
@@ -1375,6 +1377,12 @@ describe('POST /oauth/token', () => {
     });
 
     test('should reject authorization_code grant when client is not allowed to use it', async () => {
+      await withMikroContext(services, () =>
+        services.mikro.oauthClient.nativeUpdate(
+          { clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId },
+          { grantTypes: ['authorization_code', 'refresh_token'] },
+        ),
+      );
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
@@ -1382,6 +1390,12 @@ describe('POST /oauth/token', () => {
         redirectUri: REFRESH_ONLY_OAUTH_CLIENT.redirectUri,
       });
 
+      await withMikroContext(services, () =>
+        services.mikro.oauthClient.nativeUpdate(
+          { clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId },
+          { grantTypes: ['refresh_token'] },
+        ),
+      );
       const res = await exchangeCode({
         code,
         clientId: REFRESH_ONLY_OAUTH_CLIENT.clientId,

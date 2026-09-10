@@ -20,6 +20,10 @@ import {
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
+import {
+  authenticationMethods,
+  withUserSecurity,
+} from './user-security.service.js';
 
 function isAuthenticatorTransport(
   transport: string,
@@ -121,12 +125,12 @@ export class PasskeyService {
   /**
    * Verify registration response and save passkey
    */
-  public async verifyRegistration(
-    user: UserEntity,
+  public async prepareRegistration(
+    _user: UserEntity,
     response: RegistrationResponseJSON,
     expectedChallenge: string,
-    passkeyName?: string,
-  ): Promise<IUserPasskeyEntity> {
+    _passkeyName?: string,
+  ) {
     const verification = await verifyRegistrationResponse({
       response,
       expectedChallenge,
@@ -138,35 +142,55 @@ export class PasskeyService {
       throw new e.PasskeyVerificationFailed.Error();
     }
 
+    return verification;
+  }
+
+  public async verifyRegistration(
+    user: UserEntity,
+    response: RegistrationResponseJSON,
+    expectedChallenge: string,
+    passkeyName?: string,
+    prepared?: Awaited<ReturnType<PasskeyService['prepareRegistration']>>,
+  ): Promise<IUserPasskeyEntity> {
+    const verification =
+      prepared ??
+      (await this.prepareRegistration(
+        user,
+        response,
+        expectedChallenge,
+        passkeyName,
+      ));
     const { credential, credentialDeviceType, credentialBackedUp } =
       verification.registrationInfo;
+    return withUserSecurity(this.mikro, user.sub, async (freshUser) => {
+      user = freshUser; // Check if credential already exists
+      const exists = await this.mikro.userPasskey.existsByCredentialId(
+        credential.id,
+      );
+      if (exists) {
+        throw new e.PasskeyAlreadyExists.Error();
+      }
 
-    // Check if credential already exists
-    const exists = await this.mikro.userPasskey.existsByCredentialId(
-      credential.id,
-    );
-    if (exists) {
-      throw new e.PasskeyAlreadyExists.Error();
-    }
+      // Create and save passkey
+      const passkey = this.mikro.em.create(UserPasskeyEntitySchema, {
+        user: user.sub,
+        credential_id: credential.id,
+        public_key: isoBase64URL.fromBuffer(credential.publicKey),
+        counter: Number(credential.counter),
+        device_type: credentialDeviceType,
+        backed_up: credentialBackedUp,
+        transports:
+          response.response.transports?.filter(isAuthenticatorTransport) ??
+          null,
+        name: passkeyName ?? null,
+        aaguid: verification.registrationInfo.aaguid ?? null,
+      });
 
-    // Create and save passkey
-    const passkey = this.mikro.em.create(UserPasskeyEntitySchema, {
-      user: user.sub,
-      credential_id: credential.id,
-      public_key: isoBase64URL.fromBuffer(credential.publicKey),
-      counter: Number(credential.counter),
-      device_type: credentialDeviceType,
-      backed_up: credentialBackedUp,
-      transports:
-        response.response.transports?.filter(isAuthenticatorTransport) ?? null,
-      name: passkeyName ?? null,
-      aaguid: verification.registrationInfo.aaguid ?? null,
+      this.mikro.em.persist(passkey);
+      await this.mikro.em.flush();
+
+      return passkey;
     });
-
-    this.mikro.em.persist(passkey);
-    await this.mikro.em.flush();
-
-    return passkey;
   }
 
   /**
@@ -205,11 +229,11 @@ export class PasskeyService {
    * Verify authentication response
    * Returns the user if verification succeeds
    */
-  public async verifyAuthentication(
+  public async prepareAuthentication(
     response: AuthenticationResponseJSON,
     expectedChallenge: string,
     expectedUserSub?: string,
-  ): Promise<UserEntity> {
+  ) {
     // Find the passkey by credential ID
     const passkey = await this.mikro.userPasskey.findByCredentialId(
       response.id,
@@ -219,6 +243,7 @@ export class PasskeyService {
       throw new e.PasskeyNotFound.Error();
     }
 
+    const userEpoch = passkey.user.getEntity().token_epoch;
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge,
@@ -248,11 +273,44 @@ export class PasskeyService {
       throw new e.PasskeyVerificationFailed.Error();
     }
 
-    // Update counter for replay attack prevention
-    passkey.counter = newCounter;
-    await this.mikro.em.flush();
+    return {
+      userSub: passkeyUser.sub,
+      userEpoch,
+      credentialId: passkey.credential_id,
+      counter: passkey.counter,
+      newCounter,
+    };
+  }
 
-    return passkeyUser;
+  public async verifyAuthentication(
+    response: AuthenticationResponseJSON,
+    expectedChallenge: string,
+    expectedUserSub?: string,
+    prepared?: Awaited<ReturnType<PasskeyService['prepareAuthentication']>>,
+  ): Promise<UserEntity> {
+    const proof =
+      prepared ??
+      (await this.prepareAuthentication(
+        response,
+        expectedChallenge,
+        expectedUserSub,
+      ));
+    if (expectedUserSub && expectedUserSub !== proof.userSub)
+      throw new e.PasskeyUserMismatch.Error();
+    return withUserSecurity(this.mikro, proof.userSub, async (user) => {
+      if (user.token_epoch !== proof.userEpoch)
+        throw new e.Unauthorized.Error();
+      const changed = await this.mikro.userPasskey.nativeUpdate(
+        {
+          user: user.sub,
+          credential_id: proof.credentialId,
+          counter: proof.counter,
+        },
+        { counter: proof.newCounter },
+      );
+      if (changed !== 1) throw new e.PasskeyVerificationFailed.Error();
+      return user;
+    });
   }
 
   /**
@@ -276,37 +334,37 @@ export class PasskeyService {
   public async deletePasskey(
     userSub: string,
     passkeyId: string,
-    options: {
-      hasOtherAuthMethods: boolean;
-      secondFactorRequired: boolean;
-      hasOtherSecondFactor: boolean;
-    },
   ): Promise<void> {
-    const passkey = await this.mikro.userPasskey.findByUserSubAndId(
-      userSub,
-      passkeyId,
-    );
+    return withUserSecurity(this.mikro, userSub, async () => {
+      const passkey = await this.mikro.userPasskey.findByUserSubAndId(
+        userSub,
+        passkeyId,
+      );
 
-    if (!passkey) {
-      throw new e.PasskeyNotFound.Error();
-    }
-
-    const passkeyCount = await this.mikro.userPasskey.countByUserSub(userSub);
-
-    // Check if this is the last auth method
-    if (passkeyCount === 1 && !options.hasOtherAuthMethods) {
-      throw new e.CannotRemoveLastPasskey.Error();
-    }
-
-    // Prevent deleting last passkey when 2FA is required and no TOTP exists
-    if (options.secondFactorRequired) {
-      const willHaveNoPasskeys = passkeyCount === 1;
-      if (willHaveNoPasskeys && !options.hasOtherSecondFactor) {
-        throw new e.CannotRemoveLastSecondFactor.Error();
+      if (!passkey) {
+        throw new e.PasskeyNotFound.Error();
       }
-    }
 
-    await this.mikro.userPasskey.deleteByUserSubAndId(userSub, passkeyId);
+      const user = await this.mikro.user.findOneOrFail(
+        { sub: userSub },
+        { populate: ['password_hash'], refresh: true },
+      );
+      const methods = await authenticationMethods(
+        this.mikro,
+        this.config,
+        user,
+      );
+      if (methods.passkeys <= 1 && !methods.password && methods.oauth === 0)
+        throw new e.CannotRemoveLastPasskey.Error();
+      if (
+        this.config.auth.password.two_factor.enrollment_required &&
+        methods.passkeys <= 1 &&
+        !methods.totp
+      )
+        throw new e.CannotRemoveLastSecondFactor.Error();
+
+      await this.mikro.userPasskey.deleteByUserSubAndId(userSub, passkeyId);
+    });
   }
 
   /**

@@ -273,6 +273,8 @@ export async function createEmailVerification(
     // race their strict `$lt` cutoff under parallel load.
     const verification = services.mikro.emailVerification.create({
       user: userSub,
+      user_epoch: (await services.mikro.user.findOneOrFail({ sub: userSub }))
+        .token_epoch,
       token: crypto.randomUUID(),
       expiresAt,
       verified,
@@ -313,6 +315,8 @@ export async function createPasswordReset(
     // race their strict `$lt` cutoff under parallel load.
     const reset = services.mikro.passwordReset.create({
       user: userSub,
+      user_epoch: (await services.mikro.user.findOneOrFail({ sub: userSub }))
+        .token_epoch,
       token: crypto.randomUUID(),
       expiresAt,
       used,

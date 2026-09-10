@@ -1,6 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../../entrypoints/app.ts';
+import { google } from '../../../../entrypoints/identity-providers/google.js';
 import type { ServiceContainer } from '../../../../services/container.ts';
 import {
   assertJsonBody,
@@ -12,6 +13,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.ts';
+import { createStoredSessionCookie } from '../../../../test-utils/stored-session.js';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -19,7 +21,19 @@ let cleanup: () => Promise<void>;
 
 beforeAll(async () => {
   const server = await createTestApp({
-    ...MINIMAL_TEST_CONFIG,
+    ...{
+      ...MINIMAL_TEST_CONFIG,
+      auth: { password: { totp: { enabled: true } } },
+      identity_providers: [
+        google({
+          id: 'google',
+          client_id: 'fixture',
+          client_secret: 'fixture',
+          email_conflict_strategy: 'require_link',
+          enabled: true,
+        }),
+      ],
+    },
     users: [TEST_USER_CONFIG],
   });
   app = server.app;
@@ -231,15 +245,14 @@ describe('DELETE /api/user/password', () => {
 
     expect(verifyLoginRes.status).toBe(401);
 
-    // Verify session still returns has_password: false
+    // Removing a credential invalidates the existing browser session
     const sessionRes = await client.api.user.session.$get(
       {},
       { headers: { Cookie: `session=${sessionCookie}` } },
     );
 
     const sessionBody = await assertJsonBody(sessionRes);
-    expect(sessionBody.user).toBeDefined();
-    expect(sessionBody.user?.has_password).toBe(false);
+    expect(sessionBody.user).toBeNull();
   });
 
   test('should work with multiple OAuth accounts linked', async () => {
@@ -400,19 +413,11 @@ describe('DELETE /api/user/password', () => {
 });
 
 describe('DELETE /api/user/password - password disabled', () => {
-  let appSession: AppType;
-  let cleanupSession: () => Promise<void>;
+  let disabledServices: ServiceContainer;
   let appDisabled: AppType;
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const sessionServer = await createTestApp({
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-    });
-    appSession = sessionServer.app;
-    cleanupSession = sessionServer.cleanup;
-
     const disabledServer = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -423,16 +428,25 @@ describe('DELETE /api/user/password - password disabled', () => {
       },
     });
     appDisabled = disabledServer.app;
+    disabledServices = disabledServer.services;
     cleanupDisabled = disabledServer.cleanup;
   });
 
   afterAll(async () => {
-    await cleanupSession();
     await cleanupDisabled();
   });
 
   test('should return validation error when password auth is disabled', async () => {
-    const sessionCookie = await createAuthenticatedSession(appSession);
+    const sessionCookie = await createStoredSessionCookie(
+      disabledServices,
+      JSON.stringify({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+      MINIMAL_TEST_CONFIG.security.session_secret,
+    );
 
     const client = testClient(appDisabled);
     const res = await client.api.user.password.$delete(

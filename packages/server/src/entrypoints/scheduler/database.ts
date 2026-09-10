@@ -393,7 +393,15 @@ export class DatabaseBackgroundJobStore
 {
   private readonly mikro: MikroService;
 
-  constructor(mikro: MikroService) {
+  private readonly jobIds: readonly string[] | undefined;
+  private readonly scrubPayload: boolean;
+  constructor(
+    mikro: MikroService,
+    jobIds?: readonly string[],
+    scrubPayload = false,
+  ) {
+    this.jobIds = jobIds;
+    this.scrubPayload = scrubPayload;
     this.mikro = mikro;
   }
 
@@ -431,6 +439,7 @@ export class DatabaseBackgroundJobStore
     const repo = em.getRepository(BackgroundJobEntitySchema);
     const seenCandidateIds: string[] = [];
     const eligibleFilter = {
+      ...(this.jobIds ? { jobId: { $in: [...this.jobIds] } } : {}),
       $or: [
         {
           status: 'pending',
@@ -465,6 +474,7 @@ export class DatabaseBackgroundJobStore
           { id: candidate.id, ...eligibleFilter },
           {
             status: 'failed',
+            ...(this.scrubPayload ? { payload: 'null' } : {}),
             availableAt: now,
             lockedBy: null,
             lockedUntil: null,
@@ -505,6 +515,7 @@ export class DatabaseBackgroundJobStore
           },
           {
             status: 'failed',
+            ...(this.scrubPayload ? { payload: 'null' } : {}),
             availableAt: now,
             lockedBy: null,
             lockedUntil: null,
@@ -523,6 +534,7 @@ export class DatabaseBackgroundJobStore
         payload,
         attemptCount,
         maxAttempts: candidate.maxAttempts,
+        recoveredLease: candidate.status === 'running',
       };
     }
   }
@@ -562,6 +574,7 @@ export class DatabaseBackgroundJobStore
       },
       {
         status: 'succeeded',
+        ...(this.scrubPayload ? { payload: 'null' } : {}),
         lockedBy: null,
         lockedUntil: null,
         completedAt: input.now,
@@ -585,6 +598,7 @@ export class DatabaseBackgroundJobStore
       },
       {
         status: input.retryAt ? 'pending' : 'failed',
+        ...(!input.retryAt && this.scrubPayload ? { payload: 'null' } : {}),
         availableAt: input.retryAt ?? input.now,
         lockedBy: null,
         lockedUntil: null,
@@ -602,6 +616,7 @@ export class DatabaseBackgroundJobStore
     const repo = em.getRepository(BackgroundJobEntitySchema);
 
     return repo.nativeDelete({
+      ...(this.jobIds ? { jobId: { $in: [...this.jobIds] } } : {}),
       status: { $in: ['succeeded', 'failed'] },
       completedAt: { $lte: before },
     });
@@ -634,7 +649,10 @@ function createDatabaseSchedulerConfig(
         instanceId: options.instanceId,
         jobs: backgroundJobs,
         logger,
-        store: new DatabaseBackgroundJobStore(mikro),
+        store: new DatabaseBackgroundJobStore(
+          mikro,
+          backgroundJobs.map((job) => job.id),
+        ),
       });
       const scheduledHandle = await scheduledRunner.start();
       const backgroundHandle = backgroundRunner.start();

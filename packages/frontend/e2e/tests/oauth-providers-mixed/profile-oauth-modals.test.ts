@@ -5,6 +5,7 @@ import {
   createTestConfig,
   E2E_BASE_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
+import { performLogin } from '#frontend-e2e/helpers/login.ts';
 import {
   modal,
   removePasswordModal,
@@ -142,7 +143,18 @@ test.describe('SetPasswordModal', () => {
     // Modal should close
     await expect(page.locator(modal.openModal)).not.toBeVisible();
 
-    // Password status should update to "set"
+    // Password changes revoke browser authentication. Verify the new method
+    // after signing in again rather than expecting the old session to survive.
+    await page.waitForURL('**/login**');
+    expect((await page.request.get('/api/user/oauth-accounts')).status()).toBe(
+      401,
+    );
+    await performLogin(
+      page,
+      OAUTH_CASES.setPasswordSuccess.email,
+      'new-secure-password',
+    );
+    await page.waitForURL('**/profile');
     await expect(page.getByText('Password is set')).toBeVisible();
   });
 
@@ -250,7 +262,11 @@ test.describe('RemovePasswordModal', () => {
     // Modal should close
     await expect(page.locator(modal.openModal)).not.toBeVisible();
 
-    // Password status should change to "No password set"
+    await page.waitForURL('**/login**');
+    expect((await page.request.get('/api/user/oauth-accounts')).status()).toBe(
+      401,
+    );
+    await loginViaOAuthStub(page, OAUTH_CASES.removePasswordSuccess);
     await expect(page.getByText('No password set')).toBeVisible();
   });
 

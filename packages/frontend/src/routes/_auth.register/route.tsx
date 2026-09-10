@@ -42,6 +42,7 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { registerMutationOptions } from '#frontend/queries/register.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -187,13 +188,21 @@ function Register({
         } else {
           setError('email', {
             type: 'manual',
-            message: t('register.error.emailExists'),
+            message: securityErrorMessage(
+              error,
+              t,
+              t('register.error.emailExists'),
+            ),
           });
         }
       } else {
         setError('email', {
           type: 'manual',
-          message: t('register.error.emailExists'),
+          message: securityErrorMessage(
+            error,
+            t,
+            t('register.error.emailExists'),
+          ),
         });
       }
     },

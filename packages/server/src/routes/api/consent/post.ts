@@ -2,12 +2,17 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../lib/openapi.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
 import { e } from '../../../schemas/error.ts';
 import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../services/browser-security.service.js';
+import { lockOAuthClient } from '../../../services/client-security.js';
 
 function consumeConsentPrompt(
   prompt: string | undefined,
@@ -145,7 +150,8 @@ export const consentPost = new Hono<AppEnv>().post(
     tags: [TAGS.CONSENT],
     security: OPENAPI_SECURITY.cookieSession,
     summary: 'Submit consent decision',
-    description: 'Handles the user consent decision for OAuth authorization.',
+    description:
+      'Stores OAuth consent and browser continuation atomically after rechecking current user, session and client authority.',
     responses: {
       200: {
         content: {
@@ -205,6 +211,7 @@ export const consentPost = new Hono<AppEnv>().post(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
     const body = c.req.valid('json');
     const {
@@ -262,89 +269,48 @@ export const consentPost = new Hono<AppEnv>().post(
       return c.json({ redirect_url: redirectUrl }, 200);
     }
 
-    // User allowed consent - store it
+    const result = await withBrowserSecurity(c, async () => {
+      const locked = await lockOAuthClient(c.var.services.mikro.em, client.id);
+      if (
+        !locked ||
+        locked.deletedAt ||
+        !locked.enabled ||
+        locked.tokenEpoch !== client.tokenEpoch
+      )
+        throw new e.InvalidAuthorizationRequest.Error();
+      const current = await oauthClientService.findByClientId(client_id);
+      oauthClientService.validateRedirectUri(current, redirect_uri);
+      oauthClientService.validateResponseType(current, response_type);
+      oauthClientService.validateGrantType(
+        current,
+        response_type === 'code' ? 'authorization_code' : 'implicit',
+      );
+      oauthClientService.validateScopes(current, requestedScopes);
+      if (
+        response_type === 'code' &&
+        (await oauthClientService.isPublicClient(client_id))
+      ) {
+        if (!code_challenge || code_challenge_method !== 'S256')
+          throw new e.InvalidCodeChallengeMethod.Error();
+      }
+      // User allowed consent - store it
 
-    await userConsentService.grantConsent({
-      userSub: userEntity.sub,
-      clientId: client.id,
-      scopes: await userConsentService.resolveScopes({
+      await userConsentService.grantConsent({
         userSub: userEntity.sub,
-        clientId: client.id,
-        requestedScopes,
-        responseType: response_type,
-        prompt,
-        skipConsent: client.skipConsent,
-      }),
-    });
-
-    const reauthenticationSession = c.var.session.get('reauthentication');
-    const trustedReauthenticationFingerprints =
-      buildReauthenticationRequestFingerprints({
-        client_id,
-        redirect_uri,
-        response_type,
-        scope,
-        state,
-        nonce,
-        code_challenge,
-        code_challenge_method,
-        prompt,
-        max_age,
-        display,
-        response_mode,
-        login_hint,
-        ui_locales,
-        id_token_hint,
-        acr_values,
-        account_selected,
+        clientId: current.id,
+        scopes: await userConsentService.resolveScopes({
+          userSub: userEntity.sub,
+          clientId: current.id,
+          requestedScopes,
+          responseType: response_type,
+          prompt,
+          skipConsent: current.skipConsent,
+        }),
       });
-    const hasTrustedReauthentication =
-      reauthenticated === '1' &&
-      reauthenticationSession?.sub === userEntity.sub &&
-      reauthenticationSession.authenticated_at ===
-        c.var.verifiedUser.authenticatedAt &&
-      typeof reauthenticationSession.request_fingerprint === 'string' &&
-      trustedReauthenticationFingerprints.includes(
-        reauthenticationSession.request_fingerprint,
-      );
 
-    // Build authorize URL to continue the flow
-    const url = new URL(c.req.url);
-    const authorizeUrl = new URL(
-      '/oauth/authorize',
-      `${url.protocol}//${url.host}`,
-    );
-    authorizeUrl.searchParams.set('client_id', client_id);
-    authorizeUrl.searchParams.set('redirect_uri', redirect_uri);
-    authorizeUrl.searchParams.set('response_type', response_type);
-
-    if (scope) {
-      authorizeUrl.searchParams.set('scope', scope);
-    }
-    if (state) {
-      authorizeUrl.searchParams.set('state', state);
-    }
-    if (nonce) {
-      authorizeUrl.searchParams.set('nonce', nonce);
-    }
-    if (code_challenge) {
-      authorizeUrl.searchParams.set('code_challenge', code_challenge);
-    }
-    if (code_challenge_method) {
-      authorizeUrl.searchParams.set(
-        'code_challenge_method',
-        code_challenge_method,
-      );
-    }
-    const continuationPrompt = consumeConsentPrompt(
-      prompt,
-      hasTrustedReauthentication,
-    );
-    if (hasTrustedReauthentication) {
-      c.var.session.set('reauthentication', {
-        sub: userEntity.sub,
-        authenticated_at: c.var.verifiedUser.authenticatedAt,
-        request_fingerprint: buildReauthenticationRequestFingerprint({
+      const reauthenticationSession = c.var.session.get('reauthentication');
+      const trustedReauthenticationFingerprints =
+        buildReauthenticationRequestFingerprints({
           client_id,
           redirect_uri,
           response_type,
@@ -353,7 +319,7 @@ export const consentPost = new Hono<AppEnv>().post(
           nonce,
           code_challenge,
           code_challenge_method,
-          prompt: continuationPrompt,
+          prompt,
           max_age,
           display,
           response_mode,
@@ -362,46 +328,113 @@ export const consentPost = new Hono<AppEnv>().post(
           id_token_hint,
           acr_values,
           account_selected,
-        }),
-      });
-    }
-    if (continuationPrompt) {
-      authorizeUrl.searchParams.set('prompt', continuationPrompt);
-    }
-    if (max_age !== undefined) {
-      authorizeUrl.searchParams.set('max_age', max_age.toString());
-    }
-    if (hasTrustedReauthentication) {
-      authorizeUrl.searchParams.set('reauthenticated', reauthenticated);
-    }
-    if (display) {
-      authorizeUrl.searchParams.set('display', display);
-    }
-    if (response_mode) {
-      authorizeUrl.searchParams.set('response_mode', response_mode);
-    }
-    if (login_hint) {
-      authorizeUrl.searchParams.set('login_hint', login_hint);
-    }
-    if (ui_locales) {
-      authorizeUrl.searchParams.set('ui_locales', ui_locales);
-    }
-    if (id_token_hint) {
-      authorizeUrl.searchParams.set('id_token_hint', id_token_hint);
-    }
-    if (acr_values) {
-      authorizeUrl.searchParams.set('acr_values', acr_values);
-    }
-    if (account_selected) {
-      authorizeUrl.searchParams.set('account_selected', account_selected);
-    }
-    if (account_selection_state) {
-      authorizeUrl.searchParams.set(
-        'account_selection_state',
-        account_selection_state,
-      );
-    }
+        });
+      const hasTrustedReauthentication =
+        reauthenticated === '1' &&
+        reauthenticationSession?.sub === userEntity.sub &&
+        reauthenticationSession.authenticated_at ===
+          c.var.verifiedUser.authenticatedAt &&
+        typeof reauthenticationSession.request_fingerprint === 'string' &&
+        trustedReauthenticationFingerprints.includes(
+          reauthenticationSession.request_fingerprint,
+        );
 
-    return c.json({ redirect_url: authorizeUrl.toString() }, 200);
+      // Build authorize URL to continue the flow
+      const url = new URL(c.req.url);
+      const authorizeUrl = new URL(
+        '/oauth/authorize',
+        `${url.protocol}//${url.host}`,
+      );
+      authorizeUrl.searchParams.set('client_id', client_id);
+      authorizeUrl.searchParams.set('redirect_uri', redirect_uri);
+      authorizeUrl.searchParams.set('response_type', response_type);
+
+      if (scope) {
+        authorizeUrl.searchParams.set('scope', scope);
+      }
+      if (state) {
+        authorizeUrl.searchParams.set('state', state);
+      }
+      if (nonce) {
+        authorizeUrl.searchParams.set('nonce', nonce);
+      }
+      if (code_challenge) {
+        authorizeUrl.searchParams.set('code_challenge', code_challenge);
+      }
+      if (code_challenge_method) {
+        authorizeUrl.searchParams.set(
+          'code_challenge_method',
+          code_challenge_method,
+        );
+      }
+      const continuationPrompt = consumeConsentPrompt(
+        prompt,
+        hasTrustedReauthentication,
+      );
+      if (hasTrustedReauthentication) {
+        c.var.session.set('reauthentication', {
+          sub: userEntity.sub,
+          authenticated_at: c.var.verifiedUser.authenticatedAt,
+          request_fingerprint: buildReauthenticationRequestFingerprint({
+            client_id,
+            redirect_uri,
+            response_type,
+            scope,
+            state,
+            nonce,
+            code_challenge,
+            code_challenge_method,
+            prompt: continuationPrompt,
+            max_age,
+            display,
+            response_mode,
+            login_hint,
+            ui_locales,
+            id_token_hint,
+            acr_values,
+            account_selected,
+          }),
+        });
+      }
+      if (continuationPrompt) {
+        authorizeUrl.searchParams.set('prompt', continuationPrompt);
+      }
+      if (max_age !== undefined) {
+        authorizeUrl.searchParams.set('max_age', max_age.toString());
+      }
+      if (hasTrustedReauthentication) {
+        authorizeUrl.searchParams.set('reauthenticated', reauthenticated);
+      }
+      if (display) {
+        authorizeUrl.searchParams.set('display', display);
+      }
+      if (response_mode) {
+        authorizeUrl.searchParams.set('response_mode', response_mode);
+      }
+      if (login_hint) {
+        authorizeUrl.searchParams.set('login_hint', login_hint);
+      }
+      if (ui_locales) {
+        authorizeUrl.searchParams.set('ui_locales', ui_locales);
+      }
+      if (id_token_hint) {
+        authorizeUrl.searchParams.set('id_token_hint', id_token_hint);
+      }
+      if (acr_values) {
+        authorizeUrl.searchParams.set('acr_values', acr_values);
+      }
+      if (account_selected) {
+        authorizeUrl.searchParams.set('account_selected', account_selected);
+      }
+      if (account_selection_state) {
+        authorizeUrl.searchParams.set(
+          'account_selection_state',
+          account_selection_state,
+        );
+      }
+
+      return { redirect_url: authorizeUrl.toString() };
+    });
+    return c.json(result, 200);
   },
 );

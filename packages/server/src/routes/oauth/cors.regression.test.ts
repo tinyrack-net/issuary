@@ -167,7 +167,7 @@ describe('OAuth CORS root policy', () => {
       },
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     expect(response.headers.get('access-control-allow-origin')).toBeNull();
   });
 
@@ -392,7 +392,7 @@ describe('OAuth CORS root policy', () => {
       },
     );
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     expect(response.headers.get('access-control-allow-origin')).toBeNull();
   });
 

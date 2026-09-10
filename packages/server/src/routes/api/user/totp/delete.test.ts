@@ -1,5 +1,13 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 import type { AppType } from '../../../../entrypoints/app.ts';
 import { e } from '../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../services/container.ts';
@@ -17,6 +25,7 @@ import {
   type TestResponse,
   withMikroContext,
 } from '../../../../test-utils/index.ts';
+import { advanceTotpClock } from '../../../../test-utils/totp-clock.js';
 
 describe('DELETE /api/user/totp', () => {
   let app: AppType;
@@ -108,6 +117,7 @@ describe('DELETE /api/user/totp', () => {
     const secret = await enableTotpForUser(services, userSub);
 
     // Generate valid code
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(secret);
 
     const client = testClient(app);
@@ -204,6 +214,7 @@ describe('DELETE /api/user/totp', () => {
     expect(sessionBeforeBody.user?.totp_registered).toBe(true);
 
     // Disable TOTP
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(secret);
     await client.api.user.totp.$delete(
       { json: { code: validCode } },
@@ -243,6 +254,7 @@ describe('DELETE /api/user/totp', () => {
       await services.mikro.em.persist(totp).flush();
     });
 
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(secret);
 
     const client = testClient(app);
@@ -277,6 +289,7 @@ describe('DELETE /api/user/totp', () => {
       await services.mikro.em.persist(totp).flush();
     });
 
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(secret);
 
     const client = testClient(app);
@@ -301,6 +314,7 @@ describe('DELETE /api/user/totp', () => {
 
     // Enable TOTP
     const secret = await enableTotpForUser(services, userSub);
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(secret);
 
     const client = testClient(app);
@@ -333,6 +347,7 @@ describe('DELETE /api/user/totp', () => {
 
     // Enable TOTP (fully)
     const secret1 = await enableTotpForUser(services, userSub);
+    advanceTotpClock();
     const validCode1 = services.totpService.generateToken(secret1);
 
     const client = testClient(app);
@@ -353,6 +368,7 @@ describe('DELETE /api/user/totp', () => {
     const newSecret = setupBody.secret;
 
     // Verify new setup
+    advanceTotpClock();
     const newCode = services.totpService.generateToken(newSecret);
     const verifyRes = await client.api.user.totp.verify.$post(
       { json: { code: newCode } },
@@ -471,6 +487,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     const pending2FACookie = extractSessionCookie(loginRes);
 
     // Verify TOTP to get full session
+    advanceTotpClock();
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
     const pendingClient = testClient(appWith2FARequired);
     const verifyRes = await pendingClient.api.auth.totp.verify.$post(
@@ -504,6 +521,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
       );
 
     // User has only TOTP as 2FA, try to disable it
+    advanceTotpClock();
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
     const client = testClient(appWith2FARequired);
@@ -536,6 +554,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     // Also add a passkey
     await createPasskeyForUser(servicesWith2FA, userSub, 'Test Passkey');
 
+    advanceTotpClock();
     const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
 
     const client = testClient(appWith2FARequired);
@@ -584,6 +603,7 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
       await servicesWith2FA.mikro.em.persist(totp).flush();
     });
 
+    advanceTotpClock();
     const validCode = servicesWith2FA.totpService.generateToken(secret);
 
     const client = testClient(appWith2FARequired);
@@ -594,4 +614,8 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
 
     await expectError(res, e.SecondFactorNotAllowedForConfigUser);
   });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });

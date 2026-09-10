@@ -35,6 +35,15 @@ function needsOf(workflow: z.infer<typeof workflowSchema>, jobName: string) {
 }
 
 describe('CI workflow policy', () => {
+  test('focused browser jobs do not start the unused Screen Lab dev server', async () => {
+    const { workflow } = await readWorkflow();
+    for (const jobName of ['frontend-smoke', 'security-browser']) {
+      expect(workflow.jobs[jobName]).toMatchObject({
+        env: { ISSUARY_E2E_EXCLUDE_SCREEN_LAB: '1' },
+      });
+    }
+  });
+
   test('runs PR and merge-group validation without a duplicate main push', async () => {
     const { source, workflow } = await readWorkflow();
 
@@ -50,6 +59,7 @@ describe('CI workflow policy', () => {
 
     for (const jobName of [
       'linux-server',
+      'security-postgres',
       'linux-tools',
       'linux-frontend-unit',
       'windows-server',
@@ -114,6 +124,7 @@ describe('CI workflow policy', () => {
       'changes',
       'build',
       'linux-server',
+      'security-postgres',
       'linux-tools',
       'linux-frontend-unit',
       'linux-standalone',
@@ -143,6 +154,38 @@ describe('CI workflow policy', () => {
     expect(source).toContain('MERGE_BASE_SHA:');
     expect(source).toContain('MERGE_HEAD_SHA:');
     expect(source).toContain('classify-ci-changes.sh');
+  });
+
+  test('requires PostgreSQL and browser security checks at the quality gate', async () => {
+    const { source, workflow } = await readWorkflow();
+    expect(needsOf(workflow, 'quality-gate')).toEqual(
+      expect.arrayContaining(['security-postgres', 'security-browser']),
+    );
+    expect(needsOf(workflow, 'security-browser')).toEqual(['changes', 'build']);
+    expect(source).toContain('SECURITY_POSTGRES_PORT:');
+    expect(source).toContain('src/services/enrollment-security.test.ts');
+    expect(source).toContain('--project totp-required:chromium');
+  });
+
+  test('runs the merge-queue regression files before the broader browser security suite', async () => {
+    const { source } = await readWorkflow();
+    const focused = source.indexOf(
+      'name: Verify password revocation and TOTP regression flows',
+    );
+    const broader = source.indexOf(
+      'name: Verify OAuth registration, email and MFA flows',
+    );
+    expect(focused).toBeGreaterThanOrEqual(0);
+    expect(broader).toBeGreaterThan(focused);
+    const step = source.slice(focused, broader);
+    for (const file of [
+      'profile-oauth-modals.test.ts',
+      'profile-totp-modals.test.ts',
+      'journey-oauth-2fa.test.ts',
+    ])
+      expect(step).toContain(file);
+    expect(step).toContain('--output=regression-test-results');
+    expect(source).toContain('packages/frontend/regression-test-results');
   });
 
   test('evaluates tag publishing after skipped quality jobs', async () => {

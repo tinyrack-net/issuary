@@ -33,6 +33,7 @@ export function sqlite(database: SqliteDatabaseConfig): DatabaseConfig {
       });
     },
     initialize: async (orm: MikroORM) => {
+      await orm.em.getConnection().execute('pragma busy_timeout = 5000');
       if (database.test) {
         await orm.schema.refresh();
       } else {

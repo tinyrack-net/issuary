@@ -9,6 +9,8 @@ import {
   test,
   vi,
 } from 'vitest';
+import { z } from 'zod';
+import { BrowserSessionEntitySchema } from '../../../entities/browser-session.entity.js';
 import type { AppType } from '../../../entrypoints/app.ts';
 import { google } from '../../../entrypoints/identity-providers/google.ts';
 import { decrypt, encrypt } from '../../../lib/crypto.ts';
@@ -32,6 +34,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../test-utils/index.ts';
+import { advanceTotpClock } from '../../../test-utils/totp-clock.js';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://openidconnect.googleapis.com/v1/userinfo';
@@ -175,22 +178,61 @@ async function startOAuthLinkFlow(
   };
 }
 
-async function createEncryptedSessionCookie(sessionData: SessionData) {
+async function createEncryptedSessionCookie(
+  services: ServiceContainer,
+  sessionData: SessionData,
+) {
+  const id = crypto.randomUUID();
+  const users = await withMikroContext(services, () =>
+    services.mikro.user.findAll(),
+  );
+  sessionData.security = {
+    grants: Object.fromEntries(
+      [
+        sessionData.user?.sub,
+        sessionData.pending2FAUser?.sub,
+        sessionData.pending2FASetup?.sub,
+        ...(sessionData.accounts ?? []).map((a) => a.sub),
+      ]
+        .filter((sub): sub is string => sub !== undefined)
+        .map((sub) => [
+          sub,
+          users.find((user) => user.sub === sub)?.token_epoch ?? 'missing',
+        ]),
+    ),
+    pendingExpiresAt: Date.now() + 600_000,
+  };
+  await withMikroContext(services, () =>
+    services.mikro.em.insert(BrowserSessionEntitySchema, {
+      id,
+      data: sessionData,
+      revision: 0,
+      expires_at: new Date(Date.now() + 86_400_000),
+    }),
+  );
   return encrypt(
-    JSON.stringify(sessionData),
+    JSON.stringify({ sid: id, kind: 'session' }),
     MINIMAL_TEST_CONFIG.security.session_secret,
   );
 }
 
-async function readEncryptedSessionCookie(sessionCookie: string) {
+async function readEncryptedSessionCookie(
+  services: ServiceContainer,
+  sessionCookie: string,
+) {
   const decrypted = await decrypt(
     sessionCookie,
     MINIMAL_TEST_CONFIG.security.session_secret,
   );
-  if (!decrypted) {
-    throw new Error('Expected readable encrypted session cookie');
-  }
-  return JSON.parse(decrypted);
+  if (!decrypted) throw new Error('Expected readable encrypted session cookie');
+  const { sid } = z.object({ sid: z.uuid() }).parse(JSON.parse(decrypted));
+  return withMikroContext(services, async () => {
+    const session = await services.mikro.em.findOneOrFail(
+      BrowserSessionEntitySchema,
+      sid,
+    );
+    return session.data;
+  });
 }
 
 describe('Stateful auth flows', () => {
@@ -224,6 +266,7 @@ describe('Stateful auth flows', () => {
     );
     const setupBody = await assertJsonBody(setupRes);
 
+    advanceTotpClock();
     const setupCode = services.totpService.generateToken(setupBody.secret);
     const verifySetupRes = await client.api.user.totp.verify.$post(
       {
@@ -279,6 +322,7 @@ describe('Stateful auth flows', () => {
     );
     expect(pendingVerifySessionBody.user).toBeNull();
 
+    advanceTotpClock();
     const loginTotpCode = services.totpService.generateToken(setupBody.secret);
     const loginVerifyRes = await client.api.auth.totp.verify.$post(
       {
@@ -420,8 +464,14 @@ describe('Stateful auth flows', () => {
     const optionsCookie = extractCookie(optionsRes, 'session');
 
     const verifySpy = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(user);
+      .spyOn(services.passkeyService, 'prepareAuthentication')
+      .mockResolvedValueOnce({
+        userSub: user.sub,
+        userEpoch: user.token_epoch,
+        credentialId,
+        counter: 0,
+        newCounter: 1,
+      });
 
     const verifyRes = await client.api.auth.passkey.verify.$post(
       {
@@ -537,8 +587,10 @@ describe('Stateful auth flows', () => {
       );
       const confirmedSessionBody = await assertJsonBody(confirmedSessionRes);
       expect(confirmedSessionBody.user?.email).toBe(userBEmail);
-      const confirmedSession =
-        await readEncryptedSessionCookie(confirmedCookie);
+      const confirmedSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        confirmedCookie,
+      );
       expect(confirmedSession).toMatchObject({
         user: { sub: confirmBody.user.sub },
         accounts: [
@@ -609,24 +661,30 @@ describe('Stateful auth flows', () => {
       const credentialId = `pending-passkey-setup-${crypto.randomUUID()}`;
 
       const verifyRegistration = vi
-        .spyOn(scopedServer.services.passkeyService, 'verifyRegistration')
+        .spyOn(scopedServer.services.passkeyService, 'prepareRegistration')
         .mockImplementationOnce(async (user, _response, expectedChallenge) => {
           expect(user.email).toBe(userBEmail);
           expect(expectedChallenge).toBe(optionsBody.options.challenge);
 
-          const passkey = scopedServer.services.mikro.userPasskey.create({
-            user: user.sub,
-            credential_id: credentialId,
-            public_key: 'pending-passkey-setup-public-key',
-            counter: 0,
-            device_type: 'multiDevice',
-            backed_up: true,
-            transports: ['internal'],
-            name: 'Pending Setup Passkey',
-            aaguid: 'pending-passkey-setup-aaguid',
-          });
-          await scopedServer.services.mikro.em.persist(passkey).flush();
-          return passkey;
+          return {
+            verified: true,
+            registrationInfo: {
+              fmt: 'none',
+              aaguid: 'test-aaguid',
+              credential: {
+                id: credentialId,
+                publicKey: new Uint8Array([1, 2, 3]),
+                counter: 0,
+              },
+              credentialType: 'public-key',
+              attestationObject: new Uint8Array(),
+              userVerified: true,
+              credentialDeviceType: 'multiDevice',
+              credentialBackedUp: true,
+              origin: 'http://localhost:8080',
+              rpID: 'localhost',
+            },
+          };
         });
 
       const verifyRes = await client.api.user.passkeys.register.verify.$post(
@@ -655,7 +713,10 @@ describe('Stateful auth flows', () => {
       );
       const verifiedSessionBody = await assertJsonBody(verifiedSessionRes);
       expect(verifiedSessionBody.user?.email).toBe(userBEmail);
-      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      const verifiedSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        verifiedCookie,
+      );
       expect(verifiedSession).toMatchObject({
         user: { sub: registerBBody.user.sub },
         accounts: [
@@ -753,7 +814,10 @@ describe('Stateful auth flows', () => {
       const verifyBody = await assertJsonBody(verifyRes);
       expect(verifyBody.user.sub).toBe(userB.sub);
       const verifiedCookie = extractCookie(verifyRes, 'session');
-      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      const verifiedSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        verifiedCookie,
+      );
       expect(verifiedSession).toMatchObject({
         user: { sub: userB.sub },
         accounts: [{ sub: userA.sub }, { sub: userB.sub }],
@@ -873,8 +937,10 @@ describe('Stateful auth flows', () => {
       );
       const pendingSessionBody = await assertJsonBody(pendingSessionRes);
       expect(pendingSessionBody.user?.sub).toBe(userA.sub);
-      const pendingSession =
-        await readEncryptedSessionCookie(pendingTotpCookie);
+      const pendingSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        pendingTotpCookie,
+      );
       expect(pendingSession).toMatchObject({
         user: { sub: userA.sub },
         pending2FAUser: { sub: userB.sub },
@@ -893,7 +959,10 @@ describe('Stateful auth flows', () => {
       const verifyBody = await assertJsonBody(verifyRes);
       expect(verifyBody.user.sub).toBe(userB.sub);
       const verifiedCookie = extractCookie(verifyRes, 'session');
-      const verifiedSession = await readEncryptedSessionCookie(verifiedCookie);
+      const verifiedSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        verifiedCookie,
+      );
       expect(verifiedSession).toMatchObject({
         user: { sub: userB.sub },
         accountSelection: { id: accountSelectionState },
@@ -1048,8 +1117,10 @@ describe('Stateful auth flows', () => {
       );
       const pendingSessionBody = await assertJsonBody(pendingSessionRes);
       expect(pendingSessionBody.user?.sub).toBe(userA.sub);
-      const pendingSession =
-        await readEncryptedSessionCookie(pendingSetupCookie);
+      const pendingSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        pendingSetupCookie,
+      );
       expect(pendingSession).toMatchObject({
         user: { sub: userA.sub },
         pending2FASetup: { sub: userBSub },
@@ -1083,8 +1154,10 @@ describe('Stateful auth flows', () => {
       expect(confirmBody.user.sub).toBe(userBSub);
       expect(confirmBody.user.totp_registered).toBe(true);
       const confirmedCookie = extractCookie(confirmRes, 'session');
-      const confirmedSession =
-        await readEncryptedSessionCookie(confirmedCookie);
+      const confirmedSession = await readEncryptedSessionCookie(
+        scopedServer.services,
+        confirmedCookie,
+      );
       expect(confirmedSession).toMatchObject({
         user: { sub: userBSub },
         accountSelection: { id: accountSelectionState },
@@ -1154,36 +1227,39 @@ describe('Stateful auth flows', () => {
     try {
       const client = testClient(scopedServer.app);
       const rememberedAt = Math.floor(Date.now() / 1000);
-      const sessionCookie = await createEncryptedSessionCookie({
-        user: {
-          sub: TEST_USER_CONFIG.sub,
-          authenticated_at: 1_700_000_000,
-        },
-        accounts: [
-          {
+      const sessionCookie = await createEncryptedSessionCookie(
+        scopedServer.services,
+        {
+          user: {
             sub: TEST_USER_CONFIG.sub,
-            authenticated_at: rememberedAt,
-            last_used_at: rememberedAt,
+            authenticated_at: 1_700_000_000,
           },
-          {
-            sub: 'remembered-other-user',
-            authenticated_at: rememberedAt,
-            last_used_at: rememberedAt,
+          accounts: [
+            {
+              sub: TEST_USER_CONFIG.sub,
+              authenticated_at: rememberedAt,
+              last_used_at: rememberedAt,
+            },
+            {
+              sub: 'remembered-other-user',
+              authenticated_at: rememberedAt,
+              last_used_at: rememberedAt,
+            },
+          ],
+          accountSelection: {
+            id: 'stale-pending-login-account-selection',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            request_fingerprint: 'stale-pending-login-fingerprint',
+            allow_add_account: true,
+            allowed_subs: [TEST_USER_CONFIG.sub],
+            created_at: 1_700_000_000,
           },
-        ],
-        accountSelection: {
-          id: 'stale-pending-login-account-selection',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          request_fingerprint: 'stale-pending-login-fingerprint',
-          allow_add_account: true,
-          allowed_subs: [TEST_USER_CONFIG.sub, 'remembered-other-user'],
-          created_at: 1_700_000_000,
+          pending2FAUser: {
+            sub: 'deleted-pending-user',
+            authenticated_at: 1_700_000_100,
+          },
         },
-        pending2FAUser: {
-          sub: 'deleted-pending-user',
-          authenticated_at: 1_700_000_100,
-        },
-      });
+      );
 
       const optionsRes = await client.api.auth.passkey.options.$post(
         {},
@@ -1199,22 +1275,19 @@ describe('Stateful auth flows', () => {
       const sessionBody = await assertJsonBody(sessionRes);
       expect(sessionBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
       await expect(
-        readEncryptedSessionCookie(nextCookie),
+        readEncryptedSessionCookie(scopedServer.services, nextCookie),
       ).resolves.toMatchObject({
         user: {
           sub: TEST_USER_CONFIG.sub,
           authenticated_at: 1_700_000_000,
         },
-        accounts: [
-          { sub: TEST_USER_CONFIG.sub },
-          { sub: 'remembered-other-user' },
-        ],
+        accounts: [{ sub: TEST_USER_CONFIG.sub }],
         accountSelection: {
           id: 'stale-pending-login-account-selection',
         },
       });
       await expect(
-        readEncryptedSessionCookie(nextCookie),
+        readEncryptedSessionCookie(scopedServer.services, nextCookie),
       ).resolves.not.toHaveProperty('pending2FAUser');
     } finally {
       await scopedServer.cleanup();
@@ -1246,42 +1319,45 @@ describe('Stateful auth flows', () => {
     try {
       const client = testClient(scopedServer.app);
       const rememberedAt = Math.floor(Date.now() / 1000);
-      const sessionCookie = await createEncryptedSessionCookie({
-        user: {
-          sub: TEST_USER_CONFIG.sub,
-          authenticated_at: 1_700_000_000,
-        },
-        accounts: [
-          {
+      const sessionCookie = await createEncryptedSessionCookie(
+        scopedServer.services,
+        {
+          user: {
             sub: TEST_USER_CONFIG.sub,
-            authenticated_at: rememberedAt,
-            last_used_at: rememberedAt,
+            authenticated_at: 1_700_000_000,
           },
-          {
-            sub: 'remembered-other-user',
-            authenticated_at: rememberedAt,
-            last_used_at: rememberedAt,
+          accounts: [
+            {
+              sub: TEST_USER_CONFIG.sub,
+              authenticated_at: rememberedAt,
+              last_used_at: rememberedAt,
+            },
+            {
+              sub: 'remembered-other-user',
+              authenticated_at: rememberedAt,
+              last_used_at: rememberedAt,
+            },
+          ],
+          accountSelection: {
+            id: 'stale-pending-setup-account-selection',
+            client_id: TEST_OAUTH_CLIENT.clientId,
+            request_fingerprint: 'stale-pending-setup-fingerprint',
+            allow_add_account: true,
+            allowed_subs: [TEST_USER_CONFIG.sub],
+            created_at: 1_700_000_000,
           },
-        ],
-        accountSelection: {
-          id: 'stale-pending-setup-account-selection',
-          client_id: TEST_OAUTH_CLIENT.clientId,
-          request_fingerprint: 'stale-pending-setup-fingerprint',
-          allow_add_account: true,
-          allowed_subs: [TEST_USER_CONFIG.sub, 'remembered-other-user'],
-          created_at: 1_700_000_000,
+          pending2FASetup: {
+            sub: 'deleted-pending-setup-user',
+          },
         },
-        pending2FASetup: {
-          sub: 'deleted-pending-setup-user',
-        },
-      });
+      );
 
       const setupRes = await client.api.user.totp.setup.$post(
         {},
         { headers: { Cookie: `session=${sessionCookie}` } },
       );
       await expectError(setupRes, e.SecondFactorNotAllowedForConfigUser);
-      const nextCookie = extractCookie(setupRes, 'session');
+      const nextCookie = sessionCookie;
 
       const sessionRes = await client.api.user.session.$get(
         {},
@@ -1290,22 +1366,19 @@ describe('Stateful auth flows', () => {
       const sessionBody = await assertJsonBody(sessionRes);
       expect(sessionBody.user?.sub).toBe(TEST_USER_CONFIG.sub);
       await expect(
-        readEncryptedSessionCookie(nextCookie),
+        readEncryptedSessionCookie(scopedServer.services, nextCookie),
       ).resolves.toMatchObject({
         user: {
           sub: TEST_USER_CONFIG.sub,
           authenticated_at: 1_700_000_000,
         },
-        accounts: [
-          { sub: TEST_USER_CONFIG.sub },
-          { sub: 'remembered-other-user' },
-        ],
+        accounts: [{ sub: TEST_USER_CONFIG.sub }],
         accountSelection: {
           id: 'stale-pending-setup-account-selection',
         },
       });
       await expect(
-        readEncryptedSessionCookie(nextCookie),
+        readEncryptedSessionCookie(scopedServer.services, nextCookie),
       ).resolves.not.toHaveProperty('pending2FASetup');
     } finally {
       await scopedServer.cleanup();
@@ -1400,4 +1473,8 @@ describe('Stateful auth flows', () => {
       await scopedServer.cleanup();
     }
   });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });

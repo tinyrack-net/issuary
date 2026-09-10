@@ -19,6 +19,7 @@ export const PendingOAuthRegistrationEntitySchema = defineEntity({
   extends: BaseSchema,
   repository: () => PendingOAuthRegistrationRepository,
   properties: (p) => ({
+    consumed_at: p.datetime().nullable(),
     id: p
       .uuid()
       .primary()

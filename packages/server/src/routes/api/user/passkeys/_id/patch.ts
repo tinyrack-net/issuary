@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../../middleware/auth.ts';
 import { e } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
 
 export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
   '/user/passkeys/:id',
@@ -62,20 +66,23 @@ export const userPasskeyIdPatch = new Hono<AppEnv>().patch(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
-    const config = c.var.services.config;
-    if (!config.auth.passkey.enabled) {
-      throw new e.PasskeyNotEnabled.Error();
-    }
+    return withBrowserSecurity(c, async () => {
+      const config = c.var.services.config;
+      if (!config.auth.passkey.enabled) {
+        throw new e.PasskeyNotEnabled.Error();
+      }
 
-    const params = c.req.valid('param');
-    const body = c.req.valid('json');
-    const { user: userEntity } = c.var.verifiedUser;
-    const { passkeyService } = c.var.services;
+      const params = c.req.valid('param');
+      const body = c.req.valid('json');
+      const { user: userEntity } = c.var.verifiedUser;
+      const { passkeyService } = c.var.services;
 
-    // Rename passkey
-    await passkeyService.renamePasskey(userEntity.sub, params.id, body.name);
+      // Rename passkey
+      await passkeyService.renamePasskey(userEntity.sub, params.id, body.name);
 
-    return c.json({ ok: true as const }, 200);
+      return c.json({ ok: true as const }, 200);
+    });
   },
 );

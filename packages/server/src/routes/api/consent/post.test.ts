@@ -1,7 +1,6 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { AppType } from '../../../entrypoints/app.ts';
-import { encrypt } from '../../../lib/crypto.ts';
 import type { ServiceContainer } from '../../../services/container.ts';
 import {
   assertJsonBody,
@@ -14,6 +13,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../test-utils/index.ts';
+import { createStoredSessionCookie } from '../../../test-utils/stored-session.js';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -95,7 +95,8 @@ async function createBoundReauthenticationSessionCookie(params: {
   acr_values?: string | undefined;
 }): Promise<string> {
   const authenticatedAt = Math.floor(Date.now() / 1000);
-  return encrypt(
+  return createStoredSessionCookie(
+    services,
     JSON.stringify({
       user: {
         sub: TEST_USER_CONFIG.sub,
@@ -275,7 +276,8 @@ describe('POST /api/consent', () => {
 
   test('should not consume prompt=login based on forged reauthenticated body value', async () => {
     const authenticatedAt = Math.floor(Date.now() / 1000);
-    const sessionCookie = await encrypt(
+    const sessionCookie = await createStoredSessionCookie(
+      services,
       JSON.stringify({
         user: {
           sub: TEST_USER_CONFIG.sub,

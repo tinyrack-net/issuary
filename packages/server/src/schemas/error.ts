@@ -85,6 +85,21 @@ const createErrorWithData = <
 };
 
 export const e = {
+  ConcurrentSecurityChange: createError(
+    409,
+    'CONCURRENT_SECURITY_CHANGE',
+    'Security settings changed concurrently. Reload and try again.',
+  ),
+  TooManyRequests: createError(
+    429,
+    'TOO_MANY_REQUESTS',
+    'Too many attempts. Try again later.',
+  ),
+  RequestBodyTooLarge: createError(
+    413,
+    'REQUEST_BODY_TOO_LARGE',
+    'Request body is too large.',
+  ),
   InvalidEmailOrPassword: createError(
     401,
     'INVALID_EMAIL_OR_PASSWORD',

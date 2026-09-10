@@ -12,6 +12,7 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { queryKeys } from '#frontend/queries/keys.ts';
 import { registerPasskeyMutationOptions } from '#frontend/queries/passkey.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
@@ -69,7 +70,9 @@ export function SetupPasskeyModal({
       if (error.name === 'NotAllowedError') {
         setErrorMessage(t('profile.passkey.setupModal.cancelled'));
       } else {
-        setErrorMessage(t('profile.passkey.setupModal.error'));
+        setErrorMessage(
+          securityErrorMessage(error, t, t('profile.passkey.setupModal.error')),
+        );
       }
     },
   });

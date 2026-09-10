@@ -2,7 +2,10 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/server';
 import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import type { AppEnv } from '../../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../../lib/swagger-tags.ts';
 import {
   verifyAuth,
@@ -11,6 +14,7 @@ import {
 } from '../../../../../../middleware/auth.ts';
 import { e } from '../../../../../../schemas/error.ts';
 import { r } from '../../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../../services/browser-security.service.js';
 
 /**
  * POST /api/user/passkeys/register/verify
@@ -65,7 +69,13 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
   validator('json', r.PasskeyRegistrationBody),
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
+  async (c, next) => {
+    if (!c.var.services.config.auth.passkey.enabled)
+      throw new e.PasskeyNotEnabled.Error();
+    await next();
+  },
   verifyPasskeyChallenge(),
+  securityMutationDocumentation,
   async (c) => {
     const config = c.var.services.config;
     if (!config.auth.passkey.enabled) {
@@ -95,42 +105,58 @@ export const userPasskeyRegisterVerifyPost = new Hono<AppEnv>().post(
     const registrationResponse =
       body.response as unknown as RegistrationResponseJSON;
 
-    // Verify registration
-    await passkeyService.verifyRegistration(
+    const prepared = await passkeyService.prepareRegistration(
       user,
       registrationResponse,
       challenge,
       body.name,
     );
+    return withBrowserSecurity(
+      c,
+      async () => {
+        // Verify registration
+        await passkeyService.verifyRegistration(
+          user,
+          registrationResponse,
+          challenge,
+          body.name,
+          prepared,
+        );
 
-    // Check if this was from pending 2FA setup session
-    const wasPendingSetup = !!c.var.verifiedPending2FASetupUser;
+        // Check if this was from pending 2FA setup session
+        const wasPendingSetup = !!c.var.verifiedPending2FASetupUser;
 
-    if (wasPendingSetup) {
-      // Clear pending setup sessions and create full user session
-      session.setUserSession(userSub);
+        if (wasPendingSetup) {
+          // Clear pending setup sessions and create full user session
+          session.setUserSession(
+            userSub,
+            session.get('security')?.grants[userSub] ?? '',
+          );
 
-      // Get user data for response
-      const userEntity = await mikro.user.verifyBySub(userSub);
-      const userSessionData =
-        await userService.userEntityToSessionUser(userEntity);
+          // Get user data for response
+          const userEntity = await mikro.user.verifyBySub(userSub);
+          const userSessionData =
+            await userService.userEntityToSessionUser(userEntity);
 
-      return c.json(
-        {
-          ok: true as const,
-          user: userSessionData,
-          second_factor_setup_completed: true,
-        },
-        200,
-      );
-    }
+          return c.json(
+            {
+              ok: true as const,
+              user: userSessionData,
+              second_factor_setup_completed: true,
+            },
+            200,
+          );
+        }
 
-    return c.json(
-      {
-        ok: true as const,
-        second_factor_setup_completed: false,
+        return c.json(
+          {
+            ok: true as const,
+            second_factor_setup_completed: false,
+          },
+          200,
+        );
       },
-      200,
+      { stage: 'setup' },
     );
   },
 );

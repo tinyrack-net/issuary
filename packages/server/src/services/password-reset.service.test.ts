@@ -107,6 +107,8 @@ describe('PasswordResetService', () => {
 
       const token = await services.mikro.passwordReset.generateToken({
         userSub: user.sub,
+        userEpoch: (await services.mikro.user.findOneOrFail({ sub: user.sub }))
+          .token_epoch,
       });
       await services.mikro.em.flush();
       resetToken = token.token;

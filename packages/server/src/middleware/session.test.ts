@@ -1,5 +1,10 @@
 import { Hono } from 'hono';
 import { afterEach, describe, expect, test, vi } from 'vitest';
+import { e } from '../schemas/error.js';
+import type {
+  SessionStore,
+  StoredSession,
+} from '../services/browser-session.service.js';
 import { type SessionEnv, sessionMiddleware } from './session.ts';
 
 const SESSION_SECRET =
@@ -9,8 +14,40 @@ function createSessionTestApp(
   isSecure: boolean,
   rememberedAccounts: Parameters<typeof sessionMiddleware>[2] = undefined,
 ) {
-  const app = new Hono<SessionEnv>();
-  app.use('*', sessionMiddleware(SESSION_SECRET, isSecure, rememberedAccounts));
+  const app = new Hono<SessionEnv>().onError((err, c) => {
+    if (err instanceof e.Unauthorized.Error) return c.json(err.toJson(), 401);
+    throw err;
+  });
+  const records = new Map<string, StoredSession>();
+  const store: SessionStore = {
+    async transaction(operation) {
+      return operation();
+    },
+    async load(id) {
+      return structuredClone(records.get(id) ?? null);
+    },
+    async save(record, isNew, previous) {
+      if (previous) records.delete(previous.id);
+      if (
+        !isNew &&
+        !previous &&
+        records.get(record.id)?.revision !== record.revision
+      )
+        return false;
+      records.set(
+        record.id,
+        structuredClone({ ...record, revision: record.revision + 1 }),
+      );
+      return true;
+    },
+    async remove(id) {
+      records.delete(id);
+    },
+  };
+  app.use(
+    '*',
+    sessionMiddleware(SESSION_SECRET, isSecure, rememberedAccounts, store),
+  );
 
   app.post('/seed-transient', (c) => {
     c.var.session.set('oauth', {
@@ -66,13 +103,14 @@ function createSessionTestApp(
   });
 
   app.post('/login', (c) => {
-    c.var.session.setUserSession('user-1', 1_700_000_000);
+    c.var.session.setUserSession('user-1', 'test-epoch', 1_700_000_000);
     return c.json({ ok: true });
   });
 
   app.post('/login/:sub/:authTime', (c) => {
     c.var.session.setUserSession(
       c.req.param('sub'),
+      c.req.header('x-test-epoch') ?? 'test-epoch',
       Number(c.req.param('authTime')),
     );
     return c.json({ ok: true });
@@ -93,13 +131,17 @@ function createSessionTestApp(
   app.post('/pending-2fa/:sub/:authTime', (c) => {
     c.var.session.setPending2FASession(
       c.req.param('sub'),
+      c.req.header('x-test-epoch') ?? 'test-epoch',
       Number(c.req.param('authTime')),
     );
     return c.json({ ok: true });
   });
 
   app.post('/pending-setup/:sub', (c) => {
-    c.var.session.setPending2FASetupSession(c.req.param('sub'));
+    c.var.session.setPending2FASetupSession(
+      c.req.param('sub'),
+      c.req.header('x-test-epoch') ?? 'test-epoch',
+    );
     return c.json({ ok: true });
   });
 
@@ -644,3 +686,66 @@ describe('session middleware', () => {
     });
   });
 });
+
+test.each(['/pending-2fa/user-1/1700000200', '/pending-setup/user-1'])(
+  '%s discards the old subject epoch while preserving other accounts',
+  async (path) => {
+    const app = createSessionTestApp(true);
+    let cookie = requireCookiePair(
+      await app.request('/login/user-2/1700000000', { method: 'POST' }),
+    );
+    cookie = requireCookiePair(
+      await app.request('/login/user-1/1700000100', {
+        method: 'POST',
+        headers: { Cookie: cookie },
+      }),
+    );
+    cookie = requireCookiePair(
+      await app.request(path, {
+        method: 'POST',
+        headers: { Cookie: cookie, 'x-test-epoch': 'new-epoch' },
+      }),
+    );
+    const debug = await app.request('/debug-session', {
+      headers: { Cookie: cookie },
+    });
+    const data = await debug.json();
+    expect(data.user).toBeNull();
+    expect(data.accounts).toHaveLength(1);
+    expect(data.accounts[0].sub).toBe('user-2');
+    expect(
+      await (
+        await app.request('/select/user-1', {
+          method: 'POST',
+          headers: { Cookie: cookie },
+        })
+      ).json(),
+    ).toEqual({ selected: false });
+    expect(
+      await (
+        await app.request('/select/user-2', {
+          method: 'POST',
+          headers: { Cookie: cookie },
+        })
+      ).json(),
+    ).toEqual({ selected: true });
+  },
+);
+test.each(['/pending-2fa/user-1/1700000200', '/pending-setup/user-1'])(
+  '%s cannot promote with an unrelated authentication epoch',
+  async (path) => {
+    const app = createSessionTestApp(true);
+    const cookie = requireCookiePair(
+      await app.request(path, { method: 'POST' }),
+    );
+    const promotion = await app.request('/login/user-1/1700000300', {
+      method: 'POST',
+      headers: { Cookie: cookie, 'x-test-epoch': 'different-epoch' },
+    });
+    expect(promotion.status).toBe(401);
+    const debug = await app.request('/debug-session', {
+      headers: { Cookie: cookie },
+    });
+    expect((await debug.json()).user).toBeNull();
+  },
+);

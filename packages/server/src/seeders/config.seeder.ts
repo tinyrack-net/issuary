@@ -1,4 +1,4 @@
-import type { EntityManager } from '@mikro-orm/core';
+import { type EntityManager, raw } from '@mikro-orm/core';
 import { BootstrapStateEntitySchema } from '../entities/bootstrap-state.entity.ts';
 import { OAuthClientEntitySchema } from '../entities/oauth-client.entity.ts';
 import { TermsEntitySchema } from '../entities/terms.entity.ts';
@@ -11,10 +11,16 @@ import {
   toBase64Url,
 } from '../lib/base64url.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
+import { invalidateUserAuthentication } from '../services/authentication-epoch.js';
+import { lockOAuthClient } from '../services/client-security.js';
 import type { SecurityService } from '../services/security.service.ts';
+import {
+  initializeTermsPolicy,
+  lockTermsPolicy,
+} from '../services/terms-policy.service.js';
 
 const CONFIG_SEED_STATE_ID = 'config-seed';
-const CONFIG_SEED_FINGERPRINT_VERSION = 3;
+const CONFIG_SEED_FINGERPRINT_VERSION = 4;
 
 export type ConfigSeedMode = 'if-changed' | 'always' | 'skip';
 
@@ -95,7 +101,34 @@ function isMissingBootstrapStateTableError(err: unknown): boolean {
   );
 }
 
+async function lockBootstrap(em: EntityManager): Promise<void> {
+  const now = new Date();
+  await em.upsert(
+    BootstrapStateEntitySchema,
+    {
+      id: 'config-seed-lock',
+      value: crypto.randomUUID(),
+      created_at: now,
+      updated_at: now,
+    },
+    { onConflictFields: ['id'], onConflictExcludeFields: ['created_at'] },
+  );
+}
+
 export async function seedConfigIfNeeded(
+  em: EntityManager,
+  config: IssuaryRuntimeConfig,
+  securityService: SecurityService,
+  mode: ConfigSeedMode = 'if-changed',
+): Promise<boolean> {
+  if (mode === 'skip') return false;
+  return em.transactional(async (transaction) => {
+    await lockBootstrap(transaction);
+    return seedConfigIfNeededLocked(transaction, config, securityService, mode);
+  });
+}
+
+async function seedConfigIfNeededLocked(
   em: EntityManager,
   config: IssuaryRuntimeConfig,
   securityService: SecurityService,
@@ -105,18 +138,13 @@ export async function seedConfigIfNeeded(
     return false;
   }
 
-  if (mode === 'always') {
-    await seedConfig(em, config, securityService);
-    return true;
-  }
-
   const fingerprint = await createConfigSeedFingerprint(config);
 
   try {
     const state = await em.findOne(BootstrapStateEntitySchema, {
       id: CONFIG_SEED_STATE_ID,
     });
-    if (state?.value === fingerprint) {
+    if (mode !== 'always' && state?.value === fingerprint) {
       return false;
     }
   } catch (err) {
@@ -169,9 +197,14 @@ export async function seedConfig(
   config: IssuaryRuntimeConfig,
   securityService: SecurityService,
 ): Promise<void> {
-  await syncTerms(em, config);
-  await syncUsers(em, config, securityService);
-  await syncOAuthClients(em, config, securityService);
+  await em.transactional(async (transaction) => {
+    await lockBootstrap(transaction);
+    await initializeTermsPolicy(transaction);
+    await lockTermsPolicy(transaction, 'write');
+    await syncTerms(transaction, config);
+    await syncUsers(transaction, config, securityService);
+    await syncOAuthClients(transaction, config, securityService);
+  });
 }
 
 /**
@@ -252,45 +285,98 @@ async function syncUsers(
   securityService: SecurityService,
 ): Promise<void> {
   const now = new Date();
-
-  for (const configUser of config.users) {
-    const hashedPassword = await securityService.hashPassword(
-      configUser.password,
-    );
-
-    // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
-    // This is cluster-safe: concurrent instances won't cause race conditions
-    await em.upsert(
+  for (const configUser of [...config.users].sort((a, b) =>
+    a.sub.localeCompare(b.sub),
+  )) {
+    await em.nativeUpdate(
       UserEntity,
-      {
-        sub: configUser.sub,
-        email: configUser.email,
-        password_hash: hashedPassword,
-        email_verified: true,
-        managed_by: 'config',
-        role: configUser.role ?? 'user',
+      { sub: configUser.sub },
+      { security_revision: raw<number>('security_revision + 1') },
+    );
+    // The bootstrap write lock is held before this read.
+    const user = await em.findOne(
+      UserEntity,
+      { sub: configUser.sub },
+      { populate: ['password_hash'], refresh: true },
+    );
+    if (user && user.managed_by !== 'config')
+      throw new Error('Config subject conflicts with a database-managed user');
+    const samePassword = user?.password_hash
+      ? await securityService.verifyPassword(
+          user.password_hash,
+          configUser.password,
+        )
+      : false;
+    const changed =
+      !user ||
+      !samePassword ||
+      user.email !== configUser.email ||
+      user.role !== (configUser.role ?? 'user') ||
+      user.deleted_at !== null;
+    if (user && changed) await invalidateUserAuthentication(em, user);
+    const data = {
+      sub: configUser.sub,
+      email: configUser.email,
+      password_hash: samePassword
+        ? user?.password_hash
+        : await securityService.hashPassword(configUser.password),
+      email_verified: true,
+      managed_by: 'config',
+      role: configUser.role ?? 'user',
+      deleted_at: null,
+      ...(changed
+        ? {
+            sessions_invalidated_at: now,
+            token_epoch: user?.token_epoch ?? crypto.randomUUID(),
+          }
+        : {}),
+    } satisfies Partial<UserEntity>;
+    if (user) {
+      await em.nativeUpdate(
+        UserEntity,
+        { sub: user.sub },
+        {
+          ...data,
+          security_revision: raw<number>('security_revision + 1'),
+          updated_at: now,
+        },
+      );
+    } else {
+      await em.insert(UserEntity, {
+        ...data,
         created_at: now,
         updated_at: now,
-      },
+      });
+    }
+  }
+  const subjects = config.users.map((user) => user.sub);
+  const removed = await em.find(UserEntity, {
+    managed_by: 'config',
+    deleted_at: null,
+    ...(subjects.length ? { sub: { $nin: subjects } } : {}),
+  });
+  for (const candidate of removed.sort((a, b) => a.sub.localeCompare(b.sub))) {
+    await em.nativeUpdate(
+      UserEntity,
+      { sub: candidate.sub },
+      { security_revision: raw<number>('security_revision + 1') },
+    );
+    const user = await em.findOneOrFail(
+      UserEntity,
+      { sub: candidate.sub },
+      { refresh: true },
+    );
+    await invalidateUserAuthentication(em, user);
+    await em.nativeUpdate(
+      UserEntity,
+      { sub: user.sub },
       {
-        onConflictFields: ['sub'],
-        onConflictAction: 'merge',
-        // Exclude sub and created_at from merge (don't update primary key or creation time)
-        onConflictExcludeFields: ['sub', 'created_at'],
+        deleted_at: now,
+        sessions_invalidated_at: now,
+        token_epoch: user.token_epoch,
+        security_revision: raw<number>('security_revision + 1'),
       },
     );
-  }
-
-  // Remove config-managed users that are no longer in config
-  const configUserSubs = config.users.map((user) => user.sub);
-  if (configUserSubs.length > 0) {
-    await em.nativeDelete(UserEntity, {
-      managed_by: 'config',
-      sub: { $nin: configUserSubs },
-    });
-  } else {
-    // If no config users, remove all config-managed users
-    await em.nativeDelete(UserEntity, { managed_by: 'config' });
   }
 }
 
@@ -305,10 +391,23 @@ async function syncOAuthClients(
 ): Promise<void> {
   const now = new Date();
 
-  for (const client of config.clients) {
+  for (const client of [...config.clients].sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    const current = await lockOAuthClient(em, client.id);
+    if (current) await em.populate(current, ['clientSecretHash']);
     // Public clients (PKCE-only) don't have client_secret
+    const sameSecret =
+      current?.clientSecretHash && client.client_secret
+        ? await securityService.verifyClientSecret(
+            current.clientSecretHash,
+            client.client_secret,
+          )
+        : false;
     const hashedSecret = client.client_secret
-      ? await securityService.hashClientSecret(client.client_secret)
+      ? sameSecret
+        ? current?.clientSecretHash
+        : await securityService.hashClientSecret(client.client_secret)
       : null;
 
     // Use upsert for atomic INSERT ON CONFLICT DO UPDATE
@@ -352,7 +451,10 @@ async function syncOAuthClients(
     deletedAt: null,
     ...(configClientIds.length > 0 && { id: { $nin: configClientIds } }),
   });
-  for (const client of removedClients) {
+  for (const client of removedClients.sort((a, b) =>
+    a.id.localeCompare(b.id),
+  )) {
+    await lockOAuthClient(em, client.id);
     client.deletedAt = now;
     client.tokenEpoch = crypto.randomUUID();
   }

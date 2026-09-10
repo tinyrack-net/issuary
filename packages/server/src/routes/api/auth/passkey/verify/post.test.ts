@@ -1,5 +1,7 @@
 import { testClient } from 'hono/testing';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { z } from 'zod';
+import { BrowserSessionEntitySchema } from '../../../../../entities/browser-session.entity.js';
 import type { AppType } from '../../../../../entrypoints/app.ts';
 import { decrypt } from '../../../../../lib/crypto.ts';
 import type { SessionAccount } from '../../../../../middleware/session.ts';
@@ -16,7 +18,10 @@ import {
   withMikroContext,
 } from '../../../../../test-utils/index.ts';
 
-async function decodeSessionCookie(cookie: string): Promise<{
+async function decodeSessionCookie(
+  services: ServiceContainer,
+  cookie: string,
+): Promise<{
   user?: {
     sub: string;
     authenticated_at: number;
@@ -34,17 +39,14 @@ async function decodeSessionCookie(cookie: string): Promise<{
   if (!decrypted) {
     throw new Error('Failed to decrypt session cookie');
   }
-  return JSON.parse(decrypted) as {
-    user?: {
-      sub: string;
-      authenticated_at: number;
-    };
-    accounts?: SessionAccount[];
-    pending2FAUser?: {
-      sub: string;
-      authenticated_at: number;
-    };
-  };
+  const { sid } = z.object({ sid: z.uuid() }).parse(JSON.parse(decrypted));
+  return withMikroContext(services, async () => {
+    const record = await services.mikro.em.findOneOrFail(
+      BrowserSessionEntitySchema,
+      sid,
+    );
+    return record.data;
+  });
 }
 
 /**
@@ -227,7 +229,7 @@ describe('POST /api/auth/passkey/verify', () => {
 
     // Try to verify with invalid signature
     const mockVerifyAuthentication = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .spyOn(services.passkeyService, 'prepareAuthentication')
       .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
 
     const authedClient = testClient(app);
@@ -283,7 +285,7 @@ describe('POST /api/auth/passkey/verify', () => {
 
     const authedClient = testClient(app);
     const mockVerifyAuthentication = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .spyOn(services.passkeyService, 'prepareAuthentication')
       .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // First attempt (will fail)
@@ -349,7 +351,7 @@ describe('POST /api/auth/passkey/verify', () => {
 
     const authedClient = testClient(app);
     const mockVerifyAuthentication = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
+      .spyOn(services.passkeyService, 'prepareAuthentication')
       .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // Send concurrent verification requests
@@ -450,8 +452,14 @@ describe('POST /api/auth/passkey/verify - Success with mocked service', () => {
 
     // Mock the verifyAuthentication method to return success
     const mockVerifyAuthentication = vi
-      .spyOn(services.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(user);
+      .spyOn(services.passkeyService, 'prepareAuthentication')
+      .mockResolvedValueOnce({
+        userSub: user.sub,
+        userEpoch: user.token_epoch,
+        credentialId: credentialId,
+        counter: 0,
+        newCounter: 1,
+      });
 
     // Verify with mocked service
     const authedClient = testClient(app);
@@ -578,7 +586,10 @@ describe('POST /api/auth/passkey/verify - remembered account roster', () => {
     });
     expect(loginARes.status).toBe(200);
     const userACookie = extractCookie(loginARes, 'session');
-    const userASession = await decodeSessionCookie(userACookie);
+    const userASession = await decodeSessionCookie(
+      servicesWithAccounts,
+      userACookie,
+    );
     expect(userASession.user?.sub).toBe(userA.sub);
     expect(userASession.accounts?.map((account) => account.sub)).toEqual([
       userA.sub,
@@ -592,8 +603,14 @@ describe('POST /api/auth/passkey/verify - remembered account roster', () => {
     const optionsCookie = extractCookie(optionsRes, 'session');
 
     const mockVerifyAuthentication = vi
-      .spyOn(servicesWithAccounts.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(userB);
+      .spyOn(servicesWithAccounts.passkeyService, 'prepareAuthentication')
+      .mockResolvedValueOnce({
+        userSub: userB.sub,
+        userEpoch: userB.token_epoch,
+        credentialId: credentialId,
+        counter: 0,
+        newCounter: 1,
+      });
 
     try {
       const verifyRes = await client.api.auth.passkey.verify.$post(
@@ -609,7 +626,10 @@ describe('POST /api/auth/passkey/verify - remembered account roster', () => {
       );
       expect(verifyRes.status).toBe(200);
       const finalCookie = extractCookie(verifyRes, 'session');
-      const finalSession = await decodeSessionCookie(finalCookie);
+      const finalSession = await decodeSessionCookie(
+        servicesWithAccounts,
+        finalCookie,
+      );
 
       expect(finalSession.user?.sub).toBe(userB.sub);
       expect(finalSession.accounts?.map((account) => account.sub)).toEqual([
@@ -726,8 +746,14 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
 
     // Mock verifyAuthentication to return user2 (passkey owner)
     const mockVerifyAuthentication = vi
-      .spyOn(services2FA.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(user2);
+      .spyOn(services2FA.passkeyService, 'prepareAuthentication')
+      .mockResolvedValueOnce({
+        userSub: user2.sub,
+        userEpoch: user2.token_epoch,
+        credentialId: credentialId2,
+        counter: 0,
+        newCounter: 1,
+      });
 
     // Try to verify with user2's passkey while logged in as user1
     const optionsClient = testClient(app2FA);
@@ -788,7 +814,10 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     expect(loginRes.status).toBe(200);
 
     const sessionCookie = extractCookie(loginRes, 'session');
-    const pendingSessionData = await decodeSessionCookie(sessionCookie);
+    const pendingSessionData = await decodeSessionCookie(
+      services2FA,
+      sessionCookie,
+    );
     expect(pendingSessionData.pending2FAUser?.sub).toBe(userSub);
 
     // Get passkey options
@@ -803,8 +832,14 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
 
     // Mock verifyAuthentication to return success
     const mockVerifyAuthentication = vi
-      .spyOn(services2FA.passkeyService, 'verifyAuthentication')
-      .mockResolvedValueOnce(user);
+      .spyOn(services2FA.passkeyService, 'prepareAuthentication')
+      .mockResolvedValueOnce({
+        userSub: user.sub,
+        userEpoch: user.token_epoch,
+        credentialId: credentialId,
+        counter: 0,
+        newCounter: 1,
+      });
 
     // Verify passkey as 2FA
     const optionsClient = testClient(app2FA);
@@ -837,7 +872,10 @@ describe('POST /api/auth/passkey/verify - 2FA mode', () => {
     expect(sessionBody.user).toBeDefined();
     expect(sessionBody).toHaveProperty('user.sub', userSub);
 
-    const fullSessionData = await decodeSessionCookie(newSessionCookie);
+    const fullSessionData = await decodeSessionCookie(
+      services2FA,
+      newSessionCookie,
+    );
     expect(fullSessionData.pending2FAUser).toBeUndefined();
     expect(fullSessionData.user?.sub).toBe(userSub);
     expect(fullSessionData.user?.authenticated_at).toBe(

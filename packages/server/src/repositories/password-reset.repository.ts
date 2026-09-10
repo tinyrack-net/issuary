@@ -10,6 +10,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
    */
   async generateToken(params: {
     userSub: string;
+    userEpoch: string;
     expiresInHours?: number;
   }): Promise<IPasswordResetEntity> {
     // Generate a UUID token for security
@@ -20,18 +21,15 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
     const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
 
     // Invalidate all previous unused tokens for this user
-    const previousTokens = await this.find({
-      user: ref(UserEntity, params.userSub),
-      used: false,
-    });
-
-    for (const prevToken of previousTokens) {
-      prevToken.expiresAt = new Date(); // Expire immediately
-    }
+    await this.nativeUpdate(
+      { user: ref(UserEntity, params.userSub), used: false, revoked_at: null },
+      { revoked_at: new Date() },
+    );
 
     // Create the entity
     const entity = this.create({
       user: params.userSub,
+      user_epoch: params.userEpoch,
       token,
       expiresAt,
     });
@@ -47,26 +45,12 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
    * @returns The verified entity with user populated, or null if invalid
    */
   async verifyToken(token: string): Promise<IPasswordResetEntity | null> {
-    const entity = await this.findOne(
-      { token, used: false },
-      { populate: ['user'] },
+    const now = new Date();
+    const changed = await this.nativeUpdate(
+      { token, used: false, revoked_at: null, expiresAt: { $gt: now } },
+      { used: true, usedAt: now },
     );
-
-    if (!entity) {
-      return null;
-    }
-
-    // Check if expired
-    if (entity.expiresAt < new Date()) {
-      return null;
-    }
-
-    // Mark as used
-    entity.used = true;
-    entity.usedAt = new Date();
-
-    await this.getEntityManager().flush();
-
-    return entity;
+    if (changed !== 1) return null;
+    return this.findOne({ token }, { populate: ['user'], refresh: true });
   }
 }

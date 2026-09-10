@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { describeRoute } from 'hono-openapi';
 import type { AppEnv } from '#server/lib/app-env.js';
 import { buildOpenidConfiguration } from '#server/routes/oauth/.well-known/openid-configuration/get.js';
 
@@ -11,6 +12,10 @@ import { buildOpenidConfiguration } from '#server/routes/oauth/.well-known/openi
  */
 export const openidConfigGet = new Hono<AppEnv>().get(
   '/openid-configuration',
+  describeRoute({
+    summary: 'OpenID Connect discovery',
+    responses: { 200: { description: 'Provider metadata' } },
+  }),
   async (c) => {
     const { config } = c.var.services;
     c.header('Cache-Control', 'public, max-age=3600');

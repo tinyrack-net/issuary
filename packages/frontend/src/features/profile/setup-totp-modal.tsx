@@ -10,6 +10,7 @@ import { VerifyStep } from '#frontend/components/totp/verify-step.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { useTotpSetup } from '#frontend/features/totp/use-totp-setup.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 
 interface SetupTotpModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function SetupTotpModal({
   const {
     step,
     setupData,
+    setupError,
     recoveryCodes,
     isSetupPending,
     isVerifyPending,
@@ -102,7 +104,11 @@ export function SetupTotpModal({
       {step === 'error' && (
         <div className="mt-tinyrack-lg flex flex-col gap-tinyrack-md">
           <AlertBanner variant="error">
-            {t('profile.totp.setupModal.setupError')}
+            {securityErrorMessage(
+              setupError,
+              t,
+              t('profile.totp.setupModal.setupError'),
+            )}
           </AlertBanner>
           <ModalActions>
             <TRButton

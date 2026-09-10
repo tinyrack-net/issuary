@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { renderProfileModal } from '#frontend/test-utils/profile-modal-test-utils.tsx';
 import {
@@ -10,8 +11,13 @@ import {
 } from '#frontend/test-utils/query-test-utils.ts';
 import { ChangePasswordModal } from './change-password-modal.tsx';
 
+vi.mock('#frontend/libs/document-navigation.js', () => ({
+  navigateDocument: vi.fn(),
+}));
+
 afterEach(() => {
   resetFetchMock();
+  vi.clearAllMocks();
 });
 
 test('changes password, invalidates the session, and closes', async () => {
@@ -29,6 +35,7 @@ test('changes password, invalidates the session, and closes', async () => {
 
   await vi.waitFor(() => {
     expect(onClose).toHaveBeenCalled();
+    expect(navigateDocument).toHaveBeenCalledWith('/login');
   });
 
   const request = firstRequest(fetchMock.requests);
@@ -65,4 +72,28 @@ test('renders a field error when the current password is rejected', async () => 
   await expect
     .element(screen.getByTestId('change-password-error-currentPassword'))
     .toHaveTextContent('Current password is incorrect');
+});
+
+test('a revoked browser session shows a sign-in instruction without replaying the change', async () => {
+  const fetchMock = mockJsonError(
+    { code: 'UNAUTHORIZED', message: 'Authentication required' },
+    401,
+  );
+  const { screen } = await renderProfileModal(
+    <ChangePasswordModal isOpen onClose={() => {}} />,
+  );
+  await screen.getByPlaceholder('Enter current password').fill('old-password');
+  await screen.getByPlaceholder('Enter new password').fill('new-password');
+  await screen.getByPlaceholder('Confirm new password').fill('new-password');
+  await screen.getByTestId('change-password-submit').click();
+  await expect
+    .element(
+      screen.getByText(
+        'Your authentication expired or your security settings changed. Sign in again to continue.',
+      ),
+    )
+    .toBeVisible();
+  expect(
+    fetchMock.requests.filter((request) => request.method === 'PUT'),
+  ).toHaveLength(1);
 });

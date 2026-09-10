@@ -8,6 +8,8 @@ import type {
 import type { Logger } from '../../lib/logger.ts';
 import { getNextCronRunAt } from './cron.ts';
 
+export class PermanentBackgroundJobError extends Error {}
+
 const MAX_ERROR_LENGTH = 2000;
 const MAX_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
@@ -25,6 +27,7 @@ export interface AcquiredSchedulerJob {
 }
 
 export interface AcquiredBackgroundJob {
+  recoveredLease?: boolean;
   id: string;
   jobId: string;
   payload: JobPayload;
@@ -399,6 +402,12 @@ export class DistributedBackgroundJobRunner {
     });
   }
 
+  public async runPending(): Promise<void> {
+    if (this.runningTick) await this.runningTick;
+    this.queueTick();
+    await this.runningTick;
+  }
+
   private queueTick(): void {
     if (this.runningTick || this.stopped) {
       return;
@@ -428,6 +437,14 @@ export class DistributedBackgroundJobRunner {
         return;
       }
 
+      this.logger?.info(
+        {
+          jobId: acquired.id,
+          state: acquired.recoveredLease ? 'lease_recovered' : 'claimed',
+          attemptCount: acquired.attemptCount,
+        },
+        'Background job state',
+      );
       const job = this.jobs.get(acquired.jobId);
       if (!job) {
         await this.completeJob(
@@ -523,12 +540,28 @@ export class DistributedBackgroundJobRunner {
             now,
             attemptCount: job.attemptCount,
             retryAt:
+              !(err instanceof PermanentBackgroundJobError) &&
               job.attemptCount < job.maxAttempts
                 ? new Date(now.getTime() + this.retryDelayMs)
                 : null,
             error: errorToMessage(err),
           });
 
+    if (completed)
+      this.logger?.info(
+        {
+          jobId: job.id,
+          state:
+            err === undefined
+              ? 'succeeded'
+              : err instanceof PermanentBackgroundJobError ||
+                  job.attemptCount >= job.maxAttempts
+                ? 'failed'
+                : 'retry_scheduled',
+          attemptCount: job.attemptCount,
+        },
+        'Background job state',
+      );
     if (!completed) {
       this.logger?.warn(
         { id: job.id, instanceId: this.instanceId },

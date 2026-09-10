@@ -1,5 +1,13 @@
 import { testClient } from 'hono/testing';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  test,
+  vi,
+} from 'vitest';
 import type { AppType } from '../../../../../../entrypoints/app.ts';
 import { e } from '../../../../../../schemas/error.ts';
 import type { ServiceContainer } from '../../../../../../services/container.ts';
@@ -14,6 +22,7 @@ import {
   MINIMAL_TEST_CONFIG,
   withMikroContext,
 } from '../../../../../../test-utils/index.ts';
+import { advanceTotpClock } from '../../../../../../test-utils/totp-clock.js';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -75,6 +84,7 @@ async function createUserWithTotpAndRecoveryCodes(
   const totpSecret = setupBody.secret;
 
   // Verify TOTP setup (this generates recovery codes)
+  advanceTotpClock();
   const validCode = services.totpService.generateToken(totpSecret);
   const verifyRes = await setupClient.api.user.totp.verify.$post(
     {
@@ -308,6 +318,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const totpSecret = setupBody.secret;
 
     // Verify setup
+    advanceTotpClock();
     const validCode = services.totpService.generateToken(totpSecret);
     const verifyRes = await authedClient.api.user.totp.verify.$post(
       {
@@ -335,6 +346,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     });
 
     // Disable TOTP
+    advanceTotpClock();
     const disableCode = services.totpService.generateToken(totpSecret);
     const disableRes = await authedClient.api.user.totp.$delete(
       {
@@ -415,6 +427,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const pending2FACookie = extractCookie(loginRes1, 'session');
 
     // Use TOTP to complete login
+    advanceTotpClock();
     const totpCode = services.totpService.generateToken(totpSecret);
     const pendingClient = testClient(app);
     const totpVerifyRes = await pendingClient.api.auth.totp.verify.$post(
@@ -427,6 +440,7 @@ describe('POST /api/auth/totp/recovery/verify', () => {
     const authedCookie = extractCookie(totpVerifyRes, 'session');
 
     // Disable TOTP with authenticated session
+    advanceTotpClock();
     const disableCode = services.totpService.generateToken(totpSecret);
     const authedClient = testClient(app);
     const disableRes = await authedClient.api.user.totp.$delete(
@@ -517,4 +531,8 @@ describe('POST /api/auth/totp/recovery/verify - TOTP disabled', () => {
     expect(body.code).toBe('VALIDATION_ERROR');
     expect(body.data).toBe('TOTP authentication is disabled');
   });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
