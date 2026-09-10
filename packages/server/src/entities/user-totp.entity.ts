@@ -25,6 +25,7 @@ export const UserTotpEntitySchema = defineEntity({
       .boolean()
       .comment('Whether the TOTP setup has been verified')
       .default(false),
+    last_used_step: p.integer().nullable(),
     recovery_confirmed: p
       .boolean()
       .comment('Whether the user has confirmed saving recovery codes')

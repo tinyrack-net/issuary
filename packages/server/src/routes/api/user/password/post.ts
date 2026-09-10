@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { f } from '../../../../schemas/field.ts';
 import { r } from '../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 /**
  * POST /api/user/password
@@ -79,17 +83,22 @@ export const userPasswordPost = new Hono<AppEnv>().post(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
-    const body = c.req.valid('json');
-    const { config, passwordAuthService } = c.var.services;
-    const { user } = c.var.verifiedUser;
+    return withBrowserSecurity(c, async () => {
+      const body = c.req.valid('json');
+      const { config, passwordAuthService } = c.var.services;
+      const { user } = c.var.verifiedUser;
 
-    if (!config.auth.password.enabled) {
-      throw new e.ValidationError.Error('Password authentication is disabled');
-    }
+      if (!config.auth.password.enabled) {
+        throw new e.ValidationError.Error(
+          'Password authentication is disabled',
+        );
+      }
 
-    await passwordAuthService.setPasswordForUser(user, body.password);
+      await passwordAuthService.setPasswordForUser(user, body.password);
 
-    return c.json({ ok: true as const }, 200);
+      return c.json({ ok: true as const }, 200);
+    });
   },
 );

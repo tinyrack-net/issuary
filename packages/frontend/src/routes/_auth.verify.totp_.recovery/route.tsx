@@ -35,6 +35,7 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { verifyRecoveryCodeMutationOptions } from '#frontend/queries/totp.ts';
 
@@ -173,7 +174,11 @@ function VerifyRecovery({
           case ERROR_CODES.INVALID_RECOVERY_CODE:
             setError('code', {
               type: 'manual',
-              message: t('verifyRecovery.error.invalid'),
+              message: securityErrorMessage(
+                error,
+                t,
+                t('verifyRecovery.error.invalid'),
+              ),
             });
             setValue('code', '');
             inputRef.current?.focus();
@@ -184,7 +189,11 @@ function VerifyRecovery({
       // Generic error fallback
       setError('code', {
         type: 'manual',
-        message: t('verifyRecovery.error.invalid'),
+        message: securityErrorMessage(
+          error,
+          t,
+          t('verifyRecovery.error.invalid'),
+        ),
       });
       setValue('code', '');
       inputRef.current?.focus();

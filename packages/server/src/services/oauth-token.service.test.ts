@@ -1,5 +1,6 @@
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { OAuthGrantEntitySchema } from '../entities/oauth-grant.entity.js';
 import type { AppType } from '../entrypoints/app.ts';
 import {
   assertJsonBody,
@@ -148,7 +149,7 @@ describe('OAuthTokenService', () => {
 
     test('family revocation marker covers descendants issued after the replayed token', async () => {
       vi.useFakeTimers();
-      const issuedAt = new Date('2026-01-01T00:00:00.000Z');
+      const issuedAt = new Date(Date.now() + 1000);
       vi.setSystemTime(issuedAt);
 
       try {
@@ -164,7 +165,7 @@ describe('OAuthTokenService', () => {
           throw new Error('Expected refresh token grant_id');
         }
 
-        const replayedAt = new Date('2026-01-01T00:10:00.000Z');
+        const replayedAt = new Date(issuedAt.getTime() + 600_000);
         vi.setSystemTime(replayedAt);
 
         const rotatedRes = await refreshAccessToken(app, {
@@ -183,9 +184,11 @@ describe('OAuthTokenService', () => {
         expect(replayJson.code).toBe('INVALID_REFRESH_TOKEN');
 
         await withMikroContext(services, async () => {
-          const marker = await services.mikro.revokedToken.findOne({
-            jti: `grant:${grantId}`,
-          });
+          const marker = await services.mikro.em.findOne(
+            OAuthGrantEntitySchema,
+            { id: grantId },
+          );
+          expect(marker?.revoked_at).not.toBeNull();
           expect(marker).not.toBeNull();
           if (!marker) {
             throw new Error('Expected grant revocation marker');
@@ -266,6 +269,9 @@ describe('OAuthTokenService', () => {
         accessToken = await services.jwtService.signAccessToken({
           typ: 'access_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid email',
           aud: services.config.server.public_origin,
@@ -274,6 +280,9 @@ describe('OAuthTokenService', () => {
         refreshToken = await services.jwtService.signRefreshToken({
           typ: 'refresh_token',
           sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
           client_id: tokenClientId,
           scope: 'openid email',
         });

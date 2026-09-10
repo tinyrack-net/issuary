@@ -11,6 +11,7 @@ import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { IssuaryError } from '#frontend/libs/error.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { disableTotpMutationOptions } from '#frontend/queries/totp.ts';
 
@@ -69,7 +70,11 @@ export function DisableTotpModal({ isOpen, onClose }: DisableTotpModalProps) {
         }
       }
       form.setError('code', {
-        message: t('profile.totp.disableModal.error'),
+        message: securityErrorMessage(
+          error,
+          t,
+          t('profile.totp.disableModal.error'),
+        ),
       });
     }
   });

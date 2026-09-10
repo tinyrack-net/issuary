@@ -102,6 +102,8 @@ async function seedPasswordResetTokenBacklog(userSub: string, count: number) {
     for (let index = 0; index < count; index += 1) {
       const reset = services.mikro.passwordReset.create({
         user: userSub,
+        user_epoch: (await services.mikro.user.verifyBySub(userSub))
+          .token_epoch,
         token: `password-reset-backlog-${crypto.randomUUID()}`,
         expiresAt,
       });

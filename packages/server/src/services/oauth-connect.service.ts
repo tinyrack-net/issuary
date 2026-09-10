@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import z from 'zod';
+import type { UserEntity } from '../entities/user.entity.js';
 import type {
   IdentityProviderConfig,
   IssuaryRuntimeConfig,
@@ -12,6 +13,10 @@ import type { r } from '../schemas/response.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { TermsService } from './terms.service.ts';
 import type { UserService } from './user.service.ts';
+import {
+  authenticationMethods,
+  withUserSecurity,
+} from './user-security.service.js';
 
 /**
  * OAuth user info returned from provider
@@ -109,6 +114,8 @@ export interface OAuthSessionData {
   mode: z.infer<typeof f.oauthConnectMode>;
   /** URL to return to after authentication */
   returnUrl?: string | undefined;
+  linkSubject?: string;
+  linkEpoch?: string;
 }
 
 /**
@@ -119,7 +126,7 @@ export interface OAuthAuthResult {
   /** Whether this is a newly created user */
   isNewUser: boolean;
   /** Authenticated user session data */
-  user: z.infer<typeof r.UserSession>;
+  user: z.infer<typeof r.UserSession> & { token_epoch: string };
 }
 
 /**
@@ -136,11 +143,13 @@ export type OAuthCallbackResult =
   | {
       action: 'login_complete';
       userSub: string;
+      userEpoch: string;
       returnUrl: string | undefined;
     }
   | {
       action: 'login_terms_redirect';
       userSub: string;
+      userEpoch: string;
       termsUrl: string;
     };
 
@@ -176,6 +185,7 @@ export class OAuthConnectService {
     oauthSession: OAuthSessionData;
     userSub?: string | undefined;
     requestUrl: string;
+    completeLink?: (operation: () => Promise<void>) => Promise<void>;
   }): Promise<OAuthCallbackResult> {
     const { provider, code, state, oauthSession, userSub, requestUrl } = params;
 
@@ -209,7 +219,21 @@ export class OAuthConnectService {
         throw new e.Unauthorized.Error();
       }
 
-      await this.linkOAuthAccount(userSub, provider, tokens, userInfo);
+      if (
+        oauthSession.linkSubject !== userSub ||
+        !oauthSession.linkEpoch ||
+        !params.completeLink
+      )
+        throw new e.Unauthorized.Error();
+      await params.completeLink(async () => {
+        const user = await this.mikro.user.findOneOrFail(
+          { sub: userSub },
+          { refresh: true },
+        );
+        if (user.token_epoch !== oauthSession.linkEpoch)
+          throw new e.Unauthorized.Error();
+        await this.linkOAuthAccount(userSub, provider, tokens, userInfo);
+      });
 
       const returnUrl = oauthSession.returnUrl || '/profile';
       return { action: 'link_complete', returnUrl };
@@ -297,6 +321,7 @@ export class OAuthConnectService {
           return {
             action: 'login_terms_redirect',
             userSub: result.user.sub,
+            userEpoch: result.user.token_epoch,
             termsUrl: termsUrl.toString(),
           };
         }
@@ -305,6 +330,7 @@ export class OAuthConnectService {
       return {
         action: 'login_complete',
         userSub: result.user.sub,
+        userEpoch: result.user.token_epoch,
         returnUrl: oauthSession.returnUrl,
       };
     } catch (err) {
@@ -714,7 +740,7 @@ export class OAuthConnectService {
 
       return {
         isNewUser: false,
-        user: await this.userService.getSessionUserBySub(user.sub),
+        user: await this.authenticationResultUser(user),
       };
     }
 
@@ -731,29 +757,19 @@ export class OAuthConnectService {
       }
 
       // auto_link strategy - link to existing user if email is verified
-      if (!existingUser.email_verified) {
-        // Mark email as verified since OAuth provider verified it
-        existingUser.email_verified = true;
-      }
-
-      // Link OAuth account (only for database-managed users)
-      // Config-managed users can still be linked since they're in DB now
-      await this.mikro.userOAuth.linkAccount({
-        userSub: existingUser.sub,
-        providerName: providerId,
-        providerUserId: userInfo.id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || '',
-        expiresAt: tokens.expires_in
-          ? new Date(Date.now() + tokens.expires_in * 1000)
-          : null,
+      await withUserSecurity(this.mikro, existingUser.sub, async (fresh) => {
+        if (fresh.email !== userInfo.email)
+          throw new e.OAuthEmailConflict.Error();
+        fresh.email_verified = true;
+        await this.linkOAuthAccount(fresh.sub, providerId, tokens, userInfo);
+        await this.mikro.em.flush();
       });
 
       await this.mikro.em.flush();
 
       return {
         isNewUser: false,
-        user: await this.userService.getSessionUserBySub(existingUser.sub),
+        user: await this.authenticationResultUser(existingUser),
       };
     }
 
@@ -802,7 +818,7 @@ export class OAuthConnectService {
 
     return {
       isNewUser: true,
-      user: await this.userService.getSessionUserBySub(newUser.sub),
+      user: await this.authenticationResultUser(newUser),
     };
   }
 
@@ -850,74 +866,17 @@ export class OAuthConnectService {
       throw new e.OAuthEmailNotVerified.Error();
     }
 
-    // Double-check that user doesn't exist (in case of race condition)
+    // A registration token proves a new-account flow, never a fresh login to
+    // an account created or recovered since that flow began.
+    this.getProvider(providerId);
     const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
       providerId,
       userInfo.id,
     );
-
-    if (existingOAuth) {
-      // User was created in the meantime, just return existing user
-      const user = await existingOAuth.user.load({
-        populate: ['password_hash'],
-      });
-      if (!user) {
-        throw new e.UserNotFound.Error();
-      }
-
-      return {
-        isNewUser: false,
-        user: await this.userService.getSessionUserBySub(user.sub),
-      };
-    }
-
-    // Check if user with same email exists
     const existingUser = await this.mikro.user.findOne({
       email: userInfo.email,
     });
-
-    if (existingUser) {
-      // Handle as auto_link - link OAuth to existing user
-      const provider = this.getProvider(providerId);
-
-      if (provider.email_conflict_strategy === 'require_link') {
-        throw new e.OAuthEmailConflict.Error();
-      }
-
-      if (!existingUser.email_verified) {
-        existingUser.email_verified = true;
-      }
-
-      await this.mikro.userOAuth.linkAccount({
-        userSub: existingUser.sub,
-        providerName: providerId,
-        providerUserId: userInfo.id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token || '',
-        expiresAt: tokens.expires_in
-          ? new Date(Date.now() + tokens.expires_in * 1000)
-          : null,
-      });
-
-      // Record all consents for existing user (load terms once)
-      const terms = await this.termsService.getGlobalTerms();
-      await this.termsService.recordConsents({
-        userSub: existingUser.sub,
-        consents,
-        terms,
-      });
-      await this.termsService.recordImplicitConsents({
-        userSub: existingUser.sub,
-        terms,
-      });
-
-      await this.mikro.em.flush();
-
-      return {
-        isNewUser: false,
-        user: await this.userService.getSessionUserBySub(existingUser.sub),
-      };
-    }
+    if (existingOAuth || existingUser) throw new e.OAuthSessionExpired.Error();
 
     // Check if registration is enabled and email is allowed
     if (!this.config.registration.enabled) {
@@ -968,65 +927,81 @@ export class OAuthConnectService {
       terms,
     });
 
+    await this.mikro.pendingOAuthRegistration.invalidateIdentity(
+      providerId,
+      userInfo.id,
+      userInfo.email,
+    );
+
     return {
       isNewUser: true,
-      user: await this.userService.getSessionUserBySub(newUser.sub),
+      user: await this.authenticationResultUser(newUser),
     };
   }
 
   /**
    * Link OAuth account to existing user
    */
+  private async authenticationResultUser(user: UserEntity) {
+    const token_epoch = user.token_epoch;
+    return {
+      ...(await this.userService.getSessionUserBySub(user.sub)),
+      token_epoch,
+    };
+  }
+
   public async linkOAuthAccount(
     userSub: string,
     providerId: string,
     tokens: OAuthTokens,
     userInfo: OAuthUserInfo,
   ): Promise<void> {
-    // Check if OAuth account is already linked to another user
-    const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
-      providerId,
-      userInfo.id,
-    );
+    return withUserSecurity(this.mikro, userSub, async () => {
+      // Check if OAuth account is already linked to another user
+      const existingOAuth = await this.mikro.userOAuth.findByProviderUserId(
+        providerId,
+        userInfo.id,
+      );
 
-    if (existingOAuth && existingOAuth.user.sub !== userSub) {
-      throw new e.OAuthAccountAlreadyLinked.Error();
-    }
+      if (existingOAuth && existingOAuth.user.sub !== userSub) {
+        throw new e.OAuthAccountAlreadyLinked.Error();
+      }
 
-    // Get user
-    const user = await this.mikro.user.findOneOrFail(
-      { sub: userSub },
-      { failHandler: () => new e.UserNotFound.Error() },
-    );
+      // Get user
+      const user = await this.mikro.user.findOneOrFail(
+        { sub: userSub },
+        { failHandler: () => new e.UserNotFound.Error() },
+      );
 
-    // Check if already linked
-    const existingLink = await this.mikro.userOAuth.findByUserAndProvider(
-      userSub,
-      providerId,
-    );
+      // Check if already linked
+      const existingLink = await this.mikro.userOAuth.findByUserAndProvider(
+        userSub,
+        providerId,
+      );
 
-    if (existingLink) {
-      // Update tokens
-      await this.mikro.userOAuth.updateTokens(existingLink, {
+      if (existingLink) {
+        // Update tokens
+        await this.mikro.userOAuth.updateTokens(existingLink, {
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token || '',
+          expiresAt: tokens.expires_in
+            ? new Date(Date.now() + tokens.expires_in * 1000)
+            : null,
+        });
+        return;
+      }
+
+      // Link OAuth account
+      await this.mikro.userOAuth.linkAccount({
+        userSub: user.sub,
+        providerName: providerId,
+        providerUserId: userInfo.id,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || '',
         expiresAt: tokens.expires_in
           ? new Date(Date.now() + tokens.expires_in * 1000)
           : null,
       });
-      return;
-    }
-
-    // Link OAuth account
-    await this.mikro.userOAuth.linkAccount({
-      userSub: user.sub,
-      providerName: providerId,
-      providerUserId: userInfo.id,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token || '',
-      expiresAt: tokens.expires_in
-        ? new Date(Date.now() + tokens.expires_in * 1000)
-        : null,
     });
   }
 
@@ -1037,35 +1012,45 @@ export class OAuthConnectService {
     userSub: string,
     providerId: string,
   ): Promise<void> {
-    // Get user from database (config users are now synced to DB)
-    const user = await this.mikro.user.findOneOrFail(
-      { sub: userSub },
-      {
-        failHandler: () => new e.UserNotFound.Error(),
-        populate: ['password_hash'],
-      },
-    );
+    return withUserSecurity(this.mikro, userSub, async () => {
+      // Get user from database (config users are now synced to DB)
+      const user = await this.mikro.user.findOneOrFail(
+        { sub: userSub },
+        {
+          failHandler: () => new e.UserNotFound.Error(),
+          populate: ['password_hash'],
+        },
+      );
 
-    // Check if OAuth account is linked
-    const oauthAccount = await this.mikro.userOAuth.findByUserAndProvider(
-      userSub,
-      providerId,
-    );
+      // Check if OAuth account is linked
+      const oauthAccount = await this.mikro.userOAuth.findByUserAndProvider(
+        userSub,
+        providerId,
+      );
 
-    if (!oauthAccount) {
-      throw new e.OAuthAccountNotLinked.Error();
-    }
+      if (!oauthAccount) {
+        throw new e.OAuthAccountNotLinked.Error();
+      }
 
-    // Check if this is the last auth method
-    const oauthCount = await this.mikro.userOAuth.countByUser(userSub);
-    const hasPassword = user.hasPassword();
+      // Check if this is the last auth method
+      const methods = await authenticationMethods(
+        this.mikro,
+        this.config,
+        user,
+      );
+      const enabled = this.config.identity_providers.some(
+        (provider) => provider.id === providerId && provider.enabled,
+      );
+      if (
+        methods.oauth - Number(enabled) <= 0 &&
+        !methods.password &&
+        methods.passkeys === 0
+      ) {
+        throw new e.CannotUnlinkLastAuthMethod.Error();
+      }
 
-    // If only one OAuth and no password, can't unlink
-    if (oauthCount <= 1 && !hasPassword) {
-      throw new e.CannotUnlinkLastAuthMethod.Error();
-    }
-
-    await this.mikro.userOAuth.unlinkAccount(userSub, providerId);
+      await this.mikro.userOAuth.unlinkAccount(userSub, providerId);
+    });
   }
 
   /**

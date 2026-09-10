@@ -39,6 +39,7 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { appConfigQueryOptions } from '#frontend/queries/config.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import {
@@ -87,6 +88,16 @@ function VerifyEmail({ search }: { search: z.infer<typeof SearchSchema> }) {
       });
       await tick();
 
+      if (user.totp_registered || user.passkey_count > 0) {
+        const destination =
+          user.totp_registered && user.passkey_count > 0
+            ? '/verify/2fa'
+            : user.totp_registered
+              ? '/verify/totp'
+              : '/verify/passkey';
+        return navigateTo(destination, extractOAuthParams(search));
+      }
+
       if (user.second_factor_required) {
         const available_2fa_methods: SecondFactorMethod[] = [];
         if (appConfig.auth.password.totp.enabled) {
@@ -123,6 +134,12 @@ function VerifyEmail({ search }: { search: z.infer<typeof SearchSchema> }) {
 
   const resendVerificationMutation = useMutation({
     ...resendVerificationMutationOptions,
+    onError: (error) => {
+      toast.add({
+        title: securityErrorMessage(error, t, t('error.defaultMessage')),
+        type: 'error',
+      });
+    },
     onSuccess: () => {
       toast.add({ title: t('verifyEmail.resendSuccess'), type: 'success' });
       // Separate from the message: a short cooldown so the button cannot be

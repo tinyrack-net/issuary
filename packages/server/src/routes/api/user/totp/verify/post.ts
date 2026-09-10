@@ -2,7 +2,10 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import {
   verifyAuth,
@@ -11,6 +14,7 @@ import {
 import { e } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
 
 /**
  * POST /api/user/totp/verify
@@ -71,21 +75,36 @@ export const userTotpVerifyPost = new Hono<AppEnv>().post(
   ),
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
-    const body = c.req.valid('json');
-    const { totpService } = c.var.services;
+    return withBrowserSecurity(
+      c,
+      async () => {
+        const body = c.req.valid('json');
+        const { totpService, mikro } = c.var.services;
 
-    // Allow both full user session and pending 2FA setup session
-    const userSub =
-      c.var.verifiedPending2FASetupUser?.user.sub ??
-      c.var.verifiedUser?.user.sub;
+        // Allow both full user session and pending 2FA setup session
+        const userSub =
+          c.var.verifiedPending2FASetupUser?.user.sub ??
+          c.var.verifiedUser?.user.sub;
 
-    if (!userSub) {
-      throw new e.Unauthorized.Error();
-    }
+        if (!userSub) {
+          throw new e.Unauthorized.Error();
+        }
 
-    const recoveryCodes = await totpService.verifySetup(userSub, body.code);
+        const recoveryCodes = await totpService.verifySetup(userSub, body.code);
 
-    return c.json({ recovery_codes: recoveryCodes }, 200);
+        const totp = await mikro.userTotp.findByUserSub(userSub);
+        if (!totp || totp.last_used_step === null)
+          throw new e.TotpNotSetup.Error();
+        c.var.session.set('totpSetupVerification', {
+          sub: userSub,
+          totpId: totp.id,
+          step: totp.last_used_step,
+        });
+        return c.json({ recovery_codes: recoveryCodes }, 200);
+      },
+      { stage: 'setup' },
+    );
   },
 );

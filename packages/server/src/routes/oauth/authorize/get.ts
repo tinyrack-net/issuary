@@ -186,7 +186,11 @@ export const authorizeGet = new Hono<AppEnv>().get(
       authorizeParams.clearAccountSelectionSession = () =>
         c.var.session.set('accountSelection', undefined);
 
-      const result = await oauthAuthorizeService.authorize(authorizeParams);
+      const result = await oauthAuthorizeService.authorize({
+        ...authorizeParams,
+        authenticationEpochs:
+          c.var.session.authorization.security?.grants ?? {},
+      });
 
       if (result.type === 'form_post') {
         return c.html(buildFormPostResponse(result.url, result.params ?? {}));

@@ -3,9 +3,11 @@ import { describeRoute, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
 import { escapeHtml } from '../../../lib/escape-html.js';
+import { securityMutationDocumentation } from '../../../lib/openapi.js';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
 import { e } from '../../../schemas/error.ts';
+import { withBrowserSecurity } from '../../../services/browser-security.service.js';
 
 const DeviceVerificationRequestBody = z.object({
   user_code: z.string().min(1).max(64),
@@ -71,33 +73,39 @@ export const deviceGetPost = new Hono<AppEnv>()
     }),
     validator('form', DeviceVerificationRequestBody),
     verifyAuth(),
-    async (c) => {
-      const { decision, user_code: userCode } = c.req.valid('form');
-      const { mikro, securityService } = c.var.services;
-      const userCodeHash = await securityService.hashOpaqueToken(
-        'oauth-device-user-code',
-        userCode.toUpperCase(),
-      );
-      const now = new Date();
-      const deviceCode =
-        decision === 'deny'
-          ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
-              userCodeHash,
-              deniedAt: now,
-            })
-          : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
-              userCodeHash,
-              userSub: c.var.verifiedUser.user.sub,
-              approvedAt: now,
-            });
+    securityMutationDocumentation,
+    async (c) =>
+      withBrowserSecurity(c, async () => {
+        const { decision, user_code: userCode } = c.req.valid('form');
+        const { mikro, securityService } = c.var.services;
+        const userCodeHash = await securityService.hashOpaqueToken(
+          'oauth-device-user-code',
+          userCode.toUpperCase(),
+        );
+        const now = new Date();
+        const deviceCode =
+          decision === 'deny'
+            ? await mikro.oauthDeviceCode.denyPendingByUserCodeHash({
+                userCodeHash,
+                deniedAt: now,
+              })
+            : await mikro.oauthDeviceCode.approvePendingByUserCodeHash({
+                userCodeHash,
+                userSub: c.var.verifiedUser.user.sub,
+                approvedAt: now,
+                userEpoch:
+                  c.var.session.authorization.security?.grants[
+                    c.var.verifiedUser.user.sub
+                  ] ?? '',
+              });
 
-      if (!deviceCode) {
-        throw new e.InvalidDeviceCode.Error();
-      }
+        if (!deviceCode) {
+          throw new e.InvalidDeviceCode.Error();
+        }
 
-      return c.json({
-        status: decision === 'deny' ? 'denied' : 'approved',
-        client_id: deviceCode.client.clientId,
-      });
-    },
+        return c.json({
+          status: decision === 'deny' ? 'denied' : 'approved',
+          client_id: deviceCode.client.clientId,
+        });
+      }),
   );

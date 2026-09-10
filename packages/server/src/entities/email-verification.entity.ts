@@ -10,6 +10,7 @@ export const EmailVerificationEntitySchema = defineEntity({
   extends: BaseSchema,
   repository: () => EmailVerificationRepository,
   properties: (p) => ({
+    user_epoch: p.string(),
     id: p
       .uuid()
       .primary()

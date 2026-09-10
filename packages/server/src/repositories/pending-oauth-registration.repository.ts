@@ -49,15 +49,27 @@ export class PendingOAuthRegistrationRepository extends EntityRepository<IPendin
    * Find a valid (non-expired) pending registration by its token.
    * Eagerly loads lazy fields (accessToken, refreshToken).
    */
+  async claim(token: string): Promise<IPendingOAuthRegistrationEntity | null> {
+    const changed = await this.nativeUpdate(
+      { token, consumed_at: null, expiresAt: { $gt: new Date() } },
+      { consumed_at: new Date() },
+    );
+    if (changed !== 1) return null;
+    return this.findOne(
+      { token },
+      { populate: ['accessToken', 'refreshToken'], refresh: true },
+    );
+  }
+
   async findValidByToken(
     token: string,
   ): Promise<IPendingOAuthRegistrationEntity | null> {
     const entity = await this.findOne(
-      { token },
+      { token, consumed_at: null },
       { populate: ['accessToken', 'refreshToken'] },
     );
     if (!entity) return null;
-    if (entity.expiresAt < new Date()) return null;
+    if (entity.expiresAt <= new Date()) return null;
     return entity;
   }
 
@@ -71,6 +83,19 @@ export class PendingOAuthRegistrationRepository extends EntityRepository<IPendin
   /**
    * Delete all expired pending registrations.
    */
+  async invalidateIdentity(
+    providerId: string,
+    providerUserId: string,
+    email: string,
+  ): Promise<void> {
+    await this.nativeDelete({
+      $or: [
+        { providerId, userInfo: { id: providerUserId } },
+        { userInfo: { email } },
+      ],
+    });
+  }
+
   async cleanExpired(cutoffDate: Date): Promise<number> {
     return await this.nativeDelete({
       expiresAt: { $lt: cutoffDate },

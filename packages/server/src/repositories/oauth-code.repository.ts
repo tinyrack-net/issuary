@@ -3,11 +3,13 @@ import type {
   IOAuthCodeEntity,
   OAuthCodeChallengeMethods,
 } from '../entities/oauth-code.entity.ts';
+import { UserEntity } from '../entities/user.entity.js';
 
 export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
   async createAuthorizationCode(params: {
     clientId: string;
     userSub: string;
+    userEpoch?: string;
     codeHash: string;
     redirectUri: string;
     scope: string[];
@@ -21,9 +23,13 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
     const expiresInSeconds = params.expiresInSeconds || 600;
     const expiredAt = new Date(Date.now() + expiresInSeconds * 1000);
 
+    const user = await this.getEntityManager().findOneOrFail(UserEntity, {
+      sub: params.userSub,
+    });
     const entity = this.create({
       client: params.clientId,
       user: params.userSub,
+      user_epoch: params.userEpoch ?? user.token_epoch,
       codeHash: params.codeHash,
       redirectUri: params.redirectUri,
       scope: params.scope,

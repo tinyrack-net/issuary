@@ -353,6 +353,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
     // 2. Register test-only API endpoints
     const testApp = app
       .get('/test/email-token/:email', async (c) => {
+        await services.mailQueue.runPending();
         const email = c.req.param('email');
         const user = await services.mikro.user.findOne({ email });
         if (!user) {
@@ -379,6 +380,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
         return c.json({ secret: totp.secret });
       })
       .get('/test/password-reset-token/:email', async (c) => {
+        await services.mailQueue.runPending();
         const email = c.req.param('email');
         const user = await services.mikro.user.findOne({ email });
         if (!user) {
@@ -662,6 +664,7 @@ export async function createE2EServer(configFactory: ConfigFactory) {
 
     return {
       app: testApp,
+      services,
       backendPort,
       auxiliaryPort,
       releaseAuxiliaryPort: auxiliaryPortReservation.release,

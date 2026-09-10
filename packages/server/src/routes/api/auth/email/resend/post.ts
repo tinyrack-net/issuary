@@ -12,7 +12,8 @@ export const authEmailResendPost = new Hono<AppEnv>().post(
   describeRoute({
     tags: [TAGS.AUTH],
     summary: 'Resend Verification Email',
-    description: 'Resend email verification link to user',
+    description:
+      'Request verification email. The response does not reveal whether the address exists or is already verified.',
     responses: {
       200: {
         content: {
@@ -21,22 +22,6 @@ export const authEmailResendPost = new Hono<AppEnv>().post(
           },
         },
         description: 'Success',
-      },
-      400: {
-        content: {
-          'application/json': {
-            schema: resolver(e.EmailAlreadyVerified.Schema),
-          },
-        },
-        description: 'Email already verified',
-      },
-      404: {
-        content: {
-          'application/json': {
-            schema: resolver(e.UserNotFound.Schema),
-          },
-        },
-        description: 'User not found',
       },
       403: {
         content: {
@@ -65,19 +50,15 @@ export const authEmailResendPost = new Hono<AppEnv>().post(
     const body = c.req.valid('json');
     const headers = c.req.valid('header');
 
-    const verification = await services.emailService.resendVerification(
+    await services.mailQueue.enqueue(
+      'verification',
       body.email,
+      headers['accept-language'],
     );
-
-    services.emailService.sendVerificationEmailAsync({
-      email: body.email,
-      token: verification.token,
-      locale: headers['accept-language'],
-    });
 
     return c.json(
       {
-        message: 'Verification email has been resent. Please check your inbox.',
+        message: 'If this address needs verification, an email will be sent.',
       },
       200,
     );

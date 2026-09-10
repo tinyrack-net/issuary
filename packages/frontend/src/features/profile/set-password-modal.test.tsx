@@ -1,4 +1,5 @@
 import { afterEach, expect, test, vi } from 'vitest';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { renderProfileModal } from '#frontend/test-utils/profile-modal-test-utils.tsx';
 import {
@@ -10,8 +11,13 @@ import {
 } from '#frontend/test-utils/query-test-utils.ts';
 import { SetPasswordModal } from './set-password-modal.tsx';
 
+vi.mock('#frontend/libs/document-navigation.js', () => ({
+  navigateDocument: vi.fn(),
+}));
+
 afterEach(() => {
   resetFetchMock();
+  vi.clearAllMocks();
 });
 
 test('sets a password, invalidates the session, and closes', async () => {
@@ -28,6 +34,7 @@ test('sets a password, invalidates the session, and closes', async () => {
 
   await vi.waitFor(() => {
     expect(onClose).toHaveBeenCalled();
+    expect(navigateDocument).toHaveBeenCalledWith('/login');
   });
 
   const request = firstRequest(fetchMock.requests);

@@ -886,7 +886,7 @@ describe('POST /oauth/token', () => {
       expect(json.code).toBe('INVALID_PKCE_VERIFIER');
     });
 
-    test('should consume authorization code after failed PKCE verification', async () => {
+    test('should preserve authorization code after failed PKCE verification', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, {
         sessionCookie,
@@ -907,8 +907,8 @@ describe('POST /oauth/token', () => {
         codeVerifier: TEST_PKCE.codeVerifier,
       });
 
-      const retryJson = await assertJsonBody(retryRes, 400);
-      expect(retryJson.code).toBe('INVALID_AUTHORIZATION_CODE');
+      const retryJson = await assertJsonBody(retryRes, 200);
+      expect(retryJson.access_token).toBeDefined();
     });
 
     test('should reject public client legacy authorization code without stored code_challenge', async () => {

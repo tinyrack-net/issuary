@@ -114,36 +114,48 @@ async function seedCleanupRecords(
 ): Promise<void> {
   await withServices(configPath, cwd, async (connection) => {
     const now = new Date();
+    const epoch = crypto.randomUUID();
     const expiredAt = new Date(now.getTime() - 60_000);
     const futureAt = new Date(now.getTime() + 60_000);
 
     await connection.execute(
-      `insert into user (sub, created_at, updated_at, email, email_verified, managed_by, role)
-       values (?, ?, ?, ?, ?, ?, ?)`,
-      ['cleanup-user', now, now, 'cleanup@example.com', 1, 'database', 'user'],
+      `insert into user (sub, token_epoch, created_at, updated_at, email, email_verified, managed_by, role)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        'cleanup-user',
+        epoch,
+        now,
+        now,
+        'cleanup@example.com',
+        1,
+        'database',
+        'user',
+      ],
     );
 
     await connection.execute(
-      `insert into email_verification (id, created_at, updated_at, user_sub, token, expires_at, verified)
-       values (?, ?, ?, ?, ?, ?, ?)`,
+      `insert into email_verification (id, created_at, updated_at, user_sub, user_epoch, token, expires_at, verified)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         'expired-email-verification',
         now,
         now,
         'cleanup-user',
+        epoch,
         'expired-email-token',
         expiredAt,
         0,
       ],
     );
     await connection.execute(
-      `insert into email_verification (id, created_at, updated_at, user_sub, token, expires_at, verified)
-       values (?, ?, ?, ?, ?, ?, ?)`,
+      `insert into email_verification (id, created_at, updated_at, user_sub, user_epoch, token, expires_at, verified)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         'active-email-verification',
         now,
         now,
         'cleanup-user',
+        epoch,
         'active-email-token',
         futureAt,
         0,
@@ -151,26 +163,28 @@ async function seedCleanupRecords(
     );
 
     await connection.execute(
-      `insert into password_reset (id, created_at, updated_at, user_sub, token, expires_at, used)
-       values (?, ?, ?, ?, ?, ?, ?)`,
+      `insert into password_reset (id, created_at, updated_at, user_sub, user_epoch, token, expires_at, used)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         'expired-password-reset',
         now,
         now,
         'cleanup-user',
+        epoch,
         'expired-password-token',
         expiredAt,
         0,
       ],
     );
     await connection.execute(
-      `insert into password_reset (id, created_at, updated_at, user_sub, token, expires_at, used)
-       values (?, ?, ?, ?, ?, ?, ?)`,
+      `insert into password_reset (id, created_at, updated_at, user_sub, user_epoch, token, expires_at, used)
+       values (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         'active-password-reset',
         now,
         now,
         'cleanup-user',
+        epoch,
         'active-password-token',
         futureAt,
         0,

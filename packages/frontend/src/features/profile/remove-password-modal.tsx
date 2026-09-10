@@ -10,7 +10,9 @@ import z from 'zod';
 import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { navigateDocument } from '#frontend/libs/document-navigation.js';
 import { IssuaryError } from '#frontend/libs/error.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { removePasswordMutationOptions } from '#frontend/queries/password.ts';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 
@@ -46,6 +48,7 @@ export function RemovePasswordModal({
         queryKey: getSessionQueryOptions.queryKey,
       });
       handleClose();
+      navigateDocument('/login');
     },
   });
 
@@ -81,7 +84,11 @@ export function RemovePasswordModal({
         }
       }
       form.setError('root', {
-        message: t('profile.password.removeModal.error'),
+        message: securityErrorMessage(
+          err,
+          t,
+          t('profile.password.removeModal.error'),
+        ),
       });
     }
   });

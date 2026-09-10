@@ -9,7 +9,7 @@ type PasswordModalType = 'set' | 'change' | 'remove' | null;
 
 interface PasswordSectionProps {
   hasPassword: boolean;
-  hasLinkedOAuth: boolean;
+  hasOtherPrimaryMethod: boolean;
   isConfigManaged: boolean;
   hasSecondFactorOnly: boolean;
   onOpenModal: (type: PasswordModalType) => void;
@@ -17,7 +17,7 @@ interface PasswordSectionProps {
 
 export function PasswordSection({
   hasPassword,
-  hasLinkedOAuth,
+  hasOtherPrimaryMethod,
   isConfigManaged,
   hasSecondFactorOnly,
   onOpenModal,
@@ -39,7 +39,7 @@ export function PasswordSection({
             >
               {t('profile.password.change')}
             </TRButton>
-            {hasLinkedOAuth ? (
+            {hasOtherPrimaryMethod ? (
               <TRButton
                 appearance="ghost"
                 data-testid="profile-password-remove"
@@ -51,7 +51,7 @@ export function PasswordSection({
                 {t('profile.password.remove')}
               </TRButton>
             ) : null}
-            {!hasLinkedOAuth && hasSecondFactorOnly && (
+            {!hasOtherPrimaryMethod && hasSecondFactorOnly && (
               <TRTooltip.Root>
                 <TRTooltip.Trigger
                   render={

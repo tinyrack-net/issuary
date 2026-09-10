@@ -2,12 +2,16 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../lib/openapi.ts';
 import { TAGS } from '../../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../../middleware/auth.ts';
 import { e } from '../../../../schemas/error.ts';
 import { f } from '../../../../schemas/field.ts';
 import { r } from '../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../services/browser-security.service.js';
 
 export const oauthProviderDelete = new Hono<AppEnv>().delete(
   '/oauth/:provider',
@@ -59,19 +63,22 @@ export const oauthProviderDelete = new Hono<AppEnv>().delete(
     }),
   ),
   verifyAuth(),
+  securityMutationDocumentation,
   async (c) => {
-    const params = c.req.valid('param');
-    const { user: userEntity } = c.var.verifiedUser;
-    const { oauthConnectService } = c.var.services;
+    return withBrowserSecurity(c, async () => {
+      const params = c.req.valid('param');
+      const { user: userEntity } = c.var.verifiedUser;
+      const { oauthConnectService } = c.var.services;
 
-    const { provider } = params;
+      const { provider } = params;
 
-    // Verify provider exists
-    oauthConnectService.getProvider(provider);
+      // Verify provider exists
+      oauthConnectService.getProvider(provider);
 
-    // Unlink the OAuth account
-    await oauthConnectService.unlinkOAuthAccount(userEntity.sub, provider);
+      // Unlink the OAuth account
+      await oauthConnectService.unlinkOAuthAccount(userEntity.sub, provider);
 
-    return c.json({ ok: true as const }, 200);
+      return c.json({ ok: true as const }, 200);
+    });
   },
 );

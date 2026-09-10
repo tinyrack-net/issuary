@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { deleteCookie } from 'hono/cookie';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.js';
@@ -38,7 +37,7 @@ export const endSessionGet = new Hono<AppEnv>().get(
     const { config, jwtService, oauthClientService } = c.var.services;
 
     if (!query.post_logout_redirect_uri) {
-      deleteCookie(c, 'session', { path: '/' });
+      c.var.session.delete();
       return c.redirect(config.server.public_origin);
     }
 
@@ -114,7 +113,7 @@ export const endSessionGet = new Hono<AppEnv>().get(
       redirectUrl.searchParams.set('state', query.state);
     }
 
-    deleteCookie(c, 'session', { path: '/' });
+    c.var.session.delete();
     return c.redirect(redirectUrl.toString());
   },
 );

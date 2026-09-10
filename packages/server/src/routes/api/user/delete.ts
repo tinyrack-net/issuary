@@ -3,11 +3,15 @@ import { describeRoute, resolver } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
 import { calculatePermanentDeletionDate } from '../../../lib/duration.ts';
-import { OPENAPI_SECURITY } from '../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../lib/openapi.ts';
 import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
 import { e } from '../../../schemas/error.ts';
 import { r } from '../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../services/browser-security.service.js';
 
 /**
  * DELETE /api/user
@@ -72,40 +76,41 @@ export const userDelete = new Hono<AppEnv>().delete(
     },
   }),
   verifyAuth(),
-  async (c) => {
-    const { config, mikro } = c.var.services;
-    const session = c.var.session;
+  securityMutationDocumentation,
+  async (c) =>
+    withBrowserSecurity(c, async () => {
+      const { config, userService } = c.var.services;
+      const session = c.var.session;
 
-    if (!config.account_deletion.enabled) {
-      throw new e.AccountDeletionDisabled.Error();
-    }
-    const { user: userEntity } = c.var.verifiedUser;
+      if (!config.account_deletion.enabled) {
+        throw new e.AccountDeletionDisabled.Error();
+      }
+      const { user: userEntity } = c.var.verifiedUser;
 
-    if (userEntity.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+      if (userEntity.managed_by === 'config') {
+        throw new e.UserNotEditable.Error();
+      }
 
-    if (userEntity.deleted_at !== null) {
-      throw new e.AccountAlreadyDeleted.Error();
-    }
+      if (userEntity.deleted_at !== null) {
+        throw new e.AccountAlreadyDeleted.Error();
+      }
 
-    userEntity.deleted_at = new Date();
-    await mikro.em.flush();
+      const { deleted_at } = await userService.requestDeletion(userEntity.sub);
 
-    session.delete();
+      session.delete();
 
-    const permanentDeletionDate = calculatePermanentDeletionDate(
-      userEntity.deleted_at,
-      config.account_deletion.retention,
-    );
+      const permanentDeletionDate = calculatePermanentDeletionDate(
+        deleted_at,
+        config.account_deletion.retention,
+      );
 
-    return c.json(
-      {
-        ok: true,
-        deleted_at: userEntity.deleted_at.toISOString(),
-        permanent_deletion_at: permanentDeletionDate.toISOString(),
-      },
-      200,
-    );
-  },
+      return c.json(
+        {
+          ok: true,
+          deleted_at: deleted_at.toISOString(),
+          permanent_deletion_at: permanentDeletionDate.toISOString(),
+        },
+        200,
+      );
+    }),
 );

@@ -3,6 +3,7 @@ import { validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
 import { isSecureRedirectUri } from '../../../../lib/config/url-policy.ts';
+import { adminApiDocumentation } from '../../../../lib/openapi.js';
 import { requireAdmin } from '../../../../middleware/auth.ts';
 
 const QueryBoolean = z.preprocess((value) => {
@@ -151,11 +152,12 @@ function termInput(body: z.infer<typeof TermBody>) {
 }
 
 export const adminConsoleRoutes = new Hono<AppEnv>()
-  .get('/admin/overview', requireAdmin(), async (c) =>
+  .get('/admin/overview', adminApiDocumentation, requireAdmin(), async (c) =>
     c.json(await c.var.services.adminConsoleService.overview(), 200),
   )
   .get(
     '/admin/search',
+    adminApiDocumentation,
     requireAdmin(),
     validator('query', z.object({ q: z.string().trim().min(1).max(100) })),
     async (c) =>
@@ -164,11 +166,12 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
         200,
       ),
   )
-  .get('/admin/system', requireAdmin(), async (c) =>
+  .get('/admin/system', adminApiDocumentation, requireAdmin(), async (c) =>
     c.json(c.var.services.adminConsoleService.system(), 200),
   )
   .get(
     '/admin/clients',
+    adminApiDocumentation,
     requireAdmin(),
     validator('query', ClientQuery),
     async (c) => {
@@ -189,6 +192,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .post(
     '/admin/clients',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', ClientBody),
     async (c) =>
@@ -201,6 +205,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .post(
     '/admin/clients/bulk-status',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', bulkBody(ClientFilter)),
     async (c) => {
@@ -228,6 +233,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .patch(
     '/admin/clients/:id',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', ClientUpdateBody),
     async (c) => {
@@ -238,26 +244,43 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
       return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
     },
   )
-  .post('/admin/clients/:id/rotate-secret', requireAdmin(), async (c) => {
-    const result = await c.var.services.adminConsoleService.rotateClientSecret(
-      c.req.param('id'),
-    );
-    return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
-  })
-  .delete('/admin/clients/:id', requireAdmin(), async (c) => {
-    const result = await c.var.services.adminConsoleService.deleteClient(
-      c.req.param('id'),
-    );
-    return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
-  })
-  .post('/admin/clients/:id/restore', requireAdmin(), async (c) => {
-    const result = await c.var.services.adminConsoleService.restoreClient(
-      c.req.param('id'),
-    );
-    return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
-  })
+  .post(
+    '/admin/clients/:id/rotate-secret',
+    adminApiDocumentation,
+    requireAdmin(),
+    async (c) => {
+      const result =
+        await c.var.services.adminConsoleService.rotateClientSecret(
+          c.req.param('id'),
+        );
+      return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
+    },
+  )
+  .delete(
+    '/admin/clients/:id',
+    adminApiDocumentation,
+    requireAdmin(),
+    async (c) => {
+      const result = await c.var.services.adminConsoleService.deleteClient(
+        c.req.param('id'),
+      );
+      return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
+    },
+  )
+  .post(
+    '/admin/clients/:id/restore',
+    adminApiDocumentation,
+    requireAdmin(),
+    async (c) => {
+      const result = await c.var.services.adminConsoleService.restoreClient(
+        c.req.param('id'),
+      );
+      return result ? c.json(result, 200) : c.json({ error: 'Not Found' }, 404);
+    },
+  )
   .get(
     '/admin/terms',
+    adminApiDocumentation,
     requireAdmin(),
     validator('query', TermQuery),
     async (c) => {
@@ -279,6 +302,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .post(
     '/admin/terms',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', TermBody),
     async (c) =>
@@ -291,6 +315,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .post(
     '/admin/terms/bulk-status',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', bulkBody(TermFilter)),
     async (c) => {
@@ -317,6 +342,7 @@ export const adminConsoleRoutes = new Hono<AppEnv>()
   )
   .patch(
     '/admin/terms/:id',
+    adminApiDocumentation,
     requireAdmin(),
     validator('json', TermBody.omit({ id: true })),
     async (c) => {

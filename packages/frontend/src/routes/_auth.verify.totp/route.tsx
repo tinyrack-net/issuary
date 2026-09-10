@@ -37,6 +37,7 @@ import {
   RouteHydrationBoundary,
 } from '#frontend/libs/route-module.tsx';
 import { getRouteRuntime } from '#frontend/libs/route-runtime.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { getSessionQueryOptions } from '#frontend/queries/session.ts';
 import { verifyTotpLoginMutationOptions } from '#frontend/queries/totp.ts';
 
@@ -163,7 +164,11 @@ function VerifyTotp({
             // Invalid code - show specific error and clear input
             setError('code', {
               type: 'manual',
-              message: t('verifyTotp.error.invalid'),
+              message: securityErrorMessage(
+                error,
+                t,
+                t('verifyTotp.error.invalid'),
+              ),
             });
             setValue('code', '');
             pinInputRef.current?.focus();
@@ -174,7 +179,7 @@ function VerifyTotp({
       // Generic error fallback
       setError('code', {
         type: 'manual',
-        message: t('verifyTotp.error.invalid'),
+        message: securityErrorMessage(error, t, t('verifyTotp.error.invalid')),
       });
       setValue('code', '');
       pinInputRef.current?.focus();

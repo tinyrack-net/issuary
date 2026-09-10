@@ -10,6 +10,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
    */
   async generateToken(params: {
     userSub: string;
+    userEpoch: string;
     expiresInHours?: number;
   }): Promise<IPasswordResetEntity> {
     // Generate a UUID token for security
@@ -32,6 +33,7 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
     // Create the entity
     const entity = this.create({
       user: params.userSub,
+      user_epoch: params.userEpoch,
       token,
       expiresAt,
     });
@@ -47,26 +49,12 @@ export class PasswordResetRepository extends EntityRepository<IPasswordResetEnti
    * @returns The verified entity with user populated, or null if invalid
    */
   async verifyToken(token: string): Promise<IPasswordResetEntity | null> {
-    const entity = await this.findOne(
-      { token, used: false },
-      { populate: ['user'] },
+    const now = new Date();
+    const changed = await this.nativeUpdate(
+      { token, used: false, expiresAt: { $gt: now } },
+      { used: true, usedAt: now },
     );
-
-    if (!entity) {
-      return null;
-    }
-
-    // Check if expired
-    if (entity.expiresAt < new Date()) {
-      return null;
-    }
-
-    // Mark as used
-    entity.used = true;
-    entity.usedAt = new Date();
-
-    await this.getEntityManager().flush();
-
-    return entity;
+    if (changed !== 1) return null;
+    return this.findOne({ token }, { populate: ['user'], refresh: true });
   }
 }

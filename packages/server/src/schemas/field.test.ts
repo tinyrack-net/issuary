@@ -16,3 +16,11 @@ describe('field schemas', () => {
     expect(f.clientId.safeParse('x'.repeat(1000)).success).toBe(true);
   });
 });
+
+test.each([
+  '/\\attacker.example',
+  '/\t/attacker.example',
+  '//attacker.example',
+])('rejects browser-normalized external return URL %s', (path) => {
+  expect(f.returnUrl.safeParse(path).success).toBe(false);
+});

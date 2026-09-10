@@ -38,6 +38,9 @@ export const UserEntitySchema = defineEntity({
       .$type<'user' | 'admin'>()
       .comment('User role: user or admin')
       .default('user'),
+    security_revision: p.integer().default(0),
+    token_epoch: p.string().onCreate(() => crypto.randomUUID()),
+    sessions_invalidated_at: p.datetime().nullable(),
     deleted_at: p
       .datetime()
       .comment(

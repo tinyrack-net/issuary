@@ -263,12 +263,15 @@ function Profile({ search }: { search: z.infer<typeof SearchSchema> }) {
           <TRCard.Content className="divide-y divide-tinyrack-border p-0">
             {showPasswordSection && (
               <PasswordSection
-                hasLinkedOAuth={hasLinkedOAuth}
+                hasOtherPrimaryMethod={
+                  hasLinkedOAuth || (passkeyEnabled && user.passkey_count > 0)
+                }
                 hasPassword={user.has_password}
                 hasSecondFactorOnly={
                   user.has_password &&
                   !hasLinkedOAuth &&
-                  (user.totp_registered || user.passkey_count > 0)
+                  !(passkeyEnabled && user.passkey_count > 0) &&
+                  user.totp_registered
                 }
                 isConfigManaged={isConfigManaged}
                 onOpenModal={setPasswordModal}

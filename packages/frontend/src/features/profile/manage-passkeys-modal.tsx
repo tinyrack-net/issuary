@@ -20,6 +20,7 @@ import { AuthField } from '#frontend/components/auth/auth-field.tsx';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
 import { IssuaryError } from '#frontend/libs/error.ts';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 import { queryKeys } from '#frontend/queries/keys.ts';
 import {
   deletePasskeyMutationOptions,
@@ -101,7 +102,13 @@ export function ManagePasskeysModal({
           return;
         }
       }
-      setDeleteError(t('profile.passkey.manageModal.deleteError'));
+      setDeleteError(
+        securityErrorMessage(
+          error,
+          t,
+          t('profile.passkey.manageModal.deleteError'),
+        ),
+      );
     }
   };
 

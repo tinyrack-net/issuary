@@ -10,6 +10,7 @@ export const PasswordResetEntitySchema = defineEntity({
   extends: BaseSchema,
   repository: () => PasswordResetRepository,
   properties: (p) => ({
+    user_epoch: p.string(),
     id: p
       .uuid()
       .primary()

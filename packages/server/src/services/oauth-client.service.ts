@@ -22,6 +22,7 @@ export class OAuthClientService {
     const client = await this.mikro.oauthClient.findOneOrFail(
       { clientId, deletedAt: null },
       {
+        refresh: true,
         failHandler: () => new e.OAuthClientNotFound.Error(),
       },
     );

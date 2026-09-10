@@ -7,6 +7,7 @@ import { verifyAuth, verifyOAuth } from '../../../../../middleware/auth.ts';
 import { e, IssuaryError } from '../../../../../schemas/error.ts';
 import { f } from '../../../../../schemas/field.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
 import type { OAuthCallbackResult } from '../../../../../services/oauth-connect.service.ts';
 
 export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
@@ -147,6 +148,11 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
         oauthSession,
         userSub: c.var.verifiedUser?.user.sub,
         requestUrl: c.req.url,
+        completeLink: (operation) =>
+          withBrowserSecurity(c, async () => {
+            await operation();
+            session.set('oauth', undefined);
+          }),
       });
     } catch (err) {
       session.set('oauth', undefined);
@@ -166,10 +172,10 @@ export const oauthProviderCallbackGet = new Hono<AppEnv>().get(
       case 'terms_redirect':
         return c.redirect(result.url);
       case 'login_terms_redirect':
-        session.setUserSession(result.userSub);
+        session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.termsUrl);
       case 'login_complete':
-        session.setUserSession(result.userSub);
+        session.setUserSession(result.userSub, result.userEpoch);
         return c.redirect(result.returnUrl || '/profile');
     }
   },

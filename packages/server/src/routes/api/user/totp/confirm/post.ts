@@ -2,7 +2,10 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../../lib/app-env.ts';
-import { OPENAPI_SECURITY } from '../../../../../lib/openapi.ts';
+import {
+  OPENAPI_SECURITY,
+  securityMutationDocumentation,
+} from '../../../../../lib/openapi.ts';
 import { TAGS } from '../../../../../lib/swagger-tags.ts';
 import {
   verifyAuth,
@@ -10,6 +13,7 @@ import {
 } from '../../../../../middleware/auth.ts';
 import { e } from '../../../../../schemas/error.ts';
 import { r } from '../../../../../schemas/response.ts';
+import { withBrowserSecurity } from '../../../../../services/browser-security.service.js';
 
 /**
  * POST /api/user/totp/confirm
@@ -64,29 +68,51 @@ export const userTotpConfirmPost = new Hono<AppEnv>().post(
   validator('json', z.object({}).optional().nullable()),
   verifyAuth({ optional: true }),
   verifyPending2FASetupUser({ optional: true }),
+  securityMutationDocumentation,
   async (c) => {
-    const session = c.var.session;
-    const { mikro, totpService, userService } = c.var.services;
+    return withBrowserSecurity(
+      c,
+      async () => {
+        const session = c.var.session;
+        const { mikro, totpService, userService } = c.var.services;
 
-    // Allow both full user session and pending 2FA setup session
-    const userSub =
-      c.var.verifiedPending2FASetupUser?.user.sub ??
-      c.var.verifiedUser?.user.sub;
+        // Allow both full user session and pending 2FA setup session
+        const userSub =
+          c.var.verifiedPending2FASetupUser?.user.sub ??
+          c.var.verifiedUser?.user.sub;
 
-    if (!userSub) {
-      throw new e.Unauthorized.Error();
-    }
+        if (!userSub) {
+          throw new e.Unauthorized.Error();
+        }
 
-    await totpService.confirmSetup(userSub);
+        const totp = await mikro.userTotp.findVerifiedByUserSub(userSub);
+        if (!totp) throw new e.TotpNotSetup.Error();
+        if (totp.recovery_confirmed) throw new e.TotpAlreadyEnabled.Error();
+        const proof = session.get('totpSetupVerification');
+        if (
+          !proof ||
+          proof.sub !== userSub ||
+          proof.totpId !== totp.id ||
+          proof.step !== totp.last_used_step
+        )
+          throw new e.Unauthorized.Error();
+        await totpService.confirmSetup(userSub);
+        session.set('totpSetupVerification', undefined);
 
-    // Convert pending 2FA setup session to full user session
-    if (c.var.verifiedPending2FASetupUser) {
-      session.setUserSession(userSub);
-    }
+        // Convert pending 2FA setup session to full user session
+        if (c.var.verifiedPending2FASetupUser) {
+          session.setUserSession(
+            userSub,
+            session.get('security')?.grants[userSub] ?? '',
+          );
+        }
 
-    const userEntity = await mikro.user.verifyBySub(userSub);
-    const user = await userService.userEntityToSessionUser(userEntity);
+        const userEntity = await mikro.user.verifyBySub(userSub);
+        const user = await userService.userEntityToSessionUser(userEntity);
 
-    return c.json({ user }, 200);
+        return c.json({ user }, 200);
+      },
+      { stage: 'setup' },
+    );
   },
 );

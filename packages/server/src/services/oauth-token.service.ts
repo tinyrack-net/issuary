@@ -1,6 +1,9 @@
+import { raw } from '@mikro-orm/core';
+import { OAuthGrantEntitySchema } from '../entities/oauth-grant.entity.js';
 import { stringToBytes, toArrayBuffer, toBase64Url } from '../lib/base64url.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { validatePKCE } from '../lib/pkce.ts';
+import { IssuaryError } from '../schemas/error.js';
 import { e } from '../schemas/error.ts';
 import type {
   AccessTokenPayload,
@@ -101,7 +104,6 @@ export class OAuthTokenService {
   private readonly oauthClientService: OAuthClientService;
   private readonly jwtService: JwtService;
   private readonly securityService: SecurityService;
-  private readonly refreshRotationLocks = new Map<string, Promise<void>>();
   constructor(
     config: IssuaryRuntimeConfig,
     mikro: MikroService,
@@ -137,84 +139,121 @@ export class OAuthTokenService {
     // 1. Look up client to get primary key (clientId in request is the business key)
     const client = await this.oauthClientService.findByClientId(clientId);
 
-    // 2. Verify and consume the authorization code
-    // Authorization codes are single-use (RFC 6749 §4.1.2)
     const codeHash = await this.securityService.hashOpaqueToken(
       'oauth-code',
       code,
     );
-    const consumedAt = new Date();
-    const codeEntity = await this.mikro.oauthCode.consumeAuthorizationCode({
-      clientId: client.id,
-      codeHash,
-      consumedAt,
-    });
-
-    if (!codeEntity) {
-      throw new e.InvalidAuthorizationCode.Error();
-    }
-
-    // 3. Populate user relation
-    await this.mikro.em.populate(codeEntity, ['user']);
-
-    // 4. Validate redirect_uri matches (RFC 6749 §4.1.3)
-    // This prevents authorization code interception attacks
-    if (codeEntity.redirectUri !== redirectUri) {
-      throw new e.RedirectUriMismatch.Error();
-    }
-
-    // 5. Validate S256 PKCE when the authorization request used PKCE.
-    // Public clients are required to use PKCE at the authorization endpoint;
-    // confidential clients may omit PKCE and rely on client authentication at
-    // the token endpoint, but any supplied challenge must still be valid S256.
-    if (!codeEntity.codeChallenge) {
-      if (await this.oauthClientService.isPublicClient(clientId)) {
-        throw new e.InvalidPKCEVerifier.Error();
-      }
-    } else {
-      if (codeEntity.codeChallengeMethod !== 'S256') {
-        throw new e.InvalidPKCEVerifier.Error();
-      }
-
-      if (!codeVerifier) {
-        throw new e.MissingCodeVerifier.Error();
-      }
-
-      const isPKCEValid = await validatePKCE(
-        codeVerifier,
-        codeEntity.codeChallenge,
-        codeEntity.codeChallengeMethod,
+    const result = await this.mikro.em.transactional(async () => {
+      await this.mikro.oauthClient.nativeUpdate(
+        { id: client.id },
+        { updated_at: new Date() },
       );
+      const currentClient =
+        await this.oauthClientService.findByClientId(clientId);
+      if (
+        !currentClient.enabled ||
+        currentClient.tokenEpoch !== client.tokenEpoch
+      )
+        throw new e.InvalidAuthorizationCode.Error();
+      const codeEntity = await this.mikro.oauthCode.findOne(
+        { client: client.id, codeHash },
+        { refresh: true },
+      );
+      if (
+        !codeEntity ||
+        (!codeEntity.consumedAt && codeEntity.expiredAt <= new Date())
+      )
+        throw new e.InvalidAuthorizationCode.Error();
 
-      if (!isPKCEValid) {
-        throw new e.InvalidPKCEVerifier.Error();
+      // 3. Populate user relation
+      await this.mikro.em.populate(codeEntity, ['user']);
+
+      // 4. Validate redirect_uri matches (RFC 6749 §4.1.3)
+      // This prevents authorization code interception attacks
+      if (codeEntity.redirectUri !== redirectUri) {
+        throw new e.RedirectUriMismatch.Error();
       }
-    }
 
-    // 6. Get user data from relation (load via Ref)
-    const user = await codeEntity.user.load();
-    if (!user) {
-      throw new e.UserNotFound.Error();
-    }
+      // 5. Validate S256 PKCE when the authorization request used PKCE.
+      // Public clients are required to use PKCE at the authorization endpoint;
+      // confidential clients may omit PKCE and rely on client authentication at
+      // the token endpoint, but any supplied challenge must still be valid S256.
+      if (!codeEntity.codeChallenge) {
+        if (await this.oauthClientService.isPublicClient(clientId)) {
+          throw new e.InvalidPKCEVerifier.Error();
+        }
+      } else {
+        if (codeEntity.codeChallengeMethod !== 'S256') {
+          throw new e.InvalidPKCEVerifier.Error();
+        }
 
-    // 7. Build token response
-    return this.buildTokenResponse({
-      userSub: user.sub,
-      userEmail: user.email,
-      userEmailVerified: user.email_verified,
-      clientId: client.clientId,
-      clientEpoch: client.tokenEpoch,
-      scope: codeEntity.scope,
-      issueRefreshToken:
-        client.grantTypes.includes('refresh_token') &&
-        codeEntity.scope.includes('offline_access'),
-      nonce: codeEntity.nonce,
-      // Pass OIDC authentication metadata from the authorization code
-      // Only include when defined and non-null (exactOptionalPropertyTypes)
-      ...(codeEntity.authTime != null && {
-        authTime: codeEntity.authTime,
-      }),
+        if (!codeVerifier) {
+          throw new e.MissingCodeVerifier.Error();
+        }
+
+        const isPKCEValid = await validatePKCE(
+          codeVerifier,
+          codeEntity.codeChallenge,
+          codeEntity.codeChallengeMethod,
+        );
+
+        if (!isPKCEValid) {
+          throw new e.InvalidPKCEVerifier.Error();
+        }
+      }
+
+      // 6. Get user data from relation (load via Ref)
+      const user = await codeEntity.user.load();
+      if (!user) {
+        throw new e.UserNotFound.Error();
+      }
+
+      if (user.deleted_at || codeEntity.user_epoch !== user.token_epoch)
+        throw new e.InvalidAuthorizationCode.Error();
+
+      if (codeEntity.consumedAt) {
+        if (codeEntity.grant_id)
+          await this.mikro.em.nativeUpdate(
+            OAuthGrantEntitySchema,
+            { id: codeEntity.grant_id, client_id: client.clientId },
+            { revoked_at: new Date() },
+          );
+        return new e.InvalidAuthorizationCode.Error();
+      }
+      const consumed = await this.mikro.oauthCode.consumeAuthorizationCode({
+        clientId: client.id,
+        codeHash,
+        consumedAt: new Date(),
+      });
+      if (!consumed) return new e.InvalidAuthorizationCode.Error();
+      const grantId = crypto.randomUUID();
+      await this.mikro.oauthCode.nativeUpdate(
+        { id: codeEntity.id },
+        { grant_id: grantId },
+      );
+      // 7. Build token response
+      return this.buildTokenResponse({
+        grantId,
+        userSub: user.sub,
+        userEpoch: user.token_epoch ?? undefined,
+        userEmail: user.email,
+        userEmailVerified: user.email_verified,
+        clientId: client.clientId,
+        clientEpoch: client.tokenEpoch,
+        scope: codeEntity.scope,
+        issueRefreshToken:
+          client.grantTypes.includes('refresh_token') &&
+          codeEntity.scope.includes('offline_access'),
+        nonce: codeEntity.nonce,
+        // Pass OIDC authentication metadata from the authorization code
+        // Only include when defined and non-null (exactOptionalPropertyTypes)
+        ...(codeEntity.authTime != null && {
+          authTime: codeEntity.authTime,
+        }),
+      });
     });
+    if (result instanceof IssuaryError) throw result;
+    return result;
   }
 
   /**
@@ -234,21 +273,40 @@ export class OAuthTokenService {
    * @throws {ClientIdMismatch} - Client ID doesn't match original token request
    */
   async refreshAccessToken(params: RefreshTokenGrantParams) {
-    const decodedRefreshToken = this.jwtService.decodeToken(
+    const decoded = await this.jwtService.verifyRefreshTokenForReuseDetection(
       params.refreshToken,
     );
-    const refreshTokenJti =
-      typeof decodedRefreshToken?.jti === 'string'
-        ? decodedRefreshToken.jti
-        : undefined;
-
-    if (refreshTokenJti) {
-      return this.withRefreshTokenRotationLock(refreshTokenJti, () =>
-        this.refreshAccessTokenLocked(params),
+    if (decoded.client_id !== params.clientId)
+      throw new e.ClientIdMismatch.Error();
+    if (!decoded.grant_id || !decoded.jti)
+      throw new e.InvalidRefreshToken.Error();
+    const grantId = decoded.grant_id;
+    const result = await this.mikro.em.transactional(async () => {
+      const locked = await this.mikro.em.nativeUpdate(
+        OAuthGrantEntitySchema,
+        { id: grantId, client_id: params.clientId, user_sub: decoded.sub },
+        { revision: raw<number>('revision + 1') },
       );
-    }
-
-    return this.refreshAccessTokenLocked(params);
+      if (locked !== 1) throw new e.InvalidRefreshToken.Error();
+      const grant = await this.mikro.em.findOneOrFail(
+        OAuthGrantEntitySchema,
+        { id: grantId },
+        { refresh: true },
+      );
+      if (grant.revoked_at || grant.expires_at <= new Date())
+        throw new e.InvalidRefreshToken.Error();
+      if (grant.current_refresh_jti !== decoded.jti) {
+        await this.mikro.em.nativeUpdate(
+          OAuthGrantEntitySchema,
+          { id: grant.id },
+          { revoked_at: new Date() },
+        );
+        return new e.InvalidRefreshToken.Error();
+      }
+      return this.refreshAccessTokenLocked(params);
+    });
+    if (result instanceof IssuaryError) throw result;
+    return result;
   }
 
   async issueClientCredentialsToken(params: {
@@ -266,7 +324,6 @@ export class OAuthTokenService {
       grant_type: 'client_credentials',
       scope: scopeString,
       aud: this.config.server.public_origin,
-      grant_id: crypto.randomUUID(),
       ...(client.tokenEpoch && { client_epoch: client.tokenEpoch }),
     });
 
@@ -298,7 +355,7 @@ export class OAuthTokenService {
     if (!deviceCode) {
       throw new e.InvalidDeviceCode.Error();
     }
-    if (deviceCode.expiresAt < new Date()) {
+    if (deviceCode.expiresAt <= new Date()) {
       throw new e.ExpiredToken.Error();
     }
     if (deviceCode.deniedAt) {
@@ -319,35 +376,46 @@ export class OAuthTokenService {
       throw new e.InvalidDeviceCode.Error();
     }
 
-    const consumedAt = new Date();
-    const consumed =
-      await this.mikro.oauthDeviceCode.consumeAuthorizedDeviceCode(
-        deviceCode.id,
-        consumedAt,
-      );
-    if (!consumed) {
-      throw new e.InvalidDeviceCode.Error();
-    }
-    deviceCode.consumedAt = consumedAt;
-    await this.mikro.em.populate(deviceCode, ['authorizedUser']);
-    const user = deviceCode.authorizedUser;
-    if (!user) {
-      throw new e.AuthorizationPending.Error();
-    }
+    return this.mikro.em.transactional(async () => {
+      const consumedAt = new Date();
+      const consumed =
+        await this.mikro.oauthDeviceCode.consumeAuthorizedDeviceCode(
+          deviceCode.id,
+          consumedAt,
+        );
+      if (!consumed) {
+        throw new e.InvalidDeviceCode.Error();
+      }
+      deviceCode.consumedAt = consumedAt;
+      await this.mikro.em.populate(deviceCode, ['authorizedUser']);
+      const user = deviceCode.authorizedUser;
+      if (!user) {
+        throw new e.AuthorizationPending.Error();
+      }
+      if (user.deleted_at || deviceCode.user_epoch !== user.token_epoch)
+        throw new e.InvalidDeviceCode.Error();
 
-    return this.buildTokenResponse({
-      userSub: user.sub,
-      userEmail: user.email,
-      userEmailVerified: user.email_verified,
-      clientId: client.clientId,
-      clientEpoch: client.tokenEpoch,
-      scope: deviceCode.scope,
-      issueRefreshToken:
-        client.grantTypes.includes('refresh_token') &&
-        deviceCode.scope.includes('offline_access'),
-      authTime: Math.floor(
-        (deviceCode.authorizedAt?.getTime() ?? Date.now()) / 1000,
-      ),
+      const grantId = crypto.randomUUID();
+      await this.mikro.oauthDeviceCode.nativeUpdate(
+        { id: deviceCode.id },
+        { grant_id: grantId },
+      );
+      return this.buildTokenResponse({
+        grantId,
+        userSub: user.sub,
+        userEpoch: user.token_epoch ?? undefined,
+        userEmail: user.email,
+        userEmailVerified: user.email_verified,
+        clientId: client.clientId,
+        clientEpoch: client.tokenEpoch,
+        scope: deviceCode.scope,
+        issueRefreshToken:
+          client.grantTypes.includes('refresh_token') &&
+          deviceCode.scope.includes('offline_access'),
+        authTime: Math.floor(
+          (deviceCode.authorizedAt?.getTime() ?? Date.now()) / 1000,
+        ),
+      });
     });
   }
 
@@ -385,33 +453,31 @@ export class OAuthTokenService {
       throw new e.InvalidScope.Error({ invalidScopes });
     }
 
-    // 5. Refresh Token Rotation: Revoke the old refresh token
-    // This is a security best practice per OAuth 2.0 Security BCP §4.14.2
-    // If an attacker tries to use a stolen refresh token after the legitimate
-    // user has already used it, the token will be rejected as revoked.
-    if (!refreshPayload.jti || !refreshPayload.exp) {
+    if (!refreshPayload.jti || !refreshPayload.exp || !refreshPayload.grant_id)
       throw new e.InvalidRefreshToken.Error();
-    }
-
-    const didRevokeRefreshToken = await this.mikro.revokedToken.revokeTokenOnce(
+    const consumed = await this.mikro.em.nativeUpdate(
+      OAuthGrantEntitySchema,
       {
-        jti: refreshPayload.jti,
-        token_type: 'refresh_token',
-        clientId: client.id, // Use entity primary key
-        userSub: userData.sub,
-        expires_at: new Date(refreshPayload.exp * 1000),
+        id: refreshPayload.grant_id,
+        current_refresh_jti: refreshPayload.jti,
+        revoked_at: null,
       },
+      { current_refresh_jti: null },
     );
-
-    if (!didRevokeRefreshToken) {
-      await this.revokeRefreshTokenFamily(refreshPayload, client.id);
-      throw new e.InvalidRefreshToken.Error();
-    }
+    if (consumed !== 1) throw new e.InvalidRefreshToken.Error();
+    await this.mikro.revokedToken.revokeTokenOnce({
+      jti: refreshPayload.jti,
+      token_type: 'refresh_token',
+      clientId: client.id,
+      userSub: userData.sub,
+      expires_at: new Date(refreshPayload.exp * 1000),
+    });
 
     // 6. Build token response with new access and refresh tokens
     // (no nonce in refresh flow)
     return this.buildTokenResponse({
       userSub: userData.sub,
+      userEpoch: refreshPayload.user_epoch,
       userEmail: userData.email,
       userEmailVerified: userData.email_verified,
       clientId: client.clientId,
@@ -600,32 +666,6 @@ export class OAuthTokenService {
     // Access tokens will be rejected when their jti is in the revoked_tokens table.
   }
 
-  private async withRefreshTokenRotationLock<T>(
-    refreshTokenJti: string,
-    operation: () => Promise<T>,
-  ): Promise<T> {
-    const previousLock = this.refreshRotationLocks.get(refreshTokenJti);
-    let releaseLock: () => void = () => {};
-    const currentLock = new Promise<void>((resolve) => {
-      releaseLock = resolve;
-    });
-
-    this.refreshRotationLocks.set(refreshTokenJti, currentLock);
-
-    if (previousLock) {
-      await previousLock;
-    }
-
-    try {
-      return await operation();
-    } finally {
-      releaseLock();
-      if (this.refreshRotationLocks.get(refreshTokenJti) === currentLock) {
-        this.refreshRotationLocks.delete(refreshTokenJti);
-      }
-    }
-  }
-
   private async revokeRefreshTokenFamilyIfReused(
     refreshToken: string,
     clientId: string,
@@ -664,6 +704,11 @@ export class OAuthTokenService {
     const familyExpiresAt =
       Date.now() + this.config.tokens.refresh_token_ttl * 1000;
 
+    await this.mikro.em.nativeUpdate(
+      OAuthGrantEntitySchema,
+      { id: payload.grant_id, client_id: payload.client_id },
+      { revoked_at: new Date() },
+    );
     await this.mikro.revokedToken.revokeGrant({
       grantId: payload.grant_id,
       clientId: clientEntityId,
@@ -745,6 +790,7 @@ export class OAuthTokenService {
    */
   private async buildTokenResponse(params: {
     userSub: string;
+    userEpoch?: string | undefined;
     userEmail: string;
     userEmailVerified: boolean;
     clientId: string;
@@ -775,6 +821,7 @@ export class OAuthTokenService {
     const accessToken = await this.jwtService.signAccessToken({
       typ: 'access_token',
       sub: userSub,
+      user_epoch: params.userEpoch,
       client_id: clientId,
       scope: scopeString,
       aud: this.config.server.public_origin,
@@ -793,6 +840,7 @@ export class OAuthTokenService {
       response.refresh_token = await this.jwtService.signRefreshToken({
         typ: 'refresh_token',
         sub: userSub,
+        user_epoch: params.userEpoch,
         client_id: clientId,
         scope: scopeString,
         grant_id: grantId,
@@ -842,6 +890,46 @@ export class OAuthTokenService {
       response.id_token = await this.jwtService.signIdToken(idTokenPayload);
     }
 
+    const refreshJti = response.refresh_token
+      ? this.jwtService.decodeToken(response.refresh_token)?.jti
+      : undefined;
+    const expiresAt = new Date(
+      Date.now() +
+        Math.max(
+          this.config.tokens.access_token_ttl,
+          issueRefreshToken ? this.config.tokens.refresh_token_ttl : 0,
+        ) *
+          1000,
+    );
+    const existing = await this.mikro.em.findOne(
+      OAuthGrantEntitySchema,
+      { id: grantId },
+      { refresh: true },
+    );
+    if (existing) {
+      if (existing.revoked_at) throw new e.InvalidRefreshToken.Error();
+      await this.mikro.em.nativeUpdate(
+        OAuthGrantEntitySchema,
+        { id: grantId, revoked_at: null },
+        {
+          current_refresh_jti:
+            typeof refreshJti === 'string' ? refreshJti : null,
+          expires_at: new Date(
+            Math.max(existing.expires_at.getTime(), expiresAt.getTime()),
+          ),
+        },
+      );
+    } else {
+      await this.mikro.em.insert(OAuthGrantEntitySchema, {
+        id: grantId,
+        user_sub: userSub,
+        client_id: clientId,
+        current_refresh_jti: typeof refreshJti === 'string' ? refreshJti : null,
+        expires_at: expiresAt,
+        revoked_at: null,
+        revision: 0,
+      });
+    }
     return response;
   }
 }

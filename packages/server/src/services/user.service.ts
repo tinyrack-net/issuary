@@ -5,27 +5,29 @@ import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import type { Locale } from '../lib/locale.ts';
 import { e } from '../schemas/error.ts';
 import type { r } from '../schemas/response.ts';
-import type { EmailService } from './email.service.ts';
+import { invalidateUserAuthentication } from './authentication-epoch.js';
+import type { MailQueueService } from './mail-queue.service.js';
 import type { MikroService } from './mikro.service.ts';
 import type { PasswordAuthService } from './password-auth.service.ts';
 import type { TermsService } from './terms.service.ts';
+import { withUserSecurity } from './user-security.service.js';
 
 export class UserService {
   private readonly mikro: MikroService;
   private readonly config: IssuaryRuntimeConfig;
-  private readonly emailService: EmailService;
+  private readonly mailQueue: MailQueueService;
   private readonly passwordAuthService: PasswordAuthService;
   private readonly termsService?: TermsService | undefined;
   public constructor(
     mikro: MikroService,
     config: IssuaryRuntimeConfig,
-    emailService: EmailService,
+    mailQueue: MailQueueService,
     passwordAuthService: PasswordAuthService,
     termsService?: TermsService,
   ) {
     this.mikro = mikro;
     this.config = config;
-    this.emailService = emailService;
+    this.mailQueue = mailQueue;
     this.passwordAuthService = passwordAuthService;
     this.termsService = termsService;
   }
@@ -195,73 +197,107 @@ export class UserService {
     role?: UserEntity['role'] | undefined;
     emailVerified?: boolean | undefined;
   }): Promise<z.infer<typeof r.AdminUser>> {
-    const user = await this.mikro.user.verifyBySub(params.sub);
+    return withUserSecurity(this.mikro, params.sub, async (user) => {
+      const emailChanged =
+        params.email !== undefined && params.email !== user.email;
 
-    if (params.sub === params.actorSub && params.role === 'user') {
-      throw new e.Forbidden.Error();
-    }
-
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
-
-    if (user.deleted_at) {
-      throw new e.UserNotFound.Error();
-    }
-
-    if (params.email !== undefined && params.email !== user.email) {
-      const existing = await this.mikro.user.findOne({
-        email: params.email,
-        sub: { $ne: params.sub },
-      });
-      if (existing) {
-        throw new e.EmailAlreadyExists.Error();
+      if (params.sub === params.actorSub && params.role === 'user') {
+        throw new e.Forbidden.Error();
       }
-      user.email = params.email;
-    }
-    if (params.role !== undefined) {
-      user.role = params.role;
-    }
-    if (params.emailVerified !== undefined) {
-      user.email_verified = params.emailVerified;
-    }
-    await this.mikro.em.flush();
 
-    return this.getAdminUser(user.sub);
+      if (user.managed_by === 'config') {
+        throw new e.UserNotEditable.Error();
+      }
+
+      if (user.deleted_at) {
+        throw new e.UserNotFound.Error();
+      }
+
+      if (params.email !== undefined && params.email !== user.email) {
+        const existing = await this.mikro.user.findOne({
+          email: params.email,
+          sub: { $ne: params.sub },
+        });
+        if (existing) {
+          throw new e.EmailAlreadyExists.Error();
+        }
+        await invalidateUserAuthentication(this.mikro.em, user);
+        await this.mikro.passwordReset.nativeUpdate(
+          { user: user.sub, used: false },
+          { expiresAt: new Date() },
+        );
+        await this.mikro.emailVerification.nativeUpdate(
+          { user: user.sub, verified: false },
+          { expiresAt: new Date() },
+        );
+        user.email = params.email;
+        user.email_verified = false;
+      }
+      if (params.role !== undefined) {
+        if (user.role !== params.role) {
+          await invalidateUserAuthentication(this.mikro.em, user);
+        }
+        user.role = params.role;
+      }
+      if (params.emailVerified !== undefined) {
+        user.email_verified = params.emailVerified;
+      }
+      await this.mikro.em.flush();
+
+      if (emailChanged && !user.email_verified && this.config.email)
+        await this.mailQueue.enqueue(
+          'verification',
+          user.email,
+          undefined,
+          user.sub,
+        );
+      return this.getAdminUser(user.sub);
+    });
   }
 
   public async deleteAdminUser(params: {
     sub: string;
     actorSub: string;
   }): Promise<z.infer<typeof r.AdminUser>> {
-    if (params.sub === params.actorSub) {
-      throw new e.Forbidden.Error();
-    }
+    return withUserSecurity(this.mikro, params.sub, async () => {
+      if (params.sub === params.actorSub) {
+        throw new e.Forbidden.Error();
+      }
 
-    const user = await this.mikro.user.verifyBySub(params.sub);
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
-    if (!user.deleted_at) {
-      user.deleted_at = new Date();
-      await this.mikro.em.flush();
-    }
+      const user = await this.mikro.user.verifyBySub(params.sub);
+      if (user.managed_by === 'config') {
+        throw new e.UserNotEditable.Error();
+      }
+      if (!user.deleted_at) {
+        await invalidateUserAuthentication(this.mikro.em, user);
+        user.deleted_at = new Date();
+        await this.mikro.em.flush();
+      }
 
-    return this.adminUserEntityToResponse(user);
+      return this.adminUserEntityToResponse(user);
+    });
   }
 
   public async restoreAdminUser(
     sub: string,
   ): Promise<z.infer<typeof r.AdminUser>> {
-    const user = await this.mikro.user.verifyBySubIncludingDeleted(sub);
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
-    if (user.deleted_at) {
-      user.deleted_at = null;
-      await this.mikro.em.flush();
-    }
-    return this.adminUserEntityToResponse(user);
+    return withUserSecurity(
+      this.mikro,
+      sub,
+      async () => {
+        const user = await this.mikro.user.verifyBySubIncludingDeleted(sub);
+        if (user.managed_by === 'config') {
+          throw new e.UserNotEditable.Error();
+        }
+        if (user.deleted_at) {
+          await invalidateUserAuthentication(this.mikro.em, user);
+          user.deleted_at = null;
+          await this.mikro.em.flush();
+        }
+        return this.adminUserEntityToResponse(user);
+      },
+      { includeDeleted: true },
+    );
   }
 
   public async bulkSetAdminUserDeleted(params: {
@@ -302,7 +338,10 @@ export class UserService {
       }
     }
 
-    const users = await this.mikro.user.find(where);
+    const users = await this.mikro.user.find(where, {
+      refresh: true,
+      orderBy: { sub: 'ASC' },
+    });
     const skipped: Record<string, number> = {};
     let changed = 0;
     for (const user of users) {
@@ -315,6 +354,7 @@ export class UserService {
         skipped[reason] = (skipped[reason] ?? 0) + 1;
         continue;
       }
+      await invalidateUserAuthentication(this.mikro.em, user);
       user.deleted_at = params.deleted ? new Date() : null;
       changed += 1;
     }
@@ -327,87 +367,87 @@ export class UserService {
     password: string;
     consents?: Array<{ termsId: string; agreed: boolean }>;
     locale?: Locale | undefined;
-  }): Promise<z.infer<typeof r.UserSession>> {
-    // 1. Validate explicit terms consent before user creation
-    // Load terms once and reuse across validation and recording
-    const terms = this.termsService
-      ? await this.termsService.getGlobalTerms()
-      : undefined;
+  }): Promise<z.infer<typeof r.UserSession> & { token_epoch: string }> {
+    return this.mikro.em.transactional(async () => {
+      // 1. Validate explicit terms consent before user creation
+      // Load terms once and reuse across validation and recording
+      const terms = this.termsService
+        ? await this.termsService.getGlobalTerms()
+        : undefined;
 
-    if (this.termsService && terms) {
-      const explicitTerms = await this.termsService.getExplicitTerms(terms);
-      const hasRequiredExplicitTerms = explicitTerms.some((t) => t.required);
+      if (this.termsService && terms) {
+        const explicitTerms = await this.termsService.getExplicitTerms(terms);
+        const hasRequiredExplicitTerms = explicitTerms.some((t) => t.required);
 
-      if (hasRequiredExplicitTerms) {
-        if (!params.consents || params.consents.length === 0) {
-          throw new e.ValidationError.Error(
-            'Terms consent is required for registration',
+        if (hasRequiredExplicitTerms) {
+          if (!params.consents || params.consents.length === 0) {
+            throw new e.ValidationError.Error(
+              'Terms consent is required for registration',
+            );
+          }
+
+          const validation = await this.termsService.validateExplicitConsents(
+            params.consents,
+            terms,
           );
-        }
-
-        const validation = await this.termsService.validateExplicitConsents(
-          params.consents,
-          terms,
-        );
-        if (!validation.valid) {
-          throw new e.ValidationError.Error(
-            `Missing required terms: ${validation.missingTerms.join(', ')}`,
-          );
+          if (!validation.valid) {
+            throw new e.ValidationError.Error(
+              `Missing required terms: ${validation.missingTerms.join(', ')}`,
+            );
+          }
         }
       }
-    }
 
-    // 2. Register the user
-    const user = await this.passwordAuthService.createDatabaseUser({
-      email: params.email,
-      password: params.password,
-    });
-
-    // 3. Generate email verification token and send email
-    if (this.config.email) {
-      const verification = await this.emailService.generateToken({
-        userSub: user.sub,
+      // 2. Register the user
+      const user = await this.passwordAuthService.createDatabaseUser({
+        email: params.email,
+        password: params.password,
       });
-      await this.mikro.em.flush();
-      this.emailService.sendVerificationEmailAsync({
-        email: user.email,
-        token: verification.token,
-        locale: params.locale,
-      });
-    }
 
-    // 4. Record terms consent after successful registration
-    if (this.termsService && terms) {
-      // Record explicit consents provided by user
-      if (params.consents && params.consents.length > 0) {
-        await this.termsService.recordConsents({
+      // 3. Generate email verification token and send email
+      if (this.config.email) {
+        await this.mailQueue.enqueue(
+          'verification',
+          user.email,
+          params.locale,
+          user.sub,
+        );
+      }
+
+      // 4. Record terms consent after successful registration
+      if (this.termsService && terms) {
+        // Record explicit consents provided by user
+        if (params.consents && params.consents.length > 0) {
+          await this.termsService.recordConsents({
+            userSub: user.sub,
+            consents: params.consents,
+            terms,
+          });
+        }
+
+        // Record implicit consents for terms with implicit consent mode
+        await this.termsService.recordImplicitConsents({
           userSub: user.sub,
-          consents: params.consents,
           terms,
         });
       }
 
-      // Record implicit consents for terms with implicit consent mode
-      await this.termsService.recordImplicitConsents({
-        userSub: user.sub,
-        terms,
-      });
-    }
-
-    // 5. Return session info
-    return {
-      sub: user.sub,
-      managed_by: 'database',
-      email: user.email,
-      role: user.role,
-      email_verified: user.email_verified,
-      email_verification_required: this.userEmailVerificationRequired(user),
-      has_password: user.hasPassword(),
-      totp_registered: false,
-      totp_recovery_codes_missing: false,
-      second_factor_required: this.user2FASetupRequired(user),
-      passkey_count: 0,
-    };
+      // 5. Return session info
+      return {
+        sub: user.sub,
+        token_epoch: user.token_epoch,
+        managed_by: 'database',
+        email: user.email,
+        role: user.role,
+        email_verified: user.email_verified,
+        email_verification_required: this.userEmailVerificationRequired(user),
+        has_password: user.hasPassword(),
+        totp_registered: false,
+        totp_recovery_codes_missing: false,
+        second_factor_required: this.user2FASetupRequired(user),
+        passkey_count: 0,
+      };
+    });
   }
 
   /**
@@ -418,23 +458,26 @@ export class UserService {
   public async requestDeletion(userSub: string): Promise<{
     deleted_at: Date;
   }> {
-    // Check if user exists and is not config-managed
-    const user = await this.mikro.user.findOneOrFail(
-      { sub: userSub, deleted_at: null },
-      { failHandler: () => new e.UserNotFound.Error() },
-    );
+    return withUserSecurity(this.mikro, userSub, async () => {
+      // Check if user exists and is not config-managed
+      const user = await this.mikro.user.findOneOrFail(
+        { sub: userSub, deleted_at: null },
+        { failHandler: () => new e.UserNotFound.Error() },
+      );
 
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+      if (user.managed_by === 'config') {
+        throw new e.UserNotEditable.Error();
+      }
 
-    // Soft delete the user
-    user.deleted_at = new Date();
-    await this.mikro.em.flush();
+      // Soft delete the user
+      await invalidateUserAuthentication(this.mikro.em, user);
+      user.deleted_at = new Date();
+      await this.mikro.em.flush();
 
-    return {
-      deleted_at: user.deleted_at,
-    };
+      return {
+        deleted_at: user.deleted_at,
+      };
+    });
   }
 
   public userEmailVerificationRequired(userLike: {

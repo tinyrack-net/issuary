@@ -101,6 +101,7 @@ export class OAuthAuthorizeService {
    */
   public async authorize(params: {
     query: AuthorizeParams;
+    authenticationEpochs?: Record<string, string>;
     userSession?: {
       sub: string;
       /** OIDC: Time when End-User authentication occurred (Unix timestamp) */
@@ -397,6 +398,7 @@ export class OAuthAuthorizeService {
       return this.buildImplicitIdTokenRedirect({
         clientId: client.clientId,
         userSub: selectedSession.sub,
+        userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
         redirectUri: query.redirect_uri,
         scope: requestedScopes,
         nonce: query.nonce,
@@ -409,6 +411,7 @@ export class OAuthAuthorizeService {
     const codeParams: {
       clientId: string;
       userSub: string;
+      userEpoch: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -418,6 +421,7 @@ export class OAuthAuthorizeService {
     } = {
       clientId: client.id,
       userSub: selectedSession.sub,
+      userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
       redirectUri: query.redirect_uri,
       scope: requestedScopes,
     };
@@ -486,6 +490,7 @@ export class OAuthAuthorizeService {
   private createAccountSelectionSession(params: {
     clientId: string;
     query: AuthorizeParams;
+    authenticationEpochs?: Record<string, string>;
     rememberedAccounts: Array<{ sub: string }>;
   }): AccountSelectionSession {
     const clientOverride = this.config.clients.find(
@@ -634,6 +639,7 @@ export class OAuthAuthorizeService {
 
   private getTrustedAccountSelectionContinuation(params: {
     query: AuthorizeParams;
+    authenticationEpochs?: Record<string, string>;
     session: AccountSelectionSession | undefined;
     clientId: string;
     activeUserSub: string;
@@ -1081,6 +1087,7 @@ export class OAuthAuthorizeService {
   private async buildImplicitIdTokenRedirect(params: {
     clientId: string;
     userSub: string;
+    userEpoch: string;
     redirectUri: string;
     scope: string[];
     nonce: string;
@@ -1095,6 +1102,8 @@ export class OAuthAuthorizeService {
       },
     );
 
+    if (user.deleted_at || user.token_epoch !== params.userEpoch)
+      throw new e.Unauthorized.Error();
     const idTokenPayload: {
       sub: string;
       aud: string;
@@ -1189,6 +1198,7 @@ export class OAuthAuthorizeService {
   private async generateAuthorizationCode(params: {
     clientId: string;
     userSub: string;
+    userEpoch: string;
     redirectUri: string;
     scope: string[];
     nonce?: string;
@@ -1199,6 +1209,7 @@ export class OAuthAuthorizeService {
     const codeParams: {
       clientId: string;
       userSub: string;
+      userEpoch: string;
       redirectUri: string;
       scope: string[];
       nonce?: string;
@@ -1208,6 +1219,7 @@ export class OAuthAuthorizeService {
     } = {
       clientId: params.clientId,
       userSub: params.userSub,
+      userEpoch: params.userEpoch,
       redirectUri: params.redirectUri,
       scope: params.scope,
     };

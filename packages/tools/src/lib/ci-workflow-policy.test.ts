@@ -50,6 +50,7 @@ describe('CI workflow policy', () => {
 
     for (const jobName of [
       'linux-server',
+      'security-postgres',
       'linux-tools',
       'linux-frontend-unit',
       'windows-server',
@@ -114,6 +115,7 @@ describe('CI workflow policy', () => {
       'changes',
       'build',
       'linux-server',
+      'security-postgres',
       'linux-tools',
       'linux-frontend-unit',
       'linux-standalone',
@@ -143,6 +145,17 @@ describe('CI workflow policy', () => {
     expect(source).toContain('MERGE_BASE_SHA:');
     expect(source).toContain('MERGE_HEAD_SHA:');
     expect(source).toContain('classify-ci-changes.sh');
+  });
+
+  test('requires PostgreSQL and browser security checks at the quality gate', async () => {
+    const { source, workflow } = await readWorkflow();
+    expect(needsOf(workflow, 'quality-gate')).toEqual(
+      expect.arrayContaining(['security-postgres', 'security-browser']),
+    );
+    expect(needsOf(workflow, 'security-browser')).toEqual(['changes', 'build']);
+    expect(source).toContain('SECURITY_POSTGRES_PORT:');
+    expect(source).toContain('src/services/enrollment-security.test.ts');
+    expect(source).toContain('--project totp-required:chromium');
   });
 
   test('evaluates tag publishing after skipped quality jobs', async () => {

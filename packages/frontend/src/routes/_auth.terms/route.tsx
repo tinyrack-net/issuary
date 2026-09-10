@@ -23,6 +23,7 @@ import { RouteErrorFallback } from '#frontend/components/ui/route-error-fallback
 import { SanitizedRichText } from '#frontend/components/ui/sanitized-rich-text.tsx';
 import { AuthLayout } from '#frontend/features/layout/auth-layout.tsx';
 import { navigateDocument } from '#frontend/libs/document-navigation.ts';
+import { localReturnPath } from '#frontend/libs/local-return-path.js';
 import { OAuthSearchSchema } from '#frontend/libs/oauth-search.ts';
 import { tick } from '#frontend/libs/promise.ts';
 import {
@@ -139,7 +140,7 @@ function Terms({ search }: { search: z.infer<typeof TermsSearchSchema> }) {
 
       // Redirect after successful consent
       if (search.redirect) {
-        navigateDocument(search.redirect);
+        navigateDocument(localReturnPath(search.redirect));
       } else {
         navigate('/profile');
       }

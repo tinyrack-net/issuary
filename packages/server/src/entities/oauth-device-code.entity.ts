@@ -11,6 +11,8 @@ export const OAuthDeviceCodeEntitySchema = defineEntity({
   extends: BaseSchema,
   repository: () => OAuthDeviceCodeRepository,
   properties: (p) => ({
+    user_epoch: p.string().nullable(),
+    grant_id: p.string().nullable(),
     id: p
       .uuid()
       .primary()

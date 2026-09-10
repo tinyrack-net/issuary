@@ -98,21 +98,23 @@ export const authRegisterPost = new Hono<AppEnv>().post(
     }
 
     // Register the user (terms consent validation and recording handled inside)
-    const userSession = await userService.register({
+    const registeredUser = await userService.register({
       email,
       password,
       locale: headers['accept-language'],
       ...(consents && { consents }),
     });
 
+    const { token_epoch, ...userSession } = registeredUser;
+
     if (userSession.email_verification_required) {
       return c.json({ user: userSession }, 200);
     }
 
     if (userSession.second_factor_required) {
-      session.setPending2FASetupSession(userSession.sub);
+      session.setPending2FASetupSession(userSession.sub, token_epoch);
     } else {
-      session.setUserSession(userSession.sub);
+      session.setUserSession(userSession.sub, token_epoch);
     }
 
     return c.json({ user: userSession }, 200);

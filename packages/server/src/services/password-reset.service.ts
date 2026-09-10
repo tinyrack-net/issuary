@@ -3,6 +3,7 @@ import type { UserEntity } from '../entities/user.entity.ts';
 import { e } from '../schemas/error.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { PasswordAuthService } from './password-auth.service.ts';
+import { withUserSecurity } from './user-security.service.js';
 
 export class PasswordResetService {
   private readonly mikro: MikroService;
@@ -23,12 +24,15 @@ export class PasswordResetService {
     userSub: string;
     expiresInHours?: number;
   }): Promise<IPasswordResetEntity> {
-    const token = await this.mikro.passwordReset.generateToken({
-      userSub: params.userSub,
-      expiresInHours: params.expiresInHours || 1,
-    });
+    return withUserSecurity(this.mikro, params.userSub, async (user) => {
+      const token = await this.mikro.passwordReset.generateToken({
+        userSub: params.userSub,
+        userEpoch: user.token_epoch,
+        expiresInHours: params.expiresInHours || 1,
+      });
 
-    return token;
+      return token;
+    });
   }
 
   /**
@@ -63,24 +67,44 @@ export class PasswordResetService {
     token: string;
     password: string;
   }): Promise<UserEntity> {
-    const resetEntity = await this.mikro.passwordReset.verifyToken(
-      params.token,
-    );
-
-    if (!resetEntity) {
-      throw new e.InvalidPasswordResetToken.Error();
-    }
-
-    const user = await resetEntity.user.loadOrFail({
-      failHandler: () => new e.UserNotFound.Error(),
+    const candidate = await this.mikro.passwordReset.findOne({
+      token: params.token,
+      used: false,
+      expiresAt: { $gt: new Date() },
     });
+    if (!candidate) throw new e.InvalidPasswordResetToken.Error();
+    return withUserSecurity(
+      this.mikro,
+      candidate.user.sub,
+      async (freshUser) => {
+        if (
+          freshUser.deleted_at ||
+          candidate.user_epoch !== freshUser.token_epoch
+        )
+          throw new e.InvalidPasswordResetToken.Error();
+        const resetEntity = await this.mikro.passwordReset.verifyToken(
+          params.token,
+        );
 
-    if (user.managed_by === 'config') {
-      throw new e.UserNotEditable.Error();
-    }
+        if (!resetEntity) {
+          throw new e.InvalidPasswordResetToken.Error();
+        }
 
-    await this.passwordAuthService.replacePassword(user, params.password);
+        const user = await resetEntity.user.loadOrFail({
+          failHandler: () => new e.UserNotFound.Error(),
+        });
 
-    return user;
+        if (user.deleted_at) throw new e.InvalidPasswordResetToken.Error();
+
+        if (user.managed_by === 'config') {
+          throw new e.UserNotEditable.Error();
+        }
+
+        await this.passwordAuthService.replacePassword(user, params.password);
+
+        return user;
+      },
+      { includeDeleted: true },
+    );
   }
 }

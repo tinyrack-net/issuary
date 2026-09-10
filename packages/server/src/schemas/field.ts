@@ -116,6 +116,9 @@ export const f = {
       (value) =>
         value.startsWith('/') &&
         !value.startsWith('//') &&
+        !value.includes('\\') &&
+        new URL(value, 'https://return.invalid').origin ===
+          'https://return.invalid' &&
         !value.includes('\r') &&
         !value.includes('\n'),
       { message: 'Return URL must be a local path' },

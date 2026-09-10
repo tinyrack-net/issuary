@@ -106,6 +106,8 @@ async function seedEmailVerificationTokenBacklog(
     for (let index = 0; index < count; index += 1) {
       const verification = services.mikro.emailVerification.create({
         user: userSub,
+        user_epoch: (await services.mikro.user.verifyBySub(userSub))
+          .token_epoch,
         token: `email-verification-backlog-${crypto.randomUUID()}`,
         expiresAt,
       });

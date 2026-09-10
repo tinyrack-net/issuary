@@ -11,6 +11,7 @@ import {
   SignJWT,
 } from 'jose';
 import { type JwtKeyEntity, JwtKeyStatus } from '../entities/jwt-key.entity.ts';
+import { OAuthGrantEntitySchema } from '../entities/oauth-grant.entity.js';
 import { bytesToString, fromBase64Url } from '../lib/base64url.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { e } from '../schemas/error.ts';
@@ -84,6 +85,7 @@ interface BaseJWTPayload {
   grant_id?: string | undefined;
   /** Opaque OAuth client token generation. */
   client_epoch?: string | undefined;
+  user_epoch?: string | undefined;
 }
 
 /**
@@ -494,6 +496,7 @@ export class JwtService {
       scope: payload.scope,
       ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
       ...(payload.client_epoch ? { client_epoch: payload.client_epoch } : {}),
+      ...(payload.user_epoch ? { user_epoch: payload.user_epoch } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
@@ -526,6 +529,7 @@ export class JwtService {
       scope: payload.scope,
       ...(payload.grant_id ? { grant_id: payload.grant_id } : {}),
       ...(payload.client_epoch ? { client_epoch: payload.client_epoch } : {}),
+      ...(payload.user_epoch ? { user_epoch: payload.user_epoch } : {}),
     })
       .setProtectedHeader({ alg: key.algorithm, typ: 'JWT', kid: key.kid })
       .setJti(jti)
@@ -661,6 +665,19 @@ export class JwtService {
     }
 
     if (payload.grant_id) {
+      const grant = await this.mikro.em.findOne(
+        OAuthGrantEntitySchema,
+        { id: payload.grant_id },
+        { refresh: true },
+      );
+      if (
+        !grant ||
+        grant.revoked_at ||
+        grant.expires_at <= new Date() ||
+        grant.user_sub !== payload.sub ||
+        grant.client_id !== payload.client_id
+      )
+        throw new Error('Token grant is inactive');
       const isGrantRevoked = await this.mikro.revokedToken.isGrantRevoked(
         payload.grant_id,
       );
@@ -734,7 +751,11 @@ export class JwtService {
     }
 
     const user = await this.mikro.user.findOne({ sub: payload.sub });
-    if (!user || user.deleted_at) {
+    if (
+      !user ||
+      user.deleted_at ||
+      (user.token_epoch ?? undefined) !== payload.user_epoch
+    ) {
       throw new Error('Token subject is not active');
     }
   }

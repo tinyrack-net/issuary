@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertBanner } from '#frontend/components/ui/alert-banner.tsx';
 import { Modal, ModalActions } from '#frontend/components/ui/modal.tsx';
+import { securityErrorMessage } from '#frontend/libs/security-error-message.js';
 
 interface UnlinkOAuthModalProps {
   isOpen: boolean;
@@ -34,8 +35,14 @@ export function UnlinkOAuthModal({
     try {
       await onConfirm();
       handleClose();
-    } catch {
-      setError(t('profile.linkedAccounts.unlinkError'));
+    } catch (caught) {
+      setError(
+        securityErrorMessage(
+          caught,
+          t,
+          t('profile.linkedAccounts.unlinkError'),
+        ),
+      );
     }
   };
 

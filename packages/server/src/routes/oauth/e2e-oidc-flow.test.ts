@@ -3,7 +3,7 @@ import { testClient } from 'hono/testing';
 import * as jose from 'jose';
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { AppType } from '../../entrypoints/app.ts';
-import { encrypt } from '../../lib/crypto.ts';
+import type { ServiceContainer } from '../../services/container.js';
 import {
   assertDefined,
   assertJsonBody,
@@ -23,7 +23,9 @@ import {
   TEST_USER,
   TEST_USER_CONFIG,
 } from '../../test-utils/index.ts';
+import { createStoredSessionCookie } from '../../test-utils/stored-session.js';
 
+let services: ServiceContainer;
 let app: AppType;
 let cleanup: () => Promise<void>;
 
@@ -47,7 +49,7 @@ const E2E_REFRESHABLE_CLIENT_CONFIG = {
 };
 
 beforeAll(async () => {
-  ({ app, cleanup } = await createTestApp({
+  ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
     users: [TEST_USER_CONFIG],
     clients: [TEST_OAUTH_CLIENT_CONFIG, E2E_REFRESHABLE_CLIENT_CONFIG],
@@ -83,7 +85,8 @@ async function issueRefreshableTokens() {
 async function createSessionCookieWithAuthTime(
   authenticatedAt: number,
 ): Promise<string> {
-  return encrypt(
+  return createStoredSessionCookie(
+    services,
     JSON.stringify({
       user: {
         sub: TEST_USER_CONFIG.sub,
@@ -1037,21 +1040,25 @@ describe('End-to-End OIDC Account Selection Flow', () => {
   };
 
   let accountSelectionApp: AppType;
+  let accountSelectionServices: ServiceContainer;
   let accountSelectionCleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    ({ app: accountSelectionApp, cleanup: accountSelectionCleanup } =
-      await createTestApp({
-        ...MINIMAL_TEST_CONFIG,
-        auth: {
-          account_selection: {
-            enabled: true,
-            mode: 'smart',
-          },
+    ({
+      app: accountSelectionApp,
+      services: accountSelectionServices,
+      cleanup: accountSelectionCleanup,
+    } = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      auth: {
+        account_selection: {
+          enabled: true,
+          mode: 'smart',
         },
-        users: [ACCOUNT_A, ACCOUNT_B],
-        clients: [TEST_OAUTH_CLIENT_CONFIG],
-      }));
+      },
+      users: [ACCOUNT_A, ACCOUNT_B],
+      clients: [TEST_OAUTH_CLIENT_CONFIG],
+    }));
   });
 
   afterAll(async () => {
@@ -1060,7 +1067,8 @@ describe('End-to-End OIDC Account Selection Flow', () => {
 
   async function createMultiAccountSession(activeSub: string) {
     const authenticatedAt = Math.floor(Date.now() / 1000) - 5;
-    return encrypt(
+    return createStoredSessionCookie(
+      accountSelectionServices,
       JSON.stringify({
         user: {
           sub: activeSub,
@@ -1505,6 +1513,7 @@ describe('End-to-End OIDC Account Selection Flow', () => {
       users: [ACCOUNT_A, ACCOUNT_B],
       clients: [TEST_OAUTH_CLIENT_CONFIG],
     });
+    vi.setSystemTime(new Date(Date.now() + 1));
     try {
       const client = testClient(scopedServer.app);
       const configRes =
@@ -1514,7 +1523,8 @@ describe('End-to-End OIDC Account Selection Flow', () => {
       const jwksRes = await scopedServer.app.request(jwksPath);
       const JWKS = jose.createLocalJWKSet(await parseJwks(jwksRes));
       const authenticatedAt = 1_700_000_000;
-      const sessionCookie = await encrypt(
+      const sessionCookie = await createStoredSessionCookie(
+        scopedServer.services,
         JSON.stringify({
           user: {
             sub: ACCOUNT_B.sub,
@@ -1672,7 +1682,8 @@ describe('End-to-End OIDC Account Selection Flow', () => {
         ['code_challenge_method', authorizeQuery.code_challenge_method],
         ['prompt', authorizeQuery.prompt],
       ]);
-      const staleChooserCookie = await encrypt(
+      const staleChooserCookie = await createStoredSessionCookie(
+        scopedServer.services,
         JSON.stringify({
           user: {
             sub: ACCOUNT_C.sub,

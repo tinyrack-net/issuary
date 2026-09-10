@@ -1,11 +1,14 @@
 import type { EntityName } from '@mikro-orm/core';
+import { AuthBudgetEntitySchema } from '../../entities/auth-budget.entity.js';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.ts';
 import { BootstrapStateEntitySchema } from '../../entities/bootstrap-state.entity.ts';
+import { BrowserSessionEntitySchema } from '../../entities/browser-session.entity.js';
 import { EmailVerificationEntitySchema } from '../../entities/email-verification.entity.ts';
 import { JwtKeyEntitySchema } from '../../entities/jwt-key.entity.ts';
 import { OAuthClientEntitySchema } from '../../entities/oauth-client.entity.ts';
 import { OAuthCodeEntitySchema } from '../../entities/oauth-code.entity.ts';
 import { OAuthDeviceCodeEntitySchema } from '../../entities/oauth-device-code.entity.ts';
+import { OAuthGrantEntitySchema } from '../../entities/oauth-grant.entity.js';
 import { PasswordResetEntitySchema } from '../../entities/password-reset.entity.ts';
 import { PendingOAuthRegistrationEntitySchema } from '../../entities/pending-oauth-registration.entity.ts';
 import { RevokedTokenEntitySchema } from '../../entities/revoked-token.entity.ts';
@@ -29,6 +32,9 @@ export interface RuntimeDatabaseEntity {
 
 function createDatabaseEntities() {
   return [
+    OAuthGrantEntitySchema,
+    AuthBudgetEntitySchema,
+    BrowserSessionEntitySchema,
     UserEntitySchema,
     OAuthClientEntitySchema,
     OAuthCodeEntitySchema,

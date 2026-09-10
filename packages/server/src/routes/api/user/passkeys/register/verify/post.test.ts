@@ -161,26 +161,32 @@ describe('POST /api/user/passkeys/register/verify', () => {
     const optionsCookie = extractCookie(optionsRes, 'session');
 
     const verifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockImplementationOnce(
         async (user, _response, expectedChallenge, name) => {
           expect(user.sub).toBe(userSub);
           expect(expectedChallenge).toBe(optionsBody.options.challenge);
           expect(name).toBe('My Laptop');
 
-          const passkey = services.mikro.userPasskey.create({
-            user: user.sub,
-            credential_id: credentialId,
-            public_key: 'test-public-key-base64url',
-            counter: 0,
-            device_type: 'multiDevice',
-            backed_up: true,
-            transports: ['internal'],
-            name: name ?? null,
-            aaguid: 'test-aaguid',
-          });
-          await services.mikro.em.persist(passkey).flush();
-          return passkey;
+          return {
+            verified: true,
+            registrationInfo: {
+              fmt: 'none',
+              aaguid: 'test-aaguid',
+              credential: {
+                id: credentialId,
+                publicKey: new Uint8Array([1, 2, 3]),
+                counter: 0,
+              },
+              credentialType: 'public-key',
+              attestationObject: new Uint8Array(),
+              userVerified: true,
+              credentialDeviceType: 'multiDevice',
+              credentialBackedUp: true,
+              origin: 'http://localhost:8080',
+              rpID: 'localhost',
+            },
+          };
         },
       );
 
@@ -288,7 +294,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     // Try to verify with an invalid response
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
 
     const updatedClient = testClient(app);
@@ -424,7 +430,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     // Verify with name (will fail due to invalid response, but name should be accepted)
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
 
     const updatedClient = testClient(app);
@@ -569,7 +575,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
 
     // Simulate duplicate credential from passkey service.
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValueOnce(new e.PasskeyAlreadyExists.Error());
 
     const updatedClient = testClient(app);
@@ -632,7 +638,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
     }
 
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValueOnce(new e.PasskeyVerificationFailed.Error());
 
     // Try with malformed clientDataJSON
@@ -681,7 +687,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
     const updatedClient = testClient(app);
     const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // First verification attempt (will fail)
@@ -744,7 +750,7 @@ describe('POST /api/user/passkeys/register/verify', () => {
     const updatedClient = testClient(app);
     const updatedHeaders = { Cookie: `session=${updatedSessionCookie}` };
     const mockVerifyRegistration = vi
-      .spyOn(services.passkeyService, 'verifyRegistration')
+      .spyOn(services.passkeyService, 'prepareRegistration')
       .mockRejectedValue(new e.PasskeyVerificationFailed.Error());
 
     // Send concurrent verification requests
@@ -965,22 +971,28 @@ describe('POST /api/user/passkeys/register/verify - Pending 2FA setup', () => {
     const optionsCookie = extractCookie(optionsRes, 'session');
 
     const verifyRegistration = vi
-      .spyOn(services2FA.passkeyService, 'verifyRegistration')
-      .mockImplementationOnce(async (user, _response, expectedChallenge) => {
+      .spyOn(services2FA.passkeyService, 'prepareRegistration')
+      .mockImplementationOnce(async (_user, _response, expectedChallenge) => {
         expect(expectedChallenge).toBe(optionsBody.options.challenge);
-        const passkey = services2FA.mikro.userPasskey.create({
-          user: user.sub,
-          credential_id: credentialId,
-          public_key: 'test-public-key-base64url',
-          counter: 0,
-          device_type: 'multiDevice',
-          backed_up: true,
-          transports: ['internal'],
-          name: 'Setup Passkey',
-          aaguid: 'test-aaguid',
-        });
-        await services2FA.mikro.em.persist(passkey).flush();
-        return passkey;
+        return {
+          verified: true,
+          registrationInfo: {
+            fmt: 'none',
+            aaguid: 'test-aaguid',
+            credential: {
+              id: credentialId,
+              publicKey: new Uint8Array([1, 2, 3]),
+              counter: 0,
+            },
+            credentialType: 'public-key',
+            attestationObject: new Uint8Array(),
+            userVerified: true,
+            credentialDeviceType: 'multiDevice',
+            credentialBackedUp: true,
+            origin: 'http://localhost:8080',
+            rpID: 'localhost',
+          },
+        };
       });
 
     const verifyRes = await client.api.user.passkeys.register.verify.$post(
@@ -1065,23 +1077,29 @@ describe('POST /api/user/passkeys/register/verify - Pending 2FA setup', () => {
     const optionsCookie = extractCookie(optionsRes, 'session');
 
     const verifyRegistration = vi
-      .spyOn(services2FA.passkeyService, 'verifyRegistration')
+      .spyOn(services2FA.passkeyService, 'prepareRegistration')
       .mockImplementationOnce(async (user, _response, expectedChallenge) => {
         expect(user.email).toBe(email);
         expect(expectedChallenge).toBe(optionsBody.options.challenge);
-        const passkey = services2FA.mikro.userPasskey.create({
-          user: user.sub,
-          credential_id: credentialId,
-          public_key: 'test-public-key-base64url',
-          counter: 0,
-          device_type: 'multiDevice',
-          backed_up: true,
-          transports: ['internal'],
-          name: 'Pending Active Passkey',
-          aaguid: 'test-aaguid',
-        });
-        await services2FA.mikro.em.persist(passkey).flush();
-        return passkey;
+        return {
+          verified: true,
+          registrationInfo: {
+            fmt: 'none',
+            aaguid: 'test-aaguid',
+            credential: {
+              id: credentialId,
+              publicKey: new Uint8Array([1, 2, 3]),
+              counter: 0,
+            },
+            credentialType: 'public-key',
+            attestationObject: new Uint8Array(),
+            userVerified: true,
+            credentialDeviceType: 'multiDevice',
+            credentialBackedUp: true,
+            origin: 'http://localhost:8080',
+            rpID: 'localhost',
+          },
+        };
       });
 
     try {

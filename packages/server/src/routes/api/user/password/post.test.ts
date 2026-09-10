@@ -13,6 +13,7 @@ import {
   TEST_USER_CONFIG,
   withMikroContext,
 } from '../../../../test-utils/index.ts';
+import { createStoredSessionCookie } from '../../../../test-utils/stored-session.js';
 
 let app: AppType;
 let services: ServiceContainer;
@@ -247,19 +248,11 @@ describe('POST /api/user/password', () => {
 });
 
 describe('POST /api/user/password - password disabled', () => {
-  let appSession: AppType;
-  let cleanupSession: () => Promise<void>;
+  let disabledServices: ServiceContainer;
   let appDisabled: AppType;
   let cleanupDisabled: () => Promise<void>;
 
   beforeAll(async () => {
-    const sessionServer = await createTestApp({
-      ...MINIMAL_TEST_CONFIG,
-      users: [TEST_USER_CONFIG],
-    });
-    appSession = sessionServer.app;
-    cleanupSession = sessionServer.cleanup;
-
     const disabledServer = await createTestApp({
       ...MINIMAL_TEST_CONFIG,
       users: [TEST_USER_CONFIG],
@@ -270,16 +263,25 @@ describe('POST /api/user/password - password disabled', () => {
       },
     });
     appDisabled = disabledServer.app;
+    disabledServices = disabledServer.services;
     cleanupDisabled = disabledServer.cleanup;
   });
 
   afterAll(async () => {
-    await cleanupSession();
     await cleanupDisabled();
   });
 
   test('should return validation error when password auth is disabled', async () => {
-    const sessionCookie = await createAuthenticatedSession(appSession);
+    const sessionCookie = await createStoredSessionCookie(
+      disabledServices,
+      JSON.stringify({
+        user: {
+          sub: TEST_USER_CONFIG.sub,
+          authenticated_at: Math.floor(Date.now() / 1000),
+        },
+      }),
+      MINIMAL_TEST_CONFIG.security.session_secret,
+    );
 
     const client = testClient(appDisabled);
     const res = await client.api.user.password.$post(

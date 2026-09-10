@@ -1,7 +1,8 @@
 import { RequestContext } from '@mikro-orm/core';
 import type { Context, Next } from 'hono';
 import { Hono } from 'hono';
-import { generateSpecs } from 'hono-openapi';
+import { bodyLimit } from 'hono/body-limit';
+import { describeRoute, generateSpecs } from 'hono-openapi';
 import {
   type IssuaryRuntimeConfigInput,
   IssuaryRuntimeConfigSchema,
@@ -13,20 +14,24 @@ import {
 } from '../lib/frontend/react-router.ts';
 import { createLogger } from '../lib/logger.ts';
 import { createOpenApiDocumentation } from '../lib/openapi.ts';
+import { authBudget } from '../middleware/auth-budget.js';
 import { csrfProtection } from '../middleware/csrf.ts';
 import { loggerMiddleware } from '../middleware/logger.ts';
 import { mikroOrmMiddleware } from '../middleware/mikro-orm.ts';
 import { servicesMiddleware } from '../middleware/services.ts';
 import { sessionMiddleware } from '../middleware/session.ts';
+import { strictInput } from '../middleware/strict-input.js';
 import { tracingMiddleware } from '../middleware/tracing.ts';
 import { trustedProxyGuard } from '../middleware/trusted-proxy-guard.ts';
 import { routes } from '../routes/index.ts';
 import { e, IssuaryError } from '../schemas/error.ts';
 import { normalizeAccountSelectionPolicy } from '../services/account-selection.service.ts';
+import { BrowserSessionService } from '../services/browser-session.service.js';
 import {
   type InitializeServicesOptions,
   initializeServices,
 } from '../services/container.ts';
+import { isSecurityConflict } from '../services/user-security.service.js';
 
 /**
  * Application configuration for the backend runtime.
@@ -63,6 +68,11 @@ export async function createApp(
   let cachedOpenApiSpec: Awaited<ReturnType<typeof generateSpecs>> | undefined;
 
   const handleError = (err: Error, c: Context) => {
+    if (isSecurityConflict(err)) {
+      err = new e.ConcurrentSecurityChange.Error();
+    }
+    if (err instanceof e.ConcurrentSecurityChange.Error)
+      logger.warn({ code: err.code }, 'Security transaction conflict');
     if (err instanceof IssuaryError) {
       setBearerAuthChallenge(c, err);
 
@@ -82,7 +92,27 @@ export async function createApp(
     .onError(handleError)
     .use('*', tracingMiddleware())
     .use('*', loggerMiddleware(logger))
+    .use('*', async (c, next) => {
+      c.header('Cache-Control', 'no-store');
+      c.header('Referrer-Policy', 'no-referrer');
+      c.header('X-Content-Type-Options', 'nosniff');
+      c.header('Content-Security-Policy', "frame-ancestors 'none'");
+      await next();
+    })
+    .use(
+      '*',
+      bodyLimit({
+        maxSize: 1_048_576,
+        onError: () => {
+          throw new e.RequestBodyTooLarge.Error();
+        },
+      }),
+    )
+    .use('*', strictInput)
     .use('*', firstPartyCors(config.server.public_origin))
+    .use('*', trustedProxyGuard(config.server.trust_proxy))
+    .use('*', servicesMiddleware(services))
+    .use('*', mikroOrmMiddleware)
     .use(
       '*',
       sessionMiddleware(
@@ -93,13 +123,12 @@ export async function createApp(
           maxAccounts: accountSelectionPolicy.maxAccounts,
           ttlMs: parseDurationToMs(accountSelectionPolicy.ttl),
         },
+        new BrowserSessionService(services.mikro.em),
       ),
     )
-    .use('*', trustedProxyGuard(config.server.trust_proxy))
     .use('/api/*', csrfProtection(config.server.public_origin))
     .use('/oauth/device', csrfProtection(config.server.public_origin))
-    .use('*', servicesMiddleware(services))
-    .use('*', mikroOrmMiddleware)
+    .use('*', authBudget)
     .route('/', routes)
     .notFound(async (c) => {
       if (c.req.path.startsWith('/api/') || c.req.path.startsWith('/oauth/')) {
@@ -111,20 +140,70 @@ export async function createApp(
       });
     });
 
-  app.get('/api/docs/json', async (c) => {
-    if (!config.openapi.enabled) {
-      return c.json({ error: 'Not Found' }, 404);
-    }
+  app.get(
+    '/api/docs/json',
+    describeRoute({
+      summary: 'OpenAPI specification',
+      responses: {
+        200: { description: 'OpenAPI document' },
+        404: { description: 'Documentation disabled' },
+      },
+    }),
+    async (c) => {
+      if (!config.openapi.enabled) {
+        return c.json({ error: 'Not Found' }, 404);
+      }
 
-    cachedOpenApiSpec ??= await generateSpecs(app, {
-      documentation: openApiDocumentation,
-    });
+      cachedOpenApiSpec ??= await generateSpecs(app, {
+        documentation: openApiDocumentation,
+      });
 
-    return c.json(cachedOpenApiSpec);
-  });
+      for (const [path, item] of Object.entries(
+        cachedOpenApiSpec.paths ?? {},
+      )) {
+        for (const operation of [
+          item.post,
+          item.put,
+          item.patch,
+          item.delete,
+        ]) {
+          if (!operation) continue;
+          operation.responses ??= {};
+          operation.responses['409'] ??= {
+            description:
+              'CONCURRENT_SECURITY_CHANGE: review current security settings before resubmitting',
+          };
+          operation.responses['413'] = {
+            description: 'Request body exceeds 1 MiB',
+          };
+        }
+        if (
+          path.startsWith('/api/auth/') ||
+          path.startsWith('/api/user/') ||
+          path.startsWith('/oauth/')
+        ) {
+          for (const operation of [item.post, item.put, item.delete]) {
+            if (!operation) continue;
+            operation.responses ??= {};
+            operation.responses['429'] = {
+              description: 'Authentication or source request limit exceeded',
+              headers: {
+                'Retry-After': {
+                  description: 'Seconds until the current window ends',
+                  schema: { type: 'integer' },
+                },
+              },
+            };
+          }
+        }
+      }
+      return c.json(cachedOpenApiSpec);
+    },
+  );
 
   // Start scheduler
   await services.scheduler.start();
+  services.mailQueue.start();
 
   return { app, services, cleanup, logger };
 }
@@ -197,6 +276,8 @@ function toOAuthErrorJson(err: IssuaryError) {
 
 function toOAuthErrorCode(err: IssuaryError): string {
   switch (err.code) {
+    case 'TOO_MANY_REQUESTS':
+      return 'temporarily_unavailable';
     case 'INVALID_CLIENT_CREDENTIALS':
     case 'OAUTH_CLIENT_NOT_FOUND':
       return 'invalid_client';

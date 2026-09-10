@@ -1,5 +1,6 @@
 import { EntityRepository } from '@mikro-orm/core';
 import type { IOAuthDeviceCodeEntity } from '../entities/oauth-device-code.entity.ts';
+import { UserEntity } from '../entities/user.entity.js';
 
 const DEVICE_CODE_POLL_INTERVAL_SECONDS = 5;
 
@@ -42,8 +43,12 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
   async approvePendingByUserCodeHash(params: {
     userCodeHash: string;
     userSub: string;
+    userEpoch?: string;
     approvedAt: Date;
   }): Promise<IOAuthDeviceCodeEntity | null> {
+    const user = await this.getEntityManager().findOneOrFail(UserEntity, {
+      sub: params.userSub,
+    });
     const updated = await this.nativeUpdate(
       {
         userCodeHash: params.userCodeHash,
@@ -54,6 +59,7 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
       },
       {
         authorizedUser: params.userSub,
+        user_epoch: params.userEpoch ?? user.token_epoch,
         authorizedAt: params.approvedAt,
       },
     );
@@ -152,7 +158,7 @@ export class OAuthDeviceCodeRepository extends EntityRepository<IOAuthDeviceCode
     );
 
     if (updated !== 1) {
-      return this.recordPendingPoll(params);
+      return 'slow_down';
     }
 
     return isSlowDown ? 'slow_down' : 'authorization_pending';
