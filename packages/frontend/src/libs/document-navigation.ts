@@ -1,8 +1,12 @@
-export function signalDocumentNavigation(): void {
-  window.dispatchEvent(new Event('issuary-document-navigation'));
+export function signalDocumentNavigation(): boolean {
+  return window.dispatchEvent(
+    new Event('issuary-document-navigation', { cancelable: true }),
+  );
 }
 
 export function navigateDocument(url: string): void {
-  signalDocumentNavigation();
+  if (!signalDocumentNavigation()) {
+    return;
+  }
   window.location.assign(url);
 }
