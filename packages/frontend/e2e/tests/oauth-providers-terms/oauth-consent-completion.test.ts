@@ -11,6 +11,7 @@ import {
   E2E_TEST_USER_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { buildOAuthAuthorizeUrl } from '#frontend-e2e/helpers/consent.ts';
+import { captureClientRedirectAfterAction } from '#frontend-e2e/helpers/oauth-client-flow.ts';
 
 const test = createScenarioFixture((port) => ({
   ...E2E_BASE_CONFIG,
@@ -34,13 +35,6 @@ test('OAuth consent returns to authorization and issues an exchangeable code', a
       })
     ).status(),
   ).toBe(200);
-  await page.route(`${E2E_TEST_CLIENT.redirectUri}*`, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'text/plain',
-      body: 'OAuth callback',
-    }),
-  );
   await page.goto(
     `${origin}${buildOAuthAuthorizeUrl({ scope: 'openid email', state: 'consent-completion', code_challenge: challenge })}`,
   );
@@ -50,14 +44,14 @@ test('OAuth consent returns to authorization and issues an exchangeable code', a
       new URL(response.url()).pathname === '/api/consent' &&
       response.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Allow', exact: true }).click();
-  expect((await saved).status()).toBe(200);
-  await expect(page).toHaveURL(
-    new RegExp(
-      `${E2E_TEST_CLIENT.redirectUri.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?`,
-    ),
+  // Capture the real redirect request; the fixture has no client HTTP server.
+  const callback = await captureClientRedirectAfterAction(page, () =>
+    page.getByRole('button', { name: 'Allow', exact: true }).click(),
   );
-  const callback = new URL(page.url());
+  expect((await saved).status()).toBe(200);
+  expect(`${callback.origin}${callback.pathname}`).toBe(
+    E2E_TEST_CLIENT.redirectUri,
+  );
   expect(callback.searchParams.get('state')).toBe('consent-completion');
   const code = callback.searchParams.get('code');
   if (!code) throw new Error('Missing authorization code');
