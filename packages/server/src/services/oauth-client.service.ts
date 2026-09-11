@@ -216,7 +216,7 @@ export class OAuthClientService {
       !client.enabled
     )
       throw new e.InvalidClientCredentials.Error();
-    if (client.tokenEpoch !== proof.epoch) {
+    if ((client.tokenEpoch ?? '') !== proof.epoch) {
       if (grantType === 'authorization_code')
         throw new e.InvalidAuthorizationCode.Error();
       if (grantType === 'refresh_token')

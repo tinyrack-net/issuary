@@ -214,6 +214,33 @@ describe('POST /oauth/token', () => {
       expect(json.access_token).toBeDefined();
     });
 
+    test('should exchange a code for a legacy client without a token epoch', async () => {
+      await withMikroContext(services, async () => {
+        const oauthClient = await services.mikro.oauthClient.findOneOrFail({
+          clientId: TEST_OAUTH_CLIENT.clientId,
+        });
+        oauthClient.tokenEpoch = null;
+        await services.mikro.em.flush();
+      });
+
+      try {
+        const sessionCookie = await createAuthenticatedSession(app);
+        const { code } = await getAuthorizationCode(app, { sessionCookie });
+        const res = await exchangeCode({ code });
+        const json = await assertJsonBody(res, 200);
+
+        expect(json.access_token).toBeDefined();
+      } finally {
+        await withMikroContext(services, async () => {
+          const oauthClient = await services.mikro.oauthClient.findOneOrFail({
+            clientId: TEST_OAUTH_CLIENT.clientId,
+          });
+          oauthClient.tokenEpoch = crypto.randomUUID();
+          await services.mikro.em.flush();
+        });
+      }
+    });
+
     test('should work with client_secret authentication', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
