@@ -159,7 +159,7 @@ export class OAuthTokenService {
       );
       if (
         !codeEntity ||
-        codeEntity.client_epoch !== client.tokenEpoch ||
+        codeEntity.client_epoch !== (client.tokenEpoch ?? '') ||
         (!codeEntity.consumedAt && codeEntity.expiredAt <= new Date())
       )
         throw new e.InvalidAuthorizationCode.Error();
