@@ -160,10 +160,11 @@ export const tokenPost = new Hono<AppEnv>().post(
           return c.json(tokens, 200);
         } catch (error) {
           if (error instanceof e.InvalidAuthorizationCode.Error) {
-            const receivedHash = await c.var.services.securityService.hashOpaqueToken(
-              'oauth-code',
-              body.code,
-            );
+            const receivedHash =
+              await c.var.services.securityService.hashOpaqueToken(
+                'oauth-code',
+                body.code,
+              );
             c.var.logger.debug(
               {
                 clientId,
