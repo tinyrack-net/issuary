@@ -204,6 +204,24 @@ export const authorizeGet = new Hono<AppEnv>().get(
         return c.html(buildFormPostResponse(result.url, result.params ?? {}));
       }
 
+      const issuedUrl = new URL(result.url);
+      const issuedCode = issuedUrl.searchParams.get('code');
+      if (issuedCode) {
+        const issuedHash = await c.var.services.securityService.hashOpaqueToken(
+          'oauth-code',
+          issuedCode,
+        );
+        c.var.logger.debug(
+          {
+            clientId: query.client_id,
+            redirectUri: query.redirect_uri,
+            codeLength: issuedCode.length,
+            codeFingerprint: issuedHash.slice(0, 8),
+          },
+          'OAuth authorization code issued',
+        );
+      }
+
       // Redirect based on result
       return c.redirect(result.url);
     } catch (error) {
