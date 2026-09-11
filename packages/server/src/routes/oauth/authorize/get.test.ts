@@ -16,6 +16,7 @@ import {
   TEST_OAUTH_CLIENT_CONFIG,
   TEST_PKCE,
   TEST_USER_CONFIG,
+  withMikroContext,
 } from '../../../test-utils/index.ts';
 import { createStoredSessionCookie } from '../../../test-utils/stored-session.js';
 
@@ -387,6 +388,44 @@ describe('GET /oauth/authorize', () => {
       expect(code).toBeTruthy();
       expect(location.searchParams.get('state')).toBe('skip-consent-state');
       expect(location.searchParams.has('error')).toBe(false);
+    });
+
+    test('should issue code for a legacy client without a token epoch', async () => {
+      await withMikroContext(services, async () => {
+        const oauthClient = await services.mikro.oauthClient.findOneOrFail({
+          clientId: SKIP_CONSENT_CLIENT.clientId,
+        });
+        oauthClient.tokenEpoch = null;
+        await services.mikro.em.flush();
+      });
+
+      try {
+        const sessionCookie = await createAuthenticatedSession(app);
+        const { code, location, statusCode } = await getAuthorizationCode(
+          {
+            response_type: 'code',
+            client_id: SKIP_CONSENT_CLIENT.clientId,
+            redirect_uri: SKIP_CONSENT_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            state: 'legacy-client-state',
+            code_challenge: TEST_PKCE.codeChallenge,
+            code_challenge_method: TEST_PKCE.codeChallengeMethod,
+          },
+          sessionCookie,
+        );
+
+        expect(statusCode).toBe(302);
+        expect(location.pathname).toBe('/skip-consent-callback');
+        expect(code).toBeTruthy();
+      } finally {
+        await withMikroContext(services, async () => {
+          const oauthClient = await services.mikro.oauthClient.findOneOrFail({
+            clientId: SKIP_CONSENT_CLIENT.clientId,
+          });
+          oauthClient.tokenEpoch = crypto.randomUUID();
+          await services.mikro.em.flush();
+        });
+      }
     });
 
     test('should preserve all OAuth parameters in login redirect', async () => {
