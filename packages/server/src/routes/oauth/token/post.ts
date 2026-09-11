@@ -146,37 +146,17 @@ export const tokenPost = new Hono<AppEnv>().post(
           throw new e.MissingRedirectUri.Error();
         }
 
-        try {
-          const tokens = await oauthTokenService.exchangeAuthorizationCode({
-            authentication,
-            code: body.code,
-            redirectUri: body.redirect_uri,
-            clientId,
-            codeVerifier: body.code_verifier ?? undefined,
-          });
+        const tokens = await oauthTokenService.exchangeAuthorizationCode({
+          authentication,
+          code: body.code,
+          redirectUri: body.redirect_uri,
+          clientId,
+          codeVerifier: body.code_verifier ?? undefined,
+        });
 
-          c.header('Cache-Control', 'no-store');
-          c.header('Pragma', 'no-cache');
-          return c.json(tokens, 200);
-        } catch (error) {
-          if (error instanceof e.InvalidAuthorizationCode.Error) {
-            const receivedHash =
-              await c.var.services.securityService.hashOpaqueToken(
-                'oauth-code',
-                body.code,
-              );
-            c.var.logger.debug(
-              {
-                clientId,
-                redirectUri: body.redirect_uri,
-                codeLength: body.code.length,
-                codeFingerprint: receivedHash.slice(-8),
-              },
-              'OAuth authorization code rejected',
-            );
-          }
-          throw error;
-        }
+        c.header('Cache-Control', 'no-store');
+        c.header('Pragma', 'no-cache');
+        return c.json(tokens, 200);
       }
 
       if (grantType === 'refresh_token') {
