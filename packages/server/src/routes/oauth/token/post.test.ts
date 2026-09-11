@@ -194,6 +194,26 @@ describe('POST /oauth/token', () => {
       expect(res.headers.get('pragma')).toBe('no-cache');
     });
 
+    test('should exchange a code through a real URL-encoded form request', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, { sessionCookie });
+      const form = new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        client_secret: TEST_OAUTH_CLIENT.clientSecret,
+        redirect_uri: TEST_OAUTH_CLIENT.redirectUri,
+        code_verifier: TEST_PKCE.codeVerifier,
+      });
+      const res = await app.request('/oauth/token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      });
+      const json = await assertJsonBody(res, 200);
+      expect(json.access_token).toBeDefined();
+    });
+
     test('should work with client_secret authentication', async () => {
       const sessionCookie = await createAuthenticatedSession(app);
       const { code } = await getAuthorizationCode(app, { sessionCookie });
