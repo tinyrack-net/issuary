@@ -216,7 +216,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
             clientId: query.client_id,
             redirectUri: query.redirect_uri,
             codeLength: issuedCode.length,
-            codeFingerprint: issuedHash.slice(0, 8),
+            codeFingerprint: issuedHash.slice(-8),
           },
           'OAuth authorization code issued',
         );

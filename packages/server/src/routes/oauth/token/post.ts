@@ -170,7 +170,7 @@ export const tokenPost = new Hono<AppEnv>().post(
                 clientId,
                 redirectUri: body.redirect_uri,
                 codeLength: body.code.length,
-                codeFingerprint: receivedHash.slice(0, 8),
+                codeFingerprint: receivedHash.slice(-8),
               },
               'OAuth authorization code rejected',
             );
