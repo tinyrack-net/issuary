@@ -41,7 +41,7 @@ export async function completeBrowserAuthorization(
         !client ||
         client.deletedAt ||
         !client.enabled ||
-        client.tokenEpoch !== proof.clientEpoch
+        (client.tokenEpoch ?? '') !== proof.clientEpoch
       )
         throw new e.Unauthorized.Error();
       const current = await oauthClientService.findByClientId(client.clientId);
