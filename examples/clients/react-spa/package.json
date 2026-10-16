@@ -28,11 +28,11 @@
   "dependencies": {
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
-    "@tinyrack/ui": "0.33.0",
+    "@tinyrack/ui": "0.34.0",
     "jose": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "shiki": "4.4.3",
+    "shiki": "4.5.0",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -1,7 +1,12 @@
 import { testClient } from 'hono/testing';
 import type * as jose from 'jose';
 import type { AppType } from '../entrypoints/app.ts';
-import { assertDefined, type TestResponse } from './client.ts';
+import {
+  assertDefined,
+  type ClientEndpointResponse,
+  type TestClient,
+  type TestResponse,
+} from './client.ts';
 import { DEFAULT_SCOPES, TEST_OAUTH_CLIENT, TEST_PKCE } from './fixtures.ts';
 import { createAuthenticatedSession, grantConsent } from './helpers.ts';
 
@@ -140,6 +145,13 @@ export interface ExchangeCodeParams {
 }
 
 /**
+ * Response type for the token endpoint.
+ */
+export type TokenEndpointResponse = ClientEndpointResponse<
+  TestClient['oauth']['token']['$post']
+>;
+
+/**
  * Exchange authorization code for tokens.
  *
  * @param app - Hono app instance
@@ -149,7 +161,7 @@ export interface ExchangeCodeParams {
 export async function exchangeCodeForTokens(
   app: AppType,
   params: ExchangeCodeParams,
-) {
+): Promise<TokenEndpointResponse> {
   const {
     code,
     clientId = TEST_OAUTH_CLIENT.clientId,
@@ -195,7 +207,7 @@ export interface RefreshTokenParams {
 export async function refreshAccessToken(
   app: AppType,
   params: RefreshTokenParams,
-) {
+): Promise<TokenEndpointResponse> {
   const { refreshToken, clientId = TEST_OAUTH_CLIENT.clientId } = params;
   const clientSecret =
     params.clientSecret ??
@@ -278,6 +290,13 @@ export async function getAccessToken(
 }
 
 /**
+ * Response type for the userinfo endpoint.
+ */
+export type UserInfoEndpointResponse = ClientEndpointResponse<
+  TestClient['oauth']['userinfo']['$get']
+>;
+
+/**
  * Get user info using access token.
  *
  * @param app - Hono app instance
@@ -287,7 +306,7 @@ export async function getAccessToken(
 export async function getUserInfo(
   app: AppType,
   accessToken: string | undefined,
-) {
+): Promise<UserInfoEndpointResponse> {
   const client = testClient(app);
   return client.oauth.userinfo.$get({
     header: {
@@ -323,7 +342,7 @@ export interface IntrospectTokenParams {
 export async function introspectToken(
   app: AppType,
   params: IntrospectTokenParams,
-) {
+): Promise<ClientEndpointResponse<TestClient['oauth']['introspect']['$post']>> {
   const {
     token,
     tokenTypeHint,
@@ -369,7 +388,10 @@ export interface RevokeTokenParams {
  * expect(res.status).toBe(200);
  * ```
  */
-export async function revokeToken(app: AppType, params: RevokeTokenParams) {
+export async function revokeToken(
+  app: AppType,
+  params: RevokeTokenParams,
+): Promise<ClientEndpointResponse<TestClient['oauth']['revoke']['$post']>> {
   const {
     token,
     tokenTypeHint,

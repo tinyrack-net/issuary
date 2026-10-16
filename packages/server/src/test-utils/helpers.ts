@@ -3,7 +3,12 @@ import { testClient } from 'hono/testing';
 import { expect } from 'vitest';
 import type { AppType } from '../entrypoints/app.ts';
 import type { ServiceContainer } from '../services/container.ts';
-import { assertJsonBody, type TestResponse } from './client.ts';
+import {
+  assertJsonBody,
+  type ClientEndpointResponse,
+  type TestClient,
+  type TestResponse,
+} from './client.ts';
 import { generateUniqueEmail, TEST_CONSENTS, TEST_USER } from './fixtures.ts';
 
 /**
@@ -347,6 +352,13 @@ export function getLocationHeader(res: TestResponse): string {
   return location;
 }
 
+/**
+ * Response type for the registration endpoint.
+ */
+export type RegisterUserResponse = ClientEndpointResponse<
+  TestClient['api']['auth']['register']['$post']
+>;
+
 export async function registerUser(
   app: AppType,
   options: {
@@ -357,7 +369,7 @@ export async function registerUser(
       agreed: boolean;
     }>;
   } = {},
-) {
+): Promise<RegisterUserResponse> {
   const {
     email = generateUniqueEmail('test'),
     password = 'password123!',
