@@ -6,7 +6,6 @@ import {
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-  E2E_TEST_CLIENT,
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
@@ -17,6 +16,7 @@ import {
   buildOAuthFlowInput,
   CLIENT_REDIRECT_TIMEOUT_MS,
   captureClientRedirectAfterAction,
+  captureMockedClientCallback,
   exchangeAuthorizationCode,
   type OAuthAuthorizeParams,
 } from '#frontend-e2e/helpers/oauth-client-flow.ts';
@@ -40,7 +40,7 @@ const NEVER_ACCOUNT_SELECTION_MODE: 'never' = 'never';
 type ClientRedirectOutcome =
   | {
       kind: 'redirect';
-      request: import('@playwright/test').Request;
+      url: URL;
     }
   | {
       kind: 'consent';
@@ -137,12 +137,6 @@ async function seedRememberedAccounts(
   await loginByApi(page, baseURL, 'account-selection-bob@example.com');
 }
 
-function createRedirectOutcome(
-  request: import('@playwright/test').Request,
-): ClientRedirectOutcome {
-  return { kind: 'redirect', request };
-}
-
 function createConsentOutcome(): ClientRedirectOutcome {
   return { kind: 'consent' };
 }
@@ -177,46 +171,45 @@ async function authorizeSelectedAccount(params: {
   await expect(params.page).toHaveURL(/\/account\/select/);
   await waitForAppHydration(params.page);
   /*
-   * The client callback is reached through a server-side 302 issued by
-   * /oauth/authorize. Playwright does not run page.route() handlers for the
-   * follow-up request of an HTTP redirect, so the callback request cannot be
-   * intercepted or aborted from the client (an earlier route.abort() here
-   * never ran). Capture it with waitForRequest() and do not wait for the
-   * navigation to fail: an unreachable callback host refuses the connection
-   * on Linux, but some environments (e.g. WSL2 mirrored networking) silently
-   * drop the SYN, so a requestfailed wait would hang there.
+   * Selecting an account continues the OAuth flow: `/oauth/authorize` either
+   * redirects straight to the client callback or renders the consent page.
+   * `captureMockedClientCallback` intercepts both the authorize 302 and the
+   * callback URL and fulfils a harmless document, so the browser stays on the
+   * app instead of leaving a pending navigation to the unreachable mocked
+   * client (which Windows reports as a `chrome-error://` navigation that
+   * interrupts the next `page.goto`).
    */
-  const redirectPromise = params.page.waitForRequest(
-    (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-    { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
-  );
-  await params.page
-    .locator(`[data-testid="select-account-${params.expectedSub}"]`)
-    .click({ noWaitAfter: true });
+  const capture = await captureMockedClientCallback(params.page);
+  let redirectUrl: URL;
+  try {
+    await params.page
+      .locator(`[data-testid="select-account-${params.expectedSub}"]`)
+      .click();
 
-  const redirectOutcome = await Promise.race([
-    redirectPromise.then(createRedirectOutcome),
-    params.page
-      .locator(consentPage.allowButton)
-      .waitFor({
-        state: 'visible',
-        timeout: CLIENT_REDIRECT_TIMEOUT_MS,
-      })
-      .then(createConsentOutcome),
-  ]);
+    const redirectOutcome = await Promise.race([
+      capture.redirect.then(
+        (url): ClientRedirectOutcome => ({ kind: 'redirect', url }),
+      ),
+      params.page
+        .locator(consentPage.allowButton)
+        .waitFor({
+          state: 'visible',
+          timeout: CLIENT_REDIRECT_TIMEOUT_MS,
+        })
+        .then(createConsentOutcome),
+    ]);
 
-  let redirectRequest: import('@playwright/test').Request;
-  if (redirectOutcome.kind === 'consent') {
-    await waitForAppHydration(params.page);
-    await params.page.locator(consentPage.allowButton).click({
-      noWaitAfter: true,
-    });
-    redirectRequest = await redirectPromise;
-  } else {
-    redirectRequest = redirectOutcome.request;
+    if (redirectOutcome.kind === 'consent') {
+      await waitForAppHydration(params.page);
+      await params.page.locator(consentPage.allowButton).click();
+      redirectUrl = await capture.redirect;
+    } else {
+      redirectUrl = redirectOutcome.url;
+    }
+  } finally {
+    await capture.dispose();
   }
 
-  const redirectUrl = new URL(redirectRequest.url());
   const code = redirectUrl.searchParams.get('code');
   if (!code) {
     throw new Error(
@@ -322,9 +315,9 @@ test.describe('OIDC account selection', () => {
       'account-selection-carol@example.com',
     );
 
-    const code = await captureClientRedirectAfterAction(page, async () => {
-      await page.locator(consentPage.allowButton).click({ noWaitAfter: true });
-    });
+    const code = await captureClientRedirectAfterAction(page, () =>
+      page.locator(consentPage.allowButton).click(),
+    );
     const tokenResponse = await exchangeAuthorizationCode(
       request,
       String(baseURL),
@@ -506,19 +499,13 @@ test.describe('OIDC account selection', () => {
     await expect(page).toHaveURL(/\/login/);
     await openPasswordLoginFromCurrentPage(page);
 
-    const redirectPromise = page.waitForRequest(
-      (clientRequest) =>
-        clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
-    );
-
     await page
       .locator('input[name="email"]')
       .fill('account-selection-alice@example.com');
     await page.locator('input[name="password"]').fill(PASSWORD);
-    await page.locator('button[type="submit"]').click({ noWaitAfter: true });
-
-    const redirect = new URL((await redirectPromise).url());
+    const redirect = await captureClientRedirectAfterAction(page, () =>
+      page.locator('button[type="submit"]').click(),
+    );
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(page.url()).not.toContain('/account/select');
 
@@ -564,19 +551,13 @@ test.describe('OIDC account selection', () => {
     expect(page.url()).not.toContain('/account/select');
     await openPasswordLoginFromCurrentPage(page);
 
-    const redirectPromise = page.waitForRequest(
-      (clientRequest) =>
-        clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
-    );
-
     await page
       .locator('input[name="email"]')
       .fill('account-selection-carol@example.com');
     await page.locator('input[name="password"]').fill(PASSWORD);
-    await page.locator('button[type="submit"]').click({ noWaitAfter: true });
-
-    const redirect = new URL((await redirectPromise).url());
+    const redirect = await captureClientRedirectAfterAction(page, () =>
+      page.locator('button[type="submit"]').click(),
+    );
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(page.url()).not.toContain('/account/select');
 
