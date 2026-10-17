@@ -1,5 +1,35 @@
+import type { testClient } from 'hono/testing';
 import type { StatusCode } from 'hono/utils/http-status';
 import { expect } from 'vitest';
+import type { AppType } from '../entrypoints/app.ts';
+
+/**
+ * Inferred type of the Hono test client for the application.
+ *
+ * Declared as an explicit type alias so that helper functions can name
+ * their response types in return-type annotations. Hono's inferred
+ * `ClientResponseOfEndpoint` / `ClientRequest` aliases are not part of a
+ * publicly nameable path, so declaration emit reports TS2883 when a
+ * helper's return type is inferred from a `testClient` call.
+ */
+export type TestClient = ReturnType<typeof testClient<AppType>>;
+
+/**
+ * Resolve the response type returned by a client endpoint method.
+ *
+ * @example
+ * ```typescript
+ * type TokenResponse = ClientEndpointResponse<
+ *   TestClient['oauth']['token']['$post']
+ * >;
+ * const body = await res.json(); // typed as the token response schema
+ * ```
+ */
+export type ClientEndpointResponse<
+  TEndpoint extends (...args: never[]) => Promise<unknown>,
+> = TEndpoint extends (...args: never[]) => Promise<infer TResponse>
+  ? TResponse
+  : never;
 
 /**
  * Common response interface used in tests.

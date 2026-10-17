@@ -23,14 +23,14 @@
   },
   "dependencies": {
     "@react-router/node": "catalog:",
-    "@scalar/api-reference-react": "0.9.67",
-    "@tinyrack/docs": "0.22.0",
-    "@tinyrack/ui": "0.33.0",
-    "isbot": "5.2.2",
+    "@scalar/api-reference-react": "0.9.80",
+    "@tinyrack/docs": "0.23.0",
+    "@tinyrack/ui": "0.34.0",
+    "isbot": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-router": "catalog:",
-    "shiki": "4.4.3"
+    "shiki": "4.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
@@ -40,7 +40,7 @@
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "playwright": "1.63.0",
+    "playwright": "1.64.1",
     "tailwindcss": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
