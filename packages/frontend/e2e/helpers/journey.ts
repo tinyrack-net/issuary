@@ -2,6 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { consentPage } from '#frontend-e2e/helpers/consent.ts';
 import { getEmailToken } from '#frontend-e2e/helpers/email-token.ts';
 import { emailVerifyPage, totpSetupPage } from '#frontend-e2e/helpers/login.ts';
+import { captureMockedClientCallback } from '#frontend-e2e/helpers/oauth-client-flow.ts';
 import { fillPinInput } from '#frontend-e2e/helpers/pin-input.ts';
 import { generateTotpCode } from '#frontend-e2e/helpers/totp.ts';
 
@@ -124,23 +125,6 @@ export async function completeTotpSetup(
 }
 
 /**
- * Waits for the final OIDC client redirect request and validates
- * authorization code + state.
- */
-export async function expectOidcRedirectRequest(
-  page: Page,
-  redirectUri: string,
-  expectedState: string,
-): Promise<void> {
-  const redirectRequest = await page.waitForRequest((request) =>
-    request.url().startsWith(redirectUri),
-  );
-  const url = new URL(redirectRequest.url());
-  expect(url.searchParams.get('code')).toBeTruthy();
-  expect(url.searchParams.get('state')).toBe(expectedState);
-}
-
-/**
  * Clicks Allow on consent and verifies redirect with code/state.
  */
 export async function allowConsentAndExpectRedirect(
@@ -149,13 +133,15 @@ export async function allowConsentAndExpectRedirect(
   expectedState: string,
 ): Promise<void> {
   await expect(page.locator(consentPage.allowButton)).toBeVisible();
-  const redirectPromise = expectOidcRedirectRequest(
-    page,
-    redirectUri,
-    expectedState,
-  );
-  await page.getByRole('button', { name: 'Allow' }).click();
-  await redirectPromise;
+  const capture = await captureMockedClientCallback(page, redirectUri);
+  try {
+    await page.getByRole('button', { name: 'Allow' }).click();
+    const url = await capture.redirect;
+    expect(url.searchParams.get('code')).toBeTruthy();
+    expect(url.searchParams.get('state')).toBe(expectedState);
+  } finally {
+    await capture.dispose();
+  }
 }
 
 /**
@@ -167,12 +153,13 @@ export async function denyConsentAndExpectRedirect(
   expectedState: string,
 ): Promise<void> {
   await expect(page.locator(consentPage.denyButton)).toBeVisible();
-  const redirectPromise = page.waitForRequest((request) =>
-    request.url().startsWith(redirectUri),
-  );
-  await page.getByRole('button', { name: 'Deny' }).click();
-  const redirectRequest = await redirectPromise;
-  const redirectUrl = new URL(redirectRequest.url());
-  expect(redirectUrl.searchParams.get('error')).toBe('access_denied');
-  expect(redirectUrl.searchParams.get('state')).toBe(expectedState);
+  const capture = await captureMockedClientCallback(page, redirectUri);
+  try {
+    await page.getByRole('button', { name: 'Deny' }).click();
+    const url = await capture.redirect;
+    expect(url.searchParams.get('error')).toBe('access_denied');
+    expect(url.searchParams.get('state')).toBe(expectedState);
+  } finally {
+    await capture.dispose();
+  }
 }

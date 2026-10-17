@@ -6,11 +6,11 @@ import {
 import {
   createTestConfig,
   E2E_BASE_CONFIG,
-  E2E_TEST_CLIENT,
   E2E_TEST_CLIENT_CONFIG,
 } from '#frontend-e2e/fixtures/index.ts';
 import { buildOAuthAuthorizeUrl } from '#frontend-e2e/helpers/consent.ts';
 import { uniqueEmail as createUniqueEmail } from '#frontend-e2e/helpers/identity.ts';
+import { captureMockedClientCallback } from '#frontend-e2e/helpers/oauth-client-flow.ts';
 import { loginAndGoToProfile } from '#frontend-e2e/helpers/profile-page.ts';
 import { getTestApiClient } from '#frontend-e2e/setup/api-client.ts';
 
@@ -118,19 +118,15 @@ test.describe('OAuth consent flow', () => {
     // Wait for Allow button
     await expect(page.getByRole('button', { name: 'Allow' })).toBeVisible();
 
-    // Capture the redirect request before clicking, since the redirect
-    // target is a dummy client URL that nothing serves.
-    const redirectPromise = page.waitForRequest((req) =>
-      req.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-    );
-
-    // Click Allow
-    await page.getByRole('button', { name: 'Allow' }).click();
-
-    const redirectRequest = await redirectPromise;
-    const url = new URL(redirectRequest.url());
-    expect(url.searchParams.get('code')).toBeTruthy();
-    expect(url.searchParams.get('state')).toBe('test-allow-state');
+    const capture = await captureMockedClientCallback(page);
+    try {
+      await page.getByRole('button', { name: 'Allow' }).click();
+      const url = await capture.redirect;
+      expect(url.searchParams.get('code')).toBeTruthy();
+      expect(url.searchParams.get('state')).toBe('test-allow-state');
+    } finally {
+      await capture.dispose();
+    }
   });
 
   test('deny consent redirects with error', async ({
@@ -157,19 +153,15 @@ test.describe('OAuth consent flow', () => {
     // Wait for Deny button
     await expect(page.getByRole('button', { name: 'Deny' })).toBeVisible();
 
-    // Capture the redirect request before clicking, since the redirect
-    // target is a dummy client URL that nothing serves.
-    const redirectPromise = page.waitForRequest((req) =>
-      req.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-    );
-
-    // Click Deny
-    await page.getByRole('button', { name: 'Deny' }).click();
-
-    const redirectRequest = await redirectPromise;
-    const url = new URL(redirectRequest.url());
-    expect(url.searchParams.get('error')).toBe('access_denied');
-    expect(url.searchParams.get('state')).toBe('test-deny-state');
+    const capture = await captureMockedClientCallback(page);
+    try {
+      await page.getByRole('button', { name: 'Deny' }).click();
+      const url = await capture.redirect;
+      expect(url.searchParams.get('error')).toBe('access_denied');
+      expect(url.searchParams.get('state')).toBe('test-deny-state');
+    } finally {
+      await capture.dispose();
+    }
   });
 
   test('unauthenticated consent redirects to login', async ({

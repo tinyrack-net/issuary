@@ -176,56 +176,48 @@ async function authorizeSelectedAccount(params: {
 
   await expect(params.page).toHaveURL(/\/account\/select/);
   await waitForAppHydration(params.page);
-  const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
-  const callbackRouteHandler = async (
-    route: import('@playwright/test').Route,
-  ) => {
-    await route.abort('aborted');
-  };
-  await params.page.route(callbackRoute, callbackRouteHandler);
-  let redirectUrl: URL | undefined;
-  try {
-    const callbackFailurePromise = params.page.waitForEvent('requestfailed', {
-      predicate: (request) =>
-        request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      timeout: CLIENT_REDIRECT_TIMEOUT_MS,
+  /*
+   * The client callback is reached through a server-side 302 issued by
+   * /oauth/authorize. Playwright does not run page.route() handlers for the
+   * follow-up request of an HTTP redirect, so the callback request cannot be
+   * intercepted or aborted from the client (an earlier route.abort() here
+   * never ran). Capture it with waitForRequest() and do not wait for the
+   * navigation to fail: an unreachable callback host refuses the connection
+   * on Linux, but some environments (e.g. WSL2 mirrored networking) silently
+   * drop the SYN, so a requestfailed wait would hang there.
+   */
+  const redirectPromise = params.page.waitForRequest(
+    (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
+    { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
+  );
+  await params.page
+    .locator(`[data-testid="select-account-${params.expectedSub}"]`)
+    .click({ noWaitAfter: true });
+
+  const redirectOutcome = await Promise.race([
+    redirectPromise.then(createRedirectOutcome),
+    params.page
+      .locator(consentPage.allowButton)
+      .waitFor({
+        state: 'visible',
+        timeout: CLIENT_REDIRECT_TIMEOUT_MS,
+      })
+      .then(createConsentOutcome),
+  ]);
+
+  let redirectRequest: import('@playwright/test').Request;
+  if (redirectOutcome.kind === 'consent') {
+    await waitForAppHydration(params.page);
+    await params.page.locator(consentPage.allowButton).click({
+      noWaitAfter: true,
     });
-    const redirectPromise = params.page.waitForRequest(
-      (request) => request.url().startsWith(E2E_TEST_CLIENT.redirectUri),
-      { timeout: CLIENT_REDIRECT_TIMEOUT_MS },
-    );
-    await params.page
-      .locator(`[data-testid="select-account-${params.expectedSub}"]`)
-      .click({ noWaitAfter: true });
-
-    const redirectOutcome = await Promise.race([
-      redirectPromise.then(createRedirectOutcome),
-      params.page
-        .locator(consentPage.allowButton)
-        .waitFor({
-          state: 'visible',
-          timeout: CLIENT_REDIRECT_TIMEOUT_MS,
-        })
-        .then(createConsentOutcome),
-    ]);
-
-    let redirectRequest: import('@playwright/test').Request;
-    if (redirectOutcome.kind === 'consent') {
-      await waitForAppHydration(params.page);
-      await params.page.locator(consentPage.allowButton).click({
-        noWaitAfter: true,
-      });
-      redirectRequest = await redirectPromise;
-    } else {
-      redirectRequest = redirectOutcome.request;
-    }
-
-    redirectUrl = new URL(redirectRequest.url());
-    await callbackFailurePromise;
-  } finally {
-    await params.page.unroute(callbackRoute, callbackRouteHandler);
+    redirectRequest = await redirectPromise;
+  } else {
+    redirectRequest = redirectOutcome.request;
   }
-  const code = redirectUrl?.searchParams.get('code');
+
+  const redirectUrl = new URL(redirectRequest.url());
+  const code = redirectUrl.searchParams.get('code');
   if (!code) {
     throw new Error(
       'Expected authorization code in account selection redirect',
@@ -514,17 +506,6 @@ test.describe('OIDC account selection', () => {
     await expect(page).toHaveURL(/\/login/);
     await openPasswordLoginFromCurrentPage(page);
 
-    const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
-    const callbackRouteHandler = async (
-      route: import('@playwright/test').Route,
-    ) => {
-      await route.fulfill({
-        body: 'Mock OAuth client callback captured',
-        contentType: 'text/plain',
-        status: 200,
-      });
-    };
-    await page.route(callbackRoute, callbackRouteHandler);
     const redirectPromise = page.waitForRequest(
       (clientRequest) =>
         clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
@@ -538,7 +519,6 @@ test.describe('OIDC account selection', () => {
     await page.locator('button[type="submit"]').click({ noWaitAfter: true });
 
     const redirect = new URL((await redirectPromise).url());
-    await page.unroute(callbackRoute, callbackRouteHandler);
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(page.url()).not.toContain('/account/select');
 
@@ -584,17 +564,6 @@ test.describe('OIDC account selection', () => {
     expect(page.url()).not.toContain('/account/select');
     await openPasswordLoginFromCurrentPage(page);
 
-    const callbackRoute = `${E2E_TEST_CLIENT.redirectUri}**`;
-    const callbackRouteHandler = async (
-      route: import('@playwright/test').Route,
-    ) => {
-      await route.fulfill({
-        body: 'Mock OAuth client callback captured',
-        contentType: 'text/plain',
-        status: 200,
-      });
-    };
-    await page.route(callbackRoute, callbackRouteHandler);
     const redirectPromise = page.waitForRequest(
       (clientRequest) =>
         clientRequest.url().startsWith(E2E_TEST_CLIENT.redirectUri),
@@ -608,7 +577,6 @@ test.describe('OIDC account selection', () => {
     await page.locator('button[type="submit"]').click({ noWaitAfter: true });
 
     const redirect = new URL((await redirectPromise).url());
-    await page.unroute(callbackRoute, callbackRouteHandler);
     expect(redirect.searchParams.get('code')).toBeTruthy();
     expect(page.url()).not.toContain('/account/select');
 
