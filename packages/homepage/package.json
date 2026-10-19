@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@react-router/node": "catalog:",
-    "@scalar/api-reference-react": "0.9.80",
+    "@scalar/api-reference-react": "0.9.81",
     "@tinyrack/docs": "0.23.0",
     "@tinyrack/ui": "0.34.0",
     "isbot": "catalog:",

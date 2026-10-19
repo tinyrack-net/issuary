@@ -174,7 +174,7 @@
     "mikro-orm": "mikro-orm",
     "mikro-orm:postgres": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:sqlite": "node ./scripts/mikro-orm-configured.mjs ./src/entrypoints/database/sqlite/cli.ts",
-    "mikro-orm:compile": "pnpm run mikro-orm:compile:postgres && pnpm run mikro-orm:compile:sqlite",
+    "mikro-orm:compile": "pnpm run mikro-orm:compile:postgres && pnpm run mikro-orm:compile:sqlite && node ../../packages/tools/src/scripts/normalize-compiled-functions.ts",
     "mikro-orm:compile:postgres": "mikro-orm compile --config ./src/entrypoints/database/postgres/cli.ts",
     "mikro-orm:compile:sqlite": "mikro-orm compile --config ./src/entrypoints/database/sqlite/cli.ts",
     "mikro-orm:debug": "mikro-orm debug",

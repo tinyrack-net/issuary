@@ -77,7 +77,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.13.0",
+    "@axe-core/playwright": "4.14.0",
     "@biomejs/biome": "catalog:",
     "@hono/node-server": "catalog:",
     "@playwright/test": "catalog:",
