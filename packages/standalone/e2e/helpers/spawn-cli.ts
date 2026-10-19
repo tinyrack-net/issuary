@@ -68,19 +68,32 @@ export async function runBuiltCli(options: SpawnCliOptions) {
   return await spawnBuiltCli(options);
 }
 
+/**
+ * Rejects once the CLI exits, so waitForCliReady can surface its output
+ * instead of waiting for the port until the timeout. Awaiting the process
+ * keeps the callback out of `then()`, whose union signature cannot infer its
+ * parameter type.
+ */
+async function rejectOnCliExit(
+  cliProcess: CliProcess,
+  port: number,
+): Promise<never> {
+  const result = await cliProcess;
+  const output = [result.stdout, result.stderr].filter(Boolean).join('\n');
+  const outputSuffix = output ? `\n${output}` : '';
+  throw new Error(
+    `CLI exited before port ${port} became ready (exit ${result.exitCode})${outputSuffix}`,
+  );
+}
+
 export async function waitForCliReady(
   cliProcess: CliProcess,
   port: number,
 ): Promise<Response> {
-  const processExit = cliProcess.then((result) => {
-    const output = [result.stdout, result.stderr].filter(Boolean).join('\n');
-    const outputSuffix = output ? `\n${output}` : '';
-    throw new Error(
-      `CLI exited before port ${port} became ready (exit ${result.exitCode})${outputSuffix}`,
-    );
-  });
-
-  return await Promise.race([waitForReady(port), processExit]);
+  return await Promise.race([
+    waitForReady(port),
+    rejectOnCliExit(cliProcess, port),
+  ]);
 }
 
 /**
