@@ -583,6 +583,7 @@ jobs:
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/tune-windows-network
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7.1.0
         with: { cache: pnpm, node-version: 24 }
@@ -632,6 +633,7 @@ jobs:
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/tune-windows-network
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7.1.0
         with: { cache: pnpm, node-version: 24 }
@@ -671,6 +673,7 @@ jobs:
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/tune-windows-network
       - uses: pnpm/action-setup@v6.1.0
       - uses: actions/setup-node@v7.1.0
         with: { cache: pnpm, node-version: 24 }
