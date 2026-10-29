@@ -287,6 +287,8 @@ function toOAuthErrorCode(err: IssuaryError): string {
       return 'unsupported_grant_type';
     case 'INVALID_SCOPE':
       return 'invalid_scope';
+    case 'INVALID_TARGET':
+      return 'invalid_target';
     case 'INVALID_AUTHORIZATION_CODE':
     case 'INVALID_DEVICE_CODE':
     case 'REDIRECT_URI_MISMATCH':

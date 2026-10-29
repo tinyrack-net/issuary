@@ -47,6 +47,13 @@ export type {
   IssuaryRuntimeConfigInput,
 } from './resolved.ts';
 export { IssuaryRuntimeConfigSchema } from './resolved.ts';
+export type { ResourceConfig } from './resource.ts';
+export {
+  isValidResourceIndicator,
+  ResourceConfigSchema,
+  ResourceConfigsSchema,
+  validateClientResourceReferences,
+} from './resource.ts';
 export type {
   BackgroundJobConfig,
   EnqueueBackgroundJobOptions,

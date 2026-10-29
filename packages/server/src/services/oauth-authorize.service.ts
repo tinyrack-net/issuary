@@ -12,6 +12,11 @@ import type { AuthorizationProof } from './authorization-browser.service.js';
 import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
+import {
+  normalizeResourceParam,
+  rejectUnsupportedResources,
+  validateRequestedResources,
+} from './resource-indicator.ts';
 import type { SecurityService } from './security.service.ts';
 import type { TermsService } from './terms.service.js';
 import type { UserConsentService } from './user-consent.service.ts';
@@ -42,6 +47,8 @@ export interface AuthorizeParams {
   code_challenge_method?: 'S256' | 'plain' | undefined;
   /** Space-separated list of requested scopes */
   scope?: string | undefined;
+  /** RFC 8707 resource indicators (the parameter may be repeated) */
+  resource?: string | string[] | undefined;
   /** OIDC nonce for replay attack prevention */
   nonce?: string | undefined;
   /** OIDC prompt parameter to control authentication/consent UI */
@@ -160,6 +167,19 @@ export class OAuthAuthorizeService {
 
     const prompts = this.parsePrompt(query.prompt);
     const isImplicitIdToken = this.isImplicitIdTokenFlow(query.response_type);
+
+    // 5b. Validate RFC 8707 resource indicators. The implicit flow issues no
+    // access token, so a resource indicator cannot be honoured there.
+    const requestedResources = normalizeResourceParam(query.resource);
+    if (isImplicitIdToken) {
+      rejectUnsupportedResources(requestedResources);
+    } else {
+      validateRequestedResources(
+        this.config,
+        client.clientId,
+        requestedResources,
+      );
+    }
 
     // 6. Validate flow-specific authorization parameters
     if (isImplicitIdToken) {
@@ -487,6 +507,7 @@ export class OAuthAuthorizeService {
           userEpoch: string;
           redirectUri: string;
           scope: string[];
+          resources: string[];
           nonce?: string;
           codeChallenge?: string;
           codeChallengeMethod?: 'S256' | 'plain';
@@ -498,6 +519,11 @@ export class OAuthAuthorizeService {
           userEpoch: params.authenticationEpochs?.[selectedSession.sub] ?? '',
           redirectUri: query.redirect_uri,
           scope: grantedScopes,
+          resources: validateRequestedResources(
+            this.config,
+            current.clientId,
+            requestedResources,
+          ),
         };
 
         if (query.nonce) {
@@ -655,6 +681,7 @@ export class OAuthAuthorizeService {
         ['redirect_uri', query.redirect_uri],
         ['response_type', query.response_type],
         ['scope', query.scope],
+        ['resource', this.serializeResources(query)],
         ['state', query.state],
         ['nonce', query.nonce],
         ['code_challenge', query.code_challenge],
@@ -682,6 +709,7 @@ export class OAuthAuthorizeService {
         ['redirect_uri', query.redirect_uri],
         ['response_type', query.response_type],
         ['scope', query.scope],
+        ['resource', this.serializeResources(query)],
         ['state', query.state],
         ['nonce', query.nonce],
         ['code_challenge', query.code_challenge],
@@ -1069,7 +1097,36 @@ export class OAuthAuthorizeService {
     return consentUrl.toString();
   }
 
+  /**
+   * Space-delimited resource list used in browser continuations and request
+   * fingerprints. Resource indicators are absolute URIs, which cannot contain
+   * spaces, so the encoding is unambiguous.
+   */
+  private serializeResources(query: AuthorizeParams): string | undefined {
+    const resources = normalizeResourceParam(query.resource);
+    return resources.length > 0 ? resources.join(' ') : undefined;
+  }
+
+  /**
+   * Carry resource indicators to the next step. Authorization endpoint URLs
+   * repeat the `resource` parameter as defined by RFC 8707; frontend pages
+   * receive a single space-delimited value and expand it again when they
+   * return to the authorization endpoint.
+   */
+  private setResourceParams(url: URL, query: AuthorizeParams): void {
+    const resources = normalizeResourceParam(query.resource);
+    if (resources.length === 0) return;
+    if (url.pathname === '/oauth/authorize') {
+      for (const resource of resources) {
+        url.searchParams.append('resource', resource);
+      }
+      return;
+    }
+    url.searchParams.set('resource', resources.join(' '));
+  }
+
   private preserveCompatibilityParams(url: URL, query: AuthorizeParams): void {
+    this.setResourceParams(url, query);
     if (query.response_mode) {
       url.searchParams.set('response_mode', query.response_mode);
     }
@@ -1278,6 +1335,7 @@ export class OAuthAuthorizeService {
     userEpoch: string;
     redirectUri: string;
     scope: string[];
+    resources: string[];
     nonce?: string;
     codeChallenge?: string;
     codeChallengeMethod?: 'S256' | 'plain';
@@ -1290,6 +1348,7 @@ export class OAuthAuthorizeService {
       userEpoch: string;
       redirectUri: string;
       scope: string[];
+      resources: string[];
       nonce?: string;
       codeChallenge?: string;
       codeChallengeMethod?: 'S256' | 'plain';
@@ -1301,6 +1360,7 @@ export class OAuthAuthorizeService {
       userEpoch: params.userEpoch,
       redirectUri: params.redirectUri,
       scope: params.scope,
+      resources: params.resources,
     };
 
     if (params.nonce) {

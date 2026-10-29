@@ -19,6 +19,7 @@ The current config model is organized by top-level groups:
 - `auth`
 - `email`
 - `identity_providers`
+- `resources`
 - `clients`
 - `users`
 - `terms`
@@ -100,6 +101,23 @@ Within each localized `content` item, `type` must be `link` or `text`.
 | `background_retention_ms` | `number` | `604800000` | Retention for terminal background jobs (`succeeded`/`failed`) in milliseconds. Pending/running jobs are not deleted by this cleanup. |
 | `instance_id` | `string` | generated | Database scheduler lease owner id. Leave empty to generate a unique per-process id. |
 
+
+## `resources`
+
+Protected resources (resource servers) that clients may target with the RFC 8707 `resource` parameter. Omit the field or use `[]` when none are configured.
+
+| Field | Type | Default | Description |
+|------|------|--------|------|
+| `identifier` | `string` | - | Resource indicator value. Must be an absolute URI without a fragment and unique across `resources`. Requests must use this exact string. |
+| `audiences` | `string[]` | `[identifier]` | Access token `aud` values issued when this resource is requested. Values must be non-empty and contain no whitespace. |
+
+## Client resource indicators
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `resources` | `string[]` | `[]` | `identifier` values from the top-level `resources` list that this client may request. Undefined references fail configuration validation. |
+
+See [Resource indicators](/en/configuration/client-integration/overview#resource-indicators-rfc-8707) for token behavior.
 
 ## Client consent policy
 

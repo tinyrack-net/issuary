@@ -31,6 +31,29 @@ test('duplicate OAuth query parameters cannot be resolved by first/last-value pr
   expect(await response.json()).toMatchObject({ error: 'invalid_request' });
 });
 
+test('repeated RFC 8707 resource parameters are allowed within one component', async () => {
+  const response = await server.app.request(
+    '/oauth/authorize?response_type=code&client_id=unknown&redirect_uri=https%3A%2F%2Fexample.test&resource=https%3A%2F%2Fa.example.test%2F&resource=https%3A%2F%2Fb.example.test%2F',
+  );
+  // Passes strict input; the unknown client is rejected afterwards.
+  expect(await response.json()).toMatchObject({
+    error: 'unauthorized_client',
+  });
+});
+
+test('resource cannot be split across the query string and the body', async () => {
+  const response = await server.app.request(
+    '/oauth/token?resource=https%3A%2F%2Fa.example.test%2F',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=client_credentials&resource=https%3A%2F%2Fb.example.test%2F',
+    },
+  );
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({ error: 'invalid_request' });
+});
+
 test.each([undefined, '1'])(
   'streamed body limit is enforced with Content-Length %s',
   async (contentLength) => {

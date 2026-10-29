@@ -37,6 +37,26 @@ describe('oauth-search helpers', () => {
     ).toBe(false);
   });
 
+  test('expands space-delimited resource indicators into repeated parameters', () => {
+    const search = OAuthSearchSchema.parse({
+      client_id: 'web-client',
+      redirect_uri: 'https://client.example.com/callback',
+      response_type: 'code',
+      resource: 'https://mcp.example.com/mcp https://api.example.com/',
+    });
+    const parsed = parseAuthorizeUrl(buildAuthorizeUrl(search));
+
+    expect(parsed.searchParams.getAll('resource')).toEqual([
+      'https://mcp.example.com/mcp',
+      'https://api.example.com/',
+    ]);
+    expect(
+      parseAuthorizeUrl(
+        buildAuthorizeUrl({ ...search, resource: undefined }),
+      ).searchParams.has('resource'),
+    ).toBe(false);
+  });
+
   test('builds an authorize URL and preserves defined OAuth parameters', () => {
     const url = buildAuthorizeUrl({
       client_id: 'web-client',

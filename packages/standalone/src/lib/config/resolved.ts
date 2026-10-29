@@ -9,10 +9,12 @@ import {
   LoggingConfigSchema,
   OpenApiConfigSchema,
   RegistrationConfigSchema,
+  ResourceConfigsSchema,
   SecurityConfigSchema,
   ServerConfigSchema,
   TermsConfigSchema,
   TokensConfigSchema,
+  validateClientResourceReferences,
 } from '@tinyrack/issuary-server/config';
 import z from 'zod';
 import { StandaloneAdminConfigSchema } from './admin.ts';
@@ -54,6 +56,9 @@ export const StandaloneConfigSchema = z
       'In-process cleanup scheduler settings.',
     ),
     terms: TermsConfigSchema.describe('Terms of service settings.'),
+    resources: ResourceConfigsSchema.describe(
+      'Protected resources (RFC 8707 resource indicators) and their access token audiences.',
+    ),
     clients: ClientConfigsSchema.describe(
       'Registered OAuth/OIDC client applications.',
     ),
@@ -67,6 +72,7 @@ export const StandaloneConfigSchema = z
     ),
   })
   .strict()
+  .superRefine(validateClientResourceReferences)
   .describe('Issuary standalone declarative configuration.');
 
 export type StandaloneConfigInput = z.input<typeof StandaloneConfigSchema>;

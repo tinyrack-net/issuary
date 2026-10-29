@@ -155,3 +155,38 @@ Authorization Code Flow では、事前承認、`prompt=consent`、または有�
 通常のアプリが初めてオフラインアクセスを求める場合は `prompt=consent` を使用します。明示的な承認後は `prompt` を省略できます。事前承認された自社アプリは初回から省略できます。
 
 [OIDC の同意と承認](https://openid.net/specs/openid-connect-core-1_0.html#Consent)と[オフラインアクセス](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess)を参照してください。
+
+## リソースインジケーター (RFC 8707)
+
+クライアントは [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707) の `resource` パラメーターで、特定の保護リソース向けのアクセストークンを要求できます。リソースはトップレベルの `resources` に一度定義し、クライアントごとに `clients[].resources` で許可します。1 つのリソースを複数のアクセストークン audience に対応付けられるため、リソースサーバーが同じトークンを別のサービスへ転送する場合にも使えます。
+
+```yaml
+resources:
+  - identifier: https://mcp.example.com/mcp
+    audiences:
+      - https://mcp.example.com/mcp
+      - nextcloud
+  - identifier: https://api.example.com/
+
+clients:
+  - id: mcp-server
+    name: MCP Server
+    client_id: nextcloud-mcp
+    client_secret: ${MCP_CLIENT_SECRET}
+    redirect_uris: [https://mcp.example.com/oauth/callback]
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    resources:
+      - https://mcp.example.com/mcp
+```
+
+- **認可エンドポイント**: `resource` パラメーターを 0 個以上送信します（複数のリソースはパラメーターを繰り返します）。各値はフラグメントのない絶対 URI で、`resources` に定義され、そのクライアントに許可されている必要があります。そうでない場合は `invalid_target` エラーとなり、他の認可エラーと同様に `redirect_uri` へ返されます。承認されたリソースは認可コードに保存されます。
+- **トークンエンドポイント（`authorization_code`）**: 任意の `resource` パラメーターは承認済みリソースの部分集合である必要があります。省略すると承認済みリソースすべてを使います。
+- **リフレッシュ**: グラントは認可時に承認されたリソースを保持します。リフレッシュ要求で部分集合に絞り込めます（ダウンスコープ）。`resource` を省略すると全体に戻ります。
+- **`client_credentials`**: 任意の `resource` パラメーターはそのクライアントに許可されている必要があります。
+- **未対応**: デバイス認可グラントと、アクセストークンを発行しない implicit `id_token` フローでは、`resource` を `invalid_target` で拒否します。
+
+アクセストークンの `aud` は、選択されたリソースの `audiences` を順序どおり重複なく結合した値です。1 つなら文字列、複数なら配列なので、上の例では `"aud": ["https://mcp.example.com/mcp", "nextcloud"]` を発行します。`resource` のない要求は従来の既定値 `server.public_origin` を維持します。ID トークンの audience は常にクライアント ID です。リソース向けアクセストークンでも UserInfo エンドポイントを呼び出せ、トークンイントロスペクションは `aud` を文字列または配列で返します。
+
+リソースの許可は管理者設定で決まります。ユーザーはスコープに同意し、クライアントが対象にできるリソースはクライアントの許可リストで決まります。

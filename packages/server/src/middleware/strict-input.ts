@@ -74,12 +74,25 @@ export function rejectDuplicateJsonKeys(source: string): void {
   value(0);
 }
 
+/**
+ * Parameters that may legitimately repeat within one request component.
+ * RFC 8707 §2 allows multiple `resource` parameters.
+ */
+const REPEATABLE_OAUTH_PARAMETERS = new Set(['resource']);
+
 function rejectDuplicateParameters(
   parameters: URLSearchParams,
   previous = new Set<string>(),
 ): Set<string> {
+  const current = new Set<string>();
   for (const key of parameters.keys()) {
+    // A parameter may not be split across the query string and the body.
     if (previous.has(key)) throw invalid();
+    if (current.has(key) && !REPEATABLE_OAUTH_PARAMETERS.has(key))
+      throw invalid();
+    current.add(key);
+  }
+  for (const key of current) {
     previous.add(key);
   }
   return previous;

@@ -12,6 +12,10 @@ import { IdentityProviderConfigsSchema } from './identity-providers.ts';
 import { LoggingConfigSchema } from './logging.ts';
 import { OpenApiConfigSchema } from './openapi.ts';
 import { RegistrationConfigSchema } from './registration.ts';
+import {
+  ResourceConfigsSchema,
+  validateClientResourceReferences,
+} from './resource.ts';
 import { SchedulerConfigSchema } from './scheduler.ts';
 import { SecurityConfigSchema } from './security.ts';
 import { ServerConfigSchema } from './server.ts';
@@ -47,6 +51,9 @@ export const IssuaryRuntimeConfigSchema = z
     cleanup: CleanupConfigSchema.describe('Data cleanup settings.'),
     scheduler: SchedulerConfigSchema.describe('Cleanup scheduler adapter.'),
     terms: TermsConfigSchema.describe('Terms of service settings.'),
+    resources: ResourceConfigsSchema.describe(
+      'Protected resources (RFC 8707 resource indicators) and their access token audiences.',
+    ),
     clients: ClientConfigsSchema.describe(
       'Registered OAuth/OIDC client applications.',
     ),
@@ -58,6 +65,7 @@ export const IssuaryRuntimeConfigSchema = z
     ),
   })
   .strict()
+  .superRefine(validateClientResourceReferences)
   .describe('Issuary runtime configuration.');
 
 export type IssuaryRuntimeConfigInput = z.input<

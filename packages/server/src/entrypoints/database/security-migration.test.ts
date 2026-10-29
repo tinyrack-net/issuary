@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { BackgroundJobEntitySchema } from '../../entities/background-job.entity.js';
 import { BrowserSessionEntitySchema } from '../../entities/browser-session.entity.js';
+import { OAuthGrantEntitySchema } from '../../entities/oauth-grant.entity.js';
 import { UserEntity } from '../../entities/user.entity.js';
 import { encrypt } from '../../lib/crypto.js';
 import { withMikroContext } from '../../test-utils/helpers.js';
@@ -228,7 +229,9 @@ test('flow revocation migration retires pending flows and mail without revoking 
         lockedUntil: new Date(Date.now() + 60000),
       });
     });
-    await mikro.orm.migrator.down();
+    await mikro.orm.migrator.down({
+      to: 'Migration20260910200000_authentication_epoch',
+    });
     await mikro.orm.migrator.up();
     await withMikroContext(server.services, async () => {
       const fresh = await mikro.user.findOneOrFail(
@@ -263,6 +266,64 @@ test('flow revocation migration retires pending flows and mail without revoking 
         )
         .join('\n');
       expect(drift).not.toMatch(/revoked_at|client_epoch/);
+    });
+  } finally {
+    await server.cleanup();
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 30000);
+
+test('resource indicator migration rolls down and up with empty resource defaults', async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), 'issuary-resource-migration-'),
+  );
+  const server = await createTestApp(
+    securityProcessConfig(join(directory, 'migration.sqlite')),
+  );
+  try {
+    const mikro = server.services.mikro;
+    const grantId = crypto.randomUUID();
+    await withMikroContext(server.services, async () => {
+      await mikro.oauthCode.createAuthorizationCode({
+        clientId: 'test-config-oauth-client',
+        userSub: 'test-config-user',
+        codeHash: 'resource-migration-code',
+        redirectUri: 'http://localhost:8080/callback',
+        scope: ['openid'],
+        resources: ['https://mcp.example.test/mcp'],
+      });
+      await mikro.em.insert(OAuthGrantEntitySchema, {
+        id: grantId,
+        user_sub: 'test-config-user',
+        client_id: 'sdlk3n3dkj2',
+        current_refresh_jti: null,
+        revoked_at: null,
+        expires_at: new Date(Date.now() + 60000),
+        revision: 0,
+        resources: ['https://mcp.example.test/mcp'],
+      });
+    });
+    await mikro.orm.migrator.down({
+      to: 'Migration20260910220000_flow_revocation',
+    });
+    await mikro.orm.migrator.up();
+    await withMikroContext(server.services, async () => {
+      const code = await mikro.oauthCode.findOneOrFail(
+        { codeHash: 'resource-migration-code' },
+        { refresh: true },
+      );
+      expect(code.resources).toEqual([]);
+      const grant = await mikro.em.findOneOrFail(
+        OAuthGrantEntitySchema,
+        { id: grantId },
+        { refresh: true },
+      );
+      expect(grant.resources).toEqual([]);
+      const drift = (await mikro.orm.schema.getUpdateSchemaSQL())
+        .split('\n')
+        .filter((line) => /oauth_code|oauth_grant/.test(line))
+        .join('\n');
+      expect(drift).not.toMatch(/resources/);
     });
   } finally {
     await server.cleanup();

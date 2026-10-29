@@ -1,4 +1,5 @@
 import z from 'zod';
+import { ResourceIdentifierSchema } from './resource.ts';
 import { isSecureRedirectUri } from './url-policy.js';
 
 const RedirectUriSchema = z.string().refine(isSecureRedirectUri, {
@@ -139,6 +140,12 @@ export const ClientConfigSchema = z
         'Administratively preapprove this client’s registered scopes (including offline_access when allowed). Skip OAuth consent unless prompt=consent is requested; authentication, required terms and device approval are not skipped.',
       ),
     account_selection: ClientAccountSelectionConfigSchema.optional(),
+    resources: z
+      .array(ResourceIdentifierSchema)
+      .default([])
+      .describe(
+        'RFC 8707 resource identifiers this client may request with the `resource` parameter. Each must be defined in the top-level `resources` list.',
+      ),
   })
   .strict()
   .superRefine((client, ctx) => {
@@ -192,6 +199,18 @@ export const ClientConfigSchema = z
           'Clients that allow grant_type "refresh_token" must also allow "authorization_code".',
       });
     }
+
+    const seenResources = new Set<string>();
+    client.resources.forEach((identifier, index) => {
+      if (seenResources.has(identifier)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['resources', index],
+          message: 'Client resource identifiers must be unique.',
+        });
+      }
+      seenResources.add(identifier);
+    });
 
     if (grantTypes.has('client_credentials') && !client.client_secret) {
       ctx.addIssue({

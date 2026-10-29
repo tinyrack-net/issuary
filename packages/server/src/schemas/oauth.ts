@@ -21,6 +21,11 @@ const TokenIntrospectionResult = z.object({
   sub: z.string().optional().describe('Subject identifier'),
   /** Issuer identifier (only if active) */
   iss: z.string().url().optional().describe('Token issuer URL'),
+  /** Audience - string or array of strings (RFC 7662 §2.2) */
+  aud: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .describe('Intended audience(s) of the token'),
 });
 
 /**

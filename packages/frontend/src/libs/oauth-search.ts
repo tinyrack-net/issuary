@@ -28,6 +28,12 @@ export const OAuthSearchSchema = z.object({
   redirect_uri: z.string().optional(),
   response_type: z.string().optional(),
   scope: z.string().optional(),
+  /**
+   * RFC 8707 resource indicators as one space-delimited value. Resource
+   * indicators are absolute URIs and cannot contain spaces; the list is
+   * expanded into repeated `resource` parameters for /oauth/authorize.
+   */
+  resource: z.string().optional(),
   state: z.string().optional(),
   nonce: z.string().optional(),
   code_challenge: z.string().optional(),
@@ -90,6 +96,9 @@ export function buildAuthorizeUrl(search: OAuthSearch): string {
   if (search.redirect_uri) params.set('redirect_uri', search.redirect_uri);
   if (search.response_type) params.set('response_type', search.response_type);
   if (search.scope) params.set('scope', search.scope);
+  for (const resource of search.resource?.split(' ').filter(Boolean) ?? []) {
+    params.append('resource', resource);
+  }
   if (search.state) params.set('state', search.state);
   if (search.nonce) params.set('nonce', search.nonce);
   if (search.code_challenge)

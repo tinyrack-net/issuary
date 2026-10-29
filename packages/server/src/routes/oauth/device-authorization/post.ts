@@ -7,6 +7,10 @@ import { TAGS } from '../../../lib/swagger-tags.js';
 import { f } from '../../../schemas/field.js';
 import type { ClientAuthenticationProof } from '../../../services/oauth-client.service.js';
 import {
+  normalizeResourceParam,
+  rejectUnsupportedResources,
+} from '../../../services/resource-indicator.js';
+import {
   parseBasicClientCredentials,
   setBasicClientAuthChallengeIfInvalidClientCredentials,
   throwInvalidClientCredentialsWithBasicChallenge,
@@ -21,6 +25,7 @@ const DeviceAuthorizationRequestBody = z
     client_id: f.clientId.optional(),
     client_secret: f.clientSecret.optional(),
     scope: f.scope.optional(),
+    resource: f.resource.optional(),
   })
   .describe('OAuth2 device authorization request payload');
 
@@ -84,6 +89,8 @@ export const deviceAuthorizationPost = new Hono<AppEnv>().post(
 
     const requestedScopes = body.scope ? body.scope.split(' ') : [];
     oauthClientService.validateScopes(client, requestedScopes);
+    // RFC 8707 resource indicators are not supported for the device flow yet.
+    rejectUnsupportedResources(normalizeResourceParam(body.resource));
 
     const deviceCode = toBase64Url(getRandomBytes(32));
     const userCode = createUserCode();

@@ -47,6 +47,7 @@ export const authorizeGet = new Hono<AppEnv>().get(
       code_challenge: f.codeChallenge.optional(),
       code_challenge_method: f.codeChallengeMethod.optional(),
       scope: f.scope.optional(),
+      resource: f.resource.optional(),
       nonce: f.nonce.optional(),
       prompt: f.prompt.optional(),
       max_age: f.maxAge.optional(),
@@ -246,6 +247,15 @@ export const authorizeGet = new Hono<AppEnv>().get(
       if (error instanceof e.InvalidScope.Error) {
         return redirectWithError(
           'invalid_scope',
+          error.message,
+          query.redirect_uri,
+        );
+      }
+
+      // RFC 8707 §2: invalid, unknown or disallowed resource indicators.
+      if (error instanceof e.InvalidTarget.Error) {
+        return redirectWithError(
+          'invalid_target',
           error.message,
           query.redirect_uri,
         );

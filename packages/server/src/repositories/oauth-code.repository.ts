@@ -15,6 +15,8 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
     codeHash: string;
     redirectUri: string;
     scope: string[];
+    /** RFC 8707 resource indicators approved at the authorization endpoint */
+    resources?: string[];
     nonce?: string;
     codeChallenge?: string;
     codeChallengeMethod?: OAuthCodeChallengeMethods;
@@ -40,6 +42,7 @@ export class OAuthCodeRepository extends EntityRepository<IOAuthCodeEntity> {
       codeHash: params.codeHash,
       redirectUri: params.redirectUri,
       scope: params.scope,
+      resources: params.resources ?? [],
       nonce: params.nonce || '',
       codeChallenge: params.codeChallenge || '',
       codeChallengeMethod: params.codeChallengeMethod || 'S256',

@@ -16,6 +16,11 @@ import type {
   ClientAuthenticationProof,
   OAuthClientService,
 } from './oauth-client.service.ts';
+import {
+  resolveAccessTokenAudience,
+  selectApprovedResources,
+  validateRequestedResources,
+} from './resource-indicator.ts';
 import type { SecurityService } from './security.service.ts';
 import type { UserService } from './user.service.ts';
 
@@ -33,6 +38,11 @@ export interface AuthorizationCodeGrantParams {
   clientId: string;
   /** PKCE code verifier (required if code_challenge was used) */
   codeVerifier?: string | undefined;
+  /**
+   * RFC 8707 resource indicators for this access token. Must be a subset of
+   * the resources approved at the authorization endpoint; empty selects all.
+   */
+  resources?: string[] | undefined;
 }
 
 /**
@@ -47,6 +57,11 @@ export interface RefreshTokenGrantParams {
   clientId: string;
   /** Optional narrowed scope request (must be a subset of the refresh token scope) */
   scope?: string[] | undefined;
+  /**
+   * RFC 8707 resource indicators for the new access token (downscoping).
+   * Must be a subset of the grant's approved resources; empty selects all.
+   */
+  resources?: string[] | undefined;
 }
 
 /**
@@ -70,8 +85,8 @@ export interface TokenIntrospectionResult {
   sub?: string | undefined;
   /** Issuer identifier (only if active) */
   iss?: string | undefined;
-  /** Audience identifier (only if active) */
-  aud?: string | undefined;
+  /** Audience identifier(s) (only if active; RFC 7662 §2.2 string or array) */
+  aud?: string | string[] | undefined;
 }
 
 /**
@@ -221,6 +236,20 @@ export class OAuthTokenService {
           );
         return new e.InvalidAuthorizationCode.Error();
       }
+
+      // RFC 8707 §2.2: the token request may only narrow the resources that
+      // were approved at the authorization endpoint. Approved resources are
+      // re-checked against the current configuration.
+      const grantResources = validateRequestedResources(
+        this.config,
+        client.clientId,
+        codeEntity.resources,
+      );
+      const tokenResources = selectApprovedResources(
+        grantResources,
+        params.resources ?? [],
+      );
+
       const consumed = await this.mikro.oauthCode.consumeAuthorizationCode({
         clientId: client.id,
         codeHash,
@@ -242,6 +271,11 @@ export class OAuthTokenService {
         clientId: client.clientId,
         clientEpoch: client.tokenEpoch,
         scope: codeEntity.scope,
+        grantResources,
+        accessTokenAudience: resolveAccessTokenAudience(
+          this.config,
+          tokenResources,
+        ),
         issueRefreshToken:
           client.grantTypes.includes('refresh_token') &&
           codeEntity.scope.includes('offline_access'),
@@ -309,7 +343,7 @@ export class OAuthTokenService {
         );
         return new e.InvalidRefreshToken.Error();
       }
-      return this.refreshAccessTokenLocked(params);
+      return this.refreshAccessTokenLocked(params, grant.resources);
     });
     if (result instanceof IssuaryError) throw result;
     return result;
@@ -319,6 +353,8 @@ export class OAuthTokenService {
     authentication: ClientAuthenticationProof;
     clientId: string;
     scope: string[];
+    /** RFC 8707 resource indicators requested for the access token */
+    resources?: string[] | undefined;
   }): Promise<TokenResponse> {
     return this.mikro.em.transactional(async () => {
       const client = await this.oauthClientService.lockAuthenticatedClient(
@@ -329,6 +365,11 @@ export class OAuthTokenService {
       if (params.authentication.kind !== 'confidential')
         throw new e.InvalidClientCredentials.Error();
       this.oauthClientService.validateScopes(client, params.scope);
+      const resources = validateRequestedResources(
+        this.config,
+        client.clientId,
+        params.resources ?? [],
+      );
       const scopeString = params.scope.join(' ');
       const accessToken = await this.jwtService.signAccessToken({
         typ: 'access_token',
@@ -336,7 +377,7 @@ export class OAuthTokenService {
         client_id: params.clientId,
         grant_type: 'client_credentials',
         scope: scopeString,
-        aud: this.config.server.public_origin,
+        aud: resolveAccessTokenAudience(this.config, resources),
         ...(client.tokenEpoch && { client_epoch: client.tokenEpoch }),
       });
 
@@ -427,6 +468,8 @@ export class OAuthTokenService {
         clientId: client.clientId,
         clientEpoch: client.tokenEpoch,
         scope: deviceCode.scope,
+        grantResources: [],
+        accessTokenAudience: resolveAccessTokenAudience(this.config, []),
         issueRefreshToken:
           client.grantTypes.includes('refresh_token') &&
           deviceCode.scope.includes('offline_access'),
@@ -439,7 +482,10 @@ export class OAuthTokenService {
     return result;
   }
 
-  private async refreshAccessTokenLocked(params: RefreshTokenGrantParams) {
+  private async refreshAccessTokenLocked(
+    params: RefreshTokenGrantParams,
+    approvedResources: string[],
+  ) {
     const { refreshToken, clientId } = params;
 
     // 1. Verify refresh token (also checks revocation)
@@ -474,6 +520,18 @@ export class OAuthTokenService {
       throw new e.InvalidScope.Error({ invalidScopes });
     }
 
+    // RFC 8707 §2.2: downscope the access token audience to a subset of the
+    // resources approved for this grant. The grant keeps its full approval.
+    const grantResources = validateRequestedResources(
+      this.config,
+      client.clientId,
+      approvedResources,
+    );
+    const tokenResources = selectApprovedResources(
+      grantResources,
+      params.resources ?? [],
+    );
+
     if (!refreshPayload.jti || !refreshPayload.exp || !refreshPayload.grant_id)
       throw new e.InvalidRefreshToken.Error();
     const consumed = await this.mikro.em.nativeUpdate(
@@ -504,6 +562,11 @@ export class OAuthTokenService {
       clientId: client.clientId,
       clientEpoch: refreshPayload.client_epoch ?? null,
       scope: requestedScopes,
+      grantResources,
+      accessTokenAudience: resolveAccessTokenAudience(
+        this.config,
+        tokenResources,
+      ),
       issueRefreshToken: true,
       grantId: refreshPayload.grant_id,
     });
@@ -845,6 +908,10 @@ export class OAuthTokenService {
     clientId: string;
     clientEpoch: string | null;
     scope: string[];
+    /** RFC 8707 resources approved for the grant (stored on new grants). */
+    grantResources: string[];
+    /** Access token `aud` claim (RFC 9068 §3). */
+    accessTokenAudience: string | string[];
     issueRefreshToken: boolean;
     grantId?: string | undefined;
     nonce?: string;
@@ -873,7 +940,7 @@ export class OAuthTokenService {
       user_epoch: params.userEpoch,
       client_id: clientId,
       scope: scopeString,
-      aud: this.config.server.public_origin,
+      aud: params.accessTokenAudience,
       grant_id: grantId,
       ...(clientEpoch && { client_epoch: clientEpoch }),
     });
@@ -977,6 +1044,7 @@ export class OAuthTokenService {
         expires_at: expiresAt,
         revoked_at: null,
         revision: 0,
+        resources: params.grantResources,
       });
     }
     return response;

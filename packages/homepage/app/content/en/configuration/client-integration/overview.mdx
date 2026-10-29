@@ -48,3 +48,38 @@ Without one of these grounds, Issuary removes `offline_access` and continues wit
 A regular client requesting offline access for the first time should use `prompt=consent`. Once explicitly approved, it can omit `prompt` on subsequent requests. First-party clients with preapproval can omit it from the first request.
 
 See [OIDC consent/authorization](https://openid.net/specs/openid-connect-core-1_0.html#Consent) and [offline access](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess).
+
+## Resource indicators (RFC 8707)
+
+Clients can request access tokens for specific protected resources with the [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707) `resource` parameter. Define each resource once in the top-level `resources` list and allow it per client with `clients[].resources`. One resource can map to several access token audiences, for example when a resource server forwards the same token to another service:
+
+```yaml
+resources:
+  - identifier: https://mcp.example.com/mcp
+    audiences:
+      - https://mcp.example.com/mcp
+      - nextcloud
+  - identifier: https://api.example.com/
+
+clients:
+  - id: mcp-server
+    name: MCP Server
+    client_id: nextcloud-mcp
+    client_secret: ${MCP_CLIENT_SECRET}
+    redirect_uris: [https://mcp.example.com/oauth/callback]
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    resources:
+      - https://mcp.example.com/mcp
+```
+
+- **Authorization endpoint**: send zero or more `resource` parameters (repeat the parameter for several resources). Each value must be an absolute URI without a fragment, defined in `resources`, and allowed for the client; otherwise the request fails with `invalid_target`, returned to `redirect_uri` like other authorization errors. Approved resources are stored with the authorization code.
+- **Token endpoint (`authorization_code`)**: optional `resource` parameters must be a subset of the approved resources. Omitting them selects all approved resources.
+- **Refresh**: the grant keeps the resources approved at the authorization endpoint. A refresh request can narrow the access token audience to a subset (downscoping); omitting `resource` restores the full set.
+- **`client_credentials`**: optional `resource` parameters must be allowed for the client.
+- **Not supported**: `resource` is rejected with `invalid_target` for the device authorization grant and the implicit `id_token` flow, which issues no access token.
+
+The access token `aud` is the ordered, de-duplicated union of the configured `audiences` of the selected resources. One audience is a string and several are an array, so the example above issues `"aud": ["https://mcp.example.com/mcp", "nextcloud"]`. Requests without `resource` keep the default audience, `server.public_origin`. The ID token audience is always the client ID. Resource-bound access tokens remain valid at the UserInfo endpoint, and token introspection returns `aud` as a string or an array.
+
+Resource approval is administrative: users consent to scopes, and the client allowlist controls which resources a client can target.

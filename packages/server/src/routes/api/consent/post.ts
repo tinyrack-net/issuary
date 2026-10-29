@@ -13,6 +13,11 @@ import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
 import { withBrowserSecurity } from '../../../services/browser-security.service.js';
 import { lockOAuthClient } from '../../../services/client-security.js';
+import {
+  normalizeResourceParam,
+  rejectUnsupportedResources,
+  validateRequestedResources,
+} from '../../../services/resource-indicator.js';
 
 function consumeConsentPrompt(
   prompt: string | undefined,
@@ -37,6 +42,7 @@ function buildReauthenticationRequestFingerprint(params: {
   redirect_uri: string;
   response_type: string;
   scope?: string | undefined;
+  resource?: string | undefined;
   state?: string | undefined;
   nonce?: string | undefined;
   code_challenge?: string | undefined;
@@ -57,6 +63,7 @@ function buildReauthenticationRequestFingerprint(params: {
       ['redirect_uri', params.redirect_uri],
       ['response_type', params.response_type],
       ['scope', params.scope],
+      ['resource', params.resource],
       ['state', params.state],
       ['nonce', params.nonce],
       ['code_challenge', params.code_challenge],
@@ -83,6 +90,7 @@ function buildReauthenticationRequestFingerprints(params: {
   redirect_uri: string;
   response_type: string;
   scope?: string | undefined;
+  resource?: string | undefined;
   state?: string | undefined;
   nonce?: string | undefined;
   code_challenge?: string | undefined;
@@ -186,6 +194,7 @@ export const consentPost = new Hono<AppEnv>().post(
       redirect_uri: f.redirectUri,
       response_type: f.responseType,
       scope: f.scope.optional(),
+      resource: f.resourceList.optional(),
       state: f.state.optional(),
       nonce: f.nonce.optional(),
       code_challenge: f.codeChallenge.optional(),
@@ -219,6 +228,7 @@ export const consentPost = new Hono<AppEnv>().post(
       redirect_uri,
       response_type,
       scope,
+      resource,
       state,
       nonce,
       code_challenge,
@@ -240,6 +250,9 @@ export const consentPost = new Hono<AppEnv>().post(
     const { user: userEntity } = c.var.verifiedUser;
     const { oauthClientService, userConsentService } = c.var.services;
     const requestedScopes = scope ? scope.split(' ') : [];
+    const requestedResources = normalizeResourceParam(
+      resource ? resource.split(' ') : undefined,
+    );
 
     const client = await oauthClientService.findByClientId(client_id);
     oauthClientService.validateEnabled(client);
@@ -248,12 +261,20 @@ export const consentPost = new Hono<AppEnv>().post(
     oauthClientService.validateScopes(client, requestedScopes);
 
     if (response_type === 'id_token') {
+      rejectUnsupportedResources(requestedResources);
       if (!requestedScopes.includes('openid') || !nonce) {
         throw new e.InvalidAuthorizationRequest.Error();
       }
-    } else if (await oauthClientService.isPublicClient(client_id)) {
-      if (!code_challenge || code_challenge_method !== 'S256') {
-        throw new e.InvalidCodeChallengeMethod.Error();
+    } else {
+      validateRequestedResources(
+        c.var.services.config,
+        client_id,
+        requestedResources,
+      );
+      if (await oauthClientService.isPublicClient(client_id)) {
+        if (!code_challenge || code_challenge_method !== 'S256') {
+          throw new e.InvalidCodeChallengeMethod.Error();
+        }
       }
     }
 
@@ -315,6 +336,7 @@ export const consentPost = new Hono<AppEnv>().post(
           redirect_uri,
           response_type,
           scope,
+          resource: requestedResources.join(' ') || undefined,
           state,
           nonce,
           code_challenge,
@@ -352,6 +374,9 @@ export const consentPost = new Hono<AppEnv>().post(
       if (scope) {
         authorizeUrl.searchParams.set('scope', scope);
       }
+      for (const indicator of requestedResources) {
+        authorizeUrl.searchParams.append('resource', indicator);
+      }
       if (state) {
         authorizeUrl.searchParams.set('state', state);
       }
@@ -380,6 +405,7 @@ export const consentPost = new Hono<AppEnv>().post(
             redirect_uri,
             response_type,
             scope,
+            resource: requestedResources.join(' ') || undefined,
             state,
             nonce,
             code_challenge,
