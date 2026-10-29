@@ -192,6 +192,14 @@ export const e = {
       invalidScopes: z.array(z.string()),
     }),
   ),
+  InvalidTarget: createErrorWithData(
+    400,
+    'INVALID_TARGET',
+    'The requested resource is invalid, unknown, or not allowed for this request.',
+    z.object({
+      invalidResources: z.array(z.string()),
+    }),
+  ),
   InvalidCodeChallengeMethod: createError(
     400,
     'INVALID_CODE_CHALLENGE_METHOD',

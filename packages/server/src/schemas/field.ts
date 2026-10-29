@@ -35,6 +35,17 @@ export const f = {
   clientSecret: z.string().min(1).max(1000).describe('OAuth client secret'),
   redirectUri: z.url().max(1000).describe('OAuth redirect URI'),
   scope: z.string().max(1000).describe('Space-delimited list of OAuth scopes'),
+  resource: z
+    .union([z.string().max(4096), z.array(z.string().max(4096)).max(32)])
+    .describe(
+      'RFC 8707 resource indicator. Repeat the parameter to request several resources.',
+    ),
+  resourceList: z
+    .string()
+    .max(16384)
+    .describe(
+      'Space-delimited RFC 8707 resource indicators carried through browser continuations.',
+    ),
   responseType: z
     .string()
     .min(1)

@@ -374,6 +374,59 @@ describe('JwtService', () => {
       });
     });
 
+    test('should sign and verify access tokens with an array audience', async () => {
+      await withMikroContext(services, async () => {
+        const token = await services.jwtService.signAccessToken({
+          typ: 'access_token',
+          sub: tokenSubject,
+          user_epoch: (
+            await services.mikro.user.findOneOrFail({ sub: tokenSubject })
+          ).token_epoch,
+          client_id: tokenClientId,
+          scope: 'openid',
+          aud: ['https://mcp.example.test/mcp', 'nextcloud'],
+        });
+
+        expect(decodeJwt(token).aud).toEqual([
+          'https://mcp.example.test/mcp',
+          'nextcloud',
+        ]);
+        const payload = await services.jwtService.verifyAccessToken(token);
+        expect(payload.aud).toEqual([
+          'https://mcp.example.test/mcp',
+          'nextcloud',
+        ]);
+      });
+    });
+
+    test('should reject access tokens with a malformed audience claim', async () => {
+      await withMikroContext(services, async () => {
+        const activeKey = await services.jwtService.getActiveKey();
+        const privateKey = await importPKCS8(activeKey.private_key, 'RS256');
+        const user = await services.mikro.user.findOneOrFail({
+          sub: tokenSubject,
+        });
+        const token = await new SignJWT({
+          typ: 'access_token',
+          sub: tokenSubject,
+          user_epoch: user.token_epoch,
+          client_id: tokenClientId,
+          scope: 'openid',
+          // A non-string audience entry cannot be typed as JWTPayload.
+          ...JSON.parse('{"aud":["https://mcp.example.test/mcp",42]}'),
+        })
+          .setProtectedHeader({ alg: 'RS256', typ: 'JWT', kid: activeKey.kid })
+          .setIssuedAt()
+          .setExpirationTime('5m')
+          .setIssuer('https://auth.example.com')
+          .sign(privateKey);
+
+        await expect(
+          services.jwtService.verifyAccessToken(token),
+        ).rejects.toThrow();
+      });
+    });
+
     test('should reject access token with wrong issuer signed by active key', async () => {
       await withMikroContext(services, async () => {
         const activeKey = await services.jwtService.getActiveKey();

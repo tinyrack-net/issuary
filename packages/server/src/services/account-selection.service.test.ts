@@ -98,6 +98,7 @@ function createMatrixService(mode: MatrixMode) {
         grant_types: ['authorization_code'],
         scope: 'openid',
         skip_consent: false,
+        resources: [],
         account_selection: { mode: 'never' },
       },
     ];
@@ -526,6 +527,7 @@ describe('AccountSelectionService', () => {
         grant_types: ['authorization_code'],
         scope: 'openid',
         skip_consent: false,
+        resources: [],
         account_selection: { mode: 'never' },
       },
     ] as IssuaryRuntimeConfig['clients']);

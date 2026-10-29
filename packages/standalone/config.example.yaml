@@ -200,6 +200,19 @@ clients:
     # Set true only for clients whose registered scopes are administratively approved.
     # Includes allowed offline_access; prompt=consent still displays consent.
     skip_consent: false
+    # RFC 8707 resource identifiers this client may request (see `resources`).
+    # resources:
+    #   - https://api.example.com/
+
+# Protected resources for RFC 8707 resource indicators. `audiences` defaults to
+# [identifier]; list several values to issue a multi-audience access token.
+resources: []
+# Example:
+# resources:
+#   - identifier: https://api.example.com/
+#     audiences:
+#       - https://api.example.com/
+#       - another-service
 
 users:
   - sub: admin-user

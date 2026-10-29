@@ -22,6 +22,7 @@ It supports OAuth2/OIDC authorization code flows, PKCE, password login, passkeys
 ## Features
 
 - **OIDC/OAuth2 provider** with authorization code flow, PKCE, discovery, token, userinfo, introspection, revocation, RP-initiated logout, client credentials, and device authorization endpoints
+- **Resource indicators (RFC 8707)** that map each configured protected resource to one or more access token audiences
 - **Multiple sign-in methods** including password, passkeys/WebAuthn, GitHub, Google, Apple, and generic OAuth/OIDC providers
 - **Two-factor authentication** with TOTP and passkey-based second factors
 - **Config-driven deployment** through a single YAML file

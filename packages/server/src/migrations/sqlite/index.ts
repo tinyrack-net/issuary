@@ -14,6 +14,7 @@ import { Migration20260910120000_api_security } from './Migration20260910120000_
 import { Migration20260910160000_security_followup } from './Migration20260910160000_security_followup.js';
 import { Migration20260910200000_authentication_epoch } from './Migration20260910200000_authentication_epoch.js';
 import { Migration20260910220000_flow_revocation } from './Migration20260910220000_flow_revocation.js';
+import { Migration20261029120000_resource_indicators } from './Migration20261029120000_resource_indicators.js';
 
 export const SQLITE_MIGRATIONS = [
   Migration20260509171226_initial,
@@ -32,4 +33,5 @@ export const SQLITE_MIGRATIONS = [
   Migration20260910160000_security_followup,
   Migration20260910200000_authentication_epoch,
   Migration20260910220000_flow_revocation,
+  Migration20261029120000_resource_indicators,
 ];

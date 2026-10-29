@@ -10,6 +10,8 @@ export const OAuthGrantEntitySchema = defineEntity({
     revoked_at: p.datetime().nullable(),
     expires_at: p.datetime(),
     revision: p.integer().default(0),
+    /** RFC 8707 resource indicators approved for this grant. */
+    resources: p.json<string[]>().default([]),
   }),
   indexes: [
     { properties: ['expires_at'] },

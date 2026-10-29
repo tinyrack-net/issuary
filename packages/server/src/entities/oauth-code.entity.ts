@@ -48,6 +48,12 @@ export const OAuthCodeEntitySchema = defineEntity({
       .json<string[]>()
       .comment('Scopes granted by the authorization code')
       .default([]),
+    resources: p
+      .json<string[]>()
+      .comment(
+        'RFC 8707 resource indicators approved by the authorization request',
+      )
+      .default([]),
     nonce: p
       .string()
       .comment('Nonce value associated with the authorization request'),

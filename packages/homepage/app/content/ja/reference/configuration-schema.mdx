@@ -171,6 +171,18 @@ order: 32
 | `grant_types` | `string[]` | 許可権限の種類 |
 | `scope` | `string` | 許容スコープ（スペース区切り） |
 | `skip_consent` | `boolean` | 既定値 `false`。許可されたオフラインアクセスを含む登録済み権限を事前承認します。`prompt=consent` では同意を求めます。 |
+| `resources` | `string[]` | 既定値 `[]`。このクライアントが RFC 8707 の `resource` パラメーターで要求できる、トップレベル `resources` の `identifier` の一覧です。未定義の値は設定検証でエラーになります。 |
+
+## `resources`
+
+RFC 8707 の `resource` パラメーターで指定できる保護リソース（リソースサーバー）の一覧です。ない場合は省略するか `[]` にします。
+
+| アイテム | タイプ | 既定値 | 説明 |
+|------|------|--------|------|
+| `identifier` | `string` | - | リソースインジケーターの値。フラグメントを含まない絶対 URI で、`resources` 内で一意である必要があります。リクエストはこの文字列と完全に一致する必要があります。 |
+| `audiences` | `string[]` | `[identifier]` | このリソースを要求したときにアクセストークンの `aud` に入れる値。空文字や空白は使えません。 |
+
+トークンの動作は[リソースインジケーター](/ja/configuration/client-integration/overview#リソースインジケーター-rfc-8707)を参照してください。
 
 ## `users`
 

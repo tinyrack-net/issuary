@@ -101,8 +101,11 @@ export interface AccessTokenPayload extends BaseJWTPayload {
   grant_type?: 'client_credentials' | undefined;
   /** Space-separated list of scopes */
   scope: string;
-  /** Audience - intended recipient of the token */
-  aud?: string | undefined;
+  /**
+   * Audience - intended recipient(s) of the token (RFC 7519 §4.1.3,
+   * RFC 9068 §3). A single string or an array of strings.
+   */
+  aud?: string | string[] | undefined;
 }
 
 /**
@@ -148,6 +151,18 @@ export interface IdTokenPayload extends BaseJWTPayload {
   name?: string | undefined;
   /** Profile picture URL */
   picture?: string | undefined;
+}
+
+/**
+ * Whether a JWT `aud` claim is absent, a string, or an array of strings
+ * (RFC 7519 §4.1.3).
+ */
+function isAudienceClaim(aud: unknown): aud is string | string[] | undefined {
+  return (
+    aud === undefined ||
+    typeof aud === 'string' ||
+    (Array.isArray(aud) && aud.every((value) => typeof value === 'string'))
+  );
 }
 
 /**
@@ -770,7 +785,8 @@ export class JwtService {
       payload['typ'] === 'access_token' &&
       typeof payload.sub === 'string' &&
       typeof payload['client_id'] === 'string' &&
-      typeof payload['scope'] === 'string'
+      typeof payload['scope'] === 'string' &&
+      isAudienceClaim(payload.aud)
     );
   }
 
@@ -784,10 +800,15 @@ export class JwtService {
       payload['typ'] === 'refresh_token' &&
       typeof payload.sub === 'string' &&
       typeof payload['client_id'] === 'string' &&
-      typeof payload['scope'] === 'string'
+      typeof payload['scope'] === 'string' &&
+      (payload.aud === undefined || typeof payload.aud === 'string')
     );
   }
 
+  /**
+   * ID tokens are always issued with a single client_id audience (OIDC Core
+   * §2); access tokens with array audiences are not accepted as ID tokens.
+   */
   private isIdTokenPayload(
     payload: JWTPayload,
   ): payload is JWTPayload & IdTokenPayload {

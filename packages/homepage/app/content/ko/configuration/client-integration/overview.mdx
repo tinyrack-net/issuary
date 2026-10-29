@@ -155,3 +155,38 @@ Authorization Code Flow에서 `offline_access`는 앱의 사전 승인, `prompt=
 일반 앱이 처음 오프라인 접근을 요청할 때는 `prompt=consent`를 사용하세요. 승인 후에는 `prompt`를 생략할 수 있어요. 사전 승인된 자사 앱은 최초부터 생략할 수 있어요.
 
 [OIDC 권한 동의](https://openid.net/specs/openid-connect-core-1_0.html#Consent)와 [오프라인 접근](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess) 규격을 참고하세요.
+
+## 리소스 지시자 (RFC 8707)
+
+클라이언트는 [RFC 8707](https://www.rfc-editor.org/rfc/rfc8707) `resource` 파라미터로 특정 보호 리소스용 액세스 토큰을 요청할 수 있어요. 리소스는 최상위 `resources`에 한 번 정의하고, 클라이언트별로 `clients[].resources`에서 허용해요. 하나의 리소스를 여러 액세스 토큰 audience로 매핑할 수 있어서, 리소스 서버가 같은 토큰을 다른 서비스로 전달하는 경우에도 쓸 수 있어요.
+
+```yaml
+resources:
+  - identifier: https://mcp.example.com/mcp
+    audiences:
+      - https://mcp.example.com/mcp
+      - nextcloud
+  - identifier: https://api.example.com/
+
+clients:
+  - id: mcp-server
+    name: MCP Server
+    client_id: nextcloud-mcp
+    client_secret: ${MCP_CLIENT_SECRET}
+    redirect_uris: [https://mcp.example.com/oauth/callback]
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email offline_access
+    resources:
+      - https://mcp.example.com/mcp
+```
+
+- **인가 엔드포인트**: `resource` 파라미터를 0개 이상 보내요(여러 리소스는 파라미터를 반복). 각 값은 fragment 없는 절대 URI이고, `resources`에 정의되어 있으며, 해당 클라이언트에 허용되어야 해요. 아니면 `invalid_target` 오류가 나고, 다른 인가 오류처럼 `redirect_uri`로 전달돼요. 승인된 리소스는 인가 코드에 저장돼요.
+- **토큰 엔드포인트(`authorization_code`)**: 선택적인 `resource` 파라미터는 승인된 리소스의 부분집합이어야 해요. 생략하면 승인된 리소스 전체를 사용해요.
+- **갱신**: grant는 인가 단계에서 승인된 리소스를 유지해요. 갱신 요청에서 부분집합으로 audience를 좁힐 수 있고(downscoping), `resource`를 생략하면 전체로 돌아가요.
+- **`client_credentials`**: 선택적인 `resource` 파라미터는 해당 클라이언트에 허용되어야 해요.
+- **미지원**: 디바이스 인가 grant와 액세스 토큰을 발급하지 않는 implicit `id_token` 흐름에서는 `resource`를 `invalid_target`으로 거부해요.
+
+액세스 토큰 `aud`는 선택된 리소스들의 `audiences`를 순서대로 중복 없이 합친 값이에요. 값이 하나면 문자열, 여럿이면 배열이라서 위 예시는 `"aud": ["https://mcp.example.com/mcp", "nextcloud"]`를 발급해요. `resource` 없는 요청은 기존 기본값인 `server.public_origin`을 유지해요. ID 토큰의 audience는 항상 클라이언트 ID예요. 리소스용 액세스 토큰으로도 UserInfo 엔드포인트를 호출할 수 있고, 토큰 인트로스펙션은 `aud`를 문자열이나 배열로 반환해요.
+
+리소스 허용은 관리자 설정으로 결정해요. 사용자는 스코프에 동의하고, 클라이언트가 어떤 리소스를 대상으로 할 수 있는지는 클라이언트 허용 목록이 정해요.

@@ -8,6 +8,10 @@ import { f } from '../../../schemas/field.ts';
 import { r } from '../../../schemas/response.ts';
 import type { ClientAuthenticationProof } from '../../../services/oauth-client.service.js';
 import {
+  normalizeResourceParam,
+  rejectUnsupportedResources,
+} from '../../../services/resource-indicator.js';
+import {
   parseBasicClientCredentials,
   setBasicClientAuthChallengeIfInvalidClientCredentials,
   throwInvalidClientCredentialsWithBasicChallenge,
@@ -31,6 +35,7 @@ const TokenRequestBody = z
     code_verifier: f.codeVerifier.optional(),
     refresh_token: f.token.optional(),
     scope: f.scope.optional(),
+    resource: f.resource.optional(),
     device_code: z.string().min(1).max(1000).optional(),
   })
   .describe('OAuth2 token request payload');
@@ -135,6 +140,7 @@ export const tokenPost = new Hono<AppEnv>().post(
       throw new e.InvalidAuthorizationRequest.Error();
     }
     oauthClientService.validateGrantType(client, grantType);
+    const requestedResources = normalizeResourceParam(body.resource);
 
     try {
       // 3. Handle grant type
@@ -152,6 +158,7 @@ export const tokenPost = new Hono<AppEnv>().post(
           redirectUri: body.redirect_uri,
           clientId,
           codeVerifier: body.code_verifier ?? undefined,
+          resources: requestedResources,
         });
 
         c.header('Cache-Control', 'no-store');
@@ -169,6 +176,7 @@ export const tokenPost = new Hono<AppEnv>().post(
           refreshToken: body.refresh_token,
           clientId,
           scope: body.scope ? body.scope.split(' ') : undefined,
+          resources: requestedResources,
         });
 
         c.header('Cache-Control', 'no-store');
@@ -193,6 +201,7 @@ export const tokenPost = new Hono<AppEnv>().post(
           authentication,
           clientId,
           scope: requestedScopes,
+          resources: requestedResources,
         });
 
         c.header('Cache-Control', 'no-store');
@@ -204,6 +213,9 @@ export const tokenPost = new Hono<AppEnv>().post(
         if (!body.device_code) {
           throw new e.MissingDeviceCode.Error();
         }
+        // Resource indicators are not supported for the device flow yet;
+        // reject them explicitly instead of issuing a default-audience token.
+        rejectUnsupportedResources(requestedResources);
 
         const tokens = await oauthTokenService.exchangeDeviceCode({
           authentication,
