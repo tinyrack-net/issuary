@@ -119,6 +119,17 @@ Protected resources (resource servers) that clients may target with the RFC 8707
 
 See [Resource indicators](/en/configuration/client-integration/overview#resource-indicators-rfc-8707) for token behavior.
 
+## Client access policy
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `access` | `object` | unset | Restricts which users may authorize this client. Omit to allow every user. When set, at least one list must be non-empty. |
+| `access.users` | `string[]` | `[]` | User `sub` values that are allowed. |
+| `access.emails` | `string[]` | `[]` | Allowed email addresses, compared case-insensitively. Only verified emails match. |
+| `access.roles` | `('user' \| 'admin')[]` | `[]` | Allowed user roles. |
+
+See [Restricting users](/en/configuration/client-integration/overview#restricting-users) for enforcement behavior.
+
 ## Client consent policy
 
 | Field | Type | Behavior |

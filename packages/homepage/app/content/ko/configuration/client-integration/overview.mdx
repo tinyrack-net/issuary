@@ -190,3 +190,31 @@ clients:
 액세스 토큰 `aud`는 선택된 리소스들의 `audiences`를 순서대로 중복 없이 합친 값이에요. 값이 하나면 문자열, 여럿이면 배열이라서 위 예시는 `"aud": ["https://mcp.example.com/mcp", "nextcloud"]`를 발급해요. `resource` 없는 요청은 기존 기본값인 `server.public_origin`을 유지해요. ID 토큰의 audience는 항상 클라이언트 ID예요. 리소스용 액세스 토큰으로도 UserInfo 엔드포인트를 호출할 수 있고, 토큰 인트로스펙션은 `aud`를 문자열이나 배열로 반환해요.
 
 리소스 허용은 관리자 설정으로 결정해요. 사용자는 스코프에 동의하고, 클라이언트가 어떤 리소스를 대상으로 할 수 있는지는 클라이언트 허용 목록이 정해요.
+
+## 사용자 제한
+
+기본적으로 Issuary의 모든 사용자가 모든 클라이언트에 로그인할 수 있어요. 클라이언트에 `access`를 추가하면 지정한 사용자만 허용해요.
+
+```yaml
+clients:
+  - id: internal-tool
+    client_id: internal-tool
+    # ...
+    access:
+      users:
+        - 3f2c1a9e-...        # user sub
+      emails:
+        - ops@example.com     # verified email, case-insensitive
+      roles:
+        - admin
+```
+
+나열된 `sub`, 인증된 이메일, 역할 중 하나라도 일치하면 허용해요. 목록이 모두 비어 있는 `access`는 설정 검증에서 실패하니, 모두에게 허용하려면 `access`를 생략하세요.
+
+정책은 현재 설정에서 읽고, 권한을 발급하거나 연장하는 모든 지점에서 확인해요.
+
+- **인가 엔드포인트**: 허용되지 않은 사용자는 `error=access_denied`와 함께 클라이언트로 돌아가고 코드는 발급되지 않아요.
+- **토큰 엔드포인트**: 사용자가 더 이상 허용되지 않으면 인가 코드 교환과 리프레시가 `invalid_grant`를 반환해요. 그래서 `access`에서 사용자를 빼면 기존 세션도 다음 리프레시에서 끝나요.
+- **디바이스 인가**: 허용되지 않은 사용자는 디바이스를 승인할 수 없고, 승인 후 제외된 사용자의 디바이스 코드는 `access_denied`를 반환해요.
+
+이미 발급된 액세스 토큰은 만료될 때까지 유효해요.

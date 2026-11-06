@@ -172,6 +172,7 @@ order: 32
 | `scope` | `string` | 許容スコープ（スペース区切り） |
 | `skip_consent` | `boolean` | 既定値 `false`。許可されたオフラインアクセスを含む登録済み権限を事前承認します。`prompt=consent` では同意を求めます。 |
 | `resources` | `string[]` | 既定値 `[]`。このクライアントが RFC 8707 の `resource` パラメーターで要求できる、トップレベル `resources` の `identifier` の一覧です。未定義の値は設定検証でエラーになります。 |
+| `access` | `object` | 未設定ならすべてのユーザーがこのクライアントにログインできます。設定すると `users`(`sub` の一覧)、`emails`(確認済みメール、大文字小文字を区別しない)、`roles`(`user`/`admin`)のいずれかに一致するユーザーだけを許可し、すべての一覧が空なら設定検証でエラーになります。 |
 
 ## `resources`
 

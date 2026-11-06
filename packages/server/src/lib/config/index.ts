@@ -19,7 +19,7 @@ export type { BrandingConfig } from './branding.ts';
 export { BrandingConfigSchema } from './branding.ts';
 export type { CleanupConfig } from './cleanup.ts';
 export { CLEANUP_CONFIG_DEFAULT, CleanupConfigSchema } from './cleanup.ts';
-export type { ClientConfig } from './client.ts';
+export type { ClientAccessConfig, ClientConfig } from './client.ts';
 export { ClientConfigSchema, ClientConfigsSchema } from './client.ts';
 export type { DatabaseConfig } from './database.ts';
 export { DatabaseConfigSchema } from './database.ts';
