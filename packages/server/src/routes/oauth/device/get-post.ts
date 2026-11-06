@@ -8,6 +8,7 @@ import { TAGS } from '../../../lib/swagger-tags.ts';
 import { verifyAuth } from '../../../middleware/auth.ts';
 import { e } from '../../../schemas/error.ts';
 import { withBrowserSecurity } from '../../../services/browser-security.service.js';
+import { isClientAccessAllowed } from '../../../services/client-access.ts';
 
 const DeviceVerificationRequestBody = z.object({
   user_code: z.string().min(1).max(64),
@@ -114,6 +115,15 @@ export const deviceGetPost = new Hono<AppEnv>()
                 userCodeHash,
               );
             if (!pending) throw new e.InvalidDeviceCode.Error();
+            await mikro.em.populate(pending, ['client']);
+            if (
+              !isClientAccessAllowed(
+                c.var.services.config,
+                pending.client.clientId,
+                c.var.verifiedUser.user,
+              )
+            )
+              throw new e.AccessDenied.Error();
             if (
               (
                 await c.var.services.termsService.getPendingRequiredTerms(

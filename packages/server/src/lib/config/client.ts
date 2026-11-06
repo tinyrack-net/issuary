@@ -51,6 +51,40 @@ const ClientAccountSelectionConfigSchema = z
   .strict()
   .describe('Client-specific account selection overrides.');
 
+const ClientAccessConfigSchema = z
+  .object({
+    users: z
+      .array(z.string().min(1).max(255))
+      .default([])
+      .describe('User subject identifiers (`sub`) allowed to use this client.'),
+    emails: z
+      .array(z.string().min(1).max(320))
+      .default([])
+      .describe(
+        'Verified email addresses allowed to use this client. Compared case-insensitively.',
+      ),
+    roles: z
+      .array(z.enum(['user', 'admin']))
+      .default([])
+      .describe('User roles allowed to use this client.'),
+  })
+  .strict()
+  .refine(
+    (access) =>
+      access.users.length > 0 ||
+      access.emails.length > 0 ||
+      access.roles.length > 0,
+    {
+      message:
+        'Client access must list at least one user, email or role. Omit access to allow every user.',
+    },
+  )
+  .describe(
+    'Restricts which users may authorize this client. A user is allowed when any listed sub, verified email or role matches. Omit to allow every user.',
+  );
+
+export type ClientAccessConfig = z.infer<typeof ClientAccessConfigSchema>;
+
 function normalizeScopeList(scope: string): string {
   const trimmed = scope.trim();
   if (/[\t\n\r\f\v]/.test(trimmed)) {
@@ -140,6 +174,7 @@ export const ClientConfigSchema = z
         'Administratively preapprove this client’s registered scopes (including offline_access when allowed). Skip OAuth consent unless prompt=consent is requested; authentication, required terms and device approval are not skipped.',
       ),
     account_selection: ClientAccountSelectionConfigSchema.optional(),
+    access: ClientAccessConfigSchema.optional(),
     resources: z
       .array(ResourceIdentifierSchema)
       .default([])

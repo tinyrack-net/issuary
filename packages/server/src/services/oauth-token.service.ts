@@ -5,6 +5,7 @@ import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
 import { validatePKCE } from '../lib/pkce.ts';
 import { IssuaryError } from '../schemas/error.js';
 import { e } from '../schemas/error.ts';
+import { isClientAccessAllowed } from './client-access.ts';
 import { lockOAuthClient } from './client-security.js';
 import type {
   AccessTokenPayload,
@@ -225,6 +226,9 @@ export class OAuthTokenService {
       }
 
       if (user.deleted_at || codeEntity.user_epoch !== user.token_epoch)
+        throw new e.InvalidAuthorizationCode.Error();
+      // The access policy may have changed since the code was issued.
+      if (!isClientAccessAllowed(this.config, client.clientId, user))
         throw new e.InvalidAuthorizationCode.Error();
 
       if (codeEntity.consumedAt) {
@@ -453,6 +457,8 @@ export class OAuthTokenService {
       }
       if (user.deleted_at || deviceCode.user_epoch !== user.token_epoch)
         throw new e.InvalidDeviceCode.Error();
+      if (!isClientAccessAllowed(this.config, client.clientId, user))
+        throw new e.AccessDenied.Error();
 
       const grantId = crypto.randomUUID();
       await this.mikro.oauthDeviceCode.nativeUpdate(
@@ -505,6 +511,9 @@ export class OAuthTokenService {
 
     // 3. Load user (supports both config and DB users)
     const userEntity = await this.mikro.user.verifyBySub(refreshPayload.sub);
+    // Users removed from the client's access policy can no longer refresh.
+    if (!isClientAccessAllowed(this.config, clientId, userEntity))
+      throw new e.InvalidRefreshToken.Error();
     const userData = await this.userService.userEntityToSessionUser(userEntity);
 
     // 4. Get client info

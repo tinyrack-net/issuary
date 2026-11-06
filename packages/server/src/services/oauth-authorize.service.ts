@@ -9,6 +9,7 @@ import { e } from '../schemas/error.ts';
 import type { f } from '../schemas/field.ts';
 import { AccountSelectionService } from './account-selection.service.ts';
 import type { AuthorizationProof } from './authorization-browser.service.js';
+import { isClientAccessAllowed } from './client-access.ts';
 import type { JwtService } from './jwt.service.ts';
 import type { MikroService } from './mikro.service.ts';
 import type { OAuthClientService } from './oauth-client.service.ts';
@@ -381,6 +382,27 @@ export class OAuthAuthorizeService {
     const checkPolicy = async (
       current: typeof client,
     ): Promise<AuthorizeResult | undefined> => {
+      // Clients with an access policy only issue grants to listed users.
+      const accessUser = await this.mikro.user.findOne({
+        sub: selectedSession.sub,
+        deleted_at: null,
+      });
+      if (
+        !accessUser ||
+        !isClientAccessAllowed(this.config, current.clientId, accessUser)
+      ) {
+        params.clearAccountSelectionSession?.();
+        return this.buildErrorAuthorizationResult({
+          redirectUri: query.redirect_uri,
+          error: 'access_denied',
+          errorDescription:
+            'The End-User is not allowed to access this client.',
+          state: query.state,
+          responseType: query.response_type,
+          responseMode: query.response_mode,
+        });
+      }
+
       // Complete required terms for the selected account before any grant.
       const pendingTerms = await this.termsService.getPendingRequiredTerms(
         selectedSession.sub,

@@ -203,6 +203,15 @@ clients:
     # RFC 8707 resource identifiers this client may request (see `resources`).
     # resources:
     #   - https://api.example.com/
+    # Restrict which users may sign in to this client. A user is allowed when any
+    # listed sub, verified email or role matches. Omit to allow every user.
+    # access:
+    #   users:
+    #     - admin-user
+    #   emails:
+    #     - someone@example.com
+    #   roles:
+    #     - admin
 
 # Protected resources for RFC 8707 resource indicators. `audiences` defaults to
 # [identifier]; list several values to issue a multi-audience access token.

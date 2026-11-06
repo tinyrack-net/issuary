@@ -172,6 +172,7 @@ order: 32
 | `scope` | `string` | 허용 스코프(공백 구분) |
 | `skip_consent` | `boolean` | 기본값 `false`. 등록된 권한(허용된 오프라인 접근 포함)을 관리자가 사전 승인해요. `prompt=consent`에서는 동의를 받아요. |
 | `resources` | `string[]` | 기본값 `[]`. 이 클라이언트가 RFC 8707 `resource` 파라미터로 요청할 수 있는 최상위 `resources`의 `identifier` 목록이에요. 정의되지 않은 값은 설정 검증에서 실패해요. |
+| `access` | `object` | 설정하지 않으면 모든 사용자가 이 클라이언트에 로그인할 수 있어요. 설정하면 `users`(`sub` 목록), `emails`(인증된 이메일, 대소문자 구분 없음), `roles`(`user`/`admin`) 중 하나라도 일치하는 사용자만 허용하고, 목록이 모두 비어 있으면 설정 검증에서 실패해요. |
 
 ## `resources`
 

@@ -83,3 +83,31 @@ clients:
 The access token `aud` is the ordered, de-duplicated union of the configured `audiences` of the selected resources. One audience is a string and several are an array, so the example above issues `"aud": ["https://mcp.example.com/mcp", "nextcloud"]`. Requests without `resource` keep the default audience, `server.public_origin`. The ID token audience is always the client ID. Resource-bound access tokens remain valid at the UserInfo endpoint, and token introspection returns `aud` as a string or an array.
 
 Resource approval is administrative: users consent to scopes, and the client allowlist controls which resources a client can target.
+
+## Restricting users
+
+By default every Issuary user can sign in to every client. Add `access` to a client to allow only specific users:
+
+```yaml
+clients:
+  - id: internal-tool
+    client_id: internal-tool
+    # ...
+    access:
+      users:
+        - 3f2c1a9e-...        # user sub
+      emails:
+        - ops@example.com     # verified email, case-insensitive
+      roles:
+        - admin
+```
+
+A user is allowed when any listed `sub`, verified email or role matches. An `access` block whose lists are all empty fails configuration validation; omit `access` to allow everyone.
+
+The policy is read from the current configuration and checked at every point a grant is issued or extended:
+
+- **Authorization endpoint**: an unlisted user is sent back to the client with `error=access_denied`; no code is issued.
+- **Token endpoint**: authorization code exchange and refresh return `invalid_grant` when the user is no longer allowed, so removing a user from `access` also ends existing sessions at their next refresh.
+- **Device authorization grant**: an unlisted user cannot approve a device, and a device code approved by a user who was later removed returns `access_denied`.
+
+Access tokens that were already issued stay valid until they expire.
