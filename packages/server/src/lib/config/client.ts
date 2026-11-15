@@ -1,10 +1,10 @@
 import z from 'zod';
 import { ResourceIdentifierSchema } from './resource.ts';
-import { isSecureRedirectUri } from './url-policy.js';
+import { isRegistrableRedirectUri, isSecureRedirectUri } from './url-policy.js';
 
-const RedirectUriSchema = z.string().refine(isSecureRedirectUri, {
+const RedirectUriSchema = z.string().refine(isRegistrableRedirectUri, {
   message:
-    'Redirect URI must use HTTPS or local HTTP and must not contain fragments or wildcards.',
+    'Redirect URI must use HTTPS, local HTTP or a native app private-use scheme and must not contain fragments or wildcards.',
 });
 
 const WebOriginSchema = z.string().refine(

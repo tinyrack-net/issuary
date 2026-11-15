@@ -12,10 +12,20 @@ import {
 let app: AppType;
 let cleanup: () => Promise<void>;
 
+const NATIVE_REDIRECT_URI = 'bookorbit://oauth2-callback';
+
 beforeAll(async () => {
   const server = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
-    clients: [TEST_OAUTH_CLIENT_CONFIG],
+    clients: [
+      {
+        ...TEST_OAUTH_CLIENT_CONFIG,
+        redirect_uris: [
+          ...TEST_OAUTH_CLIENT_CONFIG.redirect_uris,
+          NATIVE_REDIRECT_URI,
+        ],
+      },
+    ],
   });
   app = server.app;
   cleanup = server.cleanup;
@@ -62,6 +72,22 @@ describe('GET /api/oauth/authorization-context', () => {
 
     const body = await assertJsonBody(res, 400);
     expect(body.code).toBe('INVALID_REDIRECT_URI');
+  });
+
+  test('reports no web origin for a native app redirect URI', async () => {
+    const client = testClient(app);
+    const res = await client.api.oauth['authorization-context'].$get({
+      query: {
+        client_id: TEST_OAUTH_CLIENT.clientId,
+        redirect_uri: NATIVE_REDIRECT_URI,
+        response_type: 'code',
+        scope: 'openid',
+      },
+    });
+
+    const body = await assertJsonBody(res, 200);
+    expect(body.redirect_uri).toBe(NATIVE_REDIRECT_URI);
+    expect(body.redirect_origin).toBeNull();
   });
 
   test('rejects unsupported scopes', async () => {

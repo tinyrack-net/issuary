@@ -35,7 +35,7 @@ clients:
 | `logo_uri` | X | 동의 화면에 표시될 로고 이미지 URL이에요. |
 | `client_id` | O | OAuth 요청에서 사용하는 공개 클라이언트 식별자예요. |
 | `client_secret` | △ | 클라이언트 시크릿이에요. 기밀 클라이언트(서버 측 앱)에서만 필요하며, 공개 클라이언트(SPA/모바일)에서는 생략해요. |
-| `redirect_uris` | O | 인증 후 리다이렉트할 수 있는 허용 URL 목록이에요. |
+| `redirect_uris` | O | 인증 후 리다이렉트할 수 있는 허용 URL 목록이에요. HTTPS, 로컬 HTTP, 네이티브 앱의 사설 URI 스킴을 쓸 수 있어요. |
 | `response_types` | O | 허용할 OAuth 응답 유형이에요. 일반적으로 `code`를 사용해요. |
 | `grant_types` | O | 허용할 OAuth 권한 부여 유형이에요. |
 | `scope` | O | 허용할 OAuth 스코프(공백으로 구분)예요. |
@@ -190,6 +190,27 @@ clients:
 액세스 토큰 `aud`는 선택된 리소스들의 `audiences`를 순서대로 중복 없이 합친 값이에요. 값이 하나면 문자열, 여럿이면 배열이라서 위 예시는 `"aud": ["https://mcp.example.com/mcp", "nextcloud"]`를 발급해요. `resource` 없는 요청은 기존 기본값인 `server.public_origin`을 유지해요. ID 토큰의 audience는 항상 클라이언트 ID예요. 리소스용 액세스 토큰으로도 UserInfo 엔드포인트를 호출할 수 있고, 토큰 인트로스펙션은 `aud`를 문자열이나 배열로 반환해요.
 
 리소스 허용은 관리자 설정으로 결정해요. 사용자는 스코프에 동의하고, 클라이언트가 어떤 리소스를 대상으로 할 수 있는지는 클라이언트 허용 목록이 정해요.
+
+## 네이티브 앱
+
+네이티브·모바일 앱은 HTTPS 리다이렉트 URI와 함께 `com.example.app:/oauth2redirect`, `exampleapp://callback` 같은 사설 URI 스킴 리다이렉트([RFC 8252 7.1절](https://www.rfc-editor.org/rfc/rfc8252#section-7.1))를 등록할 수 있어요.
+
+```yaml
+clients:
+  - id: reader
+    name: Reader
+    client_id: reader
+    redirect_uris:
+      - https://reader.example.com/oauth2-callback
+      - exampleapp://oauth2-callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email
+```
+
+사설 스킴은 기기의 어떤 앱이든 가로챌 수 있기 때문에, Issuary는 기밀 클라이언트라도 이 리다이렉트에는 S256 PKCE에 묶인 인가 코드만 돌려줘요. 암시적 `id_token` 플로와 `response_mode=form_post`는 거부해요. 리다이렉트 URI는 여전히 등록된 값과 정확히 일치해야 해요.
+
+`javascript`, `data`, `file`, `intent`, `mailto`, `ws` 같은 웹·스크립트·시스템 스킴은 허용하지 않아요. 직접 소유한 역도메인 스킴을 쓰고, 앱이 지원한다면 App Links나 Universal Links 같은 HTTPS 리다이렉트가 더 안전해요.
 
 ## 사용자 제한
 

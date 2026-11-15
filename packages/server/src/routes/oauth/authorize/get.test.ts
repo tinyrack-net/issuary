@@ -91,6 +91,27 @@ const SKIP_CONSENT_CLIENT_CONFIG = {
   skip_consent: true,
 };
 
+const NATIVE_APP_CLIENT = {
+  clientId: 'native-app-client',
+  clientSecret: 'native-app-client-secret',
+  redirectUri: 'bookorbit://oauth2-callback',
+};
+
+const NATIVE_APP_CLIENT_CONFIG = {
+  id: 'native-app-client-config',
+  name: 'Native App Client',
+  client_id: NATIVE_APP_CLIENT.clientId,
+  client_secret: NATIVE_APP_CLIENT.clientSecret,
+  redirect_uris: [
+    'https://books.example/oauth2-callback',
+    NATIVE_APP_CLIENT.redirectUri,
+  ],
+  response_types: ['code', 'id_token'],
+  grant_types: ['authorization_code', 'implicit'],
+  scope: 'openid profile email',
+  skip_consent: true,
+};
+
 beforeAll(async () => {
   ({ app, services, cleanup } = await createTestApp({
     ...MINIMAL_TEST_CONFIG,
@@ -101,6 +122,7 @@ beforeAll(async () => {
       PUBLIC_OAUTH_CLIENT_CONFIG,
       IMPLICIT_ID_TOKEN_CLIENT_CONFIG,
       SKIP_CONSENT_CLIENT_CONFIG,
+      NATIVE_APP_CLIENT_CONFIG,
     ],
   }));
 });
@@ -527,6 +549,110 @@ describe('GET /oauth/authorize', () => {
       const json = await assertJsonBody(res, 400);
       expect(json.error).toBe('unauthorized_client');
       expect(json.error_description).toBeDefined();
+    });
+  });
+
+  describe('Native App Redirect URIs', () => {
+    const nativeParams = {
+      response_type: 'code',
+      client_id: NATIVE_APP_CLIENT.clientId,
+      redirect_uri: NATIVE_APP_CLIENT.redirectUri,
+      scope: 'openid profile email',
+      state: 'native-state',
+      code_challenge: TEST_PKCE.codeChallenge,
+      code_challenge_method: TEST_PKCE.codeChallengeMethod,
+    };
+
+    function readNativeLocation(res: Response): URL {
+      return new URL(getLocationHeader(res));
+    }
+
+    test('should return the code to a registered private-use scheme', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        { query: nativeParams },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = readNativeLocation(res);
+      expect(location.protocol).toBe('bookorbit:');
+      expect(location.host).toBe('oauth2-callback');
+      expect(location.searchParams.get('code')).toBeTruthy();
+      expect(location.searchParams.get('state')).toBe('native-state');
+    });
+
+    test('should reject an unregistered private-use scheme without redirecting', async () => {
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get({
+        query: { ...nativeParams, redirect_uri: 'evilapp://oauth2-callback' },
+      });
+
+      const body = await assertJsonBody(res, 400);
+      expect(res.headers.get('location')).toBeNull();
+      expect(body.error).toBe('invalid_request');
+    });
+
+    test('should require S256 PKCE even for a confidential client', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'code',
+            client_id: NATIVE_APP_CLIENT.clientId,
+            redirect_uri: NATIVE_APP_CLIENT.redirectUri,
+            scope: 'openid profile email',
+            state: 'native-state',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = readNativeLocation(res);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(location.searchParams.has('code')).toBe(false);
+    });
+
+    test('should not deliver an implicit id_token to a private-use scheme', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const client = testClient(app);
+      const res = await client.oauth.authorize.$get(
+        {
+          query: {
+            response_type: 'id_token',
+            client_id: NATIVE_APP_CLIENT.clientId,
+            redirect_uri: NATIVE_APP_CLIENT.redirectUri,
+            scope: 'openid',
+            nonce: 'native-nonce',
+            state: 'native-state',
+          },
+        },
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = readNativeLocation(res);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(location.hash).not.toContain('id_token');
+    });
+
+    test('should reject form_post to a private-use scheme', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const res = await app.request(
+        `/oauth/authorize?${new URLSearchParams({
+          ...nativeParams,
+          response_mode: 'form_post',
+        }).toString()}`,
+        { headers: { Cookie: `session=${sessionCookie}` } },
+      );
+
+      expect(res.status).toBe(302);
+      const location = readNativeLocation(res);
+      expect(location.searchParams.get('error')).toBe('invalid_request');
+      expect(location.searchParams.has('code')).toBe(false);
     });
   });
 

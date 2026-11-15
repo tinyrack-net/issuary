@@ -3,7 +3,7 @@ import { createMiddleware } from 'hono/factory';
 import { validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../../lib/app-env.ts';
-import { isSecureRedirectUri } from '../../../../lib/config/url-policy.ts';
+import { isRegistrableRedirectUri } from '../../../../lib/config/url-policy.ts';
 import {
   adminApiDocumentation,
   securityMutationDocumentation,
@@ -35,9 +35,9 @@ const ClientBody = z.object({
   client_id: z.string().trim().min(1).max(255),
   name: z.string().trim().min(1).max(255),
   type: z.enum(['public', 'confidential']),
-  redirect_uris: z.array(z.string().refine(isSecureRedirectUri)).min(1),
+  redirect_uris: z.array(z.string().refine(isRegistrableRedirectUri)).min(1),
   post_logout_redirect_uris: z
-    .array(z.string().refine(isSecureRedirectUri))
+    .array(z.string().refine(isRegistrableRedirectUri))
     .default([]),
   web_origins: z.array(z.url()).default([]),
   grant_types: z.array(z.string().min(1)).min(1),

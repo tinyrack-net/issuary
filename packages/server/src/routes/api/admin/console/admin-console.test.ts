@@ -86,6 +86,50 @@ describe('admin console API', () => {
     }
   });
 
+  test('accepts native app redirect URIs and rejects script schemes', async () => {
+    const server = await createAdminApp();
+    try {
+      const session = await login(server.app);
+      const admin = testClient(server.app).api.admin;
+      const body = {
+        name: 'Native client',
+        type: 'public' as const,
+        post_logout_redirect_uris: [],
+        web_origins: [],
+        grant_types: ['authorization_code'],
+        response_types: ['code'],
+        scopes: ['openid'],
+        skip_consent: false,
+      };
+
+      const created = await admin.clients.$post(
+        {
+          json: {
+            ...body,
+            client_id: 'admin-native-client',
+            redirect_uris: ['com.example.app:/oauth2redirect'],
+          },
+        },
+        headers(session),
+      );
+      expect(created.status).toBe(201);
+
+      const rejected = await admin.clients.$post(
+        {
+          json: {
+            ...body,
+            client_id: 'admin-script-client',
+            redirect_uris: ['javascript:alert(1)'],
+          },
+        },
+        headers(session),
+      );
+      expect(rejected.status).toBe(400);
+    } finally {
+      await server.cleanup();
+    }
+  });
+
   test('soft-deletes and restores database clients while keeping config clients read-only', async () => {
     const server = await createAdminApp();
     try {
