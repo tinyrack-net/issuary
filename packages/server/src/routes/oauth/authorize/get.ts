@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { describeRoute, resolver, validator } from 'hono-openapi';
 import { z } from 'zod';
 import type { AppEnv } from '../../../lib/app-env.ts';
+import { isPrivateUseSchemeRedirectUri } from '../../../lib/config/url-policy.ts';
 import { escapeHtml } from '../../../lib/escape-html.js';
 import {
   OPENAPI_SECURITY,
@@ -100,7 +101,10 @@ export const authorizeGet = new Hono<AppEnv>().get(
         );
       }
 
-      if (query.response_mode === 'form_post') {
+      // A native app's private-use scheme cannot receive an HTML form post.
+      const isNativeRedirect = isPrivateUseSchemeRedirectUri(redirectUri);
+
+      if (query.response_mode === 'form_post' && !isNativeRedirect) {
         const params: Record<string, string> = {
           error,
           error_description: errorDescription,
@@ -113,8 +117,10 @@ export const authorizeGet = new Hono<AppEnv>().get(
 
       const url = new URL(redirectUri);
       const useFragment =
-        query.response_mode === 'fragment' ||
-        (query.response_type === 'id_token' && query.response_mode !== 'query');
+        !isNativeRedirect &&
+        (query.response_mode === 'fragment' ||
+          (query.response_type === 'id_token' &&
+            query.response_mode !== 'query'));
       const params = useFragment ? new URLSearchParams() : url.searchParams;
       params.set('error', error);
       params.set('error_description', errorDescription);

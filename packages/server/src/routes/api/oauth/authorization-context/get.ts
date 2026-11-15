@@ -14,6 +14,11 @@ import { r } from '../../../../schemas/response.ts';
  * This is safe for pre-authentication UI because it only returns data after
  * client, redirect URI, response type, and scopes have been validated.
  */
+function redirectOrigin(redirectUri: string): string | null {
+  const origin = new URL(redirectUri).origin;
+  return origin === 'null' ? null : origin;
+}
+
 export const authorizationContextGet = new Hono<AppEnv>().get(
   '/oauth/authorization-context',
   describeRoute({
@@ -79,7 +84,7 @@ export const authorizationContextGet = new Hono<AppEnv>().get(
           name: client.name,
         },
         redirect_uri: query.redirect_uri,
-        redirect_origin: new URL(query.redirect_uri).origin,
+        redirect_origin: redirectOrigin(query.redirect_uri),
         scopes: parseScopesWithDescriptions(query.scope),
       },
       200,

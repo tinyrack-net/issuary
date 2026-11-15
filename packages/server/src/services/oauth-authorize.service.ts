@@ -1,6 +1,7 @@
 import type z from 'zod';
 import { getRandomBytes, toBase64Url } from '../lib/base64url.ts';
 import type { IssuaryRuntimeConfig } from '../lib/config/index.ts';
+import { isPrivateUseSchemeRedirectUri } from '../lib/config/url-policy.ts';
 import type {
   AccountSelectionSession,
   ReauthenticationSession,
@@ -192,6 +193,7 @@ export class OAuthAuthorizeService {
         query.code_challenge_method,
       );
     }
+    this.validateNativeAppRedirect(query, isImplicitIdToken);
 
     // 7. Check user session
     const hasFreshReauthentication = userSession
@@ -932,6 +934,29 @@ export class OAuthAuthorizeService {
 
   private isImplicitIdTokenFlow(responseType: string): boolean {
     return responseType === 'id_token';
+  }
+
+  /**
+   * Private-use scheme redirects can be claimed by any app on the device, so
+   * only an authorization code bound to S256 PKCE may be returned to them
+   * (RFC 8252 sections 7.1 and 8.1). Tokens are never delivered there, and
+   * form_post cannot target a non-HTTP URI.
+   */
+  private validateNativeAppRedirect(
+    query: AuthorizeParams & { response_mode?: ResponseMode | undefined },
+    isImplicitIdToken: boolean,
+  ): void {
+    if (!isPrivateUseSchemeRedirectUri(query.redirect_uri)) {
+      return;
+    }
+
+    if (isImplicitIdToken || query.response_mode === 'form_post') {
+      throw new e.InvalidAuthorizationRequest.Error();
+    }
+
+    if (!query.code_challenge || query.code_challenge_method !== 'S256') {
+      throw new e.InvalidCodeChallengeMethod.Error();
+    }
   }
 
   private validateImplicitIdTokenRequest(

@@ -123,7 +123,10 @@ const AuthorizationContextResponse = z
     redirect_uri: f.redirectUri.describe('Validated OAuth redirect URI'),
     redirect_origin: z
       .url()
-      .describe('Origin extracted from the validated redirect URI'),
+      .nullable()
+      .describe(
+        'Origin extracted from the validated redirect URI; null for a native app private-use scheme, which has no web origin',
+      ),
     scopes: z
       .array(ConsentScope)
       .describe('Validated requested OAuth scopes with descriptions'),

@@ -35,7 +35,7 @@ clients:
 | `logo_uri` | X | 同意画面に表示されるロゴ画像 URLこれです。 |
 | `client_id` | O | OAuth リクエストで使用するパブリッククライアント識別子です。 |
 | `client_secret` | △ | クライアントシークレットです。機密クライアント（サーバー側アプリ）でのみ必要で、公開クライアント（SPA/モバイル)では省略します。 |
-| `redirect_uris` | O | 認証後にリダイレクトできる許可 URL リストです。 |
+| `redirect_uris` | O | 認証後にリダイレクトできる許可 URL リストです。HTTPS、ローカル HTTP、ネイティブアプリのプライベート URI スキームを使えます。 |
 | `response_types` | O | 許可する OAuth 応答タイプです。一般的に `code`を使用します。 |
 | `grant_types` | O | 許可する OAuth 認可タイプです。 |
 | `scope` | O | 許可する OAuth スコープ（空白で区切り）です。 |
@@ -190,6 +190,27 @@ clients:
 アクセストークンの `aud` は、選択されたリソースの `audiences` を順序どおり重複なく結合した値です。1 つなら文字列、複数なら配列なので、上の例では `"aud": ["https://mcp.example.com/mcp", "nextcloud"]` を発行します。`resource` のない要求は従来の既定値 `server.public_origin` を維持します。ID トークンの audience は常にクライアント ID です。リソース向けアクセストークンでも UserInfo エンドポイントを呼び出せ、トークンイントロスペクションは `aud` を文字列または配列で返します。
 
 リソースの許可は管理者設定で決まります。ユーザーはスコープに同意し、クライアントが対象にできるリソースはクライアントの許可リストで決まります。
+
+## ネイティブアプリ
+
+ネイティブ・モバイルアプリは、HTTPS リダイレクト URI に加えて `com.example.app:/oauth2redirect` や `exampleapp://callback` のようなプライベート URI スキームのリダイレクト([RFC 8252 7.1 節](https://www.rfc-editor.org/rfc/rfc8252#section-7.1))を登録できます。
+
+```yaml
+clients:
+  - id: reader
+    name: Reader
+    client_id: reader
+    redirect_uris:
+      - https://reader.example.com/oauth2-callback
+      - exampleapp://oauth2-callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email
+```
+
+プライベートスキームは端末上のどのアプリでも横取りできるため、Issuary は機密クライアントであってもこれらのリダイレクトには S256 PKCE に紐づいた認可コードのみを返します。暗黙的な `id_token` フローと `response_mode=form_post` は拒否します。リダイレクト URI は引き続き登録値と完全に一致する必要があります。
+
+`javascript`、`data`、`file`、`intent`、`mailto`、`ws` などの Web・スクリプト・システムスキームは受け付けません。自分が所有する逆ドメインのスキームを使い、アプリが対応していれば App Links や Universal Links などの HTTPS リダイレクトの方が安全です。
 
 ## ユーザーの制限
 

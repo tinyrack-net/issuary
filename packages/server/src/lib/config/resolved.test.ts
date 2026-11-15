@@ -741,6 +741,39 @@ describe('IssuaryRuntimeConfigSchema', () => {
     ).not.toThrow();
   });
 
+  test('allows native app private-use scheme redirect URIs', () => {
+    expect(() =>
+      IssuaryRuntimeConfigSchema.parse({
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [
+          createClientConfig([
+            'https://app.example/callback',
+            'bookorbit://oauth2-callback',
+            'com.example.app:/oauth2redirect',
+          ]),
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  test('rejects script and data scheme redirect URIs', () => {
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [createClientConfig(['javascript:alert(1)'])],
+      },
+      'clients.0.redirect_uris.0',
+    );
+
+    expectConfigIssue(
+      {
+        ...MINIMAL_INPUT_CONFIG,
+        clients: [createClientConfig(['data:text/html,hello'])],
+      },
+      'clients.0.redirect_uris.0',
+    );
+  });
+
   test('allows HTTPS and local HTTP OAuth client web origins only as origins', () => {
     expect(() =>
       IssuaryRuntimeConfigSchema.parse({

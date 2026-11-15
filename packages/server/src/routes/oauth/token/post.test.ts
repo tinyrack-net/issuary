@@ -66,6 +66,23 @@ const AUTH_CODE_ONLY_OAUTH_CLIENT_CONFIG = {
   scope: REFRESHABLE_SCOPE,
 };
 
+const NATIVE_APP_OAUTH_CLIENT = {
+  clientId: 'native-app-token-client',
+  clientSecret: 'native-app-token-secret',
+  redirectUri: 'bookorbit://oauth2-callback',
+} as const;
+
+const NATIVE_APP_OAUTH_CLIENT_CONFIG = {
+  id: 'native-app-token-client-config',
+  name: 'Native App Token Client',
+  client_id: NATIVE_APP_OAUTH_CLIENT.clientId,
+  client_secret: NATIVE_APP_OAUTH_CLIENT.clientSecret,
+  redirect_uris: [NATIVE_APP_OAUTH_CLIENT.redirectUri],
+  response_types: ['code'],
+  grant_types: ['authorization_code'],
+  scope: 'openid profile email',
+};
+
 const REFRESH_ONLY_OAUTH_CLIENT = {
   clientId: 'refresh-only-client',
   clientSecret: 'refresh-only-secret',
@@ -80,6 +97,7 @@ beforeAll(async () => {
       TOKEN_TEST_OAUTH_CLIENT_CONFIG,
       PUBLIC_OAUTH_CLIENT_CONFIG,
       AUTH_CODE_ONLY_OAUTH_CLIENT_CONFIG,
+      NATIVE_APP_OAUTH_CLIENT_CONFIG,
     ],
   }));
 
@@ -865,6 +883,48 @@ describe('POST /oauth/token', () => {
 
       const json = await assertJsonBody(res, 400);
       expect(json.code).toBe('MISSING_AUTHORIZATION_CODE');
+    });
+  });
+
+  describe('Authorization Code Grant - Native App Redirect URI', () => {
+    test('should exchange a code issued to a private-use scheme', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code, location } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: NATIVE_APP_OAUTH_CLIENT.clientId,
+        redirectUri: NATIVE_APP_OAUTH_CLIENT.redirectUri,
+      });
+      expect(location.protocol).toBe('bookorbit:');
+
+      const res = await exchangeCode({
+        code,
+        clientId: NATIVE_APP_OAUTH_CLIENT.clientId,
+        clientSecret: NATIVE_APP_OAUTH_CLIENT.clientSecret,
+        redirectUri: NATIVE_APP_OAUTH_CLIENT.redirectUri,
+      });
+
+      const json = await assertJsonBody(res, 200);
+      expect(json.access_token).toBeDefined();
+      expect(json.id_token).toBeDefined();
+    });
+
+    test('should reject a native code exchanged with another redirect_uri', async () => {
+      const sessionCookie = await createAuthenticatedSession(app);
+      const { code } = await getAuthorizationCode(app, {
+        sessionCookie,
+        clientId: NATIVE_APP_OAUTH_CLIENT.clientId,
+        redirectUri: NATIVE_APP_OAUTH_CLIENT.redirectUri,
+      });
+
+      const res = await exchangeCode({
+        code,
+        clientId: NATIVE_APP_OAUTH_CLIENT.clientId,
+        clientSecret: NATIVE_APP_OAUTH_CLIENT.clientSecret,
+        redirectUri: 'evilapp://oauth2-callback',
+      });
+
+      const json = await assertJsonBody(res, 400);
+      expect(json.code).toBe('REDIRECT_URI_MISMATCH');
     });
   });
 

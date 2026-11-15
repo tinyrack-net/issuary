@@ -84,6 +84,27 @@ The access token `aud` is the ordered, de-duplicated union of the configured `au
 
 Resource approval is administrative: users consent to scopes, and the client allowlist controls which resources a client can target.
 
+## Native apps
+
+Native and mobile apps can register a private-use URI scheme redirect ([RFC 8252 section 7.1](https://www.rfc-editor.org/rfc/rfc8252#section-7.1)), such as `com.example.app:/oauth2redirect` or `exampleapp://callback`, next to their HTTPS redirect URIs:
+
+```yaml
+clients:
+  - id: reader
+    name: Reader
+    client_id: reader
+    redirect_uris:
+      - https://reader.example.com/oauth2-callback
+      - exampleapp://oauth2-callback
+    response_types: [code]
+    grant_types: [authorization_code, refresh_token]
+    scope: openid profile email
+```
+
+Any app on the device can claim a private-use scheme, so Issuary returns only an authorization code bound to S256 PKCE to these redirects, even for confidential clients. The implicit `id_token` flow and `response_mode=form_post` are rejected for them. The redirect URI still has to match a registered value exactly.
+
+Web, script and system schemes such as `javascript`, `data`, `file`, `intent`, `mailto` and `ws` are never accepted. Prefer a reverse-domain scheme you own; claimed HTTPS redirects (App Links or Universal Links) are stronger where the app supports them.
+
 ## Restricting users
 
 By default every Issuary user can sign in to every client. Add `access` to a client to allow only specific users:
