@@ -213,7 +213,7 @@ describe('CI workflow policy', () => {
   test('evaluates tag publishing after skipped quality jobs', async () => {
     const { workflow } = await readWorkflow();
 
-    for (const jobName of ['docker-push', 'npm-publish']) {
+    for (const jobName of ['docker-push', 'docker-manifest', 'npm-publish']) {
       const condition = workflow.jobs[jobName]?.if;
       expect(
         condition,
@@ -222,5 +222,41 @@ describe('CI workflow policy', () => {
       expect(condition).toContain("startsWith(github.ref, 'refs/tags/v')");
       expect(condition).toContain("needs.quality-gate.result == 'success'");
     }
+  });
+
+  test('bounds every job so a stalled step fails instead of running for hours', async () => {
+    const { workflow } = await readWorkflow();
+    for (const [jobName, job] of Object.entries(workflow.jobs)) {
+      const timeout = (job as { 'timeout-minutes'?: unknown })[
+        'timeout-minutes'
+      ];
+      expect(timeout, `${jobName} needs timeout-minutes`).toEqual(
+        expect.any(Number),
+      );
+      expect(timeout as number, jobName).toBeLessThanOrEqual(30);
+    }
+  });
+
+  test('builds each Docker architecture natively instead of under emulation', async () => {
+    const { source, workflow } = await readWorkflow();
+    expect(source).not.toContain('docker/setup-qemu-action');
+
+    const push = workflow.jobs['docker-push'] as unknown as {
+      'runs-on': string;
+      strategy: { matrix: { include: { arch: string; runner: string }[] } };
+    };
+    expect(push['runs-on']).toBe(['${{', 'matrix.runner', '}}'].join(' '));
+    expect(push.strategy.matrix.include).toEqual(
+      expect.arrayContaining([
+        { arch: 'amd64', runner: 'ubuntu-24.04' },
+        { arch: 'arm64', runner: 'ubuntu-24.04-arm' },
+      ]),
+    );
+    expect(needsOf(workflow, 'docker-manifest')).toEqual(
+      expect.arrayContaining(['docker-push']),
+    );
+    expect(workflow.jobs['docker-manifest']?.if).toContain(
+      "needs.docker-push.result == 'success'",
+    );
   });
 });
