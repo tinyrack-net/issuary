@@ -4,3 +4,33 @@ description: Configure Time-based One-Time Password (TOTP) 2FA in Tinyrack Auth
 section: configuration
 order: 18
 ---
+
+TOTP is an additional sign-in step for password logins. Enable it with:
+
+```yaml
+auth:
+  password:
+    enabled: true
+    two_factor:
+      enrollment_required: false
+    totp:
+      enabled: true
+      issuer: Tinyrack
+```
+
+- `auth.password`
+  - `two_factor.enrollment_required`: requires every password user to register a second factor. New users finish registration only after adding one; when passkeys are also enabled, they can choose a passkey or TOTP. Turning it on later sends existing users to the second-factor setup page at their next sign-in.
+  - `totp`
+    - `enabled`: enables TOTP as a second factor.
+    - `issuer`: the name authenticator apps show for the account.
+
+When TOTP is enabled:
+
+- Users with a registered TOTP enter a code when they sign in.
+- Users can add and remove TOTP from their profile.
+
+## Exempting individual users
+
+Some accounts cannot carry a second factor, such as a shared account. An administrator can exempt a database-managed user under **Admin › Users › Edit › Exempt from required 2FA**, or with `two_factor_exempt: true` on `POST /api/admin/users` and `PATCH /api/admin/users/{sub}`. An exempt user signs in with a password only and may remove their last second factor. Config-managed users (`users` in the configuration file) are always exempt.
+
+Lifting an exemption ends the user's sessions, so the next sign-in asks them to set up a second factor.

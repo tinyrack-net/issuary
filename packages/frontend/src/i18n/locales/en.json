@@ -68,6 +68,8 @@
   "admin.users.role": "Role",
   "admin.users.source": "Source",
   "admin.users.emailVerified": "Email verified",
+  "admin.users.twoFactorExempt": "Exempt from required 2FA",
+  "admin.users.twoFactorExemptHint": "The user can sign in with only a password even though two-factor enrollment is required.",
   "admin.users.secondFactor": "2FA",
   "admin.users.status": "Status",
   "admin.users.active": "Active",

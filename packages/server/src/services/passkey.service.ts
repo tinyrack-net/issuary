@@ -358,6 +358,7 @@ export class PasskeyService {
         throw new e.CannotRemoveLastPasskey.Error();
       if (
         this.config.auth.password.two_factor.enrollment_required &&
+        !user.two_factor_exempt &&
         methods.passkeys <= 1 &&
         !methods.totp
       )

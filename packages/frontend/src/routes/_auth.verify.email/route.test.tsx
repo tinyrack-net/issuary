@@ -29,6 +29,7 @@ describe('/verify/email', () => {
         ...routeTestUser,
         email_verified: true,
         second_factor_required: true,
+        two_factor_exempt: false,
       },
     });
 

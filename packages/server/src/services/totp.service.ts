@@ -231,7 +231,7 @@ export class TotpService {
    * Also deletes all recovery codes
    */
   public async disable(userId: string, token: string): Promise<void> {
-    return withUserSecurity(this.mikro, userId, async () => {
+    return withUserSecurity(this.mikro, userId, async (user) => {
       const totp =
         await this.mikro.userTotp.findFullyRegisteredByUserSub(userId);
       if (!totp) {
@@ -243,6 +243,7 @@ export class TotpService {
       // Prevent disabling TOTP when 2FA is required and no other 2FA method exists
       if (
         this.config.auth.password.two_factor.enrollment_required &&
+        !user.two_factor_exempt &&
         !(
           this.config.auth.passkey.enabled &&
           (await this.mikro.userPasskey.countByUserSub(userId)) > 0

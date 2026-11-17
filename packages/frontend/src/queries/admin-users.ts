@@ -19,6 +19,7 @@ export type CreateAdminUserInput = {
   password: string;
   role: 'user' | 'admin';
   email_verified: boolean;
+  two_factor_exempt: boolean;
 };
 
 export type UpdateAdminUserInput = {
@@ -26,6 +27,7 @@ export type UpdateAdminUserInput = {
   email: string;
   role: 'user' | 'admin';
   email_verified: boolean;
+  two_factor_exempt: boolean;
 };
 
 type NormalizedAdminUsersQuery = {

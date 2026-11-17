@@ -542,6 +542,38 @@ describe('DELETE /api/user/totp - second_factor.required: true', () => {
     });
   });
 
+  test('should allow an exempt user to disable their only second factor when 2FA is required', async () => {
+    const password = 'testPassword123!';
+
+    const { sessionCookie, userSub, totpSecret } =
+      await createUserWithTotpSession('totp-delete-2fa-exempt', password);
+
+    await withMikroContext(servicesWith2FA, async () => {
+      await servicesWith2FA.mikro.user.nativeUpdate(
+        { sub: userSub },
+        { two_factor_exempt: true },
+      );
+    });
+
+    advanceTotpClock();
+    const validCode = servicesWith2FA.totpService.generateToken(totpSecret);
+
+    const client = testClient(appWith2FARequired);
+    const res = await client.api.user.totp.$delete(
+      { json: { code: validCode } },
+      { headers: { Cookie: `session=${sessionCookie}` } },
+    );
+
+    expect(res.status).toBe(200);
+    await withMikroContext(servicesWith2FA, async () => {
+      const totp =
+        await servicesWith2FA.mikro.userTotp.findFullyRegisteredByUserSub(
+          userSub,
+        );
+      expect(totp).toBeNull();
+    });
+  });
+
   test('should allow disabling TOTP when passkey exists and 2FA is required', async () => {
     const password = 'testPassword123!';
 

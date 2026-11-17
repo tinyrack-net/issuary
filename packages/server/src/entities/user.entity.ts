@@ -38,6 +38,12 @@ export const UserEntitySchema = defineEntity({
       .$type<'user' | 'admin'>()
       .comment('User role: user or admin')
       .default('user'),
+    two_factor_exempt: p
+      .boolean()
+      .comment(
+        'Whether an administrator exempted this user from required two-factor enrollment',
+      )
+      .default(false),
     security_revision: p.integer().default(0),
     token_epoch: p.string().onCreate(() => crypto.randomUUID()),
     sessions_invalidated_at: p.datetime().nullable(),
