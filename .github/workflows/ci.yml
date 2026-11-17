@@ -758,18 +758,73 @@ jobs:
           jq -e 'all(.[]; .result == "success" or .result == "skipped")
           and (.changes.result == "success")' <<< "$QUALITY_RESULTS"
 
+  # Each architecture builds on its own native runner: building arm64 under
+  # QEMU emulation stalled for hours on v0.36.0 and v0.37.0. The images are
+  # pushed by digest and docker-manifest tags them as one multi-arch image.
   docker-push:
-    name: Docker push
+    name: Docker push (${{ matrix.arch }})
     needs: [quality-gate, docker-build]
     if: always() && startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { arch: amd64, runner: ubuntu-24.04 }
+          - { arch: arm64, runner: ubuntu-24.04-arm }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     permissions: { contents: read, packages: write }
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: docker/setup-qemu-action@v4.4.0
       - uses: docker/setup-buildx-action@v4.4.1
       - env: { DOCKERHUB_TOKEN: '${{ secrets.DOCKERHUB_TOKEN }}' }
         run: test -n "$DOCKERHUB_TOKEN"
+      - uses: docker/login-action@v4.6.0
+        with: { registry: '${{ env.GHCR_REGISTRY }}', username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: docker/login-action@v4.6.0
+        with: { registry: '${{ env.DOCKERHUB_REGISTRY }}', username: '${{ env.DOCKERHUB_USERNAME }}', password: '${{ secrets.DOCKERHUB_TOKEN }}' }
+      - id: metadata
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: |
+            ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+            ${{ env.DOCKERHUB_REGISTRY }}/${{ env.DOCKERHUB_IMAGE_NAME }}
+      - id: build
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: .
+          file: ./packages/standalone/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          # Untagged: docker-manifest applies the tags to both architectures at once.
+          outputs: type=image,"name=${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }},${{ env.DOCKERHUB_REGISTRY }}/${{ env.DOCKERHUB_IMAGE_NAME }}",push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=docker-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.arch }}
+      - env: { DIGEST: '${{ steps.build.outputs.digest }}' }
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: docker-digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  docker-manifest:
+    name: Docker manifest
+    needs: [quality-gate, docker-push]
+    if: always() && startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success' && needs.docker-push.result == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: docker-digest-*
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v4.4.1
       - uses: docker/login-action@v4.6.0
         with: { registry: '${{ env.GHCR_REGISTRY }}', username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
       - uses: docker/login-action@v4.6.0
@@ -785,22 +840,33 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},enable=${{ !contains(github.ref_name, '-') }}
             type=semver,pattern={{major}},enable=${{ !contains(github.ref_name, '-') }}
             type=sha
-      - uses: docker/build-push-action@v7.4.0
-        with:
-          context: .
-          file: ./packages/standalone/Dockerfile
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Tag both architectures as one image
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          GHCR_IMAGE: ${{ env.GHCR_REGISTRY }}/${{ env.GHCR_IMAGE_NAME }}
+          DOCKERHUB_IMAGE: ${{ env.DOCKERHUB_REGISTRY }}/${{ env.DOCKERHUB_IMAGE_NAME }}
+          TAGS: ${{ steps.metadata.outputs.tags }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          digests=(*)
+          test "${#digests[@]}" -eq 2
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            tag_args=()
+            while IFS= read -r tag; do
+              case "$tag" in "$image":*) tag_args+=(-t "$tag") ;; esac
+            done <<< "$TAGS"
+            refs=()
+            for digest in "${digests[@]}"; do refs+=("$image@sha256:$digest"); done
+            docker buildx imagetools create "${tag_args[@]}" "${refs[@]}"
+            docker buildx imagetools inspect "$image:$VERSION"
+          done
 
   npm-publish:
     name: Publish to npm
     needs: quality-gate
     if: always() && startsWith(github.ref, 'refs/tags/v') && needs.quality-gate.result == 'success'
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions: { contents: read, id-token: write }
     steps:
       - uses: actions/checkout@v7.0.1
