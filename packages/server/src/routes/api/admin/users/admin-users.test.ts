@@ -283,6 +283,103 @@ describe('admin user management API', () => {
     }
   });
 
+  test('exempts a database user from required 2FA enrollment and lifts the exemption again', async () => {
+    const server = await createTestApp({
+      ...MINIMAL_TEST_CONFIG,
+      admin: { enabled: true },
+      users: [TEST_USER_CONFIG],
+      auth: {
+        password: {
+          two_factor: { enrollment_required: true },
+          totp: { enabled: true },
+        },
+      },
+    });
+    try {
+      const session = await loginAdmin(server.app);
+      const dbUser = await createDatabaseUser(server.services, {
+        emailVerified: true,
+      });
+
+      const required = await authClient(server.app).login.$post({
+        json: { email: dbUser.email, password: dbUser.password },
+      });
+      expect((await assertJsonBody(required)).user).toMatchObject({
+        second_factor_required: true,
+        two_factor_exempt: false,
+      });
+
+      const exempt = await adminClient(server.app).users[':sub'].$patch(
+        { param: { sub: dbUser.sub }, json: { two_factor_exempt: true } },
+        adminHeaders(session),
+      );
+      expect(exempt.status).toBe(200);
+      expect((await assertJsonBody(exempt)).user).toMatchObject({
+        two_factor_exempt: true,
+        second_factor_required: false,
+      });
+
+      // An exempt user without any second factor gets a full session.
+      const userSession = await loginUser(server.app, {
+        email: dbUser.email,
+        password: dbUser.password,
+      });
+      const me = await userClient(server.app).session.$get(
+        {},
+        { headers: { Cookie: `session=${userSession}` } },
+      );
+      expect(me.status).toBe(200);
+      expect((await assertJsonBody(me)).user).toMatchObject({
+        second_factor_required: false,
+      });
+
+      const lifted = await adminClient(server.app).users[':sub'].$patch(
+        { param: { sub: dbUser.sub }, json: { two_factor_exempt: false } },
+        adminHeaders(session),
+      );
+      expect((await assertJsonBody(lifted)).user).toMatchObject({
+        two_factor_exempt: false,
+        second_factor_required: true,
+      });
+
+      // Lifting the exemption ends the sessions it allowed.
+      const after = await userClient(server.app).session.$get(
+        {},
+        { headers: { Cookie: `session=${userSession}` } },
+      );
+      expect(after.status).toBe(200);
+      expect((await assertJsonBody(after)).user).toBeNull();
+    } finally {
+      await server.cleanup();
+    }
+  });
+
+  test('creates a 2FA-exempt database user', async () => {
+    const server = await createAdminTestApp();
+    try {
+      const session = await loginAdmin(server.app);
+      const res = await adminClient(server.app).users.$post(
+        {
+          json: {
+            email: generateUniqueEmail('exempt-created-user'),
+            password: 'Password123!',
+            role: 'user',
+            email_verified: true,
+            two_factor_exempt: true,
+          },
+        },
+        adminHeaders(session),
+      );
+      expect(res.status).toBe(201);
+      expect((await assertJsonBody(res, 201)).user).toMatchObject({
+        managed_by: 'database',
+        two_factor_exempt: true,
+      });
+    } finally {
+      await server.cleanup();
+    }
+  });
+
   test('keeps config-managed users read-only', async () => {
     const server = await createAdminTestApp();
     try {

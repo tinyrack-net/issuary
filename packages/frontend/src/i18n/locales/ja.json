@@ -68,6 +68,8 @@
   "admin.users.role": "ロール",
   "admin.users.source": "ソース",
   "admin.users.emailVerified": "メール認証",
+  "admin.users.twoFactorExempt": "必須の二要素認証を免除",
+  "admin.users.twoFactorExemptHint": "二要素認証の登録が必須でも、このユーザーはパスワードだけでサインインできます。",
   "admin.users.secondFactor": "2FA",
   "admin.users.status": "ステータス",
   "admin.users.active": "有効",

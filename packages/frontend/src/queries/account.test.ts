@@ -22,6 +22,7 @@ const sessionResponse = {
     totp_registered: true,
     totp_recovery_codes_missing: false,
     second_factor_required: true,
+    two_factor_exempt: false,
     passkey_count: 2,
   },
 };

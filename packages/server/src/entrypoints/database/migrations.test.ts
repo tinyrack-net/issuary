@@ -17,6 +17,7 @@ import { Migration20260910160000_security_followup as PostgresSecurityFollowupMi
 import { Migration20260910200000_authentication_epoch as PostgresAuthenticationEpochMigration } from '../../migrations/postgres/Migration20260910200000_authentication_epoch.js';
 import { Migration20260910220000_flow_revocation as PostgresFlowRevocationMigration } from '../../migrations/postgres/Migration20260910220000_flow_revocation.js';
 import { Migration20261029120000_resource_indicators as PostgresResourceIndicatorsMigration } from '../../migrations/postgres/Migration20261029120000_resource_indicators.js';
+import { Migration20261116120000_user_two_factor_exempt as PostgresUserTwoFactorExemptMigration } from '../../migrations/postgres/Migration20261116120000_user_two_factor_exempt.js';
 import { SQLITE_MIGRATIONS } from '../../migrations/sqlite/index.ts';
 import { Migration20260509171226_initial as SqliteInitialMigration } from '../../migrations/sqlite/Migration20260509171226_initial.ts';
 import { Migration20260512120000_add_scheduler_jobs as SqliteSchedulerJobsMigration } from '../../migrations/sqlite/Migration20260512120000_add_scheduler_jobs.ts';
@@ -35,6 +36,7 @@ import { Migration20260910160000_security_followup as SqliteSecurityFollowupMigr
 import { Migration20260910200000_authentication_epoch as SqliteAuthenticationEpochMigration } from '../../migrations/sqlite/Migration20260910200000_authentication_epoch.js';
 import { Migration20260910220000_flow_revocation as SqliteFlowRevocationMigration } from '../../migrations/sqlite/Migration20260910220000_flow_revocation.js';
 import { Migration20261029120000_resource_indicators as SqliteResourceIndicatorsMigration } from '../../migrations/sqlite/Migration20261029120000_resource_indicators.js';
+import { Migration20261116120000_user_two_factor_exempt as SqliteUserTwoFactorExemptMigration } from '../../migrations/sqlite/Migration20261116120000_user_two_factor_exempt.js';
 import { postgres } from './postgres/postgres.ts';
 import { sqlite } from './sqlite/sqlite.ts';
 
@@ -105,6 +107,7 @@ describe('database migrations', () => {
       PostgresAuthenticationEpochMigration,
       PostgresFlowRevocationMigration,
       PostgresResourceIndicatorsMigration,
+      PostgresUserTwoFactorExemptMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(POSTGRES_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();
@@ -154,6 +157,7 @@ describe('database migrations', () => {
       SqliteAuthenticationEpochMigration,
       SqliteFlowRevocationMigration,
       SqliteResourceIndicatorsMigration,
+      SqliteUserTwoFactorExemptMigration,
     ]);
     expect(options.migrations?.migrationsList).toBe(SQLITE_MIGRATIONS);
     expect(options.migrations?.path).toBeUndefined();

@@ -95,6 +95,7 @@ function authResponse() {
       email_verified: false,
       email_verification_required: true,
       second_factor_required: true,
+      two_factor_exempt: false,
       totp_registered: false,
       passkey_count: 0,
       password_editable: true,

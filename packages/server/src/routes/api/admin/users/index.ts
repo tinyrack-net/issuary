@@ -54,6 +54,7 @@ const AdminCreateUserBody = z.object({
   password: f.userPassword,
   role: z.enum(['user', 'admin']).default('user'),
   email_verified: z.boolean().default(false),
+  two_factor_exempt: z.boolean().default(false),
 });
 
 const AdminUpdateUserBody = z
@@ -61,6 +62,7 @@ const AdminUpdateUserBody = z
     email: f.userEmail.optional(),
     role: z.enum(['user', 'admin']).optional(),
     email_verified: z.boolean().optional(),
+    two_factor_exempt: z.boolean().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one field is required',
@@ -218,6 +220,7 @@ export const adminUsersRoutes = new Hono<AppEnv>()
           password: body.password,
           role: body.role,
           emailVerified: body.email_verified,
+          twoFactorExempt: body.two_factor_exempt,
         });
         return c.json({ user }, 201);
       });
@@ -262,6 +265,7 @@ export const adminUsersRoutes = new Hono<AppEnv>()
             email: body.email,
             role: body.role,
             emailVerified: body.email_verified,
+            twoFactorExempt: body.two_factor_exempt,
           });
           return c.json({ user }, 200);
         },

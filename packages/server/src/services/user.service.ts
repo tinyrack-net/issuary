@@ -63,7 +63,12 @@ export class UserService {
   public async buildSessionUser(params: {
     user: Pick<
       UserEntity,
-      'sub' | 'managed_by' | 'email' | 'role' | 'email_verified'
+      | 'sub'
+      | 'managed_by'
+      | 'email'
+      | 'role'
+      | 'email_verified'
+      | 'two_factor_exempt'
     > & {
       hasPassword(): boolean;
     };
@@ -86,6 +91,7 @@ export class UserService {
       totp_registered: totpRegistered,
       totp_recovery_codes_missing: totpRegistered && recoveryCodeCount === 0,
       second_factor_required: this.user2FASetupRequired(user),
+      two_factor_exempt: user.two_factor_exempt,
       passkey_count: passkeyCount,
     };
   }
@@ -179,6 +185,7 @@ export class UserService {
     password: string;
     role?: UserEntity['role'] | undefined;
     emailVerified?: boolean | undefined;
+    twoFactorExempt?: boolean | undefined;
   }): Promise<z.infer<typeof r.AdminUser>> {
     const user = await this.passwordAuthService.createDatabaseUser({
       email: params.email,
@@ -186,6 +193,7 @@ export class UserService {
     });
     user.role = params.role ?? 'user';
     user.email_verified = params.emailVerified ?? false;
+    user.two_factor_exempt = params.twoFactorExempt ?? false;
     await this.mikro.em.flush();
 
     return this.getAdminUser(user.sub);
@@ -197,6 +205,7 @@ export class UserService {
     email?: string | undefined;
     role?: UserEntity['role'] | undefined;
     emailVerified?: boolean | undefined;
+    twoFactorExempt?: boolean | undefined;
   }): Promise<z.infer<typeof r.AdminUser>> {
     return withUserSecurity(this.mikro, params.sub, async (user) => {
       const emailChanged =
@@ -234,6 +243,17 @@ export class UserService {
       }
       if (params.emailVerified !== undefined) {
         user.email_verified = params.emailVerified;
+      }
+      if (
+        params.twoFactorExempt !== undefined &&
+        params.twoFactorExempt !== user.two_factor_exempt
+      ) {
+        // Lifting an exemption must take effect at the next sign-in, not when
+        // the current sessions happen to expire.
+        if (!params.twoFactorExempt) {
+          await invalidateUserAuthentication(this.mikro.em, user);
+        }
+        user.two_factor_exempt = params.twoFactorExempt;
       }
       await this.mikro.em.flush();
 
@@ -442,6 +462,7 @@ export class UserService {
         totp_registered: false,
         totp_recovery_codes_missing: false,
         second_factor_required: this.user2FASetupRequired(user),
+        two_factor_exempt: user.two_factor_exempt,
         passkey_count: 0,
       };
     });
@@ -489,11 +510,13 @@ export class UserService {
 
   /**
    * Determines if second factor setup is required for a user.
+   * Config-managed users and users an administrator exempted never are.
    */
   public user2FASetupRequired(userLike: {
     managed_by: UserEntity['managed_by'];
+    two_factor_exempt?: boolean | undefined;
   }): boolean {
-    if (userLike.managed_by === 'config') {
+    if (userLike.managed_by === 'config' || userLike.two_factor_exempt) {
       return false;
     }
     return this.config.auth.password.two_factor.enrollment_required;

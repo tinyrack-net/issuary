@@ -32,6 +32,11 @@ const UserSession = z
       .describe(
         'Whether the user is required to use 2FA (e.g., due to policy)',
       ),
+    two_factor_exempt: z
+      .boolean()
+      .describe(
+        'Whether an administrator exempted the user from required 2FA enrollment',
+      ),
     passkey_count: z
       .number()
       .int()

@@ -230,6 +230,7 @@ describe('authenticateWithPasskeyMutationOptions', () => {
         totp_registered: false,
         totp_recovery_codes_missing: false,
         second_factor_required: false,
+        two_factor_exempt: false,
         passkey_count: 1,
       },
     };
@@ -275,6 +276,7 @@ describe('startConditionalPasskeyAuth', () => {
         totp_registered: false,
         totp_recovery_codes_missing: false,
         second_factor_required: false,
+        two_factor_exempt: false,
         passkey_count: 1,
       },
     };

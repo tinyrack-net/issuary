@@ -48,6 +48,7 @@ describe('UserService', () => {
         email: 'session-user@example.com',
         role: 'user',
         email_verified: true,
+        two_factor_exempt: false,
         hasPassword: () => true,
       },
       totpRegistered: false,
@@ -56,8 +57,40 @@ describe('UserService', () => {
 
     expect(sessionUser.email_verification_required).toBe(true);
     expect(sessionUser.second_factor_required).toBe(true);
+    expect(sessionUser.two_factor_exempt).toBe(false);
     expect(sessionUser.totp_recovery_codes_missing).toBe(false);
     expect(sessionUser.passkey_count).toBe(1);
+  });
+
+  test('an administrator exemption lifts required second-factor enrollment for a database user', async () => {
+    expect(
+      services.userService.user2FASetupRequired({
+        managed_by: 'database',
+        two_factor_exempt: true,
+      }),
+    ).toBe(false);
+    expect(
+      services.userService.user2FASetupRequired({
+        managed_by: 'database',
+        two_factor_exempt: false,
+      }),
+    ).toBe(true);
+
+    const sessionUser = await services.userService.buildSessionUser({
+      user: {
+        sub: 'exempt-session-user-sub',
+        managed_by: 'database',
+        email: 'exempt-session-user@example.com',
+        role: 'user',
+        email_verified: true,
+        two_factor_exempt: true,
+        hasPassword: () => true,
+      },
+      totpRegistered: false,
+      passkeyCount: 0,
+    });
+    expect(sessionUser.second_factor_required).toBe(false);
+    expect(sessionUser.two_factor_exempt).toBe(true);
   });
 
   test('config-managed users skip email verification and second-factor enrollment', async () => {

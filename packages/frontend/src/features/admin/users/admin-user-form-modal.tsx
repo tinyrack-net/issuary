@@ -24,12 +24,14 @@ type AdminUserFormModalProps = {
     password: string;
     role: 'user' | 'admin';
     email_verified: boolean;
+    two_factor_exempt: boolean;
   }) => void;
   onUpdate: (values: {
     sub: string;
     email: string;
     role: 'user' | 'admin';
     email_verified: boolean;
+    two_factor_exempt: boolean;
   }) => void;
   onDelete: (sub: string) => void;
 };
@@ -108,6 +110,7 @@ export function AdminUserFormModal({
       email: String(formData.get('email') ?? ''),
       role: parseUserRole(formData.get('role')),
       email_verified: formData.get('email_verified') === 'on',
+      two_factor_exempt: formData.get('two_factor_exempt') === 'on',
     };
     if (modal.type === 'create') {
       onCreate({
@@ -209,6 +212,28 @@ export function AdminUserFormModal({
             <TRField.Label className="cursor-pointer">
               {t('admin.users.emailVerified')}
             </TRField.Label>
+          </div>
+        </TRField.Root>
+
+        <TRField.Root>
+          <div className="flex items-center gap-tinyrack-md rounded-tinyrack-md border border-tinyrack-border bg-tinyrack-surface px-tinyrack-md py-tinyrack-sm">
+            <TRCheckbox.Root
+              aria-label={t('admin.users.twoFactorExempt')}
+              defaultChecked={defaultValues?.two_factor_exempt ?? false}
+              name="two_factor_exempt"
+              uiSize="lg"
+              value="on"
+            >
+              <TRCheckbox.Indicator />
+            </TRCheckbox.Root>
+            <div className="flex flex-col">
+              <TRField.Label className="cursor-pointer">
+                {t('admin.users.twoFactorExempt')}
+              </TRField.Label>
+              <TRText as="p" color="muted" variant="bodySm">
+                {t('admin.users.twoFactorExemptHint')}
+              </TRText>
+            </div>
           </div>
         </TRField.Root>
 

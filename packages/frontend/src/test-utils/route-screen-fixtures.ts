@@ -64,6 +64,7 @@ export const routeTestUser = {
   email_verification_required: false,
   has_password: true,
   second_factor_required: false,
+  two_factor_exempt: false,
   totp_registered: false,
   totp_recovery_codes_missing: false,
   passkey_count: 0,
